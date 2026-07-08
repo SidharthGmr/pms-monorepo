@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production-Readiness Bug Hunt Report</title>
+  <style>
+    :root {
+      --critical: #dc2626;
+      --high: #ea580c;
+      --medium: #ca8a04;
+      --low: #6366f1;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 40px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f43f5e, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .header .subtitle {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+    }
+    .header .meta {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .header .meta span {
+      background: var(--surface);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+    .header .meta strong { color: var(--text); }
+
+    /* Summary Cards */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .summary-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      border: 1px solid var(--border);
+      transition: transform 0.2s;
+    }
+    .summary-card:hover { transform: translateY(-2px); }
+    .summary-card .count {
+      font-size: 2.8rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .summary-card .label {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .summary-card.critical .count { color: var(--critical); }
+    .summary-card.high .count { color: var(--high); }
+    .summary-card.medium .count { color: var(--medium); }
+    .summary-card.low .count { color: var(--low); }
+    .summary-card.total .count { color: var(--text); }
+    .summary-card.total { border-color: var(--text); }
+
+    /* Top 3 */
+    .top3 {
+      background: linear-gradient(135deg, rgba(220,38,38,0.1), rgba(234,88,12,0.1));
+      border: 1px solid rgba(220,38,38,0.3);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 40px;
+    }
+    .top3 h2 {
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--critical);
+      margin-bottom: 16px;
+    }
+    .top3 ol {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .top3 li::marker { font-weight: 700; }
+    .top3 li { color: var(--text); }
+    .top3 code {
+      background: rgba(220,38,38,0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* Severity Switch */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .filter-btn.active { border-color: var(--text); color: var(--text); }
+    .filter-btn.active-crit { border-color: var(--critical); color: var(--critical); }
+    .filter-btn.active-high { border-color: var(--high); color: var(--high); }
+    .filter-btn.active-med { border-color: var(--medium); color: var(--medium); }
+    .filter-btn.active-low { border-color: var(--low); color: var(--low); }
+
+    /* Bug List */
+    .bug-list { display: flex; flex-direction: column; gap: 12px; }
+    .bug-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      transition: all 0.2s;
+      cursor: default;
+    }
+    .bug-item:hover {
+      border-color: var(--surface-hover);
+      transform: translateX(4px);
+    }
+
+    .bug-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .bug-severity {
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 8px;
+    }
+    .bug-severity.s-critical { background: var(--critical); }
+    .bug-severity.s-high { background: var(--high); }
+    .bug-severity.s-medium { background: var(--medium); }
+    .bug-severity.s-low { background: var(--low); }
+
+    .bug-content { flex: 1; min-width: 0; }
+    .bug-id {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .bug-id.id-critical { color: var(--critical); }
+    .bug-id.id-high { color: var(--high); }
+    .bug-id.id-medium { color: var(--medium); }
+    .bug-id.id-low { color: var(--low); }
+
+    .bug-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .bug-location {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      margin-bottom: 8px;
+    }
+    .bug-desc {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .bug-desc code {
+      background: rgba(255,255,255,0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 0;
+      margin-top: 48px;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    /* Print */
+    @media print {
+      body { background: #fff; color: #000; padding: 20px; }
+      .container { max-width: 100%; }
+      .header h1 { -webkit-text-fill-color: #dc2626; color: #dc2626; }
+      .summary-card { background: #f8fafc; border-color: #e2e8f0; }
+      .bug-item { background: #fff; border-color: #e2e8f0; break-inside: avoid; }
+      .top3 { background: #fef2f2; border-color: #fecaca; }
+      .filter-btn { display: none; }
+      .bug-desc { color: #475569; }
+      .bug-location { color: #64748b; }
+      .header .meta span { background: #f1f5f9; color: #475569; }
+      .footer { color: #94a3b8; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 20px 12px; }
+      .header h1 { font-size: 1.6rem; }
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .bug-item { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🔍 Production-Readiness Bug Hunt</h1>
+    <p class="subtitle">Authentication &amp; User Management — Full Codebase Audit</p>
+    <div class="meta">
+      <span>Focus: <strong>Auth + User Modules</strong></span>
+      <span>Files Reviewed: <strong>52</strong></span>
+      <span>Bugs Found: <strong>37</strong></span>
+      <span>Date: <strong>July 1, 2026</strong></span>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card critical">
+      <div class="count">10</div>
+      <div class="label">🔴 Critical</div>
+    </div>
+    <div class="summary-card high">
+      <div class="count">11</div>
+      <div class="label">🟠 High</div>
+    </div>
+    <div class="summary-card medium">
+      <div class="count">13</div>
+      <div class="label">🟡 Medium</div>
+    </div>
+    <div class="summary-card low">
+      <div class="count">3</div>
+      <div class="label">🔵 Low</div>
+    </div>
+    <div class="summary-card total">
+      <div class="count">37</div>
+      <div class="label">Total Bugs</div>
+    </div>
+  </div>
+
+  <!-- Top 3 -->
+  <div class="top3">
+    <h2>⚠️ Top 3 — Fix These First</h2>
+    <ol>
+      <li><strong>CRIT-1</strong>: Registration assigns <code>Role.ADMIN</code> to all self-signed-up users → <em>privilege escalation</em></li>
+      <li><strong>CRIT-2</strong>: Login response leaks password hash + tokens (full credential exposure)</li>
+      <li><strong>CRIT-3</strong>: <code>forgotPassword</code> sets OTP expiry to <code>new Date()</code> → password reset is impossible</li>
+    </ol>
+  </div>
+
+  <!-- Filter Buttons -->
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn active-crit" data-filter="critical">🔴 Critical</button>
+    <button class="filter-btn active-high" data-filter="high">🟠 High</button>
+    <button class="filter-btn active-med" data-filter="medium">🟡 Medium</button>
+    <button class="filter-btn active-low" data-filter="low">🔵 Low</button>
+  </div>
+
+  <!-- Bug List -->
+  <div class="bug-list" id="bugList"></div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Generated by ruthless SRE audit · Node.js + TypeScript REST API · Auth &amp; User Modules
+  </div>
+
+</div>
+
+<script>
+const bugs = [
+  {
+    id: "CRIT-1",
+    severity: "critical",
+    title: "Registration assigns Role.ADMIN to all self-signed-up users",
+    location: "auth.controller.ts:116",
+    desc: "<code>const newUser = await this.unitOfService.Account.create(data, Role.ADMIN);</code> — Every person who hits <code>/auth/signup</code> becomes an ADMIN with full backend privileges. Massive privilege escalation hole."
+  },
+  {
+    id: "CRIT-2",
+    severity: "critical",
+    title: "Login response leaks password hash + tokens to client",
+    location: "account.service.ts:27-33",
+    desc: "<code>AccountService.login()</code> returns the raw Prisma result directly without calling <code>convertToDto</code>. The client receives: <code>password</code> (bcrypt hash), <code>token</code>, <code>refreshToken</code>, <code>emailVerificationToken</code>."
+  },
+  {
+    id: "CRIT-3",
+    severity: "critical",
+    title: "Forgot-password OTP expires immediately — password reset impossible",
+    location: "account.repository.ts:81",
+    desc: "<code>emailVerificationExpires: new Date()</code> sets expiry to NOW. The check <code>Date.now() > user.emailVerificationExpires.getTime()</code> is always <code>true</code>. OTP dead on arrival."
+  },
+  {
+    id: "CRIT-4",
+    severity: "critical",
+    title: "GET /verify/:otp reads from req.body — never works",
+    location: "authRoutes.ts:213 + auth.controller.ts:223",
+    desc: "Route is <code>GET /verify/:otp</code> but controller does <code>const data = req.body as verifyEmailModel</code>. GET requests have no body. <code>data.email</code> and <code>data.otp</code> are always <code>undefined</code>."
+  },
+  {
+    id: "CRIT-5",
+    severity: "critical",
+    title: "reset-password has NO auth middleware — always throws 400",
+    location: "authRoutes.ts:296",
+    desc: "No <code>authenticateToken</code> on route. Controller reads <code>req.user?.userId</code> → always <code>undefined</code> → always <code>\"User ID is required\"</code>. Endpoint completely broken."
+  },
+  {
+    id: "CRIT-6",
+    severity: "critical",
+    title: "refreshToken has NO auth middleware — indefinite token reuse",
+    location: "authRoutes.ts:144 + auth.controller.ts:186",
+    desc: "No auth middleware. Any stolen JWT can be refreshed indefinitely. Old <code>refreshToken</code> is never invalidated (no rotation)."
+  },
+  {
+    id: "CRIT-7",
+    severity: "critical",
+    title: "OTP error message leaks OTP value back to client",
+    location: "auth.controller.ts:267",
+    desc: "<code>message: `\${data.otp},\"OTP expired. Please resend OTP\"`</code> — the submitted OTP is echoed in error response. Information disclosure."
+  },
+  {
+    id: "CRIT-8",
+    severity: "critical",
+    title: "sentOtp calls forgotPassword instead of updateEmailVerification",
+    location: "auth.controller.ts:209",
+    desc: "The <code>sentOtp</code> method triggers forgot-password flow. <code>updateEmailVerification</code> exists but is <strong>never called</strong> from any controller."
+  },
+  {
+    id: "CRIT-9",
+    severity: "critical",
+    title: "ADMIN can self-elevate to SUPER_ADMIN",
+    location: "routes/userRoutes.ts:352",
+    desc: "Route requires <code>[Role.SUPER_ADMIN, Role.ADMIN]</code>. No guard prevents ADMIN from updating their own role to SUPER_ADMIN."
+  },
+  {
+    id: "CRIT-10",
+    severity: "critical",
+    title: "ADMIN can create SUPER_ADMIN users",
+    location: "schemas/userSchema.ts:31 + userRoutes.ts:399",
+    desc: "Schema allows <code>SUPER_ADMIN</code> as a valid role. Admin-authorized <code>POST /create-user</code> can create super-admins."
+  },
+  {
+    id: "HIGH-1",
+    severity: "high",
+    title: "isExpired called twice, first result discarded",
+    location: "auth.controller.ts:262-264",
+    desc: "Variable <code>expired</code> stores result of first call but is never read. Second call does the actual check. Dead code."
+  },
+  {
+    id: "HIGH-2",
+    severity: "high",
+    title: "OTP expiry hardcoded to 1 minute",
+    location: "auth.controller.ts:262,264",
+    desc: "Magic number <code>1</code> (minute) scattered in code. Should be configurable via environment variable."
+  },
+  {
+    id: "HIGH-3",
+    severity: "high",
+    title: "validate middleware uses wrong path index",
+    location: "middleware/validate.ts:22",
+    desc: "<code>e.path[1]</code> skips index <code>[0]</code> ('body'). Works for nested schemas but returns <code>undefined</code> for flat schemas."
+  },
+  {
+    id: "HIGH-4",
+    severity: "high",
+    title: "getUserByEmail route missing asyncHandler",
+    location: "userRoutes.ts:76",
+    desc: "No <code>asyncHandler</code> wrapper. Any thrown error becomes an unhandled Promise rejection, potentially crashing the process."
+  },
+  {
+    id: "HIGH-5",
+    severity: "high",
+    title: "UserService.getAll throws on empty results",
+    location: "user.service.ts:67-69",
+    desc: "Throws <code>\"No user found\"</code> instead of returning <code>[]</code>. Causes 500 errors on filtered queries with zero matching records."
+  },
+  {
+    id: "HIGH-6",
+    severity: "high",
+    title: "resetPassword throws plain Error, not CustomError",
+    location: "account.service.ts:155-171",
+    desc: "Uses <code>throw new Error(\"PASSWORD_MISMATCH\")</code> etc. Global error handler only catches <code>CustomError</code>. Results in generic 500s."
+  },
+  {
+    id: "HIGH-7",
+    severity: "high",
+    title: "resetPassword never clears OTP after successful use",
+    location: "account.repository.ts:86-94",
+    desc: "<code>clearPasswordResetToken</code> exists but is <strong>never called</strong>. Same OTP can be reused after password reset."
+  },
+  {
+    id: "HIGH-8",
+    severity: "high",
+    title: "updateStatusById always sets Status.Trash regardless of input",
+    location: "user.repository.ts:53-54",
+    desc: "<code>data: { status: Status.Trash }</code> — ignores <code>updatedData</code> entirely. Cannot restore a user to active status."
+  },
+  {
+    id: "HIGH-9",
+    severity: "high",
+    title: "getUserById returns authenticated user, not requested user",
+    location: "user.controller.ts:77",
+    desc: "Reads <code>userId</code> from <code>req.user?.userId</code> (JWT token) instead of <code>req.params.userId</code>. URL parameter ignored."
+  },
+  {
+    id: "HIGH-10",
+    severity: "high",
+    title: "getUserByEmail returns authenticated user, not requested email",
+    location: "user.controller.ts:106",
+    desc: "Reads <code>email</code> from <code>req.user?.email</code> (JWT token) instead of <code>req.params.email</code>. Route path <code>/email/:email</code> is decorative."
+  },
+  {
+    id: "HIGH-11",
+    severity: "high",
+    title: "No Zod validation on PUT /:userId and PUT /status/:userId",
+    location: "userRoutes.ts:235,145",
+    desc: "These endpoints accept arbitrary <code>req.body</code> with no schema validation. <code>updateSchema</code> exists but is never applied."
+  },
+  {
+    id: "MED-1",
+    severity: "medium",
+    title: "refreshToken parameter in convertToDto is completely ignored",
+    location: "account.service.ts:91-118, user.service.ts:129-163",
+    desc: "Both <code>convertToDto</code> methods have a <code>refreshToken: boolean</code> parameter that is never read. <code>refreshToken</code> in output follows <code>token</code> flag instead."
+  },
+  {
+    id: "MED-2",
+    severity: "medium",
+    title: "Wrong error message — 'Email is required' when userId is missing",
+    location: "auth.controller.ts:207",
+    desc: "Line should say <code>'User ID is required'</code> or <code>'Authentication required'</code>. Misleading error."
+  },
+  {
+    id: "MED-3",
+    severity: "medium",
+    title: "SITE_MODE env var check with risk of silent bypass",
+    location: "clientid.middleware.ts:10,19",
+    desc: "<code>process.env.SITE_MODE !== \"local\"</code> — a typo in the env var value silently skips client ID security checks."
+  },
+  {
+    id: "MED-4",
+    severity: "medium",
+    title: "assignStore references unitOfService.Store which may not exist",
+    location: "user.controller.ts:239",
+    desc: "<code>this.unitOfService.Store.getById(storeId)</code> — verify that <code>IUnitOfService</code> defines <code>Store</code>."
+  },
+  {
+    id: "MED-5",
+    severity: "medium",
+    title: "storeId typed as number but HTTP sends strings",
+    location: "user.controller.ts:228",
+    desc: "<code>const { storeId } = req.body as { storeId: number };</code> — No Zod validation. <code>0</code> passes the <code>if (!storeId)</code> check."
+  },
+  {
+    id: "MED-6",
+    severity: "medium",
+    title: "OTP generation has modulo bias",
+    location: "otp.util.ts:5",
+    desc: "<code>% 9000</code> on uint16 (0-65535) gives non-uniform distribution (65536/9000 ≈ 7.28). Lower remainders slightly more probable."
+  },
+  {
+    id: "MED-7",
+    severity: "medium",
+    title: "Duplicate/inconsistent role 'Administrator' in enum",
+    location: "enum/user.enum.ts:6",
+    desc: "<code>Administrator = 'Administrator'</code> — inconsistent casing. Never used in any authorization check."
+  },
+  {
+    id: "MED-8",
+    severity: "medium",
+    title: "deleteUserById is a soft-delete, name implies hard delete",
+    location: "user.repository.ts:58-63",
+    desc: "Sets <code>status: Status.Trash</code>. Misleading method name. No actual cascade/hard-delete exists."
+  },
+  {
+    id: "MED-9",
+    severity: "medium",
+    title: "No rate limiting on any auth endpoint",
+    location: "All auth routes",
+    desc: "Login, signup, OTP send, verify, forgot-password, reset-password — all unprotected against brute force / replay attacks."
+  },
+  {
+    id: "MED-10",
+    severity: "medium",
+    title: "loginAttempts field never incremented or checked",
+    location: "Whole codebase",
+    desc: "Schema has <code>loginAttempts</code> but no account lockout logic exists anywhere. Field is dead schema."
+  },
+  {
+    id: "MED-11",
+    severity: "medium",
+    title: "Staff creation uses storeCode, may need storeId FK",
+    location: "user.service.ts:53-58",
+    desc: "If <code>staff</code> table has a <code>storeId</code> foreign key, this will fail at the database level."
+  },
+  {
+    id: "MED-12",
+    severity: "medium",
+    title: "ClientIdMiddleware logs 'Client ID matched:' on failure",
+    location: "clientid.middleware.ts:24",
+    desc: "Misleading log message on the failure path (when clientId doesn't match the env var)."
+  },
+  {
+    id: "MED-13",
+    severity: "medium",
+    title: "Swagger docs say POST, route is GET for verify",
+    location: "authRoutes.ts:171,213",
+    desc: "Swagger comment says <code>post:</code> but actual route is <code>.get(\"/verify/:otp\"...)</code>."
+  },
+  {
+    id: "LOW-1",
+    severity: "low",
+    title: "UserService.create wraps single operation in unnecessary transaction",
+    location: "user.service.ts:32",
+    desc: "Transaction only needed when multiple operations must be atomic (contrast with AccountService which creates store + user)."
+  },
+  {
+    id: "LOW-2",
+    severity: "low",
+    title: "Dead code — commented-out token validation in refreshToken",
+    location: "auth.controller.ts:158-163",
+    desc: "Lines 158-163 are entirely commented out. Leftover from refactoring."
+  },
+  {
+    id: "LOW-3",
+    severity: "low",
+    title: "No self-deletion protection",
+    location: "userRoutes.ts:265",
+    desc: "A user can <code>DELETE /users/:userId</code> with their own userId and soft-delete themselves. No 'you cannot delete yourself' guard."
+  }
+];
+
+function renderBugs(filter) {
+  const container = document.getElementById('bugList');
+  const filtered = filter === 'all' ? bugs : bugs.filter(b => b.severity === filter);
+  container.innerHTML = filtered.map(b => `
+    <div class="bug-item" data-severity="${b.severity}">
+      <div class="bug-header">
+        <div class="bug-severity s-${b.severity}"></div>
+        <div class="bug-content">
+          <div class="bug-id id-${b.severity}">${b.id}</div>
+          <div class="bug-title">${b.title}</div>
+          <div class="bug-location">${b.location}</div>
+          <div class="bug-desc">${b.desc}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.className = 'filter-btn');
+    const filter = btn.dataset.filter;
+    if (filter === 'all') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.add(`active-${filter}`);
+    }
+    renderBugs(filter);
+  });
+});
+
+// Initial render
+renderBugs('all');
+</script>
+
+</body>
+</html>

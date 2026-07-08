@@ -1,0 +1,26 @@
+{
+  "name": "PMS",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run dev -w apps/api",
+    "build": "npm run build --workspaces",
+    "build:web": "npm run build -w apps/web",
+    "build:api": "npm run build -w apps/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "prettier": "^3.7.4",
+    "turbo": "^2.10.4",
+    "typescript": "5.9.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  }
+}

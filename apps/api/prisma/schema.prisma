@@ -1,0 +1,423 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id                       Int               @id @default(autoincrement())
+  userId                   String            @unique
+  name                     String
+  userName                 String            @unique
+  phone                    String?
+  email                    String            @unique
+  password                 String
+  role                     Role              @default(USER)
+  isActive                 Boolean           @default(false)
+  isRegisteredByShop       Boolean           @default(false)
+  isEmailVerified          Boolean           @default(false)
+  emailVerificationToken   String?           @unique
+  emailVerificationExpires DateTime?
+  dateOfBirth              DateTime?
+  address                  String?
+  city                     String?
+  state                    String?
+  country                  String?
+  pincode                  String?
+  bio                      String?
+  isPhoneVerified          Boolean           @default(false)
+  profileImageUrl          String?
+  loginAttempts            Int               @default(0)
+  lastLoginAt              DateTime?
+  lastLoginIP              String?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime?         @updatedAt
+  status                   Status            @default(Published)
+  token                    String?
+  tokenUpdated             Boolean           @default(false)
+  refreshToken             String?
+  metadata                 Json?
+  storeCode                String?
+  orders                   order[]
+  productsCreated          product[]         @relation("CreatedBy")
+  productsUpdated          product[]         @relation("UpdatedBy")
+  staff                    staff?
+  recordedAttendances      staffAttendance[] @relation("staff_attendance_recorder")
+  staffAttendances         staffAttendance[] @relation("staff_member")
+  processedSalaries        staffSalary[]     @relation("salary_processor")
+  staffSalaries            staffSalary[]     @relation("salary_staff")
+  store                    store?            @relation(fields: [storeCode], references: [code])
+  stockHistories           stockHistory[]
+  purchases                purchase[]
+
+  @@index([userId])
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+}
+
+model store {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  code             String            @unique
+  address          String?
+  phone            String?
+  email            String?
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  status           Status            @default(Published)
+  attributes       attribute[]
+  brandNames       brandName[]
+  categories       category[]
+  orders           order[]
+  orderItems       orderItem[]
+  payments         payment[]
+  Product          product[]
+  staffDetails     staff[]
+  staffAttendances staffAttendance[]
+  staffSalary      staffSalary[]
+  staff            users[]
+  stockHistories   stockHistory[]
+  purchases        purchase[]
+}
+
+model category {
+  id           Int         @id @default(autoincrement())
+  name         String
+  description  String?
+  parentId     Int?
+  storeCode    String
+  status       Status      @default(Published)
+  displayOrder Int?        @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  parent       category?   @relation("CategoryToParent", fields: [parentId], references: [id])
+  children     category[]  @relation("CategoryToParent")
+  store        store       @relation(fields: [storeCode], references: [code])
+  products     product[]
+  brandNames   brandName[] @relation("brandNameTocategory")
+
+  @@unique([name, storeCode])
+  @@index([storeCode])
+}
+
+model product {
+  id                Int            @id @default(autoincrement())
+  name              String
+  parentId          Int?
+  categoryId        Int
+  brandNameId       Int?
+  attributeId       Int?
+  slug              String         @unique
+  description       String?
+  price             Float          @default(0)
+  cost              Float?
+  stock             Int            @default(0)
+  lowStockThreshold Int?           @default(5)
+  images            String[]       @default([])
+  storeCode         String
+  status            Status         @default(Published)
+  displayOrder      Int?           @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  createdById       String
+  updatedById       String?
+  orderItems        orderItem[]
+  attribute         attribute?     @relation(fields: [attributeId], references: [id])
+  brandName         brandName?     @relation(fields: [brandNameId], references: [id])
+  category          category       @relation(fields: [categoryId], references: [id])
+  createdBy         users          @relation("CreatedBy", fields: [createdById], references: [userId])
+  parent            product?       @relation("ProductHierarchy", fields: [parentId], references: [id])
+  children          product[]      @relation("ProductHierarchy")
+  store             store          @relation(fields: [storeCode], references: [code])
+  updatedBy         users?         @relation("UpdatedBy", fields: [updatedById], references: [userId])
+  stockHistories    stockHistory[]
+  purchaseItems     purchaseItem[]
+}
+
+model brandName {
+  id           Int        @id @default(autoincrement())
+  name         String
+  storeCode    String
+  status       Status     @default(Published)
+  displayOrder Int?       @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  store        store      @relation(fields: [storeCode], references: [code])
+  product      product[]
+  categories   category[] @relation("brandNameTocategory")
+
+  @@unique([name, storeCode])
+  @@index([id])
+  @@index([storeCode])
+}
+
+model attribute {
+  id           Int       @id @default(autoincrement())
+  name         String
+  unit         String?
+  storeCode    String
+  status       Status    @default(Published)
+  displayOrder Int?      @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  store        store     @relation(fields: [storeCode], references: [code])
+  products     product[]
+
+  @@index([id])
+  @@index([storeCode])
+}
+
+model staff {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  storeCode  String
+  position   String?
+  department String?
+  hireDate   DateTime @default(now())
+  salary     Float?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  store      store    @relation(fields: [storeCode], references: [code])
+  user       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([storeCode])
+  @@index([isActive])
+}
+
+model staffAttendance {
+  id            Int              @id @default(autoincrement())
+  staffId       Int
+  date          DateTime         @map("date")
+  status        AttendanceStatus @default(PRESENT)
+  checkInTime   DateTime?
+  checkOutTime  DateTime?
+  overtimeHours Float?
+  remarks       String?
+  recordedBy    Int?
+  storeCode     String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  recorder      users?           @relation("staff_attendance_recorder", fields: [recordedBy], references: [id])
+  staff         users            @relation("staff_member", fields: [staffId], references: [id], onDelete: Cascade)
+  store         store            @relation(fields: [storeCode], references: [code])
+
+  @@unique([staffId, date])
+  @@index([staffId])
+  @@index([date])
+}
+
+model order {
+  id            Int         @id @default(autoincrement())
+  orderNumber   String      @unique
+  customerId    String
+  orderDate     DateTime    @default(now())
+  totalAmount   Float       @default(0)
+  discount      Float       @default(0)
+  tax           Float       @default(0)
+  shippingCost  Float       @default(0)
+  grandTotal    Float       @default(0)
+  status        OrderStatus @default(PENDING)
+  notes         String?
+  createdById   String?
+  createdByName String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  storeCode     String
+  customer      users       @relation(fields: [customerId], references: [userId])
+  store         store       @relation(fields: [storeCode], references: [code])
+  items         orderItem[]
+  payments      payment[]
+
+  @@index([customerId])
+  @@index([orderNumber])
+  @@index([status])
+}
+
+model orderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  orderNumber String
+  productId   Int
+  storeCode   String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  order       order    @relation(fields: [orderId], references: [id])
+  product     product  @relation(fields: [productId], references: [id])
+  store       store    @relation(fields: [storeCode], references: [code])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([storeCode])
+}
+
+model payment {
+  id            Int           @id @default(autoincrement())
+  orderId       Int
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?       @unique
+  paymentDate   DateTime      @default(now())
+  remarks       String?
+  storeCode     String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  order         order         @relation(fields: [orderId], references: [id])
+  store         store         @relation(fields: [storeCode], references: [code])
+
+  @@index([orderId])
+  @@index([transactionId])
+  @@index([paymentDate])
+  @@index([storeCode])
+}
+
+model staffSalary {
+  id               Int           @id @default(autoincrement())
+  staffId          Int
+  month            Int
+  year             Int
+  baseSalary       Float
+  attendanceBonus  Float?
+  deductions       Float?
+  advanceDeduction Float?
+  netPayable       Float
+  paidAmount       Float         @default(0)
+  status           PaymentStatus @default(PENDING)
+  paymentDate      DateTime?
+  remarks          String?
+  processedBy      Int?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  storeCode        String
+  processor        users?        @relation("salary_processor", fields: [processedBy], references: [id])
+  staff            users         @relation("salary_staff", fields: [staffId], references: [id])
+  store            store         @relation(fields: [storeCode], references: [code])
+
+  @@unique([staffId, month, year])
+  @@index([staffId])
+  @@index([status])
+  @@index([month, year])
+}
+
+model stockHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  storeCode String
+  userId    Int
+  quantity  Int
+  reason    String?
+  createdAt DateTime @default(now())
+
+  product product @relation(fields: [productId], references: [id])
+  store   store   @relation(fields: [storeCode], references: [code])
+  user    users   @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([storeCode])
+  @@index([userId])
+}
+
+model purchase {
+  id            Int            @id @default(autoincrement())
+  invoiceNumber String?
+  invoiceUrl    String?
+  supplierName  String?
+  totalAmount   Float          @default(0)
+  notes         String?
+  storeCode     String
+  userId        Int
+  status        PurchaseStatus @default(COMPLETED)
+  purchaseDate  DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  store store          @relation(fields: [storeCode], references: [code])
+  user  users          @relation(fields: [userId], references: [id])
+  items purchaseItem[]
+
+  @@index([storeCode])
+  @@index([userId])
+}
+
+model purchaseItem {
+  id         Int   @id @default(autoincrement())
+  purchaseId Int
+  productId  Int
+  quantity   Int
+  unitCost   Float
+  totalCost  Float
+
+  purchase purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  product  @relation(fields: [productId], references: [id])
+
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  USER
+  STAFF
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  LEAVE
+  HALF_DAY
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  BANK_TRANSFER
+  ONLINE
+}
+
+enum Status {
+  Published
+  Draft
+  Trash
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
