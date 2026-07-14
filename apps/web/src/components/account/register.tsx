@@ -7,6 +7,7 @@ import config from '@/config';
 import { CreateUserModel } from '@/models/user.model';
 import SignupSchema from '@/schema/userSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Lock, Mail, Phone, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -16,7 +17,6 @@ import { CardDescription } from '../ui/card';
 import { Switch } from '../ui/switch';
 
 export default function RegisterModule() {
-  const [showLoader, setShowLoader] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -48,7 +48,6 @@ export default function RegisterModule() {
       if (response.ok) {
         form.reset();
 
-        setShowLoader(false);
         toast({
           title: 'Success',
           description: 'Registered successfully!',
@@ -74,119 +73,112 @@ export default function RegisterModule() {
   };
 
   return (
-    <>
-      <div className="">
-        {showLoader && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16">Loading...</div>
-          </div>
-        )}
-      </div>
-      <Form {...form}>
-        <form autoComplete="off" onSubmit={handleSubmit(submitData)}>
-          <div className="grid grid-cols-2 gap-1">
-            <FormField
-              control={control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
+    <Form {...form}>
+      <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={control}
-            name="email"
+            name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Business Email</FormLabel>
+                <FormLabel>First Name*</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="name@company.com" {...field} />
+                  <Input placeholder="John" icon={User} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
           <FormField
             control={control}
-            name="phone"
+            name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel>Last Name*</FormLabel>
                 <FormControl>
-                  <Input type="text" placeholder="(555) 000-0000" {...field} />
+                  <Input placeholder="Doe" icon={User} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
 
-          <FormField
-            control={control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Create a password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <FormField
+          control={control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Business Email*</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="name@company.com" icon={Mail} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <FormField
-            control={form.control}
-            name="isRegisterbyShop"
-            render={({ field }) => (
-              <FormItem className="flex items-center gap-3">
-                <FormLabel className="mt-2">Register as Shop</FormLabel>
-                <FormControl>
-                  <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <FormField
+          control={control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone*</FormLabel>
+              <FormControl>
+                <Input type="text" placeholder="(555) 000-0000" icon={Phone} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <Button
-            type="submit"
-            icon={FaArrowUpRightFromSquare}
-            className="w-full  transition-all duration-300 hover:scale-[1.02]"
-            loading={showLoader}
-          >
-            {isLoading ? 'Creating account...' : 'Create Account'}
-          </Button>
-          <div className="my-4 text-center">
-            <CardDescription>
-              Already have an account?
-              <Link href="/login" className="font-medium text-blue-500 hover:text-blue-400 transition-colors ms-1">
-                Log in now
-              </Link>
-            </CardDescription>
-          </div>
-        </form>
-      </Form>
-    </>
+        <FormField
+          control={control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password*</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="Create a password" icon={Lock} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isRegisterbyShop"
+          render={({ field }) => (
+            <FormItem className="flex items-center justify-between rounded-md border bg-background px-3 py-2.5">
+              <FormLabel className="!mt-0 font-medium">Register as Shop</FormLabel>
+              <FormControl>
+                <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button
+          type="submit"
+          icon={FaArrowUpRightFromSquare}
+          iconPlacement="right"
+          className="w-full transition-all duration-300 hover:scale-[1.02]"
+          loading={isLoading}
+        >
+          {isLoading ? 'Creating account...' : 'Create Account'}
+        </Button>
+
+        <div className="text-center">
+          <CardDescription>
+            Already have an account?
+            <Link href="/login" className="font-medium text-primary hover:text-primary/80 transition-colors ms-1">
+              Log in now
+            </Link>
+          </CardDescription>
+        </div>
+      </form>
+    </Form>
   );
 }

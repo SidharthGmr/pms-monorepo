@@ -1,13 +1,15 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { UserDto } from '@/dtos/UserDto';
+import { UserDto } from '@pms/types';
 import { useRoleRedirect } from '@/hooks/use-role-base-redirection';
 import { LoginModel } from '@/models/login.model';
 import LoginSchema from '@/schema/LoginSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Lock, Mail } from 'lucide-react';
 import { getSession, signIn, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -122,7 +124,7 @@ export default function LoginModule() {
               <FormItem>
                 <FormLabel>Email Address*</FormLabel>
                 <FormControl>
-                  <Input placeholder="name@example.com" {...field} className="" />
+                  <Input placeholder="name@example.com" icon={Mail} {...field} className="" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -136,18 +138,22 @@ export default function LoginModule() {
               <FormItem>
                 <FormLabel>Password*</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Enter your password" {...field} className="" />
+                  <Input type="password" placeholder="Enter your password" icon={Lock} {...field} className="" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* <div className="flex items-center justify-between">
-            <Link href="/recover-password" className="text-sm font-medium text-blue-500 hover:text-blue-400 transition-colors">
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Checkbox />
+              Remember me
+            </label>
+            <Link href="/recover-password" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
               Forgot Password?
             </Link>
-          </div> */}
+          </div>
 
           <Button
             type="submit"

@@ -37,6 +37,11 @@ export default interface IUnitOfWork {
    * @returns A promise that resolves to the result of the transaction.
    */
   transaction<T>(
-    callback: (prisma: Prisma.TransactionClient) => Promise<T>
+    callback: (prisma: Prisma.TransactionClient) => Promise<T>,
+    options?: { maxWait?: number; timeout?: number }
   ): Promise<T>;
+
+  // transaction<T>(
+  //   callback: (prisma: Prisma.TransactionClient) => Promise<T>
+  // ): Promise<T>;
 }

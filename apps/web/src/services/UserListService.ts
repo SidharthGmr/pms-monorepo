@@ -10,7 +10,7 @@ import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';
 import IUserListService from './interfaces/IUserListService.ts';
-import { UserDto, UserListParams } from '@pms2/types';
+import { UserDto, UserListParams } from '@pms/types';
 
 
 @injectable()

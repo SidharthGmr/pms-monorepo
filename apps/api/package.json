@@ -33,7 +33,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@pms2/types": "*",
+    "@pms/types": "*",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",

@@ -65,12 +65,18 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Staff = staff;
     this.Store = store;
   }
-
+  // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  //   return prisma.$transaction(async (transactionClient) => {
+  //     return callback(transactionClient);
+  //   });
+  // }
   async transaction<T>(
-    callback: (prisma: Prisma.TransactionClient) => Promise<T>
+    callback: (prisma: Prisma.TransactionClient) => Promise<T>,
+    options?: { maxWait?: number; timeout?: number }
   ): Promise<T> {
-    return prisma.$transaction(async (transactionClient) => {
-      return callback(transactionClient);
-    });
+    return prisma.$transaction(callback, options);
   }
+
 }
+
+

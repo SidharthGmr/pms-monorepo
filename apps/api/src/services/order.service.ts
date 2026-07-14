@@ -1,4 +1,4 @@
-import { OrderStatus } from "@prisma/client";
+
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
@@ -8,6 +8,7 @@ import { OrderFilterParams } from "../params/order.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
 import { IOrderService } from "./interfaces/Iorder.service";
+import { OrderStatus } from "@prisma/client";
 
 @injectable()
 export class OrderService implements IOrderService {
@@ -32,10 +33,7 @@ export class OrderService implements IOrderService {
     return this.unitOfWork.transaction(async (transactionClient) => {
       let calculatedTotalAmount = 0;
       const orderItemsToCreate = [];
-      console.log("Creating order with data:", data);
-      console.log("storeCode:", storeCode);
-      console.log("createdById:", createdById);
-      console.log("createdByName", createdByName);
+
       // Verify and deduct stock if items are provided
       if (data.items && data.items.length > 0) {
         for (const item of data.items) {
@@ -113,7 +111,7 @@ export class OrderService implements IOrderService {
       }
 
       return order;
-    });
+    }, { timeout: 15000 });
   }
 
 

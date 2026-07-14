@@ -5,3 +5,4 @@ dist
 .vercel
 **/swagger.ts
 src/config/swagger.ts
+/node_modules

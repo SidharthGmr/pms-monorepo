@@ -71,11 +71,6 @@ export class OrderRepository implements IOrderRepository {
     });
   }
 
-  async create(data: CreateOrderModel, storeCode: string): Promise<OrderDto> {
-    throw new Error("Order creation with items must be done via UnitOfWork transaction in OrderService");
-  }
-
-
   async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {
     return prisma.order.update({ where: { id }, data });
   }

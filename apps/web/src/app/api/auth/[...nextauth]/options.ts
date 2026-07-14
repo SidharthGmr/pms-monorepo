@@ -1,5 +1,5 @@
 import config from '@/config';
-import { UserDto } from '@/dtos/UserDto';
+import { UserDto } from '@pms/types';
 import axios from 'axios';
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
