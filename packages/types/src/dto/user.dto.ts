@@ -1,4 +1,4 @@
-import { RoleDto } from "./roleDto";
+import { RoleDto } from "./role.dto";
 
 
 

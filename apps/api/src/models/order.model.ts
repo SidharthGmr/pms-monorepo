@@ -2,6 +2,8 @@ import { OrderStatus } from "@prisma/client";
 
 export interface CreateOrderModel {
   customerId: string;
+  /** Optional order date for backdated orders; defaults to now. Drives the effective-price lookup. */
+  orderDate?: string | Date;
   totalAmount?: number;
   discount?: number;
   tax?: number;

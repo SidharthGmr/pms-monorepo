@@ -29,91 +29,97 @@ export class OrderService implements IOrderService {
   }
 
 
-  async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto> {
-    return this.unitOfWork.transaction(async (transactionClient) => {
-      let calculatedTotalAmount = 0;
-      const orderItemsToCreate = [];
+  // async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto> {
+  //   return this.unitOfWork.transaction(async (transactionClient) => {
+  //     let calculatedTotalAmount = 0;
+  //     const orderItemsToCreate = [];
 
-      // Verify and deduct stock if items are provided
-      if (data.items && data.items.length > 0) {
-        for (const item of data.items) {
-          const product = await transactionClient.product.findUnique({
-            where: { id: item.productId },
-          });
-          if (!product) {
-            throw new Error(`Product with ID ${item.productId} not found`);
-          }
-          if (product.storeCode !== storeCode) {
-            throw new Error(`Product with ID ${item.productId} does not belong to your store`);
-          }
-          if (product.stock < item.quantity) {
-            throw new Error(`Insufficient stock for product ${product.name}. Requested: ${item.quantity}, Available: ${product.stock}`);
-          }
+  //     // Date the order is placed on — allows backdating; drives the price lookup.
+  //     const orderDate = data.orderDate ? new Date(data.orderDate) : new Date();
 
-          const unitPrice = product.price;
-          const totalPrice = unitPrice * item.quantity;
-          calculatedTotalAmount += totalPrice;
+  //     // Verify and deduct stock if items are provided
+  //     if (data.items && data.items.length > 0) {
+  //       for (const item of data.items) {
+  //         const product = await transactionClient.product.findUnique({
+  //           where: { id: item.productId },
+  //         });
+  //         if (!product) {
+  //           throw new Error(`Product with ID ${item.productId} not found`);
+  //         }
+  //         if (product.storeCode !== storeCode) {
+  //           throw new Error(`Product with ID ${item.productId} does not belong to your store`);
+  //         }
+  //         if (product.stock < item.quantity) {
+  //           throw new Error(`Insufficient stock for product ${product.name}. Requested: ${item.quantity}, Available: ${product.stock}`);
+  //         }
 
-          orderItemsToCreate.push({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: unitPrice,
-            totalPrice: totalPrice,
-          });
+  //         // Resolve the price that was effective on the order date from the
+  //         // price-history table; fall back to the product's cached current
+  //         // price for legacy products created before price history existed.
+  //         const priceRow = await this.unitOfWork.ProductPrice.getEffectiveOn(item.productId, orderDate, transactionClient);
+  //         const unitPrice = priceRow ? priceRow.sellingPrice : product.price;
+  //         const totalPrice = unitPrice * item.quantity;
+  //         calculatedTotalAmount += totalPrice;
 
-          // Deduct stock
-          await transactionClient.product.update({
-            where: { id: item.productId },
-            data: { stock: product.stock - item.quantity },
-          });
-        }
-      }
+  //         orderItemsToCreate.push({
+  //           productId: item.productId,
+  //           quantity: item.quantity,
+  //           unitPrice: unitPrice,
+  //           totalPrice: totalPrice,
+  //         });
 
-      const orderNumber = generateOrderNumber();
-      const discount = data.discount || 0;
-      const tax = data.tax || 0;
-      const shippingCost = data.shippingCost || 0;
-      const grandTotal = calculatedTotalAmount + tax + shippingCost - discount;
+  //         // Deduct stock
+  //         await transactionClient.product.update({
+  //           where: { id: item.productId },
+  //           data: { stock: product.stock - item.quantity },
+  //         });
+  //       }
+  //     }
 
-      const order = await transactionClient.order.create({
-        data: {
-          storeCode: storeCode,
-          orderNumber: orderNumber,
-          customerId: data.customerId,
-          orderDate: new Date(),
-          totalAmount: calculatedTotalAmount,
-          discount: discount,
-          tax: tax,
-          shippingCost: shippingCost,
-          grandTotal: grandTotal,
-          status: data.status || OrderStatus.PENDING,
-          notes: data.notes || null,
-          createdById: createdById,
-          createdByName: createdByName,
-        },
-      });
+  //     const orderNumber = generateOrderNumber();
+  //     const discount = data.discount || 0;
+  //     const tax = data.tax || 0;
+  //     const shippingCost = data.shippingCost || 0;
+  //     const grandTotal = calculatedTotalAmount + tax + shippingCost - discount;
 
-      // Create Order Items
-      if (orderItemsToCreate.length > 0) {
-        for (const item of orderItemsToCreate) {
-          await transactionClient.orderItem.create({
-            data: {
-              storeCode: storeCode,
-              orderId: order.id,
-              orderNumber: orderNumber,
-              productId: item.productId,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice,
-            },
-          });
-        }
-      }
+  //     const order = await transactionClient.order.create({
+  //       data: {
+  //         storeCode: storeCode,
+  //         orderNumber: orderNumber,
+  //         customerId: data.customerId,
+  //         orderDate: orderDate,
+  //         totalAmount: calculatedTotalAmount,
+  //         discount: discount,
+  //         tax: tax,
+  //         shippingCost: shippingCost,
+  //         grandTotal: grandTotal,
+  //         status: data.status || OrderStatus.PENDING,
+  //         notes: data.notes || null,
+  //         createdById: createdById,
+  //         createdByName: createdByName,
+  //       },
+  //     });
 
-      return order;
-    }, { timeout: 15000 });
-  }
+  //     // Create Order Items
+  //     if (orderItemsToCreate.length > 0) {
+  //       for (const item of orderItemsToCreate) {
+  //         await transactionClient.orderItem.create({
+  //           data: {
+  //             storeCode: storeCode,
+  //             orderId: order.id,
+  //             orderNumber: orderNumber,
+  //             productId: item.productId,
+  //             quantity: item.quantity,
+  //             unitPrice: item.unitPrice,
+  //             totalPrice: item.totalPrice,
+  //           },
+  //         });
+  //       }
+  //     }
 
+  //     return order;
+  //   }, { timeout: 15000 });
+  // }
 
   async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {
     const existing = await this.unitOfWork.Order.findById(id);

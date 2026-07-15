@@ -102,20 +102,34 @@ CREATE TABLE "product" (
     "attributeId" INTEGER,
     "slug" TEXT NOT NULL,
     "description" TEXT,
-    "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "cost" DOUBLE PRECISION,
-    "stock" INTEGER NOT NULL DEFAULT 0,
     "lowStockThreshold" INTEGER DEFAULT 5,
     "images" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "storeCode" TEXT NOT NULL,
     "status" "Status" NOT NULL DEFAULT 'Published',
-    "displayOrder" INTEGER DEFAULT 0,
+    "displayOrder" INTEGER DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdById" TEXT NOT NULL,
     "updatedById" TEXT,
 
     CONSTRAINT "product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "productPrice" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "storeCode" TEXT NOT NULL,
+    "sellingPrice" DOUBLE PRECISION NOT NULL,
+    "costPrice" DOUBLE PRECISION,
+    "effectiveFrom" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "reason" TEXT,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "productPrice_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -346,6 +360,18 @@ CREATE UNIQUE INDEX "category_name_storeCode_key" ON "category"("name", "storeCo
 CREATE UNIQUE INDEX "product_slug_key" ON "product"("slug");
 
 -- CreateIndex
+CREATE INDEX "productPrice_productId_idx" ON "productPrice"("productId");
+
+-- CreateIndex
+CREATE INDEX "productPrice_storeCode_idx" ON "productPrice"("storeCode");
+
+-- CreateIndex
+CREATE INDEX "productPrice_productId_effectiveFrom_idx" ON "productPrice"("productId", "effectiveFrom");
+
+-- CreateIndex
+CREATE INDEX "productPrice_productId_isActive_idx" ON "productPrice"("productId", "isActive");
+
+-- CreateIndex
 CREATE INDEX "brandName_id_idx" ON "brandName"("id");
 
 -- CreateIndex
@@ -485,6 +511,15 @@ ALTER TABLE "product" ADD CONSTRAINT "product_storeCode_fkey" FOREIGN KEY ("stor
 
 -- AddForeignKey
 ALTER TABLE "product" ADD CONSTRAINT "product_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "users"("userId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "productPrice" ADD CONSTRAINT "productPrice_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "productPrice" ADD CONSTRAINT "productPrice_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "productPrice" ADD CONSTRAINT "productPrice_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "users"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "brandName" ADD CONSTRAINT "brandName_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -6,7 +6,7 @@ export interface IOrderService {
   getAll(filters?: OrderFilterParams): Promise<OrderDto[]>;
   getByCustomerId(customerId: string): Promise<OrderDto[]>;
   getById(id: number): Promise<OrderDto | null>;
-  create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto>;
+  // create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto>;
   update(id: number, data: UpdateOrderDto): Promise<OrderDto>;
   delete(id: number): Promise<OrderDto>;
 }

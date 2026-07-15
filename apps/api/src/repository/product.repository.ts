@@ -1,6 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductResponseDto } from '../dtos/product.dto';
+import { ProductResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { ProductFilterParams } from '../params/product.params';
 import { IProductRepository } from './interfaces/iproduct.repository';
@@ -72,80 +72,6 @@ export class ProductRepository implements IProductRepository {
 
   async findById(id: number): Promise<ProductResponseDto | null> {
     return prisma.product.findUnique({ where: { id }, include: productInclude });
-  }
-
-  async findBySlug(slug: string): Promise<ProductResponseDto | null> {
-    return prisma.product.findUnique({ where: { slug }, include: productInclude });
-  }
-
-
-  async getLowStockProducts(storeCode: string, page = 1, limit = 10): Promise<ListResponseDto<ProductResponseDto>> {
-    const skip = (page - 1) * limit;
-
-    const idsResult = await prisma.$queryRaw<{ id: number }[]>`
-      SELECT "id" FROM "product" 
-      WHERE "stock" <= "lowStockThreshold" 
-        AND "storeCode" = ${storeCode} 
-        AND "status" != 'Trash'
-      ORDER BY "stock" ASC
-      LIMIT ${limit} OFFSET ${skip}
-    `;
-    
-    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*) as count FROM "product" 
-      WHERE "stock" <= "lowStockThreshold" 
-        AND "storeCode" = ${storeCode} 
-        AND "status" != 'Trash'
-    `;
-
-    const total = Number(countResult[0]?.count || 0);
-    const ids = idsResult.map(r => r.id);
-
-    const data = await prisma.product.findMany({
-      where: { id: { in: ids } },
-      include: productInclude,
-      orderBy: { stock: 'asc' }
-    });
-
-    return { totalRecord: total, data };
-  }
-
-  async addStock(id: number, quantity: number, userIdStr: string, storeCode: string, reason?: string): Promise<ProductResponseDto> {
-    const user = await prisma.users.findUnique({ where: { userId: userIdStr } });
-    if (!user) throw new Error("User not found");
-
-    return prisma.$transaction(async (tx) => {
-      const product = await tx.product.update({
-        where: { id },
-        data: { stock: { increment: quantity } },
-        include: productInclude
-      });
-      await tx.stockHistory.create({
-        data: {
-          productId: id,
-          storeCode,
-          userId: user.id,
-          quantity,
-          reason: reason || null
-        }
-      });
-      return product;
-    });
-  }
-
-  async getStockHistory(productId: number, storeCode: string, page = 1, limit = 10): Promise<any> {
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      prisma.stockHistory.findMany({
-        where: { productId, storeCode },
-        include: { user: { select: { id: true, name: true, userId: true } } },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.stockHistory.count({ where: { productId, storeCode } }),
-    ]);
-    return { totalRecord: total, data };
   }
 
   async delete(id: number): Promise<ProductResponseDto> {

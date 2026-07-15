@@ -51,7 +51,7 @@ const accountController = container.get<AccountController>(
  *               email:
  *                 type: string
  *                 format: email
- *                 example: admin@test.com
+ *                 example: sunil@gmrwebteam.com
  *               password:
  *                 type: string
  *                 example: "Admin123!@#"

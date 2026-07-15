@@ -15,9 +15,9 @@ import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduct } from '@/hooks/service-hooks/useProductService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { CreateProductModel } from '@/models/product.model';
-import ProductSchema from '@/schema/productSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { productFields } from '@pms/types';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -40,7 +40,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
   const { data: productResponse, isLoading: isFetching } = useGetProductById(id ?? 0, isEdit);
 
   const form = useForm<CreateProductModel>({
-    resolver: yupResolver(ProductSchema),
+    resolver: zodResolver(productFields),
     defaultValues: {
       parentId: undefined,
       categoryId: 0,

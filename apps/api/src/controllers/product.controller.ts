@@ -4,7 +4,7 @@ import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import CustomResponse from "../dtos/custom-response";
 import { ListResponseDto } from "../dtos/list-response.dto";
-import { ProductResponseDto } from "../dtos/product.dto";
+import { ProductModel, ProductResponseDto } from "@pms/types";
 import { Role } from "../enum/user.enum";
 import NotFoundError from "../exceptions/not-found-error";
 import { CreateProductModel } from "../models/product.model";
@@ -15,6 +15,21 @@ export class ProductController {
   constructor(
     private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)
   ) { }
+
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
+    const userId = req.user?.userId as string;
+    const storeCode = req.user?.storeCode;
+
+    if (!storeCode || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Store code not found. User must be associated with a store.'
+      });
+    }
+    const body = req.body as ProductModel;
+    const product = await this.unitOfService.Product.create(body, userId, storeCode);
+    return res.status(201).json({ success: true, message: "Product created successfully", data: product });
+  };
 
   getAll = async (
     req: Request,
@@ -48,27 +63,6 @@ export class ProductController {
       data: { totalRecord: result.totalRecord, data: result.data },
     });
   };
-  getLowStock = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
-    const storeCode = req.user?.storeCode;
-    if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
-    }
-
-    const page = req.query['page'] ? parseInt(req.query['page'] as string) : 1;
-    const limit = req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : 10;
-
-    const result = await this.unitOfService.Product.getLowStockProducts(storeCode, page, limit);
-    return res.status(200).json({
-      success: true,
-      message: "Low stock products fetched successfully",
-      data: { totalRecord: result.totalRecord, data: result.data },
-    });
-  };
-
-
 
   getById = async (
     req: Request,
@@ -88,44 +82,6 @@ export class ProductController {
       return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
     }
     return res.status(200).json({ success: true, message: "Product fetched successfully", data: product });
-  };
-
-  getBySlug = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<CustomResponse<ProductResponseDto>>> => {
-    const { slug } = req.params;
-    if (!slug) return res.status(400).json({ success: false, message: "Slug is required" });
-    const product = await this.unitOfService.Product.getBySlug(slug as string);
-    if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
-    }
-    const isAdmin = req.user?.role === 'SUPER_ADMIN' || req.user?.role === 'ADMIN' || req.user?.role === 'STAFF';
-    if (!isAdmin && product.createdById !== req.user?.userId) {
-      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
-    }
-    if (req.user?.storeCode && product.storeCode !== req.user.storeCode) {
-      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
-    }
-    return res.status(200).json({ success: true, message: "Product fetched successfully", data: product });
-  };
-
-  create = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<CustomResponse<ProductResponseDto>>> => {
-    const userId = req.user?.userId as string;
-    const storeCode = req.user?.storeCode; // Get from logged-in user
-
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-    const body = req.body as CreateProductModel;
-    const product = await this.unitOfService.Product.create(body, userId, storeCode);
-    return res.status(201).json({ success: true, message: "Product created successfully", data: product });
   };
 
   update = async (
@@ -160,62 +116,6 @@ export class ProductController {
     return res.status(200).json({ success: true, message: "Product updated successfully", data: product });
   };
 
-  addStock = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<CustomResponse<ProductResponseDto>>> => {
-    const id = parseInt(req.params["id"] as string);
-    const userId = req.user?.userId as string;
-    const storeCode = req.user?.storeCode;
-    const { quantity, reason } = req.body;
-
-    if (!id || isNaN(id)) return res.status(400).json({ success: false, message: "Invalid product id" });
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-
-    try {
-      const product = await this.unitOfService.Product.addStock(id, quantity, userId, storeCode, reason);
-      return res.status(200).json({ success: true, message: "Stock added successfully", data: product });
-    } catch (error: any) {
-      if (error instanceof NotFoundError) {
-        return res.status(404).json({ success: false, message: error.message });
-      }
-      return res.status(403).json({ success: false, message: error.message });
-    }
-  };
-
-  getStockHistory = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<ListResponseDto<any>>> => {
-    const id = parseInt(req.params["id"] as string);
-    const storeCode = req.user?.storeCode;
-    const page = req.query['page'] ? parseInt(req.query['page'] as string) : 1;
-    const limit = req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : 10;
-
-    if (!id || isNaN(id)) return res.status(400).json({ success: false, message: "Invalid product id", data: { totalRecord: 0, data: [] } } as any);
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found.',
-        data: { totalRecord: 0, data: [] }
-      } as any);
-    }
-
-    try {
-      const result = await this.unitOfService.Product.getStockHistory(id, storeCode, page, limit);
-      return res.status(200).json({ success: true, message: "Stock history fetched successfully", data: result } as any);
-    } catch (error: any) {
-      if (error instanceof NotFoundError) {
-        return res.status(404).json({ success: false, message: error.message, data: { totalRecord: 0, data: [] } } as any);
-      }
-      return res.status(403).json({ success: false, message: error.message, data: { totalRecord: 0, data: [] } } as any);
-    }
-  };
 
   delete = async (
     req: Request,

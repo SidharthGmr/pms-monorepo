@@ -52,6 +52,7 @@ model users {
   store                    store?            @relation(fields: [storeCode], references: [code])
   stockHistories           stockHistory[]
   purchases                purchase[]
+  productPrices            productPrice[]
 
   @@index([userId])
   @@index([email])
@@ -83,6 +84,7 @@ model store {
   staff            users[]
   stockHistories   stockHistory[]
   purchases        purchase[]
+  productPrices    productPrice[]
 }
 
 model category {
@@ -114,14 +116,11 @@ model product {
   attributeId       Int?
   slug              String         @unique
   description       String?
-  price             Float          @default(0)
-  cost              Float?
-  stock             Int            @default(0)
   lowStockThreshold Int?           @default(5)
   images            String[]       @default([])
   storeCode         String
   status            Status         @default(Published)
-  displayOrder      Int?           @default(0)
+  displayOrder      Int?           @default(1)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   createdById       String
@@ -137,6 +136,33 @@ model product {
   updatedBy         users?         @relation("UpdatedBy", fields: [updatedById], references: [userId])
   stockHistories    stockHistory[]
   purchaseItems     purchaseItem[]
+  prices            productPrice[]
+}
+
+/// Append-only price history for a product. `product.price`/`product.cost`
+/// are kept as a denormalized "current" cache; this table is the source of
+/// truth for what a product's price was on any given date. The effective
+/// price on a date D is the row with the greatest `effectiveFrom <= D`.
+model productPrice {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  storeCode     String
+  sellingPrice  Float
+  costPrice     Float?
+  effectiveFrom DateTime @default(now())
+  isActive      Boolean  @default(true)
+  reason        String?
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  product       product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store         store    @relation(fields: [storeCode], references: [code])
+  createdBy     users    @relation(fields: [createdById], references: [userId])
+
+  @@index([productId])
+  @@index([storeCode])
+  @@index([productId, effectiveFrom])
+  @@index([productId, isActive])
 }
 
 model brandName {

@@ -1,5 +1,5 @@
 import { AttributeDto } from './attribute.dto';
-import { ProductResponseDto } from './product.dto';
+import { ProductResponseDto } from '@pms/types';
 
 export interface DistributionDto {
   name: string;

@@ -68,13 +68,13 @@ export class DashboardRepository implements IDashboardRepository {
 
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, name: true, stock: true }
+      select: { id: true, name: true }
     });
 
     const productDistribution = topProductsByOrder.map(p => {
       const product = products.find(prod => prod.id === p.productId);
       const count = p._sum.quantity || 0;
-      const stock = product?.stock || 0;
+      const stock = 0 || 0;
       const percentage = totalQuantity > 0 ? Math.round((count / totalQuantity) * 100) : 0;
       return {
         name: product?.name || 'Unknown Product',

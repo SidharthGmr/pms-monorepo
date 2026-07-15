@@ -74,12 +74,12 @@ const purchaseController = container.get<PurchaseController>(TYPES.PurchaseContr
  *       400:
  *         description: Validation error
  */
-router.post(
-  '/',
-  authenticateToken,
-  validate(createPurchaseSchema),
-  (req, res) => purchaseController.create(req, res)
-);
+// router.post(
+//   '/',
+//   authenticateToken,
+//   validate(createPurchaseSchema),
+//   (req, res) => purchaseController.create(req, res)
+// );
 
 /**
  * @swagger
@@ -112,11 +112,11 @@ router.post(
  *       200:
  *         description: Purchases fetched successfully
  */
-router.get(
-  '/',
-  authenticateToken,
-  (req, res) => purchaseController.getAllPurchases(req, res)
-);
+// router.get(
+//   '/',
+//   authenticateToken,
+//   (req, res) => purchaseController.getAllPurchases(req, res)
+// );
 
 /**
  * @swagger
@@ -144,10 +144,10 @@ router.get(
  *       404:
  *         description: Purchase not found
  */
-router.get(
-  '/:id',
-  authenticateToken,
-  (req, res) => purchaseController.getPurchaseById(req, res)
-);
+// router.get(
+//   '/:id',
+//   authenticateToken,
+//   (req, res) => purchaseController.getPurchaseById(req, res)
+// );
 
 export default router;

@@ -1,0 +1,1 @@
+export type Status = 'Published' | 'Draft' | 'Trash';
