@@ -7,7 +7,6 @@ import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-paginatio
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
-import RecentPostSkeleton from '../../skelton/recent-post';
 import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { container } from '@/config/ioc';
@@ -41,8 +40,8 @@ export default function CategoryList() {
     page: +(searchParams.get('page') || 1),
     search: searchParams.get('search') || '',
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-    // startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
-    // endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
+    startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
+    endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
     sortBy: searchParams.get('sortBy') || 'createdon',
     sortDirection: searchParams.get('sortDirection') || 'desc',
   });
@@ -73,26 +72,6 @@ export default function CategoryList() {
     onPaginationChange,
     onSortingChange,
   });
-
-  // useEffect(() => {
-  //   setFilterParams((oldValue) => {
-  //     return {
-  //       ...oldValue,
-  //       page: pagination.pageIndex + 1,
-  //       recordPerPage: pagination.pageSize,
-  //     };
-  //   });
-  // }, [pagination]);
-
-  // useEffect(() => {
-  //   setFilterParams((oldValue) => {
-  //     return {
-  //       ...oldValue,
-  //       sortBy: field,
-  //       sortDirection: order,
-  //     };
-  //   });
-  // }, [field, order]);
 
   useEffect(() => {
     setFilterParams((prev) => ({
@@ -127,16 +106,6 @@ export default function CategoryList() {
     return <div className="text-center py-10 text-destructive">Error loading categories</div>;
   }
 
-  if (getAllCategoriesResponse.isLoading) {
-    return (
-      <div className="space-y-3">
-        {[...Array(3)].map((_, i) => (
-          <RecentPostSkeleton key={i} />
-        ))}
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="space-y-4">
@@ -159,7 +128,7 @@ export default function CategoryList() {
 
         <DataTablePagination table={table} totalRecord={recordCount} loading={getAllCategoriesResponse.isLoading} />
         <div className="rounded-md border">
-          <CustomDataTable columns={columns} table={table} />
+          <CustomDataTable columns={columns} table={table} isLoading={getAllCategoriesResponse.isLoading} />
         </div>
         <DataTablePagination table={table} totalRecord={recordCount} loading={getAllCategoriesResponse.isLoading} />
       </div>

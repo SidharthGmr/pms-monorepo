@@ -1,34 +1,40 @@
-import { Prisma, Status } from "@prisma/client";
-import prisma from "../config/prisma";
-import { ICategoryRepository } from "./interfaces/icategory.repository";
-import { CategoryFilterParams, CategoryResponseDto, ListResponseDto } from "@pms/types";
+import { Prisma } from '@prisma/client';
+import prisma from '../config/prisma';
+import { ICategoryRepository } from './interfaces/icategory.repository';
+import { CategoryFilterParams, CategoryResponseDto, ListResponseDto, StatusEnum } from '@pms/types';
 
 export class CategoryRepository implements ICategoryRepository {
-  async findAll(filters?: CategoryFilterParams, page = 1, limit = 10, sortBy = 'displayOrder', sortOrder: 'asc' | 'desc' = 'asc'): Promise<ListResponseDto<CategoryResponseDto>> {
-    const where: Prisma.categoryWhereInput = { NOT: { status: Status.Trash } };
+  async findAll(
+    filters?: CategoryFilterParams,
+    page = 1,
+    limit = 10,
+    sortBy = 'displayOrder',
+    sortOrder: 'asc' | 'desc' = 'asc'
+  ): Promise<ListResponseDto<CategoryResponseDto>> {
+    const where: Prisma.categoryWhereInput = { NOT: { status: StatusEnum.Trash } };
 
     if (filters) {
       page = filters.page ?? page;
       limit = filters.recordPerPage ?? limit;
 
       if (filters.search) {
-        where.OR = [{ name: { contains: filters.search, mode: "insensitive" } }];
+        where.OR = [{ name: { contains: filters.search, mode: 'insensitive' } }];
       }
 
       if (filters.status !== undefined) {
-        where.status = filters.status;
+        where.status = filters.status as StatusEnum.Published;
       } else {
-        where.NOT = { status: Status.Trash };
+        where.NOT = { status: StatusEnum.Trash };
       }
 
       if (filters.storeCode !== undefined) {
         where.storeCode = filters.storeCode;
       }
 
-      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+      if (filters.startDate != null || filters.endDate != null) {
         where.createdAt = {
-          ...(filters.startDate !== undefined && { gte: filters.startDate }),
-          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+          ...(filters.startDate != null && { gte: filters.startDate }),
+          ...(filters.endDate != null && { lte: filters.endDate }),
         };
       }
     }
@@ -55,6 +61,6 @@ export class CategoryRepository implements ICategoryRepository {
   }
 
   async delete(id: number): Promise<CategoryResponseDto> {
-    return prisma.category.update({ where: { id }, data: { status: Status.Trash } });
+    return prisma.category.update({ where: { id }, data: { status: StatusEnum.Trash } });
   }
 }

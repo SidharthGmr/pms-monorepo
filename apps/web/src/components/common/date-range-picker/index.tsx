@@ -109,8 +109,8 @@ export function DateRangePicker({
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'justify-start hover:bg-primary/90 hover:text-background p-2',
-                    activePreset === label && 'bg-primary text-background hover:bg-primary/90 hover:text-background'
+                    'justify-start hover:bg-primary/90 hover:text-primary-foreground p-2',
+                    activePreset === label && 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
                   )}
                   onClick={() => {
                     setDate(range);
