@@ -14,6 +14,7 @@ import { IDashboardRepository } from "./idashboard.repository";
 import { IBrandNameRepository } from "./ibrand-name.repository";
 import { IStaffRepository } from "./istaff.repository";
 import { IStoreRepository } from "./istore.repository";
+import { IPurchaseRepository } from "./ipurchase.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -31,6 +32,7 @@ export default interface IUnitOfWork {
   BrandName: IBrandNameRepository;
   Staff: IStaffRepository;
   Store: IStoreRepository;
+  Purchase: IPurchaseRepository;
 
   /**
    * Executes a set of operations within a database transaction.

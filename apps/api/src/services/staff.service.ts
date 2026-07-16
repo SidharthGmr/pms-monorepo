@@ -17,7 +17,7 @@ export class StaffService implements IStaffService {
         return this.unitOfWork.Staff.findById(id);
     }
 
-    async getByUserId(userId: number): Promise<StaffDto | null> {
+    async getByUserId(userId: string): Promise<StaffDto | null> {
         return this.unitOfWork.Staff.findByUserId(userId);
     }
 

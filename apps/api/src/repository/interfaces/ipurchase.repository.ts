@@ -1,7 +1,5 @@
-import { CreatePurchaseModel } from "../../models/purchase.model";
-
+import { ListResponseDto, PurchaseResponseDto } from "@pms/types";
 export interface IPurchaseRepository {
-  // createPurchase(data: CreatePurchaseModel, userId: number, storeCode: string): Promise<any>;
-  // getAllPurchases(storeCode: string, page: number, limit: number, search?: string): Promise<{ data: any[], total: number }>;
-  // getPurchaseById(id: number, storeCode: string): Promise<any>;
+  getAllPurchases(storeCode: string, page: number, limit: number, search?: string): Promise<ListResponseDto<PurchaseResponseDto>>;
+  getPurchaseById(id: number, storeCode: string): Promise<PurchaseResponseDto | null>;
 }

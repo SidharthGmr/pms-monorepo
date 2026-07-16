@@ -2,9 +2,10 @@ import { Router } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import { PurchaseController } from '../controllers/purchase.controller';
+import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
 import { validate } from '../middleware/validate';
-import { createPurchaseSchema } from '../schemas/purchaseSchema';
+import { CreatePurchaseValidator } from '@pms/types';
 
 const router = Router();
 const purchaseController = container.get<PurchaseController>(TYPES.PurchaseController);
@@ -64,9 +65,9 @@ const purchaseController = container.get<PurchaseController>(TYPES.PurchaseContr
  *                       type: integer
  *                     quantity:
  *                       type: integer
- *                     unitCost:
+ *                     costPrice:
  *                       type: number
- *                     totalCost:
+ *                     totalPrice:
  *                       type: number
  *     responses:
  *       201:
@@ -74,12 +75,7 @@ const purchaseController = container.get<PurchaseController>(TYPES.PurchaseContr
  *       400:
  *         description: Validation error
  */
-// router.post(
-//   '/',
-//   authenticateToken,
-//   validate(createPurchaseSchema),
-//   (req, res) => purchaseController.create(req, res)
-// );
+router.post('/', authenticateToken, validate(CreatePurchaseValidator), asyncHandler(purchaseController.create));
 
 /**
  * @swagger
@@ -112,11 +108,11 @@ const purchaseController = container.get<PurchaseController>(TYPES.PurchaseContr
  *       200:
  *         description: Purchases fetched successfully
  */
-// router.get(
-//   '/',
-//   authenticateToken,
-//   (req, res) => purchaseController.getAllPurchases(req, res)
-// );
+router.get(
+  '/',
+  authenticateToken,
+  asyncHandler(purchaseController.getAllPurchases)
+);
 
 /**
  * @swagger
@@ -144,10 +140,10 @@ const purchaseController = container.get<PurchaseController>(TYPES.PurchaseContr
  *       404:
  *         description: Purchase not found
  */
-// router.get(
-//   '/:id',
-//   authenticateToken,
-//   (req, res) => purchaseController.getPurchaseById(req, res)
-// );
+router.get(
+  '/:id',
+  authenticateToken,
+  asyncHandler(purchaseController.getPurchaseById)
+);
 
 export default router;

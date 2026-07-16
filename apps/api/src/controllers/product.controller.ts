@@ -2,14 +2,12 @@ import { Status } from "@prisma/client";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import CustomResponse from "../dtos/custom-response";
-import { ListResponseDto } from "../dtos/list-response.dto";
-import { ProductModel, ProductResponseDto } from "@pms/types";
+import { ListResponseDto, ProductModel, ProductResponseDto } from "@pms/types";
 import { Role } from "../enum/user.enum";
 import NotFoundError from "../exceptions/not-found-error";
-import { CreateProductModel } from "../models/product.model";
 import { ProductFilterParams } from "../params/product.params";
 import IUnitOfService from "../services/interfaces/iunitof.service";
+import CustomResponse from "@pms/types/src/dto/custom-response";
 
 export class ProductController {
   constructor(
@@ -111,7 +109,7 @@ export class ProductController {
       return res.status(403).json({ success: false, message: "Not enough permissions to update this product" });
     }
 
-    const body = req.body as CreateProductModel;
+    const body = req.body as ProductModel;
     const product = await this.unitOfService.Product.update(id, body, userId, storeCode);
     return res.status(200).json({ success: true, message: "Product updated successfully", data: product });
   };

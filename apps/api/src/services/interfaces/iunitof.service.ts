@@ -13,6 +13,7 @@ import { IDashboardService } from "./Idashboard.service";
 import { IBrandNameService } from "./Ibrand-name.service";
 import { IStaffService } from "./Istaff.service";
 import { IStoreService } from "./Istore.service";
+import { IPurchaseService } from "./ipurchase.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -30,4 +31,5 @@ export default interface IUnitOfService {
   BrandName: IBrandNameService;
   Staff: IStaffService;
   Store: IStoreService;
+  Purchase: IPurchaseService;
 }

@@ -16,6 +16,7 @@ import { IDashboardService } from "./interfaces/Idashboard.service";
 import { IBrandNameService } from "./interfaces/Ibrand-name.service";
 import { IStaffService } from "./interfaces/Istaff.service";
 import { IStoreService } from "./interfaces/Istore.service";
+import { IPurchaseService } from "./interfaces/ipurchase.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -33,6 +34,7 @@ export default class UnitOfService implements IUnitOfService {
   public BrandName: IBrandNameService;
   public Staff: IStaffService;
   public Store: IStoreService;
+  public Purchase: IPurchaseService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -50,6 +52,7 @@ export default class UnitOfService implements IUnitOfService {
     brandName = container.get<IBrandNameService>(TYPES.IBrandNameService),
     staff = container.get<IStaffService>(TYPES.IStaffService),
     store = container.get<IStoreService>(TYPES.IStoreService),
+    purchase = container.get<IPurchaseService>(TYPES.IPurchaseService),
   ) {
     this.User = user;
     this.Account = account;
@@ -66,5 +69,6 @@ export default class UnitOfService implements IUnitOfService {
     this.BrandName = brandName;
     this.Staff = staff;
     this.Store = store;
+    this.Purchase = purchase;
   }
 }

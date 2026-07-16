@@ -1,12 +1,14 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ProductModel, ProductResponseDto } from "@pms/types";
-import { Status } from "../enum/status.enum";
+import { ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
 import NotFoundError from "../exceptions/not-found-error";
-import { CreateProductModel } from "../models/product.model";
 import { ProductFilterParams } from "../params/product.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IProductService } from "./interfaces/Iproduct.service";
+
+
+
+
 @injectable()
 export class ProductService implements IProductService {
   constructor(
@@ -27,7 +29,7 @@ export class ProductService implements IProductService {
           slug: data.slug,
           description: data.description || null,
           lowStockThreshold: data.lowStockThreshold || 5,
-          status: data.status || Status.Published,
+          status: data.status || StatusEnum.Published,
           images: data.images ?? [],
         },
       });
@@ -45,7 +47,7 @@ export class ProductService implements IProductService {
     return product;
   }
 
-  async update(id: number, data: CreateProductModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
+  async update(id: number, data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
     const existing = await this.unitOfWork.Product.findById(id);
     if (!existing) throw new NotFoundError("Product not found");
     return this.unitOfWork.transaction(async (transactionClient) => {
@@ -57,7 +59,7 @@ export class ProductService implements IProductService {
         description: data.description || null,
         lowStockThreshold: data.lowStockThreshold || 5,
         categoryId: data.categoryId,
-        status: data.status || Status.Published,
+        status: data.status || StatusEnum.Published,
         updatedById: userId,
         updatedAt: new Date(),
       };
@@ -70,8 +72,6 @@ export class ProductService implements IProductService {
         where: { id: id },
         data: updateData,
       });
-
-
 
       return storeData;
     });

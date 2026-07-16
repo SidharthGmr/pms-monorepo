@@ -150,7 +150,7 @@ model productPrice {
   sellingPrice  Float
   costPrice     Float?
   effectiveFrom DateTime @default(now())
-  isActive      Boolean  @default(true)
+  isActive      Boolean  @default(false)
   reason        String?
   createdById   String
   createdAt     DateTime @default(now())
@@ -163,6 +163,61 @@ model productPrice {
   @@index([storeCode])
   @@index([productId, effectiveFrom])
   @@index([productId, isActive])
+}
+
+model stockHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  storeCode String
+  userId    String
+  quantity  Int
+  reason    String?
+  createdAt DateTime @default(now())
+
+  product product @relation(fields: [productId], references: [id])
+  store   store   @relation(fields: [storeCode], references: [code])
+  user    users   @relation(fields: [userId], references: [userId])
+
+  @@index([productId])
+  @@index([storeCode])
+  @@index([userId])
+}
+
+model purchase {
+  id            Int            @id @default(autoincrement())
+  invoiceNumber String?
+  invoiceUrl    String?
+  supplierName  String?
+  totalAmount   Float          @default(0)
+  notes         String?
+  storeCode     String
+  userId        String
+  status        PurchaseStatus @default(COMPLETED)
+  purchaseDate  DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  store store          @relation(fields: [storeCode], references: [code])
+  user  users          @relation(fields: [userId], references: [userId])
+  items purchaseItem[]
+
+  @@index([storeCode])
+  @@index([userId])
+}
+
+model purchaseItem {
+  id         Int   @id @default(autoincrement())
+  purchaseId Int
+  productId  Int
+  quantity   Int
+  costPrice  Float
+  totalPrice Float
+
+  purchase purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  product  @relation(fields: [productId], references: [id])
+
+  @@index([purchaseId])
+  @@index([productId])
 }
 
 model brandName {
@@ -200,7 +255,7 @@ model attribute {
 
 model staff {
   id         Int      @id @default(autoincrement())
-  userId     Int      @unique
+  userId     String   @unique
   storeCode  String
   position   String?
   department String?
@@ -210,7 +265,7 @@ model staff {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   store      store    @relation(fields: [storeCode], references: [code])
-  user       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       users    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId])
   @@index([storeCode])
@@ -333,61 +388,6 @@ model staffSalary {
   @@index([staffId])
   @@index([status])
   @@index([month, year])
-}
-
-model stockHistory {
-  id        Int      @id @default(autoincrement())
-  productId Int
-  storeCode String
-  userId    Int
-  quantity  Int
-  reason    String?
-  createdAt DateTime @default(now())
-
-  product product @relation(fields: [productId], references: [id])
-  store   store   @relation(fields: [storeCode], references: [code])
-  user    users   @relation(fields: [userId], references: [id])
-
-  @@index([productId])
-  @@index([storeCode])
-  @@index([userId])
-}
-
-model purchase {
-  id            Int            @id @default(autoincrement())
-  invoiceNumber String?
-  invoiceUrl    String?
-  supplierName  String?
-  totalAmount   Float          @default(0)
-  notes         String?
-  storeCode     String
-  userId        Int
-  status        PurchaseStatus @default(COMPLETED)
-  purchaseDate  DateTime       @default(now())
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  store store          @relation(fields: [storeCode], references: [code])
-  user  users          @relation(fields: [userId], references: [id])
-  items purchaseItem[]
-
-  @@index([storeCode])
-  @@index([userId])
-}
-
-model purchaseItem {
-  id         Int   @id @default(autoincrement())
-  purchaseId Int
-  productId  Int
-  quantity   Int
-  unitCost   Float
-  totalCost  Float
-
-  purchase purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  product  product  @relation(fields: [productId], references: [id])
-
-  @@index([purchaseId])
-  @@index([productId])
 }
 
 enum Role {

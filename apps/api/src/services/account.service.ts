@@ -1,10 +1,9 @@
 
-import { Role, users } from "@prisma/client";
+import { users } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import { UserDto } from "../dtos/user.dto";
-import { Status } from "../enum/status.enum";
 import { ResetPasswordModel } from "../models/forgot-password.model";
 import { LoginModel } from "../models/login.model";
 import { CreateUserModel } from "../models/user.model";
@@ -13,6 +12,7 @@ import { createUserName, generateStoreCode, generateUserGUID } from "../utils/au
 import { generateOtp } from "../utils/otp.util";
 import { IAccountService } from "./interfaces/Iaccount.service";
 import { getOtpExpiryDate } from "../utils/timeExpiry.util";
+import { Role, Status, StatusEnum } from "@pms/types";
 
 @injectable()
 export class AccountService implements IAccountService {
@@ -26,6 +26,7 @@ export class AccountService implements IAccountService {
     if (!user) {
       return null;
     }
+
     return user;
   }
 
@@ -39,7 +40,7 @@ export class AccountService implements IAccountService {
         data: {
           name: `${data.firstName} ${data.lastName}'s Store - ${storeCode}`,
           code: storeCode,
-          status: Status.Published,
+          status: StatusEnum.Published,
         },
       });
 
@@ -83,19 +84,19 @@ export class AccountService implements IAccountService {
           isActive: false,
           isEmailVerified: false,
           isPhoneVerified: false,
-          role: data.role || Role.USER,
+          role: data.role || Role.user,
           storeCode: storeCode,
         },
       });
 
-      if (user.role === Role.STAFF) {
-        await transactionClient.staff.create({
-          data: {
-            userId: user.id,
-            storeCode: storeCode,
-          }
-        });
-      }
+      // if (user.role === Role.STAFF) {
+      //   await transactionClient.staff.create({
+      //     data: {
+      //       userId: ,
+      //       storeCode: storeCode,
+      //     }
+      //   });
+      // }
 
       return this.convertToDto(user);
     });

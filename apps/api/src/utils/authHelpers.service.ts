@@ -17,6 +17,17 @@ export const generateCustomId = (): number => {
   return 1000 + (buf.readUInt16BE(0) % 9000);
 };
 
+export const PricingUtils = {
+
+  applyMarkup: (basePrice: number, markupPercent: number): number => {
+    return Number(((basePrice * (100 + markupPercent)) / 100).toFixed(2));
+  },
+
+  costToSellingPrice: (costPrice: number): number => {
+    return PricingUtils.applyMarkup(costPrice, 30);
+  },
+};
+
 export const userAge = (dateOfBirth: string | Date): number => {
   const dob = new Date(dateOfBirth);
   const today = new Date();

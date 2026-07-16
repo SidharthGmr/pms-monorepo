@@ -1,13 +1,12 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import { CategoryDto } from "../dtos/category.dto";
-import { ListResponseDto } from "../dtos/list-response.dto";
-import { Status } from "../enum/status.enum";
 import NotFoundError from "../exceptions/not-found-error";
 import { CategoryModel } from "../models/category.model";
 import { CategoryFilterParams } from "../params/category.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { ICategoryService } from "./interfaces/Icategory.service";
+import { ListResponseDto, StatusEnum } from "@pms/types";
 
 @injectable()
 export class CategoryService implements ICategoryService {
@@ -34,7 +33,7 @@ export class CategoryService implements ICategoryService {
           description: data.description || null,
           parentId: data.parentId || null,
           storeCode: storeCode,
-          status: data.status || Status.Draft,
+          status: data.status || StatusEnum.Draft,
         },
       });
       return category;
@@ -52,7 +51,7 @@ export class CategoryService implements ICategoryService {
           description: data.description || null,
           parentId: data.parentId || null,
           storeCode: data.storeCode,
-          status: data.status || Status.Draft,
+          status: data.status || StatusEnum.Draft,
           updatedAt: new Date(),
         },
       });

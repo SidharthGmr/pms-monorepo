@@ -46,8 +46,8 @@ export class StaffController {
   };
 
   getByUserId = async (req: Request, res: Response): Promise<Response<CustomResponse<StaffDto>>> => {
-    const userId = parseInt(req.params["userId"] as string);
-    if (isNaN(userId)) return res.status(400).json({ success: false, message: "Invalid userId" });
+    const userId = req.params.userId as string;
+    if ((!userId)) return res.status(400).json({ success: false, message: "Invalid userId" });
 
     const staff = await this.unitOfService.Staff.getByUserId(userId);
     if (!staff) return res.status(404).json({ success: false, message: "Staff not found" });

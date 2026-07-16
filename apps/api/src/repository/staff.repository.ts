@@ -63,7 +63,7 @@ export class StaffRepository implements IStaffRepository {
         });
     }
 
-    async findByUserId(userId: number): Promise<StaffDto | null> {
+    async findByUserId(userId: string): Promise<StaffDto | null> {
         return prisma.staff.findUnique({
             where: { userId },
             include: {

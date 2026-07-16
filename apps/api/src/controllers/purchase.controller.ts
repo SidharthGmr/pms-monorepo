@@ -1,69 +1,53 @@
 import { Request, Response } from 'express';
-import { inject, injectable } from 'inversify';
+import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { IPurchaseService } from '../services/interfaces/ipurchase.service';
+import IUnitOfService from '../services/interfaces/iunitof.service';
+import CustomResponse from '../dtos/custom-response';
+import { ListResponseDto } from '../dtos/list-response.dto';
+import { PurchaseResponseDto } from '@pms/types';
 
-@injectable()
 export class PurchaseController {
-  private purchaseService: IPurchaseService;
-
   constructor(
-    @inject(TYPES.IPurchaseService) purchaseService: IPurchaseService
-  ) {
-    this.purchaseService = purchaseService;
-  }
+    private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)
+  ) { }
 
-  // async create(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const data = req.body;
-  //     const userId = req.user?.userId as string;
-  //     const storeCode = req.user?.storeCode as string;
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<PurchaseResponseDto>>> => {
+    const userId = req.user?.userId as string;
+    const storeCode = req.user?.storeCode;
 
-  //     if (!userId || !storeCode) {
-  //       res.status(400).json({ error: "Missing user ID or store code" });
-  //       return;
-  //     }
+    if (!storeCode || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Store code not found. User must be associated with a store.',
+      });
+    }
+    const result = await this.unitOfService.Purchase.create(req.body, userId, storeCode);
+    return res.status(201).json({ success: true, message: 'Purchase created successfully', data: result });
+  };
 
-  //     const result = await this.purchaseService.createPurchase(data, userId, storeCode);
-  //     res.status(201).json({ message: "Purchase created successfully", data: result });
-  //   } catch (error: any) {
-  //     res.status(400).json({ error: error.message || 'Error creating purchase' });
-  //   }
-  // }
+  getAllPurchases = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<PurchaseResponseDto>>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) {
+      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+    }
 
-  // async getAllPurchases(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const storeCode = req.user?.storeCode as string;
-  //     if (!storeCode) {
-  //       res.status(400).json({ error: "Missing store code" });
-  //       return;
-  //     }
+    const page = req.query.page ? parseInt(req.query.page as string) : 1;
+    const limit = req.query.recordPerPage ? parseInt(req.query.recordPerPage as string) : 10;
+    const search = req.query.search as string | undefined;
 
-  //     const page = parseInt(req.query.page as string) || 1;
-  //     const limit = parseInt(req.query.recordPerPage as string) || 10;
-  //     const search = req.query.search as string;
+    const result = await this.unitOfService.Purchase.getAllPurchases(storeCode, page, limit, search);
+    return res.status(200).json({ success: true, message: 'Purchases fetched successfully', data: result });
+  };
 
-  //     const result = await this.purchaseService.getAllPurchases(storeCode, page, limit, search);
-  //     res.status(200).json({ data: result });
-  //   } catch (error: any) {
-  //     res.status(500).json({ error: error.message || 'Error fetching purchases' });
-  //   }
-  // }
+  getPurchaseById = async (req: Request, res: Response): Promise<Response<CustomResponse<PurchaseResponseDto>>> => {
+    const storeCode = req.user?.storeCode;
+    const id = parseInt(req.params.id as string);
 
-  // async getPurchaseById(req: Request, res: Response): Promise<void> {
-  //   try {
-  //     const storeCode = req.user?.storeCode as string;
-  //     const id = parseInt(req.params.id as string || '10');
+    if (!storeCode || isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid parameters' });
+    }
 
-  //     if (!storeCode || isNaN(id)) {
-  //       res.status(400).json({ error: "Invalid parameters" });
-  //       return;
-  //     }
-
-  //     const result = await this.purchaseService.getPurchaseById(id, storeCode);
-  //     res.status(200).json({ data: result });
-  //   } catch (error: any) {
-  //     res.status(404).json({ error: error.message || 'Error fetching purchase' });
-  //   }
-  // }
+    const result = await this.unitOfService.Purchase.getPurchaseById(id, storeCode);
+    return res.status(200).json({ success: true, message: 'Purchase fetched successfully', data: result });
+  };
 }

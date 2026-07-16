@@ -9,17 +9,7 @@ import { DashboardSummaryDto, ProductDistribution } from '@/dtos/dashboard-summa
 import { useGetDashboardSummary } from '@/hooks/service-hooks/useDashboardService';
 import { useGetLowStockProducts } from '@/hooks/service-hooks/useProductService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Layers,
-  Package,
-  Receipt,
-  ShoppingBag,
-  Star,
-  Tags
-} from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowRight, Layers, Package, Receipt, ShoppingBag, Star, Tags } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import SectionCard from '../common/custome-card';
@@ -27,7 +17,6 @@ import GreetingHeader from '../common/greeting-header';
 import { DashboardEmptyState } from '../skelton/empty-states';
 import DashboardStats from './DashboardStats';
 import RecentOrdersList from './RecentOrdersList';
-
 
 const PROGRESS_COLORS = [
   'bg-gradient-to-r from-amber-400 to-amber-500',
@@ -70,7 +59,6 @@ export default function DashboardHome() {
   //const summaryData = data?.data?.data;
   const lowStockProducts = lowStockData?.data?.data?.data || [];
 
-
   const getDashboardSummaryResponse = useGetDashboardSummary();
 
   const [data, setData] = useState<DashboardSummaryDto>();
@@ -80,7 +68,6 @@ export default function DashboardHome() {
       setData(getDashboardSummaryResponse.data.data.data);
     }
   }, [getDashboardSummaryResponse.isSuccess, getDashboardSummaryResponse.data?.data?.data]);
-
 
   if (getDashboardSummaryResponse.isLoading || isLowStockLoading) {
     return (
@@ -122,7 +109,8 @@ export default function DashboardHome() {
                 <h3 className="text-lg font-semibold text-red-800 dark:text-red-300">Failed to Load Dashboard</h3>
                 <p className="text-sm text-red-600 dark:text-red-400 mt-1">
                   {/* {getDashboardSummaryResponse.isError ? (getDashboardSummaryResponse.error instanceof Error ? getDashboardSummaryResponse.error.message : 'Please try again later.'} */}
-                  Error </p>
+                  Error{' '}
+                </p>
               </div>
               <Button variant="outline" onClick={() => window.location.reload()}>
                 Try Again
@@ -134,35 +122,23 @@ export default function DashboardHome() {
     );
   }
 
-
   return (
     <div className="min-h-screen ">
       <div className="space-y-6 p-2">
         <GreetingHeader />
 
-
         <DashboardStats summaryData={data} />
 
         <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
           <div className="col-span-4">
-            <SectionCard
-              title="Recent Orders"
-              icon={Receipt}
-              href="/admin/orders"
-              ctaTitle="View All Orders"
-            >
+            <SectionCard title="Recent Orders" icon={Receipt} href="/admin/orders" ctaTitle="View All Orders">
               <>
                 <RecentOrdersList />
               </>
             </SectionCard>
           </div>
           <div className="col-span-2">
-            <SectionCard
-              title="Products Stock"
-              icon={Receipt}
-              href="/admin/orders"
-              ctaTitle="View All Orders"
-            >
+            <SectionCard title="Products Stock" icon={Receipt} href="/admin/orders" ctaTitle="View All Orders">
               <>
                 {data?.productDistribution && data?.productDistribution.length > 0 ? (
                   <div className="space-y-4 w-full">
@@ -171,7 +147,7 @@ export default function DashboardHome() {
                         <div className="flex justify-between items-center text-sm font-medium">
                           <span className="text-muted-foreground">{product.name}</span>
                           <span className="font-bold text-foreground">
-                            {product.stock}/ {product.count} |  ({product.percentage}%)
+                            {product.stock}/ {product.count} | ({product.percentage}%)
                           </span>
                         </div>
                         <Progress
@@ -183,18 +159,12 @@ export default function DashboardHome() {
                     ))}
                   </div>
                 ) : (
-                  <DashboardEmptyState
-                    title="No recent products"
-                    ctaUrl="/admin/products/create"
-                    ctaTitle="Create Product"
-                    icon={ShoppingBag}
-                  />
+                  <DashboardEmptyState title="No recent products" ctaUrl="/admin/products/create" ctaTitle="Create Product" icon={ShoppingBag} />
                 )}
               </>
             </SectionCard>
           </div>
         </div>
-
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <SectionCard
@@ -210,8 +180,8 @@ export default function DashboardHome() {
             }
             icon={AlertTriangle}
             href="/admin/products"
-            ctaTitle="View All Orders" >
-
+            ctaTitle="View All Orders"
+          >
             {lowStockProducts.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {lowStockProducts.map((product: any) => (
@@ -224,11 +194,18 @@ export default function DashboardHome() {
                     <div className="flex items-center justify-between gap-2 mb-1.5 pl-1.5">
                       <h4 className="font-bold text-sm text-foreground truncate max-w-[130px]">{product.name}</h4>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <Badge variant="destructive" className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-rose-500 text-white rounded-md">
+                        <Badge
+                          variant="destructive"
+                          className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 bg-rose-500 text-white rounded-md"
+                        >
                           {product.stock === 0 ? 'Out' : `${product.stock} left`}
                         </Badge>
                         <Link href={`/admin/products/${product.id}`}>
-                          <Button variant="secondary" size="icon" className="h-6 w-6 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 transition-transform hover:scale-105">
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-6 w-6 rounded-full bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 transition-transform hover:scale-105"
+                          >
                             <ArrowRight className="h-3.5 w-3.5" />
                           </Button>
                         </Link>
@@ -241,7 +218,10 @@ export default function DashboardHome() {
                     </div>
 
                     <div className="mt-2 px-1.5 py-1 bg-background/50 dark:bg-card/50 rounded-lg flex items-center justify-between text-[11px]">
-                      <span>Stock: <strong className="text-rose-600 dark:text-rose-400 font-bold">{product.stock}</strong> / {product.lowStockThreshold || 5}</span>
+                      <span>
+                        Stock: <strong className="text-rose-600 dark:text-rose-400 font-bold">{product.stock}</strong> /{' '}
+                        {product.lowStockThreshold || 5}
+                      </span>
                       <div className="w-16 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                         <div
                           className="bg-rose-500 h-full transition-all"
@@ -263,12 +243,7 @@ export default function DashboardHome() {
             )}
           </SectionCard>
 
-          <SectionCard
-            title="Recent Products"
-            icon={Package}
-            href="/admin/orders"
-            ctaTitle="View All Orders"
-          >
+          <SectionCard title="Recent Products" icon={Package} href="/admin/orders" ctaTitle="View All Orders">
             {data && data?.products?.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {data?.products.map((product, index) => (
@@ -283,9 +258,7 @@ export default function DashboardHome() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <h4 className="font-semibold text-xs md:text-sm text-foreground truncate">
-                            {product.name}
-                          </h4>
+                          <h4 className="font-semibold text-xs md:text-sm text-foreground truncate">{product.name}</h4>
                           {index === 0 && (
                             <Badge className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-sm rounded">
                               New
@@ -304,9 +277,9 @@ export default function DashboardHome() {
                     </div>
 
                     <div className="flex items-center gap-2 pl-3 border-l border-border/40 shrink-0">
-                      <span className="text-xs md:text-sm font-bold text-foreground">
+                      {/* <span className="text-xs md:text-sm font-bold text-foreground">
                         ${product.price.toFixed(2)}
-                      </span>
+                      </span> */}
                       <Link href={`/admin/products/${product.id}`}>
                         <Button
                           variant="ghost"
@@ -321,21 +294,11 @@ export default function DashboardHome() {
                 ))}
               </div>
             ) : (
-              <DashboardEmptyState
-                title="No recent attributes"
-                ctaUrl="/admin/attributes/create"
-                ctaTitle="Create Attribute"
-                icon={Star}
-              />
+              <DashboardEmptyState title="No recent attributes" ctaUrl="/admin/attributes/create" ctaTitle="Create Attribute" icon={Star} />
             )}
           </SectionCard>
 
-          <SectionCard
-            title="Recent Attributes"
-            icon={Tags}
-            href="/admin/attributes"
-            ctaTitle="View All Attributes"
-          >
+          <SectionCard title="Recent Attributes" icon={Tags} href="/admin/attributes" ctaTitle="View All Attributes">
             {data && data?.attributes?.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {data.attributes.map((attribute) => (
@@ -351,22 +314,29 @@ export default function DashboardHome() {
                         <div className="flex items-center gap-2 mb-0.5">
                           <h4 className="font-semibold text-xs md:text-sm text-foreground truncate">{attribute.name}</h4>
                           <Badge
-                            className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border-none rounded ${attribute.status === 'Published'
-                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                              : 'bg-muted text-muted-foreground'
-                              }`}
+                            className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border-none rounded ${
+                              attribute.status === 'Published'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
                           >
                             {attribute.status}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Unit: <strong className="text-foreground">{attribute.unit || 'N/A'}</strong></span>
+                          <span>
+                            Unit: <strong className="text-foreground">{attribute.unit || 'N/A'}</strong>
+                          </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 pl-3 border-l border-border/40 shrink-0">
                       <Link href={`/admin/attributes/${attribute.id}`}>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
+                        >
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
                       </Link>
@@ -375,18 +345,10 @@ export default function DashboardHome() {
                 ))}
               </div>
             ) : (
-              <DashboardEmptyState
-                title="No recent attributes"
-                ctaUrl="/admin/attributes/create"
-                ctaTitle="Create Attribute"
-                icon={Star}
-              />
+              <DashboardEmptyState title="No recent attributes" ctaUrl="/admin/attributes/create" ctaTitle="Create Attribute" icon={Star} />
             )}
           </SectionCard>
-
-
         </div>
-
 
         <div className="grid gap-5 md:grid-cols-3">
           <Card className="group relative overflow-hidden bg-card border border-border/50 hover:border-blue-500/20 shadow-sm transition-all duration-300 rounded-xl p-4 flex flex-col justify-between">
@@ -437,7 +399,6 @@ export default function DashboardHome() {
             <Progress value={64} className="h-1.5 mt-3.5 bg-indigo-500/10 [&>div]:bg-indigo-500" />
           </Card>
         </div>
-
       </div>
     </div>
   );

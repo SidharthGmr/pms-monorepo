@@ -1,5 +1,7 @@
 import { Status } from "../enum/status.enum";
 
+
+
 export interface ProductResponseDto {
   id: number;
   name: string;
