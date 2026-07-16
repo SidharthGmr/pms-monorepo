@@ -1,3 +1,5 @@
+import { ProductPriceDto } from './product-price.dto';
+
 export interface ProductDto {
   id: number;
   name: string;
@@ -7,6 +9,8 @@ export interface ProductDto {
   price: number;
   cost?: number | null;
   stock: number;
+  prices?: ProductPriceDto[];
+  currentPrice?: ProductPriceDto | null;
   lowStockThreshold?: number | null;
   categoryId: number;
   parentId?: number | null;

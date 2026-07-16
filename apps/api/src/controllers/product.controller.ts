@@ -2,7 +2,7 @@ import { Status } from "@prisma/client";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto, ProductModel, ProductResponseDto } from "@pms/types";
+import { ListResponseDto, ProductModel, ProductResponseDto, ProductWithPriceResponseDto } from "@pms/types";
 import { Role } from "../enum/user.enum";
 import NotFoundError from "../exceptions/not-found-error";
 import { ProductFilterParams } from "../params/product.params";
@@ -32,7 +32,7 @@ export class ProductController {
   getAll = async (
     req: Request,
     res: Response
-  ): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
+  ): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
     const isAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === Role.ADMIN || req.user?.role === Role.USER || req.user?.role === Role.STAFF;
     const createdById = isAdmin ? undefined : req.user?.userId;
     const storeCode = req.user?.storeCode;

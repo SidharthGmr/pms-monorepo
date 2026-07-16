@@ -27,3 +27,4 @@ export * from "./model/category.model"
 export * from "./validator/product.validator";
 export * from "./validator/purchase.validator";
 export * from "./validator/category.validator";
+export * from "./validator/product-price.validator";

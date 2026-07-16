@@ -1,12 +1,12 @@
 export interface ProductPriceResponseDto {
-  id: number;
-  productId: number;
-  storeCode: string;
+  // id: number;
+  // productId: number;
+  // storeCode: string;
   sellingPrice: number;
   costPrice: number | null;
-  effectiveFrom: Date;
-  isActive: boolean;
-  reason: string | null;
+  // effectiveFrom: Date;
+  // isActive: boolean;
+  // reason: string | null;
   createdById: string;
   createdAt: Date;
 }

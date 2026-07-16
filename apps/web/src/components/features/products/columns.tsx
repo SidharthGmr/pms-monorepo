@@ -52,12 +52,16 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         enableSorting: false,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Price / Cost" />,
-        cell: ({ row }) => (
-          <div className="space-y-0.5">
-            <span className="block font-medium">${row.original.price.toFixed(2)}</span>
-            {row.original.cost != null && <span className="text-xs text-muted-foreground">Cost: ${row.original.cost.toFixed(2)}</span>}
-          </div>
-        ),
+        cell: ({ row }) => {
+          const sellingPrice = row.original.currentPrice?.sellingPrice ?? row.original.price;
+          const costPrice = row.original.currentPrice?.costPrice ?? row.original.cost;
+          return (
+            <div className="space-y-0.5">
+              <span className="block font-medium">{sellingPrice != null ? `$${sellingPrice.toFixed(2)}` : '—'}</span>
+              {costPrice != null && <span className="text-xs text-muted-foreground">Cost: ${costPrice.toFixed(2)}</span>}
+            </div>
+          );
+        },
         meta: { sortingKey: 'price' },
       },
       {

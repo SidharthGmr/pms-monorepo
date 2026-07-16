@@ -13,6 +13,7 @@ import { UserController } from '../controllers/user.controller';
 import { HealthController } from '../controllers/health.controller';
 import { CategoryController } from '../controllers/category.controller';
 import { ProductController } from '../controllers/product.controller';
+import { ProductPriceController } from '../controllers/product-price.controller';
 import { AttributeController } from '../controllers/attribute.controller';
 import { StaffAttendanceController } from '../controllers/staff-attendance.controller';
 import { OrderController } from '../controllers/order.controller';
@@ -101,6 +102,7 @@ container.bind<AccountController>(TYPES.AccountController).to(AccountController)
 container.bind<UserController>(TYPES.UserController).to(UserController);
 container.bind<CategoryController>(TYPES.CategoryController).to(CategoryController);
 container.bind<ProductController>(TYPES.ProductController).to(ProductController);
+container.bind<ProductPriceController>(TYPES.ProductPriceController).to(ProductPriceController);
 container.bind<AttributeController>(TYPES.AttributeController).to(AttributeController);
 container.bind<StaffAttendanceController>(TYPES.StaffAttendanceController).to(StaffAttendanceController);
 container.bind<OrderController>(TYPES.OrderController).to(OrderController);

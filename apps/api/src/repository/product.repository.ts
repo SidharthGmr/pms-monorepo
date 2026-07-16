@@ -1,14 +1,14 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductResponseDto } from '@pms/types';
+import { ProductResponseDto, ProductWithPriceResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { ProductFilterParams } from '../params/product.params';
 import { IProductRepository } from './interfaces/iproduct.repository';
 
 const productInclude = {
-  brandName: { select: { id: true, name: true } },   // ✅ No 'where'
-  category: { select: { id: true, name: true } },   // ✅
-  attribute: { select: { id: true, name: true } },  // ✅
+  // brandName: { select: { id: true, name: true } },
+  // category: { select: { id: true, name: true } },
+  // attribute: { select: { id: true, name: true } },
 } satisfies Prisma.productInclude;
 
 export class ProductRepository implements IProductRepository {
@@ -18,7 +18,7 @@ export class ProductRepository implements IProductRepository {
     limit = 10,
     sortBy = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<ListResponseDto<ProductResponseDto>> {
+  ): Promise<ListResponseDto<ProductWithPriceResponseDto>> {
     const where: Prisma.productWhereInput = { NOT: { status: Status.Trash } };
 
     if (filters) {
@@ -56,7 +56,7 @@ export class ProductRepository implements IProductRepository {
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
-    const [data, total] = await Promise.all([
+    const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
         include: productInclude,
@@ -66,6 +66,49 @@ export class ProductRepository implements IProductRepository {
       }),
       prisma.product.count({ where }),
     ]);
+
+    // Collect the related ids referenced by the fetched products.
+    const productIds = products.map((product) => product.id);
+    const categoryIds = [...new Set(products.map((product) => product.categoryId))];
+    const brandNameIds = [...new Set(products.map((product) => product.brandNameId).filter((id): id is number => id != null))];
+    const attributeIds = [...new Set(products.map((product) => product.attributeId).filter((id): id is number => id != null))];
+
+    // Resolve related names + the current price in batched queries (no `include`).
+    // "Current" price = the latest price effective as of now (by effectiveFrom).
+    const [categories, brands, attributes, effectivePrices] = await Promise.all([
+      categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }) : [],
+      brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
+      attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
+      productIds.length
+        ? prisma.productPrice.findMany({
+          where: { productId: { in: productIds }, effectiveFrom: { lte: new Date() } },
+          orderBy: { effectiveFrom: 'desc' },
+          select: { productId: true, sellingPrice: true, costPrice: true },
+        })
+        : [],
+    ]);
+
+    const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
+    const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]));
+    const attributeNames = new Map(attributes.map((attribute) => [attribute.id, attribute.name]));
+
+    // Prices are latest-first, so the first row seen per product is its current price.
+    // Expose only sellingPrice + costPrice.
+    const currentPriceByProduct = new Map<number, { sellingPrice: number; costPrice: number | null }>();
+    for (const price of effectivePrices) {
+      if (!currentPriceByProduct.has(price.productId)) {
+        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice, costPrice: price.costPrice });
+      }
+    }
+
+    // Attach the related names (flat) + the current price to each product.
+    const data = products.map((product) => ({
+      ...product,
+      category: categoryNames.get(product.categoryId) ?? '',
+      brandName: product.brandNameId != null ? brandNames.get(product.brandNameId) ?? null : null,
+      attribute: product.attributeId != null ? attributeNames.get(product.attributeId) ?? null : null,
+      currentPrice: currentPriceByProduct.get(product.id) ?? null,
+    }));
 
     return { totalRecord: total, data };
   }
