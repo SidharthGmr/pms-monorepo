@@ -94,7 +94,7 @@ model category {
   parentId     Int?
   storeCode    String
   status       Status      @default(Published)
-  displayOrder Int?        @default(0)
+  displayOrder Int?        @default(1)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   parent       category?   @relation("CategoryToParent", fields: [parentId], references: [id])

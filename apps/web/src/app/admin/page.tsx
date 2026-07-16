@@ -1,10 +1,10 @@
 import DashboardSummary from '@/components/admin-home/DashboardSummary';
 import config from '@/config';
-import { UserDto } from '@/dtos/UserDto';
 import { Roles } from '@/enums/roles.enum';
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../api/auth/[...nextauth]/options';
+import { UserDto } from '@pms/types';
 
 export const metadata: Metadata = {
   title: `User List- ${config.appName}`,

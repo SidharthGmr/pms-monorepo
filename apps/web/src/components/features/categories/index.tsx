@@ -8,7 +8,6 @@ import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
 import RecentPostSkeleton from '../../skelton/recent-post';
-import Loader from '../../loader';
 import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { container } from '@/config/ioc';
@@ -20,10 +19,11 @@ import CategoryListFilter from './filter';
 import ManageCategory from './add-edit';
 import config from '@/config';
 import { useSearchParams } from 'next/navigation';
-import { CategoryFilterParams } from '@/params/category.params';
+import { CategoryFilterParams } from '@pms/types';
 
 export default function CategoryList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const searchParams = useSearchParams();
 
   const [data, setData] = useState<CategoryDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
@@ -36,13 +36,13 @@ export default function CategoryList() {
     (id) => openDeleteModal(id)
   );
 
-  const searchParams = useSearchParams();
-
   const [filterParams, setFilterParams] = useState<CategoryFilterParams>({
-    status: searchParams.get('status') || '',
+    status: searchParams.get('status') || 'Published',
     page: +(searchParams.get('page') || 1),
-    q: searchParams.get('q') || '',
+    search: searchParams.get('search') || '',
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
+    // startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
+    // endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
     sortBy: searchParams.get('sortBy') || 'createdon',
     sortDirection: searchParams.get('sortDirection') || 'desc',
   });
@@ -57,16 +57,9 @@ export default function CategoryList() {
       setRecordCount(result.totalRecord ?? 0);
     }
   }, [getAllCategoriesResponse.status, getAllCategoriesResponse.data]);
- 
 
-
- const { sorting, onSortingChange, field, order } = useTanstackTableSorting<CategoryDto>(
-    filterParams.sortBy ?? '',
-    filterParams.sortDirection ?? '',
-    columns
-  );
-
-  const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
+  const { sorting, onSortingChange } = useTanstackTableSorting<CategoryDto>('name', 'asc', columns);
+  const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage ?? config.recordPerPage);
 
   const table = useCustomDataTable({
     columns,
@@ -77,43 +70,48 @@ export default function CategoryList() {
     pageCount: Math.ceil((recordCount || 0) / (filterParams.recordPerPage || 1)),
     pagination,
     sorting,
-    onPaginationChange: onPaginationChange,
-    onSortingChange: onSortingChange,
+    onPaginationChange,
+    onSortingChange,
   });
 
+  // useEffect(() => {
+  //   setFilterParams((oldValue) => {
+  //     return {
+  //       ...oldValue,
+  //       page: pagination.pageIndex + 1,
+  //       recordPerPage: pagination.pageSize,
+  //     };
+  //   });
+  // }, [pagination]);
+
+  // useEffect(() => {
+  //   setFilterParams((oldValue) => {
+  //     return {
+  //       ...oldValue,
+  //       sortBy: field,
+  //       sortDirection: order,
+  //     };
+  //   });
+  // }, [field, order]);
+
   useEffect(() => {
-    setFilterParams((oldValue) => {
-      return {
-        ...oldValue,
-        page: pagination.pageIndex + 1,
-        recordPerPage: pagination.pageSize,
-      };
-    });
+    setFilterParams((prev) => ({
+      ...prev,
+      page: pagination.pageIndex + 1,
+      recordPerPage: pagination.pageSize,
+    }));
   }, [pagination]);
 
-  useEffect(() => {
-    setFilterParams((oldValue) => {
-      return {
-        ...oldValue,
-        sortBy: field,
-        sortDirection: order,
-      };
-    });
-  }, [field, order]);
-
   const resetForm = () => {
-    setFilterParams(() => {
-      return {
-        status: searchParams.get('status') || '',
-        page: +(searchParams.get('page') || 1),
-        q: searchParams.get('q') || '',
-        recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-        sortBy: searchParams.get('sortBy') || 'createdon',
-        sortDirection: searchParams.get('sortDirection') || 'desc',
-      };
+    setFilterParams({
+      search: undefined,
+      status: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      page: 1,
+      recordPerPage: config.recordPerPage,
     });
   };
-
   const handleDelete = async (id: number) => {
     const response = await deleteCategoryMutation.mutateAsync(id);
     if (response && response.status === 204) {
@@ -143,25 +141,28 @@ export default function CategoryList() {
     <>
       <div className="space-y-4">
         <CategoryListFilter
-           table={table}
+          table={table}
           resetForm={resetForm}
-             onTextChange={(value) => {
-            setFilterParams((oldValue) => {
-              return {
-                ...oldValue,
-                q: value || '',
-              };
-            });
+          onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || undefined, page: 1 }))}
+          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: value || '' }))}
+          onStartDateChanged={(value) => {
+            const selectedDate = value;
+            if (selectedDate) selectedDate.setHours(0, 0, 0, 0);
+            setFilterParams((prev) => ({ ...prev, startDate: selectedDate?.toISOString() }));
           }}
-          />
+          onEndDateChanged={(value) => {
+            const selectedDate = value;
+            if (selectedDate) selectedDate.setHours(23, 59, 59, 999);
+            setFilterParams((prev) => ({ ...prev, endDate: selectedDate?.toISOString() }));
+          }}
+        />
+
         <DataTablePagination table={table} totalRecord={recordCount} loading={getAllCategoriesResponse.isLoading} />
         <div className="rounded-md border">
           <CustomDataTable columns={columns} table={table} />
         </div>
         <DataTablePagination table={table} totalRecord={recordCount} loading={getAllCategoriesResponse.isLoading} />
       </div>
-
-     
 
       {showEditModal && (
         <ManageCategory

@@ -5,7 +5,7 @@ import { CategoryController } from "../controllers/category.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import { validate } from "../middleware/validate";
-import { createCategorySchema, updateCategorySchema } from "../schemas/categorySchema";
+import { categoryValidator } from "@pms/types";
 
 const categoryRouter = Router();
 const categoryController = container.get<CategoryController>(TYPES.CategoryController);
@@ -37,52 +37,44 @@ const categoryController = container.get<CategoryController>(TYPES.CategoryContr
  *         schema:
  *           type: integer
  *         required: false
- *         description: Page number for pagination (optional)
  *       - in: query
  *         name: recordPerPage
  *         schema:
  *           type: integer
  *         required: false
- *         description: Number of records per page (optional)
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
  *         required: false
- *         description: Search term to filter categories by name (optional)
  *       - in: query
  *         name: parentId
  *         schema:
  *           type: integer
  *         required: false
- *         description: Filter by parent category ID (optional)
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [Published, Draft, Trash]
  *         required: false
- *         description: Filter by status (optional)
  *       - in: query
  *         name: showAllRecords
  *         schema:
  *           type: boolean
  *         required: false
- *         description: Show all records without pagination (optional)
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date-time
  *         required: false
- *         description: Filter by start date (optional)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date-time
  *         required: false
- *         description: Filter by end date (optional)
  *     responses:
  *       200:
  *         description: Categories fetched successfully
@@ -175,7 +167,7 @@ categoryRouter.get("/:id", authenticateToken, asyncHandler(categoryController.ge
  *         description: Unauthorized - Invalid or missing token
  *     description: Creates a new category. The storeCode is automatically taken from the authenticated user's token.
  */
-categoryRouter.post("/", authenticateToken, validate(createCategorySchema), asyncHandler(categoryController.create));
+categoryRouter.post("/", authenticateToken, validate(categoryValidator), asyncHandler(categoryController.create));
 /**
  * @swagger
  * /categories/{id}:
@@ -213,7 +205,7 @@ categoryRouter.post("/", authenticateToken, validate(createCategorySchema), asyn
  *       200:
  *         description: Category updated successfully
  */
-categoryRouter.put("/:id", authenticateToken, validate(updateCategorySchema), asyncHandler(categoryController.update));
+categoryRouter.put("/:id", authenticateToken, validate(categoryValidator), asyncHandler(categoryController.update));
 
 /**
  * @swagger

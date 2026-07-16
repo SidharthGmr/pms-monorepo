@@ -1,18 +1,10 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { CategoryDto } from "../dtos/category.dto";
-import { ListResponseDto } from "../dtos/list-response.dto";
-import { CategoryFilterParams } from "../params/category.params";
 import { ICategoryRepository } from "./interfaces/icategory.repository";
+import { CategoryFilterParams, CategoryResponseDto, ListResponseDto } from "@pms/types";
 
 export class CategoryRepository implements ICategoryRepository {
-  async findAll(
-    filters?: CategoryFilterParams,
-    page = 1,
-    limit = 10,
-    sortBy = 'displayOrder',
-    sortOrder: 'asc' | 'desc' = 'asc'
-  ): Promise<ListResponseDto<CategoryDto>> {
+  async findAll(filters?: CategoryFilterParams, page = 1, limit = 10, sortBy = 'displayOrder', sortOrder: 'asc' | 'desc' = 'asc'): Promise<ListResponseDto<CategoryResponseDto>> {
     const where: Prisma.categoryWhereInput = { NOT: { status: Status.Trash } };
 
     if (filters) {
@@ -20,10 +12,8 @@ export class CategoryRepository implements ICategoryRepository {
       limit = filters.recordPerPage ?? limit;
 
       if (filters.search) {
-        where.OR = [{ name: { contains: filters.search, mode: 'insensitive' } }];
+        where.OR = [{ name: { contains: filters.search, mode: "insensitive" } }];
       }
-
-      if (filters.parentId !== undefined) where.parentId = filters.parentId;
 
       if (filters.status !== undefined) {
         where.status = filters.status;
@@ -33,6 +23,13 @@ export class CategoryRepository implements ICategoryRepository {
 
       if (filters.storeCode !== undefined) {
         where.storeCode = filters.storeCode;
+      }
+
+      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+        where.createdAt = {
+          ...(filters.startDate !== undefined && { gte: filters.startDate }),
+          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+        };
       }
     }
 
@@ -53,11 +50,11 @@ export class CategoryRepository implements ICategoryRepository {
     return { totalRecord: total, data };
   }
 
-  async findById(id: number): Promise<CategoryDto | null> {
-    return prisma.category.findUnique({ where: { id } });
+  async findById(id: number, storeCode: string): Promise<CategoryResponseDto | null> {
+    return prisma.category.findUnique({ where: { id, storeCode } });
   }
 
-  async delete(id: number): Promise<CategoryDto> {
+  async delete(id: number): Promise<CategoryResponseDto> {
     return prisma.category.update({ where: { id }, data: { status: Status.Trash } });
   }
 }

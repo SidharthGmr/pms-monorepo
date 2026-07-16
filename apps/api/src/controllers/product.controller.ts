@@ -46,6 +46,7 @@ export class ProductController {
         search: req.query['search'] as string | undefined,
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
         storeId: req.query['storeId'] ? parseInt(req.query['storeId'] as string) : undefined,
+        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
         status: req.query['status'] ? req.query['status'] as Status : undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
@@ -115,10 +116,7 @@ export class ProductController {
   };
 
 
-  delete = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<CustomResponse<ProductResponseDto>>> => {
+  delete = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
 
@@ -135,6 +133,6 @@ export class ProductController {
     }
 
     const product = await this.unitOfService.Product.delete(id);
-    return res.status(204).json({ success: true, message: "Product deleted successfully", data: product });
+    return res.status(200).json({ success: true, message: "Product deleted successfully", data: product });
   };
 }

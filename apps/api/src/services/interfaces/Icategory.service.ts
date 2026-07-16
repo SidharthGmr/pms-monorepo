@@ -1,12 +1,10 @@
-import { CategoryDto } from "../../dtos/category.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
-import { CategoryModel } from "../../models/category.model";
-import { CategoryFilterParams } from "../../params/category.params";
+import { CategoryFilterParams, CategoryModel, CategoryResponseDto, ListResponseDto } from "@pms/types";
+
 
 export interface ICategoryService {
-  getAll(filters?: CategoryFilterParams): Promise<ListResponseDto<CategoryDto>>;
-  getById(id: number): Promise<CategoryDto | null>;
-  create(data: CategoryModel, storeCode: string): Promise<CategoryDto>;
-  update(id: number, data: CategoryModel): Promise<CategoryDto>;
-  delete(id: number): Promise<CategoryDto>;
+  getAll(filters?: CategoryFilterParams): Promise<ListResponseDto<CategoryResponseDto>>;
+  getById(id: number, storeCode: string): Promise<CategoryResponseDto | null>;
+  create(data: CategoryModel, storeCode: string): Promise<CategoryResponseDto>;
+  update(id: number, data: CategoryModel, storeCode: string): Promise<CategoryResponseDto>;
+  delete(id: number, storeCode: string): Promise<CategoryResponseDto>;
 }

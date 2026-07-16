@@ -61,7 +61,7 @@ export class AttributeRepository implements IAttributeRepository {
   async findById(id: number): Promise<AttributeDto | null> {
     return prisma.attribute.findUnique({ where: { id } });
   }
-  
+
   async delete(id: number): Promise<AttributeDto> {
     return prisma.attribute.update({ where: { id }, data: { status: Status.Trash } });
   }

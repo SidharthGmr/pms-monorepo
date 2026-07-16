@@ -1,9 +1,6 @@
-import { CategoryDto } from "../../dtos/category.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
-import { CategoryFilterParams } from "../../params/category.params";
-
+import { CategoryFilterParams, CategoryResponseDto, ListResponseDto } from "@pms/types";
 export interface ICategoryRepository {
-  findAll(filters?: CategoryFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<CategoryDto>>;
-  findById(id: number): Promise<CategoryDto | null>;
-  delete(id: number): Promise<CategoryDto>;
+  findAll(filters?: CategoryFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<CategoryResponseDto>>;
+  findById(id: number, storeCode: string): Promise<CategoryResponseDto | null>;
+  delete(id: number): Promise<CategoryResponseDto>;
 }

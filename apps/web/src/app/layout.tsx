@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: process.env.NEXT_PUBLIC_APP_NAME,
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${quicksand.variable} bg-background !pointer-events-auto`}>

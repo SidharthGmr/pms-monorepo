@@ -5,7 +5,7 @@ export interface PageFilterParams {
   endDate?: Date;
   page?: number;
   recordPerPage?: number;
-   sortBy?: string;
+  sortBy?: string;
   sortDirection?: string;
   showAllRecords?: boolean;
 }
