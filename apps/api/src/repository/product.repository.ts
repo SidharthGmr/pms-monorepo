@@ -102,13 +102,17 @@ export class ProductRepository implements IProductRepository {
     }
 
     // Attach the related names (flat) + the current price to each product.
-    const data = products.map((product) => ({
-      ...product,
-      category: categoryNames.get(product.categoryId) ?? '',
-      brandName: product.brandNameId != null ? brandNames.get(product.brandNameId) ?? null : null,
-      attribute: product.attributeId != null ? attributeNames.get(product.attributeId) ?? null : null,
-      currentPrice: currentPriceByProduct.get(product.id) ?? null,
-    }));
+    // Drop the raw *Id/parentId columns from the response (resolved into names).
+    const data = products.map((product) => {
+      const { categoryId, brandNameId, attributeId, parentId, ...rest } = product;
+      return {
+        ...rest,
+        category: categoryNames.get(categoryId) ?? '',
+        brandName: brandNameId != null ? brandNames.get(brandNameId) ?? null : null,
+        attribute: attributeId != null ? attributeNames.get(attributeId) ?? null : null,
+        currentPrice: currentPriceByProduct.get(product.id) ?? null,
+      };
+    });
 
     return { totalRecord: total, data };
   }
