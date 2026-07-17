@@ -33,6 +33,7 @@ export class PurchaseService implements IPurchaseService {
           userId: userId,
           invoiceNumber: data.invoiceNumber || '',
           invoiceUrl: data.invoiceUrl || '',
+          supplierId: data.supplierId || null,
           supplierName: data.supplierName || '',
           totalAmount: data.totalAmount || 0,
           notes: data.notes ?? null,

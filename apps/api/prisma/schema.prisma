@@ -85,6 +85,7 @@ model store {
   stockHistories   stockHistory[]
   purchases        purchase[]
   productPrices    productPrice[]
+  suppliers        supplier[]
 }
 
 model category {
@@ -187,6 +188,7 @@ model purchase {
   id            Int            @id @default(autoincrement())
   invoiceNumber String?
   invoiceUrl    String?
+  supplierId    String?
   supplierName  String?
   totalAmount   Float          @default(0)
   notes         String?
@@ -249,6 +251,26 @@ model attribute {
   store        store     @relation(fields: [storeCode], references: [code])
   products     product[]
 
+  @@index([id])
+  @@index([storeCode])
+}
+
+model supplier {
+  id            Int      @id @default(autoincrement())
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  notes         String?
+  storeCode     String
+  status        Status   @default(Published)
+  displayOrder  Int?     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  store         store    @relation(fields: [storeCode], references: [code])
+
+  @@unique([name, storeCode])
   @@index([id])
   @@index([storeCode])
 }

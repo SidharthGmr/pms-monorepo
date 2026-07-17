@@ -8,13 +8,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useCreatePurchase } from '@/hooks/service-hooks/usePurchaseService';
+import { useGetAllSuppliers } from '@/hooks/service-hooks/useSupplierService';
 import { ReceiveStockFormValues, receiveStockSchema } from '@/schema/receiveStockSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axios from 'axios';
-import { CheckCircle2, FileText, Package, Plus, Receipt, UploadCloud, X } from 'lucide-react';
-import { ReactNode, useState } from 'react';
+import { CheckCircle2, FileText, Package, Package2, Plus, Receipt, UploadCloud, X } from 'lucide-react';
+import { ReactNode, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { PurchaseItemRow } from './purchase-item-row';
+import SectionCard from '@/components/common/custome-card';
+import { SelectSearch } from '@/components/common/select-search';
+import ManageSupplier from '@/components/features/suppliers/add-edit';
 
 /** A numbered form section with an icon, title and optional description. */
 function Section({
@@ -59,14 +63,21 @@ function Section({
 export default function ReceiveStockPage() {
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
 
   const { data: productsData } = useGetAllProducts();
   const products = productsData?.data?.data?.data || [];
+
+  const { data: suppliersData } = useGetAllSuppliers({ showAllRecords: true });
+  const suppliers = suppliersData?.data?.data?.data || [];
+  const supplierItems = useMemo(() => suppliers.map((s) => ({ label: s.name, value: String(s.id) })), [suppliers]);
+
   const createPurchase = useCreatePurchase();
 
   const form = useForm<ReceiveStockFormValues>({
     resolver: yupResolver(receiveStockSchema),
     defaultValues: {
+      supplierId: '',
       supplierName: '',
       invoiceNumber: '',
       notes: '',
@@ -124,9 +135,12 @@ export default function ReceiveStockPage() {
         totalPrice: Number(item.quantity) * Number(item.unitCost),
       }));
 
+      const selectedSupplier = suppliers.find((s) => String(s.id) === String(data.supplierId));
+
       await createPurchase.mutateAsync({
         invoiceNumber: data.invoiceNumber || undefined,
-        supplierName: data.supplierName || undefined,
+        supplierId: data.supplierId || undefined,
+        supplierName: selectedSupplier?.name || undefined,
         notes: data.notes || undefined,
         invoiceUrl: invoiceUrl || undefined,
         totalAmount: totalCost,
@@ -144,7 +158,7 @@ export default function ReceiveStockPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 pb-12">
+    <div className="mx-auto max-w-7xl space-y-5 pb-12">
       <PageHeader
         title="Add Stock"
         description="Add incoming products to your inventory and attach supplier invoices for record-keeping."
@@ -152,20 +166,9 @@ export default function ReceiveStockPage() {
       />
 
       <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-5 lg:grid-cols-5">
-          {/* LEFT — Products */}
-          <div className="space-y-5 lg:col-span-3">
-            <Section
-              step={1}
-              icon={<Package className="h-4 w-4" />}
-              title="Products"
-              description="Pick a product, then enter how many you received and the unit cost."
-              aside={
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                  {fields.length} item{fields.length !== 1 ? 's' : ''}
-                </span>
-              }
-            >
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-5 lg:grid-cols-6">
+          <div className="space-y-5 lg:col-span-4">
+            <SectionCard title="Add Products Stock" icon={Package2} href="/admin/products" ctaTitle="View All Orders">
               <div className="space-y-3">
                 {fields.map((field, index) => (
                   <PurchaseItemRow
@@ -190,24 +193,55 @@ export default function ReceiveStockPage() {
                   Add Another Product
                 </Button>
               </div>
-            </Section>
-          </div>
+            </SectionCard>
 
-          {/* RIGHT — Details + summary */}
+            {/* <Section
+              step={1}
+              icon={<Package className="h-4 w-4" />}
+              title="Products"
+
+              aside={
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                  {fields.length} item{fields.length !== 1 ? 's' : ''}
+                </span>
+              }
+            ></Section> */}
+          </div>
           <div className="space-y-5 lg:col-span-2">
             <div className="sticky top-6 space-y-5">
-              <Section step={2} icon={<Receipt className="h-4 w-4" />} title="Supplier & Invoice" description="Optional record-keeping details.">
+              <SectionCard title="Supplier & Invoice" icon={Receipt} href="/admin/stock-purchase/history/" ctaTitle="View All Supplier">
                 <div className="space-y-4">
                   <FormField
                     control={control}
-                    name="supplierName"
+                    name="supplierId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-700">
-                          Supplier Name <span className="font-normal text-slate-400">(optional)</span>
-                        </FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-slate-700">
+                            Supplier <span className="font-normal text-slate-400">(optional)</span>
+                          </FormLabel>
+                          <Button
+                            type="button"
+                            variant="link"
+                            size="sm"
+                            icon={Plus}
+                            iconPlacement="left"
+                            className="h-auto p-0 text-xs font-medium"
+                            onClick={() => setShowAddSupplier(true)}
+                          >
+                            Add New
+                          </Button>
+                        </div>
                         <FormControl>
-                          <Input placeholder="e.g. Acme Corp" {...field} value={field.value || ''} />
+                          <SelectSearch
+                            placeholder="Select a supplier"
+                            buttonClass="w-full"
+                            items={supplierItems}
+                            value={field.value || ''}
+                            valueType="string"
+                            containerName="receive-stock-supplier"
+                            onChange={(value) => field.onChange(value)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -238,7 +272,13 @@ export default function ReceiveStockPage() {
                         className="group flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-slate-300 p-4 transition-all hover:border-primary hover:bg-slate-50"
                         onClick={() => document.getElementById('invoice-upload')?.click()}
                       >
-                        <Input id="invoice-upload" type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
+                        <Input
+                          id="invoice-upload"
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)}
+                        />
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 transition-colors group-hover:bg-primary/10">
                           <UploadCloud className="h-5 w-5 text-slate-500 transition-colors group-hover:text-primary" />
                         </div>
@@ -258,7 +298,13 @@ export default function ReceiveStockPage() {
                             <p className="text-xs text-slate-500">{(invoiceFile.size / 1024 / 1024).toFixed(2)} MB</p>
                           </div>
                         </div>
-                        <Button type="button" variant="ghost" size="icon" className="shrink-0 text-slate-400 hover:text-red-500" onClick={() => setInvoiceFile(null)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 text-slate-400 hover:text-red-500"
+                          onClick={() => setInvoiceFile(null)}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -274,14 +320,20 @@ export default function ReceiveStockPage() {
                           Notes <span className="font-normal text-slate-400">(optional)</span>
                         </FormLabel>
                         <FormControl>
-                          <Textarea className="resize-none bg-slate-50" rows={2} placeholder="Any additional details..." {...field} value={field.value || ''} />
+                          <Textarea
+                            className="resize-none bg-slate-50"
+                            rows={2}
+                            placeholder="Any additional details..."
+                            {...field}
+                            value={field.value || ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-              </Section>
+              </SectionCard>
 
               {/* Summary + submit */}
               <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg ring-1 ring-black/5">
@@ -316,6 +368,8 @@ export default function ReceiveStockPage() {
           </div>
         </form>
       </Form>
+
+      {showAddSupplier && <ManageSupplier isOpen={showAddSupplier} onClose={() => setShowAddSupplier(false)} />}
     </div>
   );
 }

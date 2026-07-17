@@ -17,11 +17,10 @@ interface PurchaseItemRowProps {
 }
 
 export function PurchaseItemRow({ control, index, products, onRemove, canRemove }: PurchaseItemRowProps) {
-
   const productItems = useMemo(() => {
     return products.map((p: any) => ({
       label: p.name,
-      value: p.id
+      value: p.id,
     }));
   }, [products]);
 
@@ -31,8 +30,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
   const lineTotal = Number(quantity) > 0 && Number(unitCost) >= 0 ? Number(quantity) * Number(unitCost) : 0;
 
   return (
-    <div className="relative flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 pl-6 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:flex-row sm:items-start">
-
+    <div className="relative flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-2 pl-6 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:flex-row sm:items-start">
       {/* Index Badge */}
       <div className="absolute left-2 top-4 hidden h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white shadow-sm sm:flex">
         {index + 1}

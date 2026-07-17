@@ -14,6 +14,7 @@ import IProductService from './IProductService';
 import IStaffSalaryService from './IStaffSalaryService';
 import IStaffService from './IStaffService';
 import IStoreService from './IStoreService';
+import ISupplierService from './ISupplierService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -34,4 +35,5 @@ export default interface IUnitOfService {
   StoreService: IStoreService;
   OrderService: IOrderService;
   OrderItemService: IOrderItemService;
+  SupplierService: ISupplierService;
 }

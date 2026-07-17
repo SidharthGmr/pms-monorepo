@@ -11,6 +11,7 @@ export const CreatePurchaseValidator = z.object({
     body: z.object({
         invoiceNumber: z.string().optional(),
         invoiceUrl: z.string().url().optional().or(z.literal('')),
+        supplierId: z.string().optional(),
         supplierName: z.string().optional(),
         totalAmount: z.number().nonnegative(),
         notes: z.string().optional(),

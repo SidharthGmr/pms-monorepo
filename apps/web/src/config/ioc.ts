@@ -40,6 +40,8 @@ import PurchaseService from '@/services/PurchaseService';
 import StaffSalaryService from '@/services/StaffSalaryService';
 import StaffService from '@/services/StaffService';
 import StoreService from '@/services/StoreService';
+import SupplierService from '@/services/SupplierService';
+import ISupplierService from '@/services/interfaces/ISupplierService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -64,6 +66,7 @@ container.bind<IStoreService>(TYPES.IStoreService).to(StoreService);
 container.bind<IPurchaseService>(TYPES.IPurchaseService).to(PurchaseService);
 container.bind<IOrderService>(TYPES.IOrderService).to(OrderService);
 container.bind<IOrderItemService>(TYPES.IOrderItemService).to(OrderItemService);
+container.bind<ISupplierService>(TYPES.ISupplierService).to(SupplierService);
 
 export { container };
 

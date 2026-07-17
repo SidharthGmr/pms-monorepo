@@ -1,5 +1,5 @@
 import { Roles } from '@/enums/roles.enum';
-import { FolderTree, LayoutDashboard, List, Package, Receipt, ShoppingBag, Sliders, Store, Tags, User, Users } from 'lucide-react';
+import { FolderTree, LayoutDashboard, List, Package, Receipt, ShoppingBag, Sliders, Store, Tags, Truck, User, Users } from 'lucide-react';
 
 export interface SideBarMenuDto {
   id: string;
@@ -97,6 +97,14 @@ export const SideBarMenu: SideBarMenuDto[] = [
         title: 'Products',
         icon: Package,
         url: '/admin/products/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'suppliers',
+        title: 'Suppliers',
+        icon: Truck,
+        url: '/admin/suppliers/',
         role: [Roles.ADMIN],
         isActive: false,
       },

@@ -19,6 +19,7 @@ export interface CreatePurchaseItemModel {
 export interface CreatePurchaseModel {
   invoiceNumber?: string;
   invoiceUrl?: string;
+  supplierId?: string;
   supplierName?: string;
   totalAmount: number;
   notes?: string;

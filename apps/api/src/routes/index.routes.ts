@@ -16,6 +16,7 @@ import brandNameRouter from "./brandNameRoutes";
 import staffRouter from "./staffRoutes";
 import storeRouter from "./storeRoutes";
 import purchaseRouter from "./purchaseRoutes";
+import supplierRouter from "./supplierRoutes";
 
 const routes = express.Router();
 
@@ -36,5 +37,6 @@ routes.use("/brand-names", brandNameRouter);
 routes.use("/staff", staffRouter);
 routes.use("/stores", storeRouter);
 routes.use("/purchases", purchaseRouter);
+routes.use("/suppliers", supplierRouter);
 
 export default routes;

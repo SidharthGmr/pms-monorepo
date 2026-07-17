@@ -18,6 +18,7 @@ import IProductService from './interfaces/IProductService';
 import IStaffSalaryService from './interfaces/IStaffSalaryService';
 import IStaffService from './interfaces/IStaffService';
 import IStoreService from './interfaces/IStoreService';
+import ISupplierService from './interfaces/ISupplierService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -42,6 +43,7 @@ export default class UnitOfService implements IUnitOfService {
   public StoreService: IStoreService;
   public OrderService: IOrderService;
   public OrderItemService: IOrderItemService;
+  public SupplierService: ISupplierService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -61,6 +63,7 @@ export default class UnitOfService implements IUnitOfService {
     storeService = container.get<IStoreService>(TYPES.IStoreService),
     orderService = container.get<IOrderService>(TYPES.IOrderService),
     orderItemService = container.get<IOrderItemService>(TYPES.IOrderItemService),
+    supplierService = container.get<ISupplierService>(TYPES.ISupplierService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -79,5 +82,6 @@ export default class UnitOfService implements IUnitOfService {
     this.StoreService = storeService;
     this.OrderService = orderService;
     this.OrderItemService = orderItemService;
+    this.SupplierService = supplierService;
   }
 }
