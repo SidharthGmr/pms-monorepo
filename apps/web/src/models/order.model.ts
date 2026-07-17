@@ -2,18 +2,15 @@ import { OrderStatus } from '@/enums/order-status.enum';
 
 export interface CreateOrderModel {
   customerId: string;
-  totalAmount: number;
   discount: number;
   tax: number;
   shippingCost: number;
-  grandTotal: number;
   status: OrderStatus;
   notes?: string;
+  // Only product + quantity — the server resolves unit price and computes totals.
   items?: {
     productId: number;
     quantity: number;
-    unitPrice: number;
-    totalPrice: number;
   }[];
 }
 

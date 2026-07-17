@@ -17,13 +17,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/components/ui/use-toast';
+import { SelectSearch } from '@/components/common/select-search';
 import { ProductDto } from '@/dtos/product.dto';
 import { OrderStatus } from '@/enums/order-status.enum';
+import { Roles } from '@/enums/roles.enum';
 import { useCreateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
-import { ArrowLeft, Minus, Plus, ShoppingBag, ShoppingCart, Trash2, Search, Percent, Landmark, FileText } from 'lucide-react';
+import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
+import { ArrowLeft, Minus, Plus, ShoppingBag, ShoppingCart, Trash2, Search, Percent, Landmark, FileText, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const CheckoutSchema = yup.object().shape({
   discount: yup.number().min(0, 'Must be >= 0').typeError('Must be a number').optional().default(0),
@@ -41,12 +44,27 @@ interface CartItem extends ProductDto {
 export default function PurchasePage() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const { data: session } = useSession();
-  const customerId = '7659f57e-e2d1-465e-9f9b-4aa946d227e3';
   const { data: productsResponse, isLoading } = useGetAllProducts();
   const createOrderMutation = useCreateOrder();
   const [cart, setCart] = useState<Record<number, CartItem>>({});
   const [view, setView] = useState<'products' | 'cart'>('products');
   const [searchTerm, setSearchTerm] = useState('');
+  const [customerId, setCustomerId] = useState('');
+
+  // Customers available to sell to (users with the USER role).
+  const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
+  const customerOptions = useMemo(
+    () =>
+      (customersResponse?.data?.data?.data || [])
+        .map((c) => {
+          // The users API returns the GUID under `userId` (the Prisma column);
+          // the DTO mislabels it as `usersId`, so read both defensively.
+          const id = ((c as any).userId ?? (c as any).usersId ?? '') as string;
+          return { label: c.email ? `${c.name} (${c.email})` : c.name, value: id };
+        })
+        .filter((o) => o.value),
+    [customersResponse]
+  );
 
   const form = useForm<CheckoutFormValues>({
     resolver: yupResolver(CheckoutSchema),
@@ -54,6 +72,10 @@ export default function PurchasePage() {
   });
 
   const products: ProductDto[] = productsResponse?.data?.data?.data || [];
+
+  // The products API returns the current price under `currentPrice.sellingPrice`,
+  // not as a flat `price` field — resolve it safely here.
+  const getSellingPrice = (p: ProductDto): number => p.currentPrice?.sellingPrice ?? p.price ?? 0;
 
   const handleAddToCart = (product: ProductDto) => {
     setCart((prev) => {
@@ -67,7 +89,8 @@ export default function PurchasePage() {
 
       return {
         ...prev,
-        [product.id]: { ...product, cartQuantity: newQuantity },
+        // Normalize the price onto the cart item so downstream totals are correct.
+        [product.id]: { ...product, price: getSellingPrice(product), cartQuantity: newQuantity },
       };
     });
   };
@@ -116,18 +139,15 @@ export default function PurchasePage() {
     try {
       const orderPayload = {
         customerId,
-        totalAmount,
         discount: data.discount || 0,
         tax: data.tax || 0,
         shippingCost: data.shippingCost || 0,
-        grandTotal: grandTotal,
         status: OrderStatus.Pending,
         notes: data.notes,
+        // Send only product + quantity; the server resolves price and totals.
         items: cartItems.map(item => ({
           productId: item.id,
           quantity: item.cartQuantity,
-          unitPrice: item.price,
-          totalPrice: item.price * item.cartQuantity,
         })),
       };
 
@@ -135,6 +155,7 @@ export default function PurchasePage() {
       if (response && (response.status === 201 || response.status === 200)) {
         toast({ variant: 'success', title: 'Order placed successfully' });
         setCart({});
+        setCustomerId('');
         setView('products');
       } else {
         const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
@@ -180,27 +201,6 @@ export default function PurchasePage() {
                   className="pl-9 h-10 rounded-xl bg-background border-border/40 text-sm focus-visible:ring-primary/20"
                 />
               </div>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  toast({
-                    variant: 'success',
-                    title: 'Successful Order Placement',
-                    description: 'Your purchase has been recorded. Receipt has been mailed.'
-                  });
-                  setTimeout(() => {
-                    toast({
-                      variant: 'destructive',
-                      title: 'Order Placement Error',
-                      description: 'Failed to authorize payment. Please check card status.'
-                    });
-                  }, 800);
-                }}
-                className="h-10 rounded-xl px-4 border-border/40 font-bold shrink-0 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Test Toasts
-              </Button>
 
               <Button
                 onClick={() => setView('cart')}
@@ -287,7 +287,7 @@ export default function PurchasePage() {
 
                       {/* Footer Actions */}
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60">
-                        <span className="text-lg font-black text-slate-900 dark:text-white">${product.price.toFixed(2)}</span>
+                        <span className="text-lg font-black text-slate-900 dark:text-white">${getSellingPrice(product).toFixed(2)}</span>
                         
                         {inCartQty > 0 ? (
                           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 rounded-xl p-1 border border-slate-200/40 dark:border-slate-800/40 shadow-inner">
@@ -441,6 +441,23 @@ export default function PurchasePage() {
                 </CardHeader>
                 
                 <CardContent className="p-5 space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 opacity-60" />
+                      Customer *
+                    </label>
+                    <SelectSearch
+                      placeholder="Select a customer"
+                      buttonClass="w-full h-9 rounded-xl text-xs bg-muted/30 border-border/40 font-normal"
+                      items={customerOptions}
+                      value={customerId}
+                      valueType="string"
+                      containerName="pos-customer"
+                      onChange={(value) => setCustomerId(value ? String(value) : '')}
+                    />
+                    {!customerId && <p className="text-[10px] text-muted-foreground">Select the customer this sale is for.</p>}
+                  </div>
+
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleCheckout)} className="space-y-4" autoComplete="off">
                       <div className="grid grid-cols-2 gap-3">
@@ -532,7 +549,7 @@ export default function PurchasePage() {
 
                       <Button
                         className="w-full h-10 text-xs font-black shadow-lg shadow-primary/10 hover:shadow-xl hover:translate-y-[-1.5px] active:translate-y-[0px] rounded-xl transition-all mt-4"
-                        disabled={cartItems.length === 0 || createOrderMutation.isPending}
+                        disabled={cartItems.length === 0 || !customerId || createOrderMutation.isPending}
                         type="submit"
                         loading={createOrderMutation.isPending}
                       >

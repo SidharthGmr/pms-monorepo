@@ -153,7 +153,7 @@ orderRouter.get("/:id", authenticateToken, asyncHandler(orderController.getById)
  *       201:
  *         description: Order created successfully
  */
-// orderRouter.post("/", authenticateToken, validate(createOrderSchema), asyncHandler(orderController.create));
+orderRouter.post("/", authenticateToken, validate(createOrderSchema), asyncHandler(orderController.create));
 
 /**
  * @swagger

@@ -25,11 +25,9 @@ interface ManageOrderProps {
 
 const OrderSchema = Yup.object({
   customerId: Yup.string().required('Customer ID is required'),
-  totalAmount: Yup.number().required().default(0),
   discount: Yup.number().required().default(0),
   tax: Yup.number().required().default(0),
   shippingCost: Yup.number().required().default(0),
-  grandTotal: Yup.number().required().default(0),
 
   status: Yup.mixed<OrderStatus>()
     .oneOf(Object.values(OrderStatus))
@@ -50,11 +48,9 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
     resolver: yupResolver(OrderSchema),
     defaultValues: {
       customerId: '',
-      totalAmount: 0,
       discount: 0,
       tax: 0,
       shippingCost: 0,
-      grandTotal: 0,
       status: OrderStatus.Pending,
       notes: '',
     },
@@ -67,11 +63,9 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
       const order = orderResponse.data.data;
       reset({
         customerId: order.customerId,
-        totalAmount: order.totalAmount,
         discount: order.discount,
         tax: order.tax,
         shippingCost: order.shippingCost,
-        grandTotal: order.grandTotal,
         status: order.status,
         notes: order.notes ?? '',
       });
@@ -123,20 +117,6 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
 
             <FormField
               control={form.control}
-              name="totalAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="discount"
               render={({ field }) => (
                 <FormItem>
@@ -169,20 +149,6 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Shipping Cost</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="grandTotal"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Grand Total</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
                   </FormControl>

@@ -41,24 +41,24 @@ export class OrderController {
     return res.status(200).json({ success: true, message: "Order fetched successfully", data: order });
   };
 
-  // create = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {
-  //   const body = req.body as CreateOrderModel;
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {
+    const body = req.body as CreateOrderModel;
 
-  //   const storeCode = req.user?.storeCode;
+    const storeCode = req.user?.storeCode;
 
-  //   if (!storeCode) {
-  //     return res.status(400).json({
-  //       success: false,
-  //       message: 'Store code not found. User must be associated with a store.'
-  //     });
-  //   }
+    if (!storeCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Store code not found. User must be associated with a store.'
+      });
+    }
 
-  //   const createdById = body.createdById || req.user?.userId;
-  //   const createdByName = body.createdByName || req.user?.name;
+    const createdById = body.createdById || req.user?.userId;
+    const createdByName = body.createdByName || req.user?.name;
 
-  //   const order = await this.unitOfService.Order.create(body, storeCode, createdById as string, createdByName as string);
-  //   return res.status(201).json({ success: true, message: "Order created successfully", data: order });
-  // };
+    const order = await this.unitOfService.Order.create(body, storeCode, createdById as string, createdByName as string);
+    return res.status(201).json({ success: true, message: "Order created successfully", data: order });
+  };
 
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {
     const id = parseInt(req.params["id"] as string);

@@ -14,6 +14,8 @@ const useCreateOrder = () => {
     onSettled: (response) => {
       if (response && response.status === 201) {
         queryClient.invalidateQueries({ queryKey: ['OrderService.getAll'] });
+        // A sale deducts stock, so refresh the product catalog to reflect it.
+        queryClient.invalidateQueries({ queryKey: ['ProductService.getAll'] });
       }
     },
     onError: (error) => error,
