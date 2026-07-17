@@ -14,7 +14,8 @@ import { LoginModel } from '../models/login.model';
 import { CreateUserModel } from '../models/user.model';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { isExpired } from '../utils/timeExpiry.util';
-import { generateStoreCode } from '../utils/authHelpers.service';
+import { generateStoreCode, nowISO } from '../utils/authHelpers.service';
+import { dispatchEmailAsync } from '../utils/email/emailDispatcher.util';
 
 export class AccountController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {
@@ -95,6 +96,14 @@ export class AccountController {
     //   data.email,
     //   false
     // );
+
+    dispatchEmailAsync({
+      userId: newUser.userId,
+      to: newUser.email,
+      subject: "Welcome 🎉",
+      html: "0654"
+    });
+
 
     response = {
       success: true,

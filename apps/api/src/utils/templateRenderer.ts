@@ -5,7 +5,7 @@ export async function renderTemplate(
   templateName: string,
   variables: Record<string, string>
 ): Promise<string> {
-  const baseDir = path.join(__dirname, "..", "templates");
+  const baseDir = path.join(__dirname, "..", "templetes");
   const filePath = path.join(baseDir, `${templateName}.html`);
 
   let html = await fs.readFile(filePath, "utf-8");
