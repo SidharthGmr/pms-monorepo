@@ -135,4 +135,54 @@ export class ProductController {
     const product = await this.unitOfService.Product.delete(id);
     return res.status(200).json({ success: true, message: "Product deleted successfully", data: product });
   };
+
+  addStock = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
+    const id = parseInt(req.params["id"] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+
+    const userId = req.user?.userId as string;
+    const storeCode = req.user?.storeCode;
+    if (!storeCode || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Store code not found. User must be associated with a store.'
+      });
+    }
+
+    const existingProduct = await this.unitOfService.Product.getById(id);
+    if (!existingProduct) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    if (existingProduct.storeCode !== storeCode) {
+      return res.status(403).json({ success: false, message: "Not enough permissions to update this product" });
+    }
+
+    const { quantity, reason, sellingPrice, costPrice } = req.body as {
+      quantity: number; reason?: string; sellingPrice?: number; costPrice?: number | null;
+    };
+    const product = await this.unitOfService.Product.addStock(id, { quantity, reason, sellingPrice, costPrice }, userId, storeCode);
+    return res.status(200).json({ success: true, message: "Stock added successfully", data: product });
+  };
+
+  getStockHistory = async (req: Request, res: Response): Promise<Response<ListResponseDto<any>>> => {
+    const id = parseInt(req.params["id"] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+
+    const existingProduct = await this.unitOfService.Product.getById(id);
+    if (!existingProduct) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    if (req.user?.storeCode && existingProduct.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
+    }
+
+    const page = req.query["page"] ? parseInt(req.query["page"] as string) : undefined;
+    const recordPerPage = req.query["recordPerPage"] ? parseInt(req.query["recordPerPage"] as string) : undefined;
+    const result = await this.unitOfService.Product.getStockHistory(id, page, recordPerPage);
+    return res.status(200).json({
+      success: true,
+      message: "Stock history fetched successfully",
+      data: { totalRecord: result.totalRecord, data: result.data },
+    });
+  };
 }

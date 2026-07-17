@@ -19,6 +19,10 @@ export const updateProductFields = productFields.partial();
 export const addStockFields = z.object({
   quantity: z.number().int().positive("Quantity must be a positive integer"),
   reason: z.string().optional(),
+  // Optional price update applied alongside the stock change. When
+  // `sellingPrice` is provided a new active price row is created for the product.
+  sellingPrice: z.number().nonnegative("Selling price must be zero or greater").optional(),
+  costPrice: z.number().nonnegative("Cost price must be zero or greater").nullable().optional(),
 });
 
 // Express `validate(schema)` middleware parses `{ body, query, params }`.

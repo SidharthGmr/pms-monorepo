@@ -1,10 +1,10 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
+import { ListResponseDto, ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
 import NotFoundError from "../exceptions/not-found-error";
 import { ProductFilterParams } from "../params/product.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
-import { IProductService } from "./interfaces/Iproduct.service";
+import { AddStockModel, IProductService } from "./interfaces/Iproduct.service";
 
 
 
@@ -81,5 +81,48 @@ export class ProductService implements IProductService {
     const existing = await this.unitOfWork.Product.findById(id);
     if (!existing) throw new NotFoundError("Product not found");
     return this.unitOfWork.Product.delete(id);
+  }
+
+  async addStock(id: number, data: AddStockModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
+    const existing = await this.unitOfWork.Product.findById(id);
+    if (!existing) throw new NotFoundError("Product not found");
+
+    return this.unitOfWork.transaction(async (transactionClient) => {
+      // Record the stock movement.
+      await this.unitOfWork.Product.createStockHistory(
+        {
+          productId: id,
+          storeCode,
+          userId,
+          quantity: data.quantity,
+          reason: data.reason ?? null,
+        },
+        transactionClient
+      );
+
+      // Optionally update the product's price alongside the stock change.
+      // A new active price row is only created when a selling price is supplied.
+      if (data.sellingPrice !== undefined) {
+        await this.unitOfWork.ProductPrice.create(
+          {
+            productId: id,
+            storeCode,
+            sellingPrice: data.sellingPrice,
+            costPrice: data.costPrice ?? null,
+            reason: data.reason ?? null,
+            createdById: userId,
+          },
+          transactionClient
+        );
+      }
+
+      return existing;
+    });
+  }
+
+  async getStockHistory(id: number, page?: number, limit?: number): Promise<ListResponseDto<any>> {
+    const existing = await this.unitOfWork.Product.findById(id);
+    if (!existing) throw new NotFoundError("Product not found");
+    return this.unitOfWork.Product.getStockHistory(id, page, limit);
   }
 }

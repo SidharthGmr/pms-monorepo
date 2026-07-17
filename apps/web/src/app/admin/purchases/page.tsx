@@ -1,11 +1,5 @@
-import { Metadata } from 'next';
-import config from '@/config';
-import ListingWrapper from '@/components/features/purchases/listing-wrapper';
+import PurchasePage from '@/components/features/pos';
 
-export const metadata: Metadata = {
-  title: `Purchases - ${config.appName}`,
-};
-
-export default function PurchasesPage() {
-  return <ListingWrapper />;
+export default function Purchase() {
+  return <PurchasePage />;
 }

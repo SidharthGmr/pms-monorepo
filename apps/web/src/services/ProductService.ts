@@ -3,7 +3,7 @@ import { AxiosResponse } from 'axios';
 import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
-import IProductService from './interfaces/IProductService';
+import IProductService, { AddStockModel } from './interfaces/IProductService';
 import { ProductDto } from '@/dtos/product.dto';
 import { CreateProductModel, UpdateProductModel } from '@/models/product.model';
 import { ProductFilterParams } from '@/params/product.params';
@@ -50,10 +50,10 @@ export default class ProductService implements IProductService {
             .get<ListResponseDto<ProductDto>, AxiosResponse<Response<ListResponseDto<ProductDto>>>>('/products/reports/low-stock', { params });
     }
 
-    addStock(id: number | string, quantity: number, reason?: string): Promise<AxiosResponse<Response<ProductDto>>> {
+    addStock(id: number | string, model: AddStockModel): Promise<AxiosResponse<Response<ProductDto>>> {
         return this.httpService
             .call()
-            .patch<ProductDto, AxiosResponse<Response<ProductDto>>>(`/products/${id}/stock`, { quantity, reason });
+            .patch<ProductDto, AxiosResponse<Response<ProductDto>>>(`/products/${id}/stock`, model);
     }
 
     getStockHistory(id: number | string, params?: { page?: number, recordPerPage?: number }): Promise<AxiosResponse<Response<ListResponseDto<any>>>> {

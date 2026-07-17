@@ -42,4 +42,6 @@ export interface ProductWithPriceResponseDto extends ProductResponseDto {
   brandName: string | null;
   attribute: string | null;
   currentPrice: CurrentPriceDto | null;
+  // Current on-hand stock: the sum of all stockHistory quantity movements.
+  stock: number;
 }

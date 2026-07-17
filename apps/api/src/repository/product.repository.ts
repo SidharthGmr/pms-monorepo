@@ -75,7 +75,8 @@ export class ProductRepository implements IProductRepository {
 
     // Resolve related names + the current price in batched queries (no `include`).
     // "Current" price = the latest price effective as of now (by effectiveFrom).
-    const [categories, brands, attributes, effectivePrices] = await Promise.all([
+    // Current stock = the sum of all stockHistory quantity movements per product.
+    const [categories, brands, attributes, effectivePrices, stockSums] = await Promise.all([
       categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }) : [],
       brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
       attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
@@ -86,11 +87,19 @@ export class ProductRepository implements IProductRepository {
           select: { productId: true, sellingPrice: true, costPrice: true },
         })
         : [],
+      productIds.length
+        ? prisma.stockHistory.groupBy({
+          by: ['productId'],
+          where: { productId: { in: productIds } },
+          _sum: { quantity: true },
+        })
+        : [],
     ]);
 
     const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
     const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]));
     const attributeNames = new Map(attributes.map((attribute) => [attribute.id, attribute.name]));
+    const stockByProduct = new Map(stockSums.map((row) => [row.productId, row._sum.quantity ?? 0]));
 
     // Prices are latest-first, so the first row seen per product is its current price.
     // Expose only sellingPrice + costPrice.
@@ -111,6 +120,7 @@ export class ProductRepository implements IProductRepository {
         brandName: brandNameId != null ? brandNames.get(brandNameId) ?? null : null,
         attribute: attributeId != null ? attributeNames.get(attributeId) ?? null : null,
         currentPrice: currentPriceByProduct.get(product.id) ?? null,
+        stock: stockByProduct.get(product.id) ?? 0,
       };
     });
 
@@ -123,5 +133,36 @@ export class ProductRepository implements IProductRepository {
 
   async delete(id: number): Promise<ProductResponseDto> {
     return prisma.product.update({ where: { id }, data: { status: Status.Trash } });
+  }
+
+  async createStockHistory(
+    data: { productId: number; storeCode: string; userId: string; quantity: number; reason?: string | null },
+    tx: Prisma.TransactionClient = prisma
+  ): Promise<void> {
+    await tx.stockHistory.create({
+      data: {
+        productId: data.productId,
+        storeCode: data.storeCode,
+        userId: data.userId,
+        quantity: data.quantity,
+        reason: data.reason ?? null,
+      },
+    });
+  }
+
+  async getStockHistory(productId: number, page = 1, limit = 10): Promise<ListResponseDto<any>> {
+    const skip = (page - 1) * limit;
+    const where = { productId };
+    const [data, total] = await Promise.all([
+      prisma.stockHistory.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: { user: { select: { userId: true, name: true } } },
+      }),
+      prisma.stockHistory.count({ where }),
+    ]);
+    return { totalRecord: total, data };
   }
 }

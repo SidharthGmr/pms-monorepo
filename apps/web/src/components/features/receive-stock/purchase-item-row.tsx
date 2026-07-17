@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ReceiveStockFormValues } from '@/schema/receiveStockSchema';
 import { Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
-import { Control } from 'react-hook-form';
+import { Control, useWatch } from 'react-hook-form';
 
 interface PurchaseItemRowProps {
   control: Control<ReceiveStockFormValues>;
@@ -25,11 +25,16 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
     }));
   }, [products]);
 
-  return (
-    <div className="flex flex-col sm:flex-row items-start gap-4 p-4 bg-white shadow-lg hover:shadow-md hover:border-slate-300 transition-all duration-200 relative group">
+  // Live per-line subtotal (quantity × unit cost).
+  const quantity = useWatch({ control, name: `items.${index}.quantity` });
+  const unitCost = useWatch({ control, name: `items.${index}.unitCost` });
+  const lineTotal = Number(quantity) > 0 && Number(unitCost) >= 0 ? Number(quantity) * Number(unitCost) : 0;
 
-      {/* Decorative Index Badge */}
-      <div className="hidden sm:flex absolute -left-0 -top-0 w-4 h-4 bg-slate-800 text-white rounded-full items-center justify-center text-xs font-bold shadow-sm">
+  return (
+    <div className="relative flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 pl-6 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:flex-row sm:items-start">
+
+      {/* Index Badge */}
+      <div className="absolute left-2 top-4 hidden h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white shadow-sm sm:flex">
         {index + 1}
       </div>
 
@@ -56,18 +61,19 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
         />
       </div>
 
-      <div className="w-full sm:w-28">
+      <div className="w-full sm:w-24">
         <FormField
           control={control}
           name={`items.${index}.quantity`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel >Quantity</FormLabel>
+              <FormLabel>Quantity</FormLabel>
               <FormControl>
                 <Input
                   type="text"
-                  className=""
+                  className="h-11"
                   {...field}
+                  value={field.value ?? ''}
                   onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                   placeholder="0"
                 />
@@ -78,21 +84,25 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
         />
       </div>
 
-      <div className="w-full sm:w-32">
+      <div className="w-full sm:w-28">
         <FormField
           control={control}
           name={`items.${index}.unitCost`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel >Unit Cost ($)</FormLabel>
+              <FormLabel>Unit Cost</FormLabel>
               <FormControl>
-                <Input
-                  type="text"
-                  className=""
-                  {...field}
-                  onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                  placeholder="0.00"
-                />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
+                  <Input
+                    type="text"
+                    className="h-11 pl-6"
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                    placeholder="0.00"
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,17 +110,23 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
         />
       </div>
 
-      <div className="w-full sm:w-auto flex justify-end pt-6">
+      {/* Line total */}
+      <div className="w-full sm:w-24">
+        <FormLabel className="text-slate-400">Subtotal</FormLabel>
+        <div className="flex h-11 items-center font-semibold text-slate-800">${lineTotal.toFixed(2)}</div>
+      </div>
+
+      <div className="flex w-full justify-end pt-0 sm:w-auto sm:pt-6">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className={`h-11 w-11 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors ${!canRemove && 'opacity-30 cursor-not-allowed hover:bg-transparent hover:text-slate-400'}`}
+          className={`h-11 w-11 rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 ${!canRemove && 'cursor-not-allowed opacity-30 hover:bg-transparent hover:text-slate-400'}`}
           onClick={() => canRemove && onRemove(index)}
           disabled={!canRemove}
           title="Remove Item"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="h-5 w-5" />
         </Button>
       </div>
     </div>

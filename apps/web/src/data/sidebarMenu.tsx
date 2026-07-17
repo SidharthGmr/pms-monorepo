@@ -1,17 +1,5 @@
 import { Roles } from '@/enums/roles.enum';
-import {
-  FolderTree,
-  LayoutDashboard,
-  List,
-  Package,
-  Receipt,
-  ShoppingBag,
-  Sliders,
-  Store,
-  Tags,
-  User,
-  Users
-} from 'lucide-react';
+import { FolderTree, LayoutDashboard, List, Package, Receipt, ShoppingBag, Sliders, Store, Tags, User, Users } from 'lucide-react';
 
 export interface SideBarMenuDto {
   id: string;
@@ -62,10 +50,10 @@ export const SideBarMenu: SideBarMenuDto[] = [
     role: [Roles.ADMIN],
   },
   {
-    id: "addproducts",
-    title: "Add Products",
+    id: 'addproducts',
+    title: 'Add Products',
     icon: User,
-    url: "",
+    url: '',
     role: [Roles.ADMIN],
     isActive: true,
     submenu: [
@@ -76,7 +64,8 @@ export const SideBarMenu: SideBarMenuDto[] = [
         url: '/admin/brand-names/',
         role: [Roles.ADMIN],
         isActive: false,
-      }, {
+      },
+      {
         id: 'attributes',
         title: 'Attributes',
         icon: Sliders,
@@ -111,11 +100,8 @@ export const SideBarMenu: SideBarMenuDto[] = [
         role: [Roles.ADMIN],
         isActive: false,
       },
-    ]
+    ],
   },
-
-
-
 
   {
     id: 'orders',
@@ -150,21 +136,32 @@ export const SideBarMenu: SideBarMenuDto[] = [
     isActive: false,
   },
   {
-    id: 'add-stock',
-    title: 'Add Stock',
+    id: 'stock',
+    title: 'Stock',
     icon: Receipt,
-    url: '/admin/receive-stock/',
+    url: '',
     role: [Roles.ADMIN],
-    isActive: false,
+    isActive: true,
+    submenu: [
+      {
+        id: 'add-stock',
+        title: 'Add Stock',
+        icon: User,
+        url: '/admin/stock-purchase/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'purchases-history',
+        title: 'Purchase History',
+        icon: List,
+        url: '/admin/stock-purchase/history',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+    ],
   },
-  {
-    id: 'purchases-history',
-    title: 'Purchase History',
-    icon: List,
-    url: '/admin/purchases/',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
+
   {
     id: 'staff',
     title: 'Staff',

@@ -388,4 +388,93 @@ productRouter.put('/:id', authenticateToken, validate(updateProductSchema), asyn
  */
 productRouter.delete('/:id', authenticateToken, asyncHandler(productController.delete));
 
+/**
+ * @swagger
+ * /products/{id}/stock:
+ *   patch:
+ *     summary: Add stock (and optionally update price) for a product
+ *     tags: [Product]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quantity
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *                 minimum: 1
+ *                 example: 10
+ *               reason:
+ *                 type: string
+ *                 example: Restock from supplier
+ *               sellingPrice:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 199.99
+ *               costPrice:
+ *                 type: number
+ *                 minimum: 0
+ *                 nullable: true
+ *                 example: 150.00
+ *     responses:
+ *       200:
+ *         description: Stock added successfully
+ *       404:
+ *         description: Product not found
+ */
+productRouter.patch('/:id/stock', authenticateToken, validate(addStockSchema), asyncHandler(productController.addStock));
+
+/**
+ * @swagger
+ * /products/{id}/stock-history:
+ *   get:
+ *     summary: Get paginated stock movement history for a product
+ *     tags: [Product]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Stock history fetched successfully
+ *       404:
+ *         description: Product not found
+ */
+productRouter.get('/:id/stock-history', authenticateToken, asyncHandler(productController.getStockHistory));
+
 export default productRouter;

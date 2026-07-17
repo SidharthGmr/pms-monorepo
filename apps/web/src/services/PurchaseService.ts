@@ -12,8 +12,8 @@ import { ListResponseDto } from '@/dtos/list-response.dto';
 export interface CreatePurchaseItemModel {
   productId: number;
   quantity: number;
-  unitCost: number;
-  totalCost: number;
+  costPrice: number;
+  totalPrice: number;
 }
 
 export interface CreatePurchaseModel {
