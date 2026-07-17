@@ -1,7 +1,8 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import LoginModel from '@/models/LoginModel';
-import { CreateUserModel, UpdateUserModel } from '@/models/user.model';
+import { CreateUserModel } from '@/models/user.model';
+import { UpdateProfileModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
@@ -96,7 +97,7 @@ const useCreateUser = () => {
 const useUpdateProfile = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
-  const mutationFn = async (model: UpdateUserModel) => {
+  const mutationFn = async (model: UpdateProfileModel) => {
     return await unitOfService.AccountService.updateProfile(model);
   };
 

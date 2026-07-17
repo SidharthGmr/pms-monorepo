@@ -1,7 +1,8 @@
-import UserProfileModel from '@/models/UserProfileModel';
+
+import { UpdateProfileModel } from '@pms/types';
 import * as Yup from 'yup';
 
-const UserProfileSchema: Yup.ObjectSchema<UserProfileModel> = Yup.object().shape({
+const UserProfileSchema: Yup.ObjectSchema<UpdateProfileModel> = Yup.object().shape({
   firstName: Yup.string()
     .required('First name is required')
     .min(5, 'Minimum 5 chars required')

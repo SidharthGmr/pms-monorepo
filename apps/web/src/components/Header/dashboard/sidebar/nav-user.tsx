@@ -51,7 +51,7 @@ export function NavUser() {
               <DropdownMenuGroup>
                 {currentUserRole !== Roles.USER && (
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/account/edit-profile">
+                    <Link href="/admin/profile">
                       <FaRegUser /> My Profile
                     </Link>
                   </DropdownMenuItem>
