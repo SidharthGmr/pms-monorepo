@@ -9,12 +9,16 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { OrderStatus } from '@/enums/order-status.enum';
+import { Roles } from '@/enums/roles.enum';
 import { useCreateOrder, useGetOrderById, useUpdateOrder } from '@/hooks/service-hooks/useOrderService';
+import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
+import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { CreateOrderModel } from '@/models/order.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 
 interface ManageOrderProps {
@@ -24,18 +28,24 @@ interface ManageOrderProps {
 }
 
 const OrderSchema = Yup.object({
-  customerId: Yup.string().required('Customer ID is required'),
-  discount: Yup.number().required().default(0),
-  tax: Yup.number().required().default(0),
-  shippingCost: Yup.number().required().default(0),
-
-  status: Yup.mixed<OrderStatus>()
-    .oneOf(Object.values(OrderStatus))
-    .required(),
-
+  customerId: Yup.string().required('Customer is required'),
+  discount: Yup.number().typeError('Enter a number').min(0).required().default(0),
+  tax: Yup.number().typeError('Enter a number').min(0).required().default(0),
+  shippingCost: Yup.number().typeError('Enter a number').min(0).required().default(0),
+  status: Yup.mixed<OrderStatus>().oneOf(Object.values(OrderStatus)).required(),
   notes: Yup.string().optional(),
+  items: Yup.array()
+    .of(
+      Yup.object({
+        productId: Yup.number().typeError('Product is required').required('Product is required'),
+        quantity: Yup.number().typeError('Quantity is required').min(1, 'Quantity must be at least 1').required('Quantity is required'),
+      })
+    )
+    .min(1, 'Add at least one product')
+    .required(),
 });
 
+type OrderFormValues = Yup.InferType<typeof OrderSchema>;
 
 export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
   const isEdit = !!id && id > 0;
@@ -44,7 +54,27 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
   const updateOrder = useUpdateOrder();
   const { data: orderResponse, isLoading: isFetching } = useGetOrderById(id ?? 0, isEdit);
 
-  const form = useForm<CreateOrderModel>({
+  // Customers (users with the USER role) and products for the dropdowns.
+  const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
+  const customerOptions = useMemo(
+    () =>
+      (customersResponse?.data?.data?.data || [])
+        .map((c) => {
+          // API returns the GUID under `userId`; the DTO mislabels it `usersId`.
+          const cid = ((c as any).userId ?? (c as any).usersId ?? '') as string;
+          return { label: c.email ? `${c.name} (${c.email})` : c.name, value: cid };
+        })
+        .filter((o) => o.value),
+    [customersResponse]
+  );
+
+  const { data: productsResponse } = useGetAllProducts();
+  const productOptions = useMemo(
+    () => (productsResponse?.data?.data?.data || []).map((p) => ({ label: p.name, value: p.id })),
+    [productsResponse]
+  );
+
+  const form = useForm<OrderFormValues>({
     resolver: yupResolver(OrderSchema),
     defaultValues: {
       customerId: '',
@@ -53,10 +83,12 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
       shippingCost: 0,
       status: OrderStatus.Pending,
       notes: '',
+      items: [{ productId: undefined as any, quantity: 1 }],
     },
   });
 
-  const { handleSubmit, reset, setValue } = form;
+  const { control, handleSubmit, reset } = form;
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
   useEffect(() => {
     if (isEdit && orderResponse?.data?.data) {
@@ -68,18 +100,26 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
         shippingCost: order.shippingCost,
         status: order.status,
         notes: order.notes ?? '',
+        items:
+          order.items && order.items.length > 0
+            ? order.items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+            : [{ productId: undefined as any, quantity: 1 }],
       });
     }
   }, [isEdit, orderResponse, reset]);
 
-  const submitData = async (model: CreateOrderModel) => {
-    let response;
+  const submitData = async (model: OrderFormValues) => {
+    const payload: CreateOrderModel = {
+      customerId: model.customerId,
+      discount: model.discount,
+      tax: model.tax,
+      shippingCost: model.shippingCost,
+      status: model.status,
+      notes: model.notes,
+      items: (model.items ?? []).map((it) => ({ productId: Number(it.productId), quantity: Number(it.quantity) })),
+    };
 
-    if (isEdit) {
-      response = await updateOrder.mutateAsync({ id: id!, model });
-    } else {
-      response = await createOrder.mutateAsync(model);
-    }
+    const response = isEdit ? await updateOrder.mutateAsync({ id: id!, model: payload }) : await createOrder.mutateAsync(payload);
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: `Order ${isEdit ? 'updated' : 'created'} successfully` });
@@ -102,13 +142,21 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
         <Form {...form}>
           <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
-              control={form.control}
+              control={control}
               name="customerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer ID *</FormLabel>
+                  <FormLabel>Customer *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Customer ID" {...field} />
+                    <SelectSearch
+                      buttonClass="w-full"
+                      placeholder="Select a customer"
+                      items={customerOptions}
+                      value={field.value ?? ''}
+                      valueType="string"
+                      containerName="order-customer"
+                      onChange={(value) => field.onChange(value ? String(value) : '')}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,49 +164,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
             />
 
             <FormField
-              control={form.control}
-              name="discount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Discount</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="tax"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tax</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="shippingCost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Shipping Cost</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
+              control={control}
               name="status"
               render={({ field }) => (
                 <FormItem>
@@ -168,14 +174,13 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                       buttonClass="w-full"
                       placeholder="Select Status"
                       disableSearch={true}
-                      items={[
-                        { label: 'Pending', value: 'Pending' },
-                        { label: 'Processing', value: 'Processing' },
-                        { label: 'Completed', value: 'Completed' },
-                        { label: 'Cancelled', value: 'Cancelled' },
-                        { label: 'Failed', value: 'Failed' },
-                      ]}
+                      items={Object.values(OrderStatus).map((s) => ({
+                        label: s.charAt(0) + s.slice(1).toLowerCase(),
+                        value: s,
+                      }))}
                       value={field.value ?? ''}
+                      valueType="string"
+                      containerName="order-status"
                       onChange={(value) => field.onChange(value)}
                     />
                   </FormControl>
@@ -184,15 +189,136 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
               )}
             />
 
+            {/* Products + quantity */}
+            <div className="md:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <FormLabel>Products *</FormLabel>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  icon={Plus}
+                  iconPlacement="left"
+                  className="h-auto p-0 text-xs font-medium"
+                  onClick={() => append({ productId: undefined as any, quantity: 1 })}
+                >
+                  Add Product
+                </Button>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+                {fields.map((f, index) => (
+                  <div key={f.id} className="flex items-start gap-2">
+                    <div className="flex-1">
+                      <FormField
+                        control={control}
+                        name={`items.${index}.productId`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <SelectSearch
+                                buttonClass="w-full h-10 font-normal"
+                                placeholder="Select a product"
+                                items={productOptions}
+                                value={field.value ?? ''}
+                                valueType="number"
+                                containerName={`order-product-${index}`}
+                                onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <FormField
+                        control={control}
+                        name={`items.${index}.quantity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                className="h-10"
+                                placeholder="Qty"
+                                value={field.value ?? ''}
+                                onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className={`h-10 w-10 shrink-0 text-slate-400 hover:text-red-500 ${fields.length <= 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                      onClick={() => fields.length > 1 && remove(index)}
+                      disabled={fields.length <= 1}
+                      title="Remove product"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <FormField
+              control={control}
+              name="discount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Discount</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="tax"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tax</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="shippingCost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Shipping Cost</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="md:col-span-2">
               <FormField
-                control={form.control}
+                control={control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Notes</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Order notes" {...field} />
+                      <Textarea placeholder="Order notes" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
