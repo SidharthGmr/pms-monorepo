@@ -34,7 +34,7 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(({ classN
   <h2
     ref={ref}
     className={cn(
-      'text-xl font-medium leading-none tracking-tight text-foreground',
+      'text-xl   font-bold tracking-tight text-foreground',
       {
         'text-md': variant === 'sm',
         'text-xl': variant === 'md',

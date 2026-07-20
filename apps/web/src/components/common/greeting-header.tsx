@@ -29,7 +29,10 @@ export default function GreetingHeader() {
           <CardDescription className="text-muted-foreground text-xs">
             Welcome back! Here's a quick overview of what's happening with your store today.
           </CardDescription>
-          <small> {currentUser?.role} |  {currentUser?.storeCode}</small>
+          <small>
+            {' '}
+            {currentUser?.role} | {currentUser?.storeCode}
+          </small>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -37,15 +40,11 @@ export default function GreetingHeader() {
             <Activity className="h-3 w-3 mr-1" />
             Live
           </Badge>
-          <Button icon={FaUser} variant="default" size="sm" effect={'expandIcon'} asChild >
-            <Link href="/admin/settings/profile">
-              Edit Profile
-            </Link>
+          <Button icon={FaUser} variant="default" size="sm" effect={'expandIcon'} asChild>
+            <Link href="/admin/profile">Edit Profile</Link>
           </Button>
           <Button variant={'secondary'} iconPlacement="right" icon={Plus} size="sm" effect={'expandIcon'} asChild>
-            <Link href="admin/purchase">
-              Create Order
-            </Link>
+            <Link href="/admin/purchase">Create Order</Link>
           </Button>
         </div>
       </div>

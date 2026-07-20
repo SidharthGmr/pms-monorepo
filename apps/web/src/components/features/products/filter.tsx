@@ -20,6 +20,8 @@ interface ProductListFilterProps<TData> {
   resetForm?: () => void;
   onStartDateChanged?: (date: Date | undefined) => void;
   onEndDateChanged?: (date: Date | undefined) => void;
+  showStatus?: boolean;
+  showDateRange?: boolean;
 }
 
 export default function ProductListFilter<TData>({
@@ -30,6 +32,8 @@ export default function ProductListFilter<TData>({
   resetForm,
   onStartDateChanged,
   onEndDateChanged,
+  showStatus = true,
+  showDateRange = true,
 }: ProductListFilterProps<TData>) {
   const [searchedText, setSearchedText] = useState('');
   const [searchedValue] = useDebounce(searchedText, 1000);
@@ -115,10 +119,14 @@ export default function ProductListFilter<TData>({
         buttonClass=""
         disableSearch={true}
       />
-      <div className="overflo w-hidden">
-        <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
-      </div>
-      <SelectSearch value={status} placeholder="Filter by status" items={statusDatas} onChange={onStatusValueChange} buttonClass="" disableSearch />
+      {showDateRange && (
+        <div className="overflo w-hidden">
+          <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
+        </div>
+      )}
+      {showStatus && (
+        <SelectSearch value={status} placeholder="Filter by status" items={statusDatas} onChange={onStatusValueChange} buttonClass="" disableSearch />
+      )}
 
       <div className="place-content-center">
         {isFiltered && (
