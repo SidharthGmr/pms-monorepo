@@ -6,7 +6,7 @@ import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { UserListParams } from '@/params/user-list.params';
+
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import RecentPostSkeleton from '../../skelton/recent-post';
@@ -15,6 +15,7 @@ import { DataTablePagination } from '../../Table/data-table-pagination';
 import { useUserColumns } from './columns';
 import EditUserProfile from './edit-profile';
 import UserListListFilter from './filter';
+import { UserListParams } from '@pms/types';
 
 export default function GetAllUserss({ role }: { role?: string }) {
   const [data, setData] = useState<UserDto[]>([]);
@@ -27,7 +28,7 @@ export default function GetAllUserss({ role }: { role?: string }) {
     status: searchParams.get('status') || '',
     role: searchParams.get('role') || role,
     page: +(searchParams.get('page') || 1),
-    q: searchParams.get('q') || '',
+    search: searchParams.get('search') || '',
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     sortBy: searchParams.get('sortBy') || 'createdon',
     sortDirection: searchParams.get('sortDirection') || 'desc',
@@ -88,7 +89,7 @@ export default function GetAllUserss({ role }: { role?: string }) {
         status: searchParams.get('status') || '',
         role: searchParams.get('role') || role,
         page: +(searchParams.get('page') || 1),
-        q: searchParams.get('q') || '',
+        search: searchParams.get('search') || '',
         recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
         sortBy: searchParams.get('sortBy') || 'createdon',
         sortDirection: searchParams.get('sortDirection') || 'desc',
@@ -115,7 +116,6 @@ export default function GetAllUserss({ role }: { role?: string }) {
   return (
     <>
       <div className="space-y-4">
-
         <UserListListFilter
           table={table}
           resetForm={resetForm}

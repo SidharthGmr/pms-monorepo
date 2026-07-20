@@ -1,4 +1,4 @@
-import { sendEmail } from "./nodemailer";
+import { sendEmail } from "./brevo.mailer";
 import { injectable } from "inversify";
 
 export interface SendEmailParams {

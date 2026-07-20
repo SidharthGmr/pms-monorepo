@@ -7,8 +7,8 @@ import IEmailService from './interfaces/IEmailService';
 import Response from '@/dtos/Response';
 import { EmailModel } from '@/models/email.model';
 import { sendEmailDto } from '@/dtos/newsletter.dto';
-import { UserListParams } from '@/params/user-list.params';
 import { ListResponseDto } from '@/dtos/list-response.dto';
+import { UserListParams } from '@pms/types';
 
 @injectable()
 export default class EmailService implements IEmailService {
@@ -26,17 +26,17 @@ export default class EmailService implements IEmailService {
       .post<sendEmailDto, AxiosResponse<Response<sendEmailDto>>>('/email', model);
   }
 
-    getAll(p?: UserListParams): Promise<AxiosResponse<Response<ListResponseDto<sendEmailDto>>>> {
-      return this.httpService.call().get<ListResponseDto<sendEmailDto>, AxiosResponse<Response<ListResponseDto<sendEmailDto>>>>(`/email`, { params: p });
-    }
+  getAll(p?: UserListParams): Promise<AxiosResponse<Response<ListResponseDto<sendEmailDto>>>> {
+    return this.httpService.call().get<ListResponseDto<sendEmailDto>, AxiosResponse<Response<ListResponseDto<sendEmailDto>>>>(`/email`, { params: p });
+  }
 
-   getById(id: number): Promise<AxiosResponse<Response<sendEmailDto>>> {
-      return this.httpService.call().get<sendEmailDto, AxiosResponse<Response<sendEmailDto>>>(`/email/${id}`);
-    }
-   
-    delete(id: number): Promise<AxiosResponse<Response<sendEmailDto>>> {
-      return this.httpService.call().delete<sendEmailDto, AxiosResponse<Response<sendEmailDto>>>(`/email/${id}`);
-    }
+  getById(id: number): Promise<AxiosResponse<Response<sendEmailDto>>> {
+    return this.httpService.call().get<sendEmailDto, AxiosResponse<Response<sendEmailDto>>>(`/email/${id}`);
+  }
+
+  delete(id: number): Promise<AxiosResponse<Response<sendEmailDto>>> {
+    return this.httpService.call().delete<sendEmailDto, AxiosResponse<Response<sendEmailDto>>>(`/email/${id}`);
+  }
 
 
 }

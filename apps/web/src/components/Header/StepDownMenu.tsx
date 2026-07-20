@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { FaAngleRight, FaChevronDown } from 'react-icons/fa';
 import HeaderTopBar from './HeaderTopBar';
-import { SideBarMenu, SideBarMenuDto } from './dashboard/sidebar/sidebarMenu';
+import { SideBarMenu, SideBarMenuDto } from '@/data/sidebarMenu';
 
 const StepDownMenu: React.FC = () => {
   const [scroll, setScroll] = useState(false);

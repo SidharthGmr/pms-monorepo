@@ -1,7 +1,5 @@
-// import { sendEmail } from "../nodemailer";
+import { sendEmail } from "../brevo.mailer";
 import { renderTemplate } from "../templateRenderer";
-import { emailTransporter } from "../../utils/brevo-transporter";  // add
-
 
 interface SendEmailOptions {
   userId?: string;
@@ -12,6 +10,8 @@ interface SendEmailOptions {
   templateData?: Record<string, any>;
 }
 
+// Sends via Brevo's SMTP relay (see ../nodemailer). Returns null on failure so callers
+// (e.g. auth flows) are never blocked by a mail error — check server logs for details.
 export const dispatchEmailAsync = async ({ userId, to, subject, html, templateName, templateData }: SendEmailOptions): Promise<any> => {
   try {
     let finalHtml = html;
@@ -22,13 +22,8 @@ export const dispatchEmailAsync = async ({ userId, to, subject, html, templateNa
     if (!finalHtml) {
       throw new Error("Email HTML content is missing");
     }
-    //const emailResponse = await emailTransporter(to, subject, finalHtml);
-    const emailResponse = await emailTransporter.sendEmail({
-      to: [{ email: to }],
-      sender: { email: process.env.BREVO_SENDER_EMAIL!, name: process.env.BREVO_SENDER_NAME || 'PMS' },
-      subject,
-      htmlContent: finalHtml,
-    });
+
+    const emailResponse = await sendEmail(to, subject, finalHtml);
     return emailResponse;
   } catch (error) {
     console.error("EMAIL DISPATCH FAILED:", error);

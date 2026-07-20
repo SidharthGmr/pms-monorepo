@@ -2,8 +2,8 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import ResetPasswordModel from '@/models/ResetPasswordModel';
 import { CreateUserModel } from '@/models/user.model';
-import { UserListParams } from '@/params/user-list.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { UserListParams } from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 

@@ -5,7 +5,7 @@ import { UserDto } from '@/dtos/UserDto';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import ResetPasswordModel from '@/models/ResetPasswordModel';
 import { CreateUserModel } from '@/models/user.model';
-import { UserListParams } from '@/params/user-list.params';
+import { UserListParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IUserListService {

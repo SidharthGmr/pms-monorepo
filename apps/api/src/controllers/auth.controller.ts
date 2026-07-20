@@ -97,11 +97,34 @@ export class AccountController {
     //   false
     // );
 
+
     dispatchEmailAsync({
       userId: newUser.userId,
       to: newUser.email,
-      subject: "Welcome 🎉",
-      html: "0654"
+      subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME} 🎉`,
+      templateName: 'welcome',
+      templateData: {
+        Name: newUser.name || newUser.userName || 'there',
+        PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
+        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
+        SupportEmail: process.env.BREVO_SENDER_EMAIL,
+        WebsiteUrl: process.env.WEB_APP_URL,
+        Year: String(new Date().getFullYear()),
+      },
+    });
+
+    dispatchEmailAsync({
+      to: newUser.email,
+      subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
+      templateName: 'otp',
+      templateData: {
+        FirstName: newUser.name || newUser.userName || 'there',
+        PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
+        OTP_CODE: newUser.emailVerificationToken,
+        OtpExpiryMinutes: newUser.emailVerificationExpires,
+        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
+        Year: String(new Date().getFullYear()),
+      },
     });
 
 
@@ -135,7 +158,6 @@ export class AccountController {
     };
     return res.status(201).json(response);
   };
-
 
   logout = async (req: Request, res: Response): Promise<Response<CustomResponse<null>>> => {
     const userId = req.user?.userId;
@@ -246,9 +268,21 @@ export class AccountController {
     }
 
     const user = await this.unitOfService.Account.sendVerificationOtp(userByEmail.userId);
-    if (!user) {
-      throw new CustomError('User not found', 404);
-    }
+
+    dispatchEmailAsync({
+      to: user.email,
+      subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
+      templateName: 'otp',
+      templateData: {
+        FirstName: user.name || user.userName || 'there',
+        PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
+        OTP_CODE: user.emailVerificationToken,
+        OtpExpiryMinutes: user.emailVerificationExpires,
+        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
+        Year: String(new Date().getFullYear()),
+      },
+    });
+
 
     const response: CustomResponse<UserDto> = {
       success: true,

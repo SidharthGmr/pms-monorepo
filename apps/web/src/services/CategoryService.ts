@@ -8,7 +8,7 @@ import { CategoryDto } from '@/dtos/category.dto';
 import { CreateCategoryModel, UpdateCategoryModel } from '@/models/category.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import Response from '@/dtos/Response';
-import { CategoryFilterParams } from '@/params/category.params';
+import { CategoryFilterParams } from '@pms/types';
 
 @injectable()
 export default class CategoryService implements ICategoryService {

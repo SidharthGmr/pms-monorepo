@@ -8,7 +8,6 @@ import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { UserListParams } from '@/params/user-list.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -18,6 +17,7 @@ import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { useUserColumns } from './columns';
 import UserListFilter from './filter';
+import { UserListParams } from '@pms/types';
 
 export default function UserList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
