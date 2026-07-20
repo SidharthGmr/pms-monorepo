@@ -19,7 +19,7 @@ export interface PageHeaderProps {
   buttonVariant?: string;
 }
 
-export function PageHeader({ title, description, variant = 'add', actionText, href, onClick, icon, buttonVariant = 'outline' }: PageHeaderProps) {
+export function PageHeader({ title, description, variant = 'add', actionText, href, onClick, icon, buttonVariant = 'default' }: PageHeaderProps) {
   const router = useRouter();
   const [canShowAction, setCanShowAction] = useState(true);
 
