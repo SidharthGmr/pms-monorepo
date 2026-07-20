@@ -63,6 +63,36 @@ export class ProductController {
     });
   };
 
+  /**
+   * Public catalog endpoint — no authentication required.
+   * Only ever returns Published products and never exposes drafts/trash.
+   * Store scoping is optional via the `storeCode` query param.
+   */
+  getAllPublic = async (
+    req: Request,
+    res: Response
+  ): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
+    const filters: ProductFilterParams = Object.fromEntries(
+      Object.entries({
+        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
+        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
+        search: req.query['search'] as string | undefined,
+        categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
+        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
+        storeCode: req.query['storeCode'] as string | undefined,
+        showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        // Public visitors must only ever see published products.
+        status: Status.Published,
+      }).filter(([, v]) => v !== undefined)
+    );
+    const result = await this.unitOfService.Product.getAll(filters);
+    return res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      data: { totalRecord: result.totalRecord, data: result.data },
+    });
+  };
+
   getById = async (
     req: Request,
     res: Response

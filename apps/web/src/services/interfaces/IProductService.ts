@@ -15,6 +15,7 @@ export interface AddStockModel {
 export default interface IProductService {
     create(model: CreateProductModel): Promise<AxiosResponse<Response<ProductDto>>>;
     getAll(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;
+    getAllPublic(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;
     getById(id: number | string): Promise<AxiosResponse<Response<ProductDto>>>;
     update(id: number | string, model: UpdateProductModel): Promise<AxiosResponse<Response<ProductDto>>>;
     getLowStock(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;

@@ -103,6 +103,38 @@ productRouter.get('/', authenticateToken, asyncHandler(productController.getAll)
 
 /**
  * @swagger
+ * /products/public:
+ *   get:
+ *     summary: Get all published products (public, no authentication)
+ *     tags: [Product]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: storeCode
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: Products fetched successfully
+ */
+// Public catalog — must be declared before `/:id` so it is not captured by the param route.
+productRouter.get('/public', asyncHandler(productController.getAllPublic));
+
+/**
+ * @swagger
  * /products/{id}:
  *   get:
  *     summary: Get product by ID

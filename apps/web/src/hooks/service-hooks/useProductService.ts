@@ -35,6 +35,18 @@ const useGetAllProducts = (params?: ProductFilterParams, enabled: boolean = true
     });
 };
 
+const useGetAllPublicProducts = (params?: ProductFilterParams, enabled: boolean = true) => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    return useQuery({
+        queryKey: ['ProductService.getAllPublic', params],
+        queryFn: async () => {
+            return await unitOfService.ProductService.getAllPublic(params);
+        },
+        enabled,
+    });
+};
+
 const useGetProductById = (id: number | string, enabled: boolean = true) => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -119,6 +131,7 @@ const useGetStockHistory = (id: number | string, params?: { page?: number, recor
 export {
     useCreateProduct,
     useGetAllProducts,
+    useGetAllPublicProducts,
     useGetProductById,
     useUpdateProduct,
     useGetLowStockProducts,

@@ -32,6 +32,13 @@ export default class ProductService implements IProductService {
             .get<ListResponseDto<ProductDto>, AxiosResponse<Response<ListResponseDto<ProductDto>>>>('/products', { params });
     }
 
+    // Public catalog endpoint — no authentication needed (only returns published products).
+    getAllPublic(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>> {
+        return this.httpService
+            .call()
+            .get<ListResponseDto<ProductDto>, AxiosResponse<Response<ListResponseDto<ProductDto>>>>('/products/public', { params });
+    }
+
     getById(id: number | string): Promise<AxiosResponse<Response<ProductDto>>> {
         return this.httpService
             .call()
