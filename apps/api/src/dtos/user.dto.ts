@@ -66,5 +66,9 @@ export interface UpdateOtpDto {
   emailVerificationToken?: string | null;
   emailVerificationExpires?: Date | null;
 }
+export interface OtpDto {
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
+}
 
 // export interface UpdateUserDto extends Partial<CreateUserDto> {}

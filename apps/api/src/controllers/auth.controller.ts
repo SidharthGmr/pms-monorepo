@@ -92,12 +92,6 @@ export class AccountController {
       throw new CustomError('User creation failed', 400);
     }
 
-    // const emailUser = await this.unitOfService.User.getByEmail(
-    //   data.email,
-    //   false
-    // );
-
-
     dispatchEmailAsync({
       userId: newUser.userId,
       to: newUser.email,
@@ -113,15 +107,19 @@ export class AccountController {
       },
     });
 
+    const otpUser = await this.unitOfService.User.getUserOtp(newUser.userId);
+    if (!otpUser) {
+      throw new CustomError('Failed to fetch details', 400);
+    }
     dispatchEmailAsync({
-      to: newUser.email,
+      to: otpUser.email,
       subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
       templateName: 'otp',
       templateData: {
-        FirstName: newUser.name || newUser.userName || 'there',
+        FirstName: otpUser.name || otpUser.userName || 'there',
         PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
-        OTP_CODE: newUser.emailVerificationToken,
-        OtpExpiryMinutes: newUser.emailVerificationExpires,
+        OTP_CODE: otpUser.emailVerificationToken,
+        OtpExpiryMinutes: otpUser.emailVerificationExpires,
         LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
         Year: String(new Date().getFullYear()),
       },

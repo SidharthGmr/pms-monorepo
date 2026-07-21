@@ -13,4 +13,6 @@ export interface IUserService {
   updateRole(userId: string, role: Role): Promise<UserDto | null>;
   updateUserByIdentifier(identifier: { email?: string; userId?: string; phone?: string }, data: { role?: Role; status?: Status }): Promise<UserDto | null>;
   getBystoreId(storeId: string): Promise<UserDto | null>;
+
+  getUserOtp(userId: string): Promise<UserDto | null>;
 }

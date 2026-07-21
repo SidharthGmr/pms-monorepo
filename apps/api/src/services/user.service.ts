@@ -113,6 +113,7 @@ export class UserService implements IUserService {
     return result;
   }
 
+
   async getBystoreId(storeId: string): Promise<UserDto | null> {
     const user = await this.unitOfWork.User.getBystoreId(storeId);
     if (!user) {
@@ -121,6 +122,13 @@ export class UserService implements IUserService {
     return user;
   }
 
+  async getUserOtp(userId: string): Promise<UserDto | null> {
+    const user = await this.unitOfWork.User.findById(userId);
+    if (!user) {
+      return null;
+    }
+    return user;
+  }
 
   convertToDto(user: users, includePassword: boolean = false, token: boolean = false, refreshToken: boolean = false,): UserDto {
     return {

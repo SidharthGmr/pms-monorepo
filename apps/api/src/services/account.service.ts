@@ -3,7 +3,7 @@ import { users } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { UserDto } from "../dtos/user.dto";
+import { OtpDto, UserDto } from "../dtos/user.dto";
 import { ResetPasswordModel } from "../models/forgot-password.model";
 import { LoginModel } from "../models/login.model";
 import { CreateUserModel } from "../models/user.model";
@@ -237,34 +237,45 @@ export class AccountService implements IAccountService {
     });
   }
 
-  convertToDto(user: users, includePassword = false, includeToken = false, includeRefreshToken = false, includeVerificationToken = false): UserDto {
+  async getUserOtp(userId: string): Promise<UserDto | null> {
+    const user = await this.unitOfWork.User.findByEmail(userId);
+    if (!user) {
+      return null;
+    }
+    return this.convertToDto(user, false, false, false, true);
+  }
+
+  convertToDto(user: UserDto, includePassword = false, includeToken = false, includeRefreshToken = false, includeVerificationToken = false): UserDto {
     return {
       id: user.id,
       userId: user.userId,
       name: user.name,
       userName: user.userName,
       email: user.email,
-      phone: user.phone,
+      phone: user.phone ?? null,
       password: includePassword ? user.password : null,
       role: user.role,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       loginAttempts: user.loginAttempts,
-      lastLoginAt: user.lastLoginAt,
-      lastLoginIP: user.lastLoginIP,
-      emailVerificationToken: includeVerificationToken ? user.emailVerificationToken : null,
-      emailVerificationExpires: includeVerificationToken ? user.emailVerificationExpires : null,
-      profileImageUrl: user.profileImageUrl,
+      lastLoginAt: user.lastLoginAt ?? null,
+      lastLoginIP: user.lastLoginIP ?? null,
+      emailVerificationToken: includeVerificationToken ? user.emailVerificationToken ?? null : null,
+      emailVerificationExpires: includeVerificationToken ? user.emailVerificationExpires ?? null : null,
+      profileImageUrl: user.profileImageUrl ?? null,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      updatedAt: user.updatedAt ?? null,
       status: user.status,
-      token: includeToken ? user.token : null,
+      token: includeToken ? user.token ?? null : null,
       tokenUpdated: user.tokenUpdated,
-      refreshToken: includeRefreshToken ? user.refreshToken : null,
+      refreshToken: includeRefreshToken ? user.refreshToken ?? null : null,
       storeCode: user.storeCode || null,
     };
   }
+
+
+
 }
 
 export default AccountService;
