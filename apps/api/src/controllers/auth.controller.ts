@@ -24,7 +24,7 @@ export class AccountController {
 
   login = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
     const model = req.body as LoginModel;
-    let response: CustomResponse<UserDto>;
+
     if (!model.email || !model.password) {
       throw new CustomError('Email and password are required', 400);
     }
@@ -82,6 +82,7 @@ export class AccountController {
     let response: CustomResponse<UserDto>;
 
     const user = await this.unitOfService.User.getByEmail(data.email);
+
     if (user) {
       throw new CustomError('User already exists', 409);
     }
@@ -92,38 +93,51 @@ export class AccountController {
       throw new CustomError('User creation failed', 400);
     }
 
-    dispatchEmailAsync({
+    const tokenPayload = {
+      id: newUser.id,
       userId: newUser.userId,
-      to: newUser.email,
-      subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME} 🎉`,
-      templateName: 'welcome',
-      templateData: {
-        Name: newUser.name || newUser.userName || 'there',
-        PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
-        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
-        SupportEmail: process.env.BREVO_SENDER_EMAIL,
-        WebsiteUrl: process.env.WEB_APP_URL,
-        Year: String(new Date().getFullYear()),
-      },
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      storeCode: newUser.storeCode || null,
+    };
+
+    const token = jwt.sign(tokenPayload, config.jwt.secret, {
+      expiresIn: config.jwt.accessExpires as any, // was hardcoded "10h"
+      algorithm: 'HS256',
+      audience: config.jwt.audience,
+      issuer: config.jwt.issuer,
     });
 
+
+    const signupTokenUpdted = await this.unitOfService.Account.updateToken(newUser.userId, token);
     const otpUser = await this.unitOfService.User.getUserOtp(newUser.userId);
-    if (!otpUser) {
+
+    if (!signupTokenUpdted || !otpUser) {
       throw new CustomError('Failed to fetch details', 400);
     }
+
     dispatchEmailAsync({
-      to: otpUser.email,
-      subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
-      templateName: 'otp',
-      templateData: {
-        FirstName: otpUser.name || otpUser.userName || 'there',
-        PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
-        OTP_CODE: otpUser.emailVerificationToken,
-        OtpExpiryMinutes: otpUser.emailVerificationExpires,
-        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
-        Year: String(new Date().getFullYear()),
-      },
+      userId: signupTokenUpdted.userId,
+      to: signupTokenUpdted.email,
+      subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME} 🎉`,
+      templateName: 'welcome',
+      html: `${process.env.JWT_ISSUER}/verify-email?token=${token}`
     });
+
+    // dispatchEmailAsync({
+    //   to: otpUser.email,
+    //   subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
+    //   templateName: 'otp',
+    //   templateData: {
+    //     FirstName: otpUser.name || otpUser.userName || 'there',
+    //     PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
+    //     OTP_CODE: otpUser.emailVerificationToken,
+    //     OtpExpiryMinutes: otpUser.emailVerificationExpires,
+    //     LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
+    //     Year: String(new Date().getFullYear()),
+    //   },
+    // });
 
 
     response = {
@@ -352,6 +366,58 @@ export class AccountController {
       message: 'OTP verified successfully',
       data: updatedUser,
     });
+  };
+
+  verifyToken = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
+    const { token } = req.body as { token: string };
+
+    // Validate the token: it must be a valid JWT. The userId is read from its payload.
+    let decoded: jwt.JwtPayload;
+    try {
+      decoded = jwt.verify(token, config.jwt.secret, {
+        algorithms: ['HS256'],
+        audience: config.jwt.audience || undefined,
+        issuer: config.jwt.issuer || undefined,
+      }) as jwt.JwtPayload;
+    } catch {
+      throw new CustomError('Invalid or expired verification token', 401);
+    }
+
+    const userId = decoded.userId as string | undefined;
+    if (!userId) {
+      throw new CustomError('Invalid verification token', 401);
+    }
+    console.log("userId", userId)
+
+    const user = await this.unitOfService.User.getUserById(userId);
+    if (!user) {
+      throw new CustomError('User not found', 404);
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: 'Email already verified',
+        data: user,
+      });
+    }
+
+    // Ensure the token matches the one issued to this user at signup.
+    if (user.token !== token) {
+      throw new CustomError('Invalid verification token', 401);
+    }
+
+    const updatedUser = await this.unitOfService.Account.updateEmailStatus(user.email);
+    if (!updatedUser) {
+      throw new CustomError('Failed to verify email', 500);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Email verified successfully',
+      data: updatedUser,
+    });
+
   };
 
   forgotPassword = async (req: Request, res: Response): Promise<Response<CustomResponse<null>>> => {

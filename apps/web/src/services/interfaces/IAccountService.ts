@@ -3,6 +3,7 @@ import PlainDto from '@/dtos/PlainDto';
 import Response from '@/dtos/Response';
 import { UserDto } from '@/dtos/UserDto';
 import LoginModel from '@/models/LoginModel';
+import VerifyTokenModel from '@/models/VerifyTokenModel';
 import { CreateUserModel } from '@/models/user.model';
 import { UpdateProfileModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
@@ -15,4 +16,5 @@ export default interface IAccountService {
   getRefreshToken(token: string): Promise<AxiosResponse<Response<refreshTokenResponseDto>>>;
   createUser(model: CreateUserModel): Promise<AxiosResponse<Response<LoginDto>>>;
   updateProfile(model: UpdateProfileModel): Promise<AxiosResponse<Response<UserDto>>>;
+  verifyToken(model: VerifyTokenModel): Promise<AxiosResponse<Response<UserDto>>>;
 }

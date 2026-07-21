@@ -7,7 +7,7 @@ import { AccountController } from "../controllers/auth.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import { validate } from "../middleware/validate";
-import { createUserByAdminSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, verifyOtpSchema, verifyOtpByIdSchema, sendOtpSchema } from "../schemas/userSchema";
+import { createUserByAdminSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, verifyOtpSchema, verifyOtpByIdSchema, sendOtpSchema, verifyEmailTokenSchema } from "../schemas/userSchema";
 import { authLimiter } from "../middleware/rateLimiter.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { Role } from "../enum/user.enum";
@@ -327,6 +327,41 @@ accountRouter.post("/otp/send", authLimiter, validate(sendOtpSchema), asyncHandl
  *         description: Server error
  */
 accountRouter.post("/verify-otp", authLimiter, validate(verifyOtpSchema), asyncHandler(accountController.otpVerify));
+
+/**
+ * @swagger
+ * /auth/verify-token:
+ *   post:
+ *     tags: [Account]
+ *     summary: Verify a user's email using the signup token
+*     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token 
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: The token issued to the user at signup 
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       401:
+ *         description: Invalid or expired verification token
+ *       404:
+ *         description: User not found
+ */
+accountRouter.post("/verify-token", authLimiter, validate(verifyEmailTokenSchema), asyncHandler(accountController.verifyToken));
 
 
 /**

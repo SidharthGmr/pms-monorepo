@@ -51,6 +51,12 @@ export const verifyOtpByIdSchema = z.object({
   }),
 });
 
+export const verifyEmailTokenSchema = z.object({
+  body: z.object({
+    token: z.string().min(1, "Token is required."),
+  }),
+});
+
 export const sendOtpSchema = z.object({
   body: z.object({
     email: z.string().email("Invalid email address."),

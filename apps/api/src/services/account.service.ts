@@ -238,7 +238,7 @@ export class AccountService implements IAccountService {
   }
 
   async getUserOtp(userId: string): Promise<UserDto | null> {
-    const user = await this.unitOfWork.User.findByEmail(userId);
+    const user = await this.unitOfWork.User.findById(userId);
     if (!user) {
       return null;
     }

@@ -41,26 +41,16 @@ export class UserService implements IUserService {
     return user;
   }
 
-  async update(
-    userId: string,
-    updatedData: UpdateUserDto
-  ): Promise<UserDto | null> {
-    const user = await this.unitOfWork.User.update(userId, {
-      ...updatedData,
-    });
+  async update(userId: string, updatedData: UpdateUserDto): Promise<UserDto | null> {
+    const user = await this.unitOfWork.User.update(userId, { ...updatedData, });
     if (!user) {
       return null;
     }
     return user;
   }
 
-  async updateStatus(
-    userId: string,
-    updatedData: UpdateUserDto
-  ): Promise<UserDto | null> {
-    const user = await this.unitOfWork.User.updateStatus(userId, {
-      ...updatedData,
-    });
+  async updateStatus(userId: string, updatedData: UpdateUserDto): Promise<UserDto | null> {
+    const user = await this.unitOfWork.User.updateStatus(userId, { ...updatedData });
     if (!user) {
       return null;
     }

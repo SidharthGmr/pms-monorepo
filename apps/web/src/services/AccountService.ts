@@ -4,6 +4,7 @@ import { LoginDto, refreshTokenResponseDto } from '@/dtos/LoginDto';
 import PlainDto from '@/dtos/PlainDto';
 import Response from '@/dtos/Response';
 import LoginModel from '@/models/LoginModel';
+import VerifyEmailModel from '@/models/VerifyEmailModel';
 import { CreateUserModel } from '@/models/user.model';
 import { UpdateProfileModel } from '@pms/types';
 import { UserDto } from '@/dtos/UserDto';
@@ -11,6 +12,7 @@ import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IAccountService from './interfaces/IAccountService';
 import IHttpService from './interfaces/IHttpService';
+import VerifyTokenModel from '@/models/VerifyTokenModel';
 
 @injectable()
 export default class AccountService implements IAccountService {
@@ -31,13 +33,11 @@ export default class AccountService implements IAccountService {
     const result = this.httpService.call().post<PlainDto, AxiosResponse<Response<PlainDto>>>('/auth/logout', {
       token: token,
     });
-
     return result;
   }
 
   logoutAllSession(): Promise<AxiosResponse<Response<PlainDto>>> {
     const result = this.httpService.call().post<PlainDto, AxiosResponse<Response<PlainDto>>>('/auth/logoutallsession');
-
     return result;
   }
 
@@ -53,5 +53,9 @@ export default class AccountService implements IAccountService {
 
   updateProfile(model: UpdateProfileModel): Promise<AxiosResponse<Response<UserDto>>> {
     return this.httpService.call().put<UserDto, AxiosResponse<Response<UserDto>>>('/users/profile', model);
+  }
+
+  verifyToken(model: VerifyTokenModel): Promise<AxiosResponse<Response<UserDto>>> {
+    return this.httpService.call().post<UserDto, AxiosResponse<Response<UserDto>>>('/auth/verify-token', model);
   }
 }

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(grep -nv \"^\\\\s*\\\\*\\\\|^\\\\s*/\\\\*\\\\|^\\\\s*\\\\*/\" routes/authRoutes.ts)"
     ]
   }
 }
