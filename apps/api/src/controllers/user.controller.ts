@@ -175,6 +175,33 @@ export class UserController {
     return res.status(200).json(response);
   };
 
+  updateActiveStatusById = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
+    const userId = req.params.userId as string;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId is required',
+        data: null,
+      });
+    }
+
+    const { isActive } = req.body as { isActive: boolean };
+
+    const user = await this.unitOfService.User.updateActiveStatus(userId, isActive);
+
+    if (!user) {
+      throw new CustomError('User not found', 404);
+    }
+
+    const response: CustomResponse<UserDto> = {
+      success: true,
+      message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+      data: user,
+    };
+
+    return res.status(200).json(response);
+  };
+
   deleteUserById = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
     const userId = req.params.userId as string;
     if (!userId) {

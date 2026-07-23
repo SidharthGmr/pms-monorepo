@@ -56,6 +56,29 @@ const useUpdateUser = () => {
   });
 };
 
+const useUpdateUserActiveStatus = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const queryClient = useQueryClient();
+
+  const mutationFn = async (args: { userId: string; isActive: boolean }) => {
+    return unitOfService.UserListService.updateActiveStatus(args.userId, args.isActive);
+  };
+
+  return useMutation({
+    mutationFn,
+    onSettled: (response) => {
+      if (response && response.status === 200) {
+        queryClient.invalidateQueries({
+          queryKey: ['UserListService.getAll'],
+        });
+      }
+    },
+    onError: (error) => {
+      return error;
+    },
+  });
+};
+
 const useDeleteUserById = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const queryClient = useQueryClient();
@@ -163,5 +186,5 @@ const useCreateUserByAdmin = () => {
 //   });
 // };
 
-export { useCreateUserByAdmin, useDeleteUserById, useGetAllUserList, useGetUserById, useResetPassword, useSendOtp, useUpdateUser, useVerifyOtp };
+export { useCreateUserByAdmin, useDeleteUserById, useGetAllUserList, useGetUserById, useResetPassword, useSendOtp, useUpdateUser, useUpdateUserActiveStatus, useVerifyOtp };
 

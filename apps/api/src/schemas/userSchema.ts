@@ -113,6 +113,13 @@ export const updateSchema = z.object({
   }),
 });
 
+// Rule for Active-status toggle (super admin)
+export const updateActiveStatusSchema = z.object({
+  body: z.object({
+    isActive: z.boolean({ error: "isActive must be a boolean" }),
+  }),
+});
+
 // Rule for Role Update
 export const updateRoleSchema = z.object({
   body: z.object({

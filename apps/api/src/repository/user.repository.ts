@@ -61,6 +61,13 @@ export class UserRepository implements IUserRepository {
     });
   }
 
+  async updateActiveStatus(userId: string, isActive: boolean): Promise<UserDto> {
+    return prisma.users.update({
+      where: { userId },
+      data: { isActive },
+    });
+  }
+
   async delete(userId: string): Promise<UserDto> {
     return prisma.users.update({
       where: { userId },

@@ -9,6 +9,7 @@ export interface IUserService {
   getByEmail(email: string, includePassword?: boolean): Promise<UserDto | null>;
   update(userId: string, updatedData: UpdateUserDto): Promise<UserDto | null>;
   updateStatus(userId: string, updatedData: UpdateUserDto): Promise<UserDto | null>;
+  updateActiveStatus(userId: string, isActive: boolean): Promise<UserDto | null>;
   delete(userId: string): Promise<UserDto | null>;
   updateRole(userId: string, role: Role): Promise<UserDto | null>;
   updateUserByIdentifier(identifier: { email?: string; userId?: string; phone?: string }, data: { role?: Role; status?: Status }): Promise<UserDto | null>;

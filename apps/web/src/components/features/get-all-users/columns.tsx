@@ -4,7 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { UserDto } from '@/dtos/UserDto';
 import { ColumnDef } from '@tanstack/react-table';
-import { Dot } from 'lucide-react';
 import { useMemo } from 'react';
 import { BsEnvelope, BsPhone } from 'react-icons/bs';
 import { GoCheckCircleFill } from 'react-icons/go';
@@ -15,6 +14,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import ECardListRowActions from './row-action';
+import ActiveStatusToggle from './active-status-toggle';
 
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -96,12 +96,7 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         header: ({ column }) => (
           <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Activity" />
         ),
-        cell: ({ row }) => (
-          <Badge variant={row.original.isActive ? 'cyan' : 'blue'}>
-            <Dot className={row.original.isActive ? 'text-green-500' : 'text-gray-400'} />
-            {row.original.isActive ? 'Active' : 'Inactive'}
-          </Badge>
-        ),
+        cell: ({ row }) => <ActiveStatusToggle user={row.original} />,
         meta: { sortingKey: 'isActive' },
       },
       {

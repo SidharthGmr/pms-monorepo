@@ -6,7 +6,7 @@ import { UserController } from '../controllers/user.controller';
 import asyncHandler from '../middleware/asyncHandler.middleware';
 import authorization from '../middleware/authorization.middleware';
 import { validate } from '../middleware/validate';
-import { updateRoleSchema, updateProfileSchema, superAdminUpdateRoleSchema } from '../schemas/userSchema';
+import { updateRoleSchema, updateProfileSchema, superAdminUpdateRoleSchema, updateActiveStatusSchema } from '../schemas/userSchema';
 import { Role } from '@prisma/client';
 
 const userRouter = Router();
@@ -387,6 +387,54 @@ userRouter.patch('/assign-store', authenticateToken, asyncHandler(usersControlle
  *         description: User not found
  */
 userRouter.put('/status/:userId', authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), asyncHandler(usersController.updateStatusById));
+
+
+/**
+ * @swagger
+ * /users/active-status/{userId}:
+ *   put:
+ *     summary: Activate or deactivate a user (super admin only)
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - isActive
+ *             properties:
+ *               isActive:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: User active status updated successfully
+ *       400:
+ *         description: Bad request - missing or invalid isActive
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Only super admin can access
+ *       404:
+ *         description: User not found
+ */
+userRouter.put('/active-status/:userId', authenticateToken, authorization([Role.SUPER_ADMIN]), validate(updateActiveStatusSchema), asyncHandler(usersController.updateActiveStatusById));
 
 
 /**

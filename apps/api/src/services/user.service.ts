@@ -57,6 +57,14 @@ export class UserService implements IUserService {
     return user;
   }
 
+  async updateActiveStatus(userId: string, isActive: boolean): Promise<UserDto | null> {
+    const user = await this.unitOfWork.User.updateActiveStatus(userId, isActive);
+    if (!user) {
+      return null;
+    }
+    return user;
+  }
+
   async delete(userId: string): Promise<UserDto | null> {
     const user = await this.unitOfWork.User.delete(userId);
     return user;

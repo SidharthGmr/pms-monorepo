@@ -30,6 +30,10 @@ export default class UserListService implements IUserListService {
   update(id: string, model: any): Promise<AxiosResponse<Response<UserDto>>> {
     return this.httpService.call().put<UserDto, AxiosResponse<Response<UserDto>>>(`/users/${id}`, model);
   }
+
+  updateActiveStatus(userId: string, isActive: boolean): Promise<AxiosResponse<Response<UserDto>>> {
+    return this.httpService.call().put<UserDto, AxiosResponse<Response<UserDto>>>(`/users/active-status/${userId}`, { isActive });
+  }
   delete(id: string): Promise<AxiosResponse<Response<UserDto>>> {
     return this.httpService.call().delete<UserDto, AxiosResponse<Response<UserDto>>>(`/users/${id}`);
   }
