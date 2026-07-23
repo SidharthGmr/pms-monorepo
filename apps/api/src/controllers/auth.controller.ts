@@ -103,7 +103,7 @@ export class AccountController {
     };
 
     const token = jwt.sign(tokenPayload, config.jwt.secret, {
-      expiresIn: config.jwt.accessExpires as any, // was hardcoded "10h"
+      expiresIn: config.jwt.emailVerifyExpires as any, // long-lived: this is an email verification link, not an access token
       algorithm: 'HS256',
       audience: config.jwt.audience,
       issuer: config.jwt.issuer,

@@ -1,6 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import LoginModel from '@/models/LoginModel';
+import VerifyTokenModel from '@/models/VerifyTokenModel';
 import { CreateUserModel } from '@/models/user.model';
 import { UpdateProfileModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -112,5 +113,25 @@ const useUpdateProfile = () => {
   });
 };
 
-export { useCreateUser, useDbLogout, useLogin, useLogoutAllSession, useRefreshToken, useUpdateProfile };
+const useVerifyToken = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  const mutationFn = async (model: VerifyTokenModel) => {
+    return await unitOfService.AccountService.verifyToken(model);
+  };
+
+  return useMutation({
+    mutationFn,
+    onSettled: (response) => {
+      if (response && (response.status === 200 || response.status === 201) && response.data) {
+        // invalidate query here if required
+      }
+    },
+    onError: (error) => {
+      return error;
+    },
+  });
+};
+
+export { useCreateUser, useDbLogout, useLogin, useLogoutAllSession, useRefreshToken, useUpdateProfile, useVerifyToken };
 

@@ -5,10 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaArrowRight, FaCheckCircle, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
-import { container } from '@/config/ioc';
-import { TYPES } from '@/config/types';
-import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import config from '@/config';
+import { useVerifyToken } from '@/hooks/service-hooks/useAccountService';
 import { toast } from '../ui/use-toast';
 
 type VerifyStatus = 'verifying' | 'success' | 'error';
@@ -43,7 +40,8 @@ export default function VerifyEmailModule() {
   const [status, setStatus] = useState<VerifyStatus>('verifying');
   const [message, setMessage] = useState<string>('Verifying your email, please wait...');
 
-  // Guard against React Strict Mode / re-renders firing the request twice.
+  const verifyTokenMutation = useVerifyToken();
+
   const hasVerified = useRef(false);
 
   const verify = useCallback(async () => {
@@ -53,50 +51,35 @@ export default function VerifyEmailModule() {
       return;
     }
     try {
-      const response = await fetch(`${config.apiBaseUrl}/auth/verify-token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(token),
-      });
-      console.log('response', response);
-      if (response.ok) {
+      // The API expects a JSON body: { token }. Sending it through the service
+      // (HttpService) also attaches the required clientId header.
+      const response = await verifyTokenMutation.mutateAsync({ token });
+
+      if (response && (response.status === 200 || response.status === 201) && response.data?.success) {
+        setStatus('success');
+        setMessage(response.data.message || 'Your email has been verified successfully.');
         toast({
           title: 'Success',
           description: 'Your email has been verified successfully!',
           variant: 'success',
         });
-
-        //router.push('/login/');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save data');
+        setStatus('error');
+        setMessage(response?.data?.message || 'We could not verify your email. The link may have expired.');
+        toast({
+          variant: 'destructive',
+          description: response?.data?.message || 'We could not verify your email. The link may have expired.',
+        });
       }
     } catch (error) {
-      console.error('Error saving data:', error);
-
+      console.error('Error verifying email:', error);
+      setStatus('error');
+      setMessage('Something went wrong while verifying your email. Please try again.');
       toast({
-        variant: 'destructive', // Changed to destructive for error
-        description: 'Failed to create account. Please try again.',
+        variant: 'destructive',
+        description: 'Something went wrong while verifying your email. Please try again.',
       });
     }
-    // try {
-    //   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
-
-    //   const response = await unitOfService.AccountService.verifyToken({ token });
-
-    //   if (response && (response.status === 200 || response.status === 201) && response.data?.success) {
-    //     setStatus('success');
-    //     setMessage(response.data.message || 'Your email has been verified successfully.');
-    //   } else {
-    //     setStatus('error');
-    //     setMessage(response?.data?.message || 'We could not verify your email. The link may have expired.');
-    //   }
-    // } catch {
-    //   setStatus('error');
-    //   setMessage('Something went wrong while verifying your email. Please try again.');
-    // }
   }, [token]);
 
   useEffect(() => {
@@ -133,7 +116,6 @@ export default function VerifyEmailModule() {
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
               Email Verification
             </h1>
-
             <p className="text-sm text-gray-400">{heading.subtitle}</p>
           </div>
 
