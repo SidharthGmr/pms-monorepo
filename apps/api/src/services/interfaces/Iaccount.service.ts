@@ -15,6 +15,5 @@ export interface IAccountService {
   sendVerificationOtp(userId: string): Promise<UserDto>;
   updateEmailStatus(email: string): Promise<UserDto | null>;
   resetPassword(userId: string, data: ResetPasswordModel): Promise<UserDto>;
-  forgotPassword(userId: string): Promise<UserDto | null>;
   convertToDto(user: UserDto, includePassword: boolean, includeToken: boolean, includeRefreshToken: boolean, includeVerificationToken: boolean): UserDto;
 }

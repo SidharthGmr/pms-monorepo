@@ -368,46 +368,7 @@ accountRouter.post("/verify-token", authLimiter, validate(verifyEmailTokenSchema
  * @swagger
  * /auth/forgot-password:
  *   post:
- *     summary: Request OTP for password reset
- *     tags: [Account] 
- *     parameters:
- *       - in: header
- *         name: clientId
- *         schema:
- *           type: string
- *         required: true
- *         description: Enter Client Id
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "user@example.com"
- *     responses:
- *       200:
- *         description: OTP sent successfully
- *       400:
- *         description: Validation error
- *       429:
- *         description: Too many requests
- *       500:
- *         description: Server error
- */
-accountRouter.post("/forgot-password", authLimiter, validate(forgotPasswordSchema), asyncHandler(accountController.forgotPassword));
-
-
-/**
- * @swagger
- * /auth/reset-password:
- *   post:
- *     summary: Reset password using OTP
+ *     summary: Request a password reset link by email
  *     tags: [Account]
  *     parameters:
  *       - in: header
@@ -424,19 +385,51 @@ accountRouter.post("/forgot-password", authLimiter, validate(forgotPasswordSchem
  *             type: object
  *             required:
  *               - email
- *               - otp
- *               - newPassword
- *               - confirmPassword
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
  *                 example: "user@example.com"
- *                 description: Enter user email to receive OTP
- *               otp:
+ *     responses:
+ *       200:
+ *         description: If the email exists, a password reset link has been sent
+ *       400:
+ *         description: Validation error
+ *       429:
+ *         description: Too many requests
+ *       500:
+ *         description: Server error
+ */
+accountRouter.post("/forgot-password", authLimiter, validate(forgotPasswordSchema), asyncHandler(accountController.forgotPassword));
+
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password using the emailed reset token
+ *     tags: [Account]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *               - confirmPassword
+ *             properties:
+ *               token:
  *                 type: string
- *                 example: "7452"
- *                 description: OTP received on email
+ *                 description: The reset token from the emailed reset link
  *               newPassword:
  *                 type: string
  *                 example: "NewStrong@123"
@@ -447,7 +440,9 @@ accountRouter.post("/forgot-password", authLimiter, validate(forgotPasswordSchem
  *       200:
  *         description: Password reset successful
  *       400:
- *         description: Invalid OTP, expired OTP, or password mismatch
+ *         description: Password mismatch or validation error
+ *       401:
+ *         description: Invalid or expired reset token
  *       404:
  *         description: User not found
  *       429:

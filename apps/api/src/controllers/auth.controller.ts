@@ -429,13 +429,41 @@ export class AccountController {
 
     const existingUser = await this.unitOfService.User.getByEmail(email);
 
+    // Always respond the same way whether or not the account exists, so the
+    // endpoint can't be used to probe which emails are registered.
     if (existingUser) {
-      await this.unitOfService.Account.forgotPassword(existingUser.userId);
+      const tokenPayload = {
+        id: existingUser.id,
+        userId: existingUser.userId,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+        storeCode: existingUser.storeCode || null,
+      };
+
+      const token = jwt.sign(tokenPayload, config.jwt.secret, {
+        expiresIn: config.jwt.passwordResetExpires as any, // short-lived: this is a reset link, not an access token
+        algorithm: 'HS256',
+        audience: config.jwt.audience,
+        issuer: config.jwt.issuer,
+      });
+
+      const updatedUser = await this.unitOfService.Account.updateToken(existingUser.userId, token);
+
+      if (updatedUser) {
+        dispatchEmailAsync({
+          userId: updatedUser.userId,
+          to: updatedUser.email,
+          subject: `Reset your ${process.env.NEXT_PUBLIC_APP_NAME} password`,
+          templateName: 'welcome',
+          html: `${process.env.JWT_ISSUER}/reset-password?token=${token}`,
+        });
+      }
     }
 
     return res.status(200).json({
       success: true,
-      message: 'If the email exists, an OTP has been sent.',
+      message: 'If the email exists, a password reset link has been sent.',
       data: null,
     });
   };
@@ -443,12 +471,8 @@ export class AccountController {
   resetPassword = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto | null>>> => {
     const data = req.body as ResetPasswordModel;
 
-    if (!data.email) {
-      throw new CustomError('Email is required', 400);
-    }
-
-    if (!data.otp) {
-      throw new CustomError('OTP is required', 400);
+    if (!data.token) {
+      throw new CustomError('Token is required', 400);
     }
 
     if (!data.newPassword || !data.confirmPassword) {
@@ -459,26 +483,32 @@ export class AccountController {
       throw new CustomError('Password and confirm password do not match', 400);
     }
 
-    const user = await this.unitOfService.User.getByEmail(data.email);
+    // Validate the reset token: it must be a valid JWT. The userId is read from
+    // its payload, mirroring the signup email-verification flow.
+    let decoded: jwt.JwtPayload;
+    try {
+      decoded = jwt.verify(data.token, config.jwt.secret, {
+        algorithms: ['HS256'],
+        audience: config.jwt.audience || undefined,
+        issuer: config.jwt.issuer || undefined,
+      }) as jwt.JwtPayload;
+    } catch {
+      throw new CustomError('Invalid or expired reset token', 401);
+    }
 
+    const userId = decoded.userId as string | undefined;
+    if (!userId) {
+      throw new CustomError('Invalid reset token', 401);
+    }
+
+    const user = await this.unitOfService.User.getUserById(userId);
     if (!user) {
-      return res.status(200).json({
-        success: true,
-        message: 'If the email and OTP are valid, your password has been reset.',
-        data: null,
-      });
+      throw new CustomError('User not found', 404);
     }
 
-    if (!user.emailVerificationToken || !user.emailVerificationExpires) {
-      throw new CustomError('OTP not generated or already used. Please resend OTP', 400);
-    }
-
-    if (isExpired(user.emailVerificationExpires, 1)) {
-      throw new CustomError('OTP expired. Please resend OTP', 400);
-    }
-
-    if (user.emailVerificationToken !== data.otp) {
-      throw new CustomError('Invalid OTP', 400);
+    // Ensure the token matches the one issued to this user at forgot-password.
+    if (user.token !== data.token) {
+      throw new CustomError('Invalid or expired reset token', 401);
     }
 
     const updatedUser = await this.unitOfService.Account.resetPassword(user.userId, data);

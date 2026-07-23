@@ -13,6 +13,9 @@ const config = {
     // Email verification links must stay valid long after signup, so they get
     // their own expiry rather than reusing the short-lived access-token expiry.
     emailVerifyExpires: process.env.JWT_EMAIL_VERIFY_EXPIRES || "1d",
+    // Password reset links are security-sensitive, so they expire sooner than
+    // the signup verification link.
+    passwordResetExpires: process.env.JWT_PASSWORD_RESET_EXPIRES || "1h",
   },
 };
 

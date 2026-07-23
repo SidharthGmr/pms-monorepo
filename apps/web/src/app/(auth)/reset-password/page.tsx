@@ -1,20 +1,20 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
 import config from '@/config';
-import VerifyEmailModule from '@/components/account/verify-email';
+import ResetPasswordModule from '@/components/account/reset-password';
 import AuthStaticLayout from '@/components/layout/authSimpleSlider';
 
 export const metadata: Metadata = {
-  title: `Verify Email - ${config.appName}`,
+  title: `Reset Password - ${config.appName}`,
 };
 
-export default function VerifyEmailPage() {
+export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<div className="min-h-screen" />}>
       <AuthStaticLayout
-        formComponent={<VerifyEmailModule />}
-        title="Email verification"
-        description="Confirming your email address."
+        formComponent={<ResetPasswordModule />}
+        title="Reset password"
+        description="Choose a new password for your account."
       />
     </Suspense>
   );

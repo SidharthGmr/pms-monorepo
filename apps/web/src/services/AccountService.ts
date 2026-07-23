@@ -13,6 +13,8 @@ import { injectable } from 'inversify';
 import IAccountService from './interfaces/IAccountService';
 import IHttpService from './interfaces/IHttpService';
 import VerifyTokenModel from '@/models/VerifyTokenModel';
+import ForgotPasswordModel from '@/models/ForgotPasswordModel';
+import ResetPasswordTokenModel from '@/models/ResetPasswordTokenModel';
 
 @injectable()
 export default class AccountService implements IAccountService {
@@ -57,5 +59,13 @@ export default class AccountService implements IAccountService {
 
   verifyToken(model: VerifyTokenModel): Promise<AxiosResponse<Response<UserDto>>> {
     return this.httpService.call().post<UserDto, AxiosResponse<Response<UserDto>>>('/auth/verify-token', model);
+  }
+
+  forgotPassword(model: ForgotPasswordModel): Promise<AxiosResponse<Response<PlainDto>>> {
+    return this.httpService.call().post<PlainDto, AxiosResponse<Response<PlainDto>>>('/auth/forgot-password', model);
+  }
+
+  resetPassword(model: ResetPasswordTokenModel): Promise<AxiosResponse<Response<UserDto>>> {
+    return this.httpService.call().post<UserDto, AxiosResponse<Response<UserDto>>>('/auth/reset-password', model);
   }
 }

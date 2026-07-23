@@ -186,54 +186,21 @@ export class AccountService implements IAccountService {
     if (!existingUser) {
       throw new Error("User account was not found.");
     }
-    if (!existingUser.emailVerificationToken || !existingUser.emailVerificationExpires) {
-      throw new Error("Password reset request was not found. Please request a new OTP.");
-    }
-
-    if (Date.now() > existingUser.emailVerificationExpires.getTime()) {
-      throw new Error("OTP has expired. Please request a new OTP.");
-    }
-
-    if (existingUser.emailVerificationToken !== data.otp) {
-      throw new Error("Invalid OTP. Please check the code and try again.");
-    }
 
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
 
+    // Clear the reset token so the link can only be used once.
     return this.unitOfWork.transaction(async (transactionClient) => {
       const updatedUser = await transactionClient.users.update({
         where: { userId },
         data: {
           password: hashedPassword,
-          emailVerificationToken: null,
-          emailVerificationExpires: null,
+          token: null,
+          tokenUpdated: false,
         },
       });
 
       return this.convertToDto(updatedUser);
-    });
-  }
-
-  async forgotPassword(userId: string): Promise<UserDto | null> {
-    const existingUser = await this.unitOfWork.User.findById(userId);
-
-    if (!existingUser) {
-      return null;
-    }
-
-    const { otp } = generateOtp();
-    const otpExpiresAt = getOtpExpiryDate(10);
-
-    return this.unitOfWork.transaction(async (transactionClient) => {
-      const user = await transactionClient.users.update({
-        where: { userId },
-        data: {
-          emailVerificationToken: otp,
-          emailVerificationExpires: otpExpiresAt,
-        },
-      });
-
-      return this.convertToDto(user);
     });
   }
 

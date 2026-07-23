@@ -66,8 +66,7 @@ export const sendOtpSchema = z.object({
 export const resetPasswordSchema = z.object({
   body: z
     .object({
-      email: z.string().email("Invalid email address."),
-      otp: z.string().min(4, "OTP is required.").max(8),
+      token: z.string().min(1, "Token is required."),
       newPassword: z
         .string()
         .min(8, "Password must be at least 8 characters.")

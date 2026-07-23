@@ -4,8 +4,7 @@ export interface verifyEmailModel {
 }
 
 export interface ResetPasswordModel {
-  email: string;
-  otp: string;
+  token: string;
   newPassword: string;
   confirmPassword: string;
 }

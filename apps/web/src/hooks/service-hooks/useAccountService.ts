@@ -2,6 +2,8 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import LoginModel from '@/models/LoginModel';
 import VerifyTokenModel from '@/models/VerifyTokenModel';
+import ForgotPasswordModel from '@/models/ForgotPasswordModel';
+import ResetPasswordTokenModel from '@/models/ResetPasswordTokenModel';
 import { CreateUserModel } from '@/models/user.model';
 import { UpdateProfileModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -133,5 +135,45 @@ const useVerifyToken = () => {
   });
 };
 
-export { useCreateUser, useDbLogout, useLogin, useLogoutAllSession, useRefreshToken, useUpdateProfile, useVerifyToken };
+const useForgotPassword = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  const mutationFn = async (model: ForgotPasswordModel) => {
+    return await unitOfService.AccountService.forgotPassword(model);
+  };
+
+  return useMutation({
+    mutationFn,
+    onError: (error) => {
+      return error;
+    },
+  });
+};
+
+const useResetPassword = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  const mutationFn = async (model: ResetPasswordTokenModel) => {
+    return await unitOfService.AccountService.resetPassword(model);
+  };
+
+  return useMutation({
+    mutationFn,
+    onError: (error) => {
+      return error;
+    },
+  });
+};
+
+export {
+  useCreateUser,
+  useDbLogout,
+  useForgotPassword,
+  useLogin,
+  useLogoutAllSession,
+  useRefreshToken,
+  useResetPassword,
+  useUpdateProfile,
+  useVerifyToken,
+};
 

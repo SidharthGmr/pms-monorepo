@@ -48,6 +48,5 @@ export const config = {
     '/student/:path*',
     '/access-denied',
     '/access-denied/',
-    '/reset-password/'
   ],
 };
