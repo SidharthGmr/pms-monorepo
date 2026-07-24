@@ -48,6 +48,14 @@ export class AccountController {
       });
     }
 
+    if (!loggedInUser.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact an administrator.',
+        data: null,
+      });
+    }
+
     const tokenPayload = {
       id: loggedInUser.id,
       userId: loggedInUser.userId,

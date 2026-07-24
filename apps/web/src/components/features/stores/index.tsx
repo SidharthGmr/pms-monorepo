@@ -18,12 +18,20 @@ import { useStoreColumns } from './columns';
 import StoreListFilter from './filter';
 import ManageStore from './add-edit';
 import config from '@/config';
+import { useSearchParams } from 'next/navigation';
+import { StoreFilterParams } from '@/params/store.params';
 
 export default function StoreList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
-
+  const searchParams = useSearchParams();
   const [data, setData] = useState<StoreDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
+
+  const [filterParams, setFilterParams] = useState<StoreFilterParams>({
+    page: +(searchParams.get('page') || 1),
+    recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
+    search: searchParams.get('search') || '',
+  });
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
@@ -33,7 +41,7 @@ export default function StoreList() {
     (id) => openDeleteModal(id)
   );
 
-  const getAllStoresResponse = useGetAllStores();
+  const getAllStoresResponse = useGetAllStores(filterParams);
   const deleteStoreMutation = useDeleteStore();
 
   useEffect(() => {
@@ -42,7 +50,7 @@ export default function StoreList() {
       setData(result.data ?? []);
       setRecordCount(result.totalRecord ?? 0);
     }
-  }, [getAllStoresResponse.status, getAllStoresResponse.data]);
+  }, [getAllStoresResponse.status, getAllStoresResponse.data?.data?.data]);
 
   const { sorting, onSortingChange } = useTanstackTableSorting<StoreDto>('', 'desc', columns);
   const { onPaginationChange, pagination } = useTanstackTablePagination(config.recordPerPage);
@@ -53,12 +61,28 @@ export default function StoreList() {
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
-    pageCount: Math.ceil((recordCount || 0) / config.recordPerPage),
+    pageCount: Math.ceil((recordCount || 0) / (config.recordPerPage || 1)),
     pagination,
     sorting,
     onPaginationChange,
     onSortingChange,
   });
+
+  useEffect(() => {
+    setFilterParams((prev) => ({
+      ...prev,
+      page: pagination.pageIndex + 1,
+      recordPerPage: pagination.pageSize,
+    }));
+  }, [pagination]);
+
+  const resetForm = () => {
+    setFilterParams({
+      search: undefined,
+      page: 1,
+      recordPerPage: config.recordPerPage,
+    });
+  };
 
   const handleDelete = async (id: number) => {
     const response = await deleteStoreMutation.mutateAsync(id);
@@ -77,12 +101,16 @@ export default function StoreList() {
 
   return (
     <>
-      <div className="p-4">
-        <StoreListFilter table={table} />
+      <div className="w-full space-y-4">
+        <StoreListFilter table={table} resetForm={resetForm} />
+        <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+          <CustomDataTable columns={columns} table={table} isLoading={getAllStoresResponse.isLoading} />
+        </div>
+        <div className="py-2">
+          <DataTablePagination table={table} totalRecord={recordCount} loading={getAllStoresResponse.isLoading} />
+        </div>
       </div>
-      {deleteStoreMutation.isPending && <Loader />}
-      <CustomDataTable table={table} columns={columns} isLoading={getAllStoresResponse.isLoading} />
-      <DataTablePagination table={table} />
+
       {showEditModal && editId && (
         <ManageStore
           id={+editId}

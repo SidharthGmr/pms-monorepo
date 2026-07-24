@@ -3,6 +3,8 @@ import { Role, Status } from "@prisma/client";
 export interface UserDto {
   id: number;
   userId: string;
+  // Alias of `userId` exposed for the web client, whose shared UserDto (@pms/types) reads `usersId`.
+  usersId?: string;
   name: string;
   userName: string;
   phone?: string | null;

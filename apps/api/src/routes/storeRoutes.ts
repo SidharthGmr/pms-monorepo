@@ -73,7 +73,7 @@ const storeController = container.get<StoreController>(TYPES.StoreController);
  *       400: { description: Bad Request }
  *       500: { description: Server error }
  */
-storeRouter.get("/", asyncHandler(storeController.getAll));
+storeRouter.get("/", authenticateToken, asyncHandler(storeController.getAll));
 
 /**
  * @swagger
@@ -100,7 +100,7 @@ storeRouter.get("/", asyncHandler(storeController.getAll));
  *       404: { description: Store not found }
  *       500: { description: Server error }
  */
-storeRouter.get("/:id", asyncHandler(storeController.getById));
+storeRouter.get("/:id", authenticateToken, asyncHandler(storeController.getById));
 
 /**
  * @swagger
@@ -147,7 +147,7 @@ storeRouter.get("/:id", asyncHandler(storeController.getById));
  *       400: { description: Bad Request }
  *       500: { description: Server error }
  */
-storeRouter.post("/", [validate(createStoreSchema)], asyncHandler(storeController.create));
+storeRouter.post("/", authenticateToken, [validate(createStoreSchema)], asyncHandler(storeController.create));
 
 /**
  * @swagger

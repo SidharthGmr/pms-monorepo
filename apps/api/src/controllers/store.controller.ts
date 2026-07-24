@@ -27,12 +27,7 @@ export class StoreController {
     return res.status(200).json({
       success: true,
       message: "Stores fetched successfully",
-      data: {
-        records: result.data,
-        total: result.total,
-        page: result.page,
-        recordPerPage: result.recordPerPage,
-      },
+      data: result,
     });
   };
 
@@ -59,11 +54,11 @@ export class StoreController {
     return res.status(200).json({ success: true, message: "Store updated successfully", data: store });
   };
 
-  delete = async (req: Request, res: Response): Promise<Response<CustomResponse<StoreDto>>> => {
+  delete = async (req: Request, res: Response): Promise<Response<CustomResponse<StoreDto>> | Response> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
 
-    const store = await this.unitOfService.Store.delete(id);
-    return res.status(200).json({ success: true, message: "Store deleted successfully", data: store });
+    await this.unitOfService.Store.delete(id);
+    return res.status(204).send();
   };
 }

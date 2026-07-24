@@ -16,16 +16,26 @@ export default function StoreListFilter<TData>({ table, onTextChange, resetForm 
   const [searchedText, setSearchedText] = useState('');
   const [searchedValue] = useDebounce(searchedText, 600);
 
+  const [isFiltered, setIsFiltered] = useState(false);
+
   useEffect(() => {
-    onTextChange?.(searchedValue);
+    if (onTextChange) {
+      onTextChange(searchedValue);
+    }
     table.setPageIndex(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchedValue]);
 
   const resetFilter = () => {
     setSearchedText('');
+    setIsFiltered(false);
+    table.setPageIndex(0);
     resetForm?.();
   };
+
+  useEffect(() => {
+    setIsFiltered(!!searchedText);
+  }, [searchedText]);
 
   return (
     <div className="flex gap-2 items-center">

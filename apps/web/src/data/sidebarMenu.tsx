@@ -191,7 +191,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
     id: 'stores',
     title: 'Stores',
     icon: Store,
-    url: '/admin/stores/',
+    url: '/super-admin/stores/',
     role: [Roles.SUPER_ADMIN],
     isActive: false,
   },

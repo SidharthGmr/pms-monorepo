@@ -1,8 +1,9 @@
-import {   Status } from "@prisma/client";
+import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
 import { StoreDto, CreateStoreDto } from "../dtos/store.dto";
 import { StoreFilterParams } from "../params/store.params";
 import NotFoundError from "../exceptions/not-found-error";
+import { ListResponseDto } from "@pms/types";
 
 export class StoreRepository {
   async create(data: CreateStoreDto): Promise<StoreDto> {
@@ -20,46 +21,50 @@ export class StoreRepository {
     return this.mapToDto(store);
   }
 
-  async getAll(
-    filters: StoreFilterParams
-  ): Promise<{ data: StoreDto[]; total: number; page: number; recordPerPage: number }> {
-    const page = filters.page ?? 1;
-    const recordPerPage = filters.recordPerPage ?? 10;
-    const skip = (page - 1) * recordPerPage;
+  async findAll(filters?: StoreFilterParams, page = 1, limit = 10, sortBy = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc'): Promise<ListResponseDto<StoreDto>> {
+    const where: Prisma.storeWhereInput = {};
 
-    const whereClause: any = {};
-    if (filters.search) {
-      whereClause.OR = [
-        { name: { contains: filters.search, mode: "insensitive" } },
-        { code: { contains: filters.search, mode: "insensitive" } },
-      ];
+    if (filters) {
+      page = filters.page ?? page;
+      limit = filters.recordPerPage ?? limit;
+
+      if (filters.search) {
+        where.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { code: { contains: filters.search, mode: 'insensitive' } },
+        ];
+      }
+
+      if (filters.isActive !== undefined) {
+        where.isActive = filters.isActive;
+      }
     }
 
-    const anyFilters: any = filters;
-    if (anyFilters.status) whereClause.status = anyFilters.status;
-    if (anyFilters.isActive !== undefined) whereClause.isActive = anyFilters.isActive;
-
-    const findManyArgs: any = {
-      where: whereClause,
-      skip: filters.showAllRecords ? 0 : skip,
-      orderBy: { createdAt: "desc" },
-    };
-    if (!filters.showAllRecords) {
-      findManyArgs.take = recordPerPage;
+    // Exclude trashed stores by default; allow explicit status filtering.
+    if (filters?.status !== undefined) {
+      where.status = filters.status;
+    } else {
+      where.NOT = { status: Status.Trash };
     }
 
-    const [stores, total] = await Promise.all([
-      prisma.store.findMany(findManyArgs),
-      prisma.store.count({ where: whereClause }),
+    const showAll = filters?.showAllRecords === true;
+    const skip = showAll ? undefined : (page - 1) * limit;
+    const take = showAll ? undefined : limit;
+
+    const [data, total] = await Promise.all([
+      prisma.store.findMany({
+        where,
+        orderBy: { [sortBy]: sortOrder },
+        ...(skip !== undefined && { skip }),
+        ...(take !== undefined && { take }),
+      }),
+      prisma.store.count({ where }),
     ]);
 
-    return {
-      data: stores.map(s => this.mapToDto(s)),
-      total,
-      page,
-      recordPerPage,
-    };
+    return { totalRecord: total, data: data.map((s) => this.mapToDto(s)) };
   }
+
+
 
 
   async getById(id: number): Promise<StoreDto> {
@@ -84,11 +89,12 @@ export class StoreRepository {
       throw new NotFoundError(`Store with id ${id} not found`);
     }
 
-    return prisma.store.update({
+    const deleted = await prisma.store.update({
       where: { id },
       data: { status: Status.Trash }
     });
 
+    return this.mapToDto(deleted);
   }
 
   async checkExists(field: "name" | "code", value: string, excludeId?: number): Promise<boolean> {

@@ -127,6 +127,7 @@ export class AccountService implements IAccountService {
       const user = await transactionClient.users.update({
         where: { userId },
         data: {
+          isActive: true,
           emailVerificationToken: otp,
           emailVerificationExpires: otpExpiresAt,
         },
@@ -159,6 +160,7 @@ export class AccountService implements IAccountService {
         where: { email },
         data: {
           isEmailVerified: true,
+          isActive: true,
           emailVerificationToken: null,
           emailVerificationExpires: null,
         },

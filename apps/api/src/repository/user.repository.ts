@@ -15,12 +15,15 @@ export class UserRepository implements IUserRepository {
       where.role = filters.role;
     }
 
-    return prisma.users.findMany({
+    const records = await prisma.users.findMany({
       where,
       orderBy: {
         createdAt: "desc",
       },
     });
+
+    // The web client reads `usersId` (see @pms/types UserDto); expose it alongside `userId`.
+    return records.map((u) => ({ ...u, usersId: u.userId }));
   }
 
   async findById(userId: string): Promise<UserDto | null> {

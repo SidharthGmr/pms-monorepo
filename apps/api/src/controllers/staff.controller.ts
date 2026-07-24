@@ -25,9 +25,11 @@ export class StaffController {
     if (req.query.department) filters.department = req.query.department as string;
     if (req.query.position) filters.position = req.query.position as string;
     if (req.query.storeCode) filters.storeCode = req.query.storeCode as string;
+
     if (storeCode) filters.storeCode = storeCode;
 
     const staff = await this.unitOfService.Staff.getAll(filters);
+
     return res.status(200).json({
       success: true,
       message: "Staff members fetched successfully",
