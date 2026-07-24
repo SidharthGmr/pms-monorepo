@@ -34,6 +34,7 @@ import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/common/page-header';
 
 import config from '@/config';
+import { cn } from '@/lib/utils';
 import { ProductFilterParams } from '@/params/product.params';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
@@ -85,6 +86,69 @@ function QuantityStepper({
       >
         <Plus className="h-3.5 w-3.5" />
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Product image with an e-commerce-style gallery: the selected image shows large,
+ * and when a product has more than one image a thumbnail strip renders below it.
+ * Clicking a thumbnail swaps the main image.
+ */
+function ProductCardImage({
+  images,
+  name,
+  soldOut,
+  badge,
+}: {
+  images?: string[];
+  name: string;
+  soldOut: boolean;
+  badge: React.ReactNode;
+}) {
+  const gallery = (images || []).filter(Boolean);
+  const [active, setActive] = useState(0);
+  const activeSrc = gallery[active] ?? gallery[0];
+
+  return (
+    <div>
+      {/* Main image */}
+      <div className="relative flex h-40 items-center justify-center overflow-hidden border-b border-border bg-muted/40">
+        {activeSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={activeSrc}
+            alt={name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <Package className="h-10 w-10 text-muted-foreground/40 transition-transform duration-500 group-hover:scale-110" />
+        )}
+        <div className="absolute left-3 top-3">{badge}</div>
+        {soldOut && <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />}
+      </div>
+
+      {/* Thumbnails (only when there is more than one image) */}
+      {gallery.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto border-b border-border bg-muted/20 p-2">
+          {gallery.map((img, i) => (
+            <button
+              key={`${img}-${i}`}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`View image ${i + 1} of ${name}`}
+              aria-pressed={i === active}
+              className={cn(
+                'h-9 w-9 shrink-0 overflow-hidden rounded-md border transition-all',
+                i === active ? 'border-primary ring-2 ring-primary/40' : 'border-border opacity-70 hover:opacity-100'
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img} alt={`${name} thumbnail ${i + 1}`} className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -355,21 +419,8 @@ export default function PurchasePage() {
               key={product.id}
               className="group flex flex-col overflow-hidden rounded-2xl border-border bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md"
             >
-              {/* Image */}
-              <div className="relative flex h-40 items-center justify-center overflow-hidden border-b border-border bg-muted/40">
-                {product.images && product.images[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <Package className="h-10 w-10 text-muted-foreground/40 transition-transform duration-500 group-hover:scale-110" />
-                )}
-                <div className="absolute left-3 top-3">{renderStockBadge(product)}</div>
-                {soldOut && <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />}
-              </div>
+              {/* Image gallery */}
+              <ProductCardImage images={product.images} name={product.name} soldOut={soldOut} badge={renderStockBadge(product)} />
 
               {/* Body */}
               <div className="flex flex-1 flex-col p-4">

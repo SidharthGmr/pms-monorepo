@@ -126,8 +126,7 @@ export default function CategoryList() {
           }}
         />
 
-        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllCategoriesResponse.isLoading} />
-        <div className="rounded-md border">
+        <div className="overflow-hidden rounded-xl border border-border/60">
           <CustomDataTable columns={columns} table={table} isLoading={getAllCategoriesResponse.isLoading} />
         </div>
         <DataTablePagination table={table} totalRecord={recordCount} loading={getAllCategoriesResponse.isLoading} />

@@ -46,16 +46,17 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
           const user = row.original;
           return (
             <div className="flex items-center gap-3">
-              <Avatar className="w-[30px] h-[30px] ring-1 ring-green-500 ring-offset-[2px] ring-offset-background">
+              <Avatar className="h-9 w-9 ring-1 ring-border ring-offset-2 ring-offset-background">
                 {user?.profileImageUrl && (
                   <AvatarImage src={user.profileImageUrl} className="object-cover" alt={user.name} />
                 )}
-                <AvatarFallback className="uppercase bg-primary text-primary-foreground">
+                <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
                   {user?.name?.slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <span className="text-sm font-medium">{user.name}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">{user.name}</span>
+                <span className="text-xs text-muted-foreground">@{user.role}</span>
               </div>
             </div>
           );
@@ -73,16 +74,15 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         cell: ({ row }) => {
           const user = row.original;
           return (
-            <div className="space-y-1 text-xs min-w-[220px]">
+            <div className="min-w-[220px] space-y-1 text-xs">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <BsEnvelope size={12} />
-                <span className="truncate">{user.email}</span>
+                <BsEnvelope size={12} className="shrink-0" />
+                <span className="truncate text-foreground">{user.email}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
-                <BsPhone size={12} />
-                <span>{user.phone}</span>
+                <BsPhone size={12} className="shrink-0" />
+                <span>{user.phone || '—'}</span>
               </div>
-              <span className="text-xs text-muted-foreground block">@{row.original.role}</span>
             </div>
           );
         },

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm install *)",
       "Bash(npx tsc *)",
-      "Bash(grep -nv \"^\\\\s*\\\\*\\\\|^\\\\s*/\\\\*\\\\|^\\\\s*\\\\*/\" routes/authRoutes.ts)"
+      "Bash(grep -nv \"^\\\\s*\\\\*\\\\|^\\\\s*/\\\\*\\\\|^\\\\s*\\\\*/\" routes/authRoutes.ts)",
+      "Bash(grep -rln \"\\\\\\\\+ Add\\\\|onClick.*addToCart\\\\|addToCart\\\\|Add<\" src/components)"
     ]
   }
 }

@@ -7,17 +7,24 @@ import { CategoryDto } from '@/dtos/category.dto';
 import { StatusValues } from '@/enums/status-values.enum';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
+import { Folder } from 'lucide-react';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
-import CategoryRowActions from './row-action';
 
 export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
   useMemo<ColumnDef<CategoryDto>[]>(
     () => [
       {
         id: 'actions',
-        header: 'Action',
-        cell: ({ row }) => <CategoryRowActions row={row} editRecord={editRecord} deleteRecord={deleteRecord} />,
+        enableSorting: false,
+        enableHiding: false,
+        header: () => <span className="text-xs font-semibold uppercase text-muted-foreground">Action</span>,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <ActionTooltip variant="edit" tooltip="Edit category" onClick={() => editRecord(+row.original.id)} />
+            <ActionTooltip variant="delete" tooltip="Delete category" onClick={() => deleteRecord(+row.original.id)} />
+          </div>
+        ),
       },
       {
         id: 'name',
@@ -25,7 +32,14 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
         enableSorting: false,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Name" />,
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Folder className="h-4 w-4" />
+            </div>
+            <span className="font-medium text-foreground">{row.original.name}</span>
+          </div>
+        ),
         meta: { sortingKey: 'name' },
       },
       {
@@ -47,25 +61,12 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
         meta: { sortingKey: 'parentId' },
       },
       {
-        id: 'actions-mobile',
-        accessorKey: 'actions',
-        enableHiding: false,
-        enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} title="" />,
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <ActionTooltip variant="edit" tooltip="Edit Record"    />
-            <ActionTooltip variant="delete" tooltip="Delete Record" onClick={() => deleteRecord(+row.original.id)} />
-          </div>
-        ),
-        meta: { sortingKey: 'actions' },
-      }, {
         id: 'status',
         accessorKey: 'status',
         enableSorting: false,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'scusses' : 'orange'}>{row.original.status}</Badge>,
+        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'green' : 'orange'}>{row.original.status}</Badge>,
         meta: { sortingKey: 'status' },
       },
       {

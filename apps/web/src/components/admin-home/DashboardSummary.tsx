@@ -15,18 +15,25 @@ import {
   AlertTriangle,
   ArrowRight,
   BarChart3,
+  Briefcase,
+  Folder,
   Package,
   Plus,
   Receipt,
   ShoppingBag,
+  ShoppingCart,
   Star,
+  Tag,
   Tags,
   UserRound,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { DashboardEmptyState } from '../skelton/empty-states';
+import DashboardOverviewChart from './DashboardOverviewChart';
 import DashboardStats from './DashboardStats';
+import PurchaseHistoryList from './PurchaseHistoryList';
 import RecentOrdersList from './RecentOrdersList';
 
 /* ------------------------------------------------------------------ */
@@ -58,12 +65,13 @@ function Panel({
             <Icon className="h-4 w-4" />
           </div>
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {count != null && count > 0 && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{count}</span>
-          )}
+          {count != null && count > 0 && <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{count}</span>}
         </div>
         {href && (
-          <Link href={href} className="group inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <Link
+            href={href}
+            className="group inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
             {ctaLabel || 'View all'}
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
@@ -96,9 +104,7 @@ function DashboardHeader() {
             {currentUser?.role && (
               <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{currentUser.role}</span>
             )}
-            {currentUser?.storeCode && (
-              <span className="font-mono text-xs text-muted-foreground/80">{currentUser.storeCode}</span>
-            )}
+            {currentUser?.storeCode && <span className="font-mono text-xs text-muted-foreground/80">{currentUser.storeCode}</span>}
           </div>
         )}
       </div>
@@ -229,10 +235,7 @@ export default function DashboardHome() {
                   return (
                     <div key={product.id} className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <Link
-                          href={`/admin/products/${product.id}`}
-                          className="truncate text-sm font-medium text-foreground hover:text-primary"
-                        >
+                        <Link href={`/admin/products/${product.id}`} className="truncate text-sm font-medium text-foreground hover:text-primary">
                           {product.name}
                         </Link>
                         <span
@@ -288,6 +291,14 @@ export default function DashboardHome() {
 
       {/* Recent products + attributes */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Purchase history */}
+        <Panel title="Purchase History" icon={ShoppingCart} href="/admin/purchase" ctaLabel="View all purchases">
+          <PurchaseHistoryList />
+        </Panel>
+
+        {/* Sales vs purchases chart (period toggle) */}
+        <DashboardOverviewChart data={data} />
+
         <Panel title="Recent Products" icon={Package} href="/admin/products">
           {data && data.products?.length > 0 ? (
             <div className="divide-y divide-border/60">
@@ -352,6 +363,135 @@ export default function DashboardHome() {
             </div>
           ) : (
             <DashboardEmptyState title="No recent attributes" ctaUrl="/admin/attributes/create" ctaTitle="Create Attribute" icon={Star} />
+          )}
+        </Panel>
+
+        <Panel title="Recent Categories" icon={Folder} href="/admin/categories" ctaLabel="View all categories">
+          {data && data.categories?.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {data.categories.map((category) => (
+                <ListRow key={category.id} href={`/admin/categories/${category.id}`}>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Folder className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">{category.name}</span>
+                      <Badge
+                        className={cn(
+                          'rounded border-none px-1.5 py-0 text-[10px] font-semibold uppercase tracking-wide',
+                          category.status === 'Published'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {category.status}
+                      </Badge>
+                    </div>
+                    {category.description && <div className="mt-0.5 truncate text-xs text-muted-foreground">{category.description}</div>}
+                  </div>
+                </ListRow>
+              ))}
+            </div>
+          ) : (
+            <DashboardEmptyState title="No recent categories" ctaUrl="/admin/categories/create" ctaTitle="Create Category" icon={Folder} />
+          )}
+        </Panel>
+
+        <Panel title="Recent Brands" icon={Tag} href="/admin/brand-names" ctaLabel="View all brands">
+          {data && data.brands?.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {data.brands.map((brand) => (
+                <ListRow key={brand.id} href={`/admin/brand-names/${brand.id}`}>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Tag className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">{brand.name}</span>
+                      <Badge
+                        className={cn(
+                          'rounded border-none px-1.5 py-0 text-[10px] font-semibold uppercase tracking-wide',
+                          brand.status === 'Published'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {brand.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </ListRow>
+              ))}
+            </div>
+          ) : (
+            <DashboardEmptyState title="No recent brands" ctaUrl="/admin/brand-names/create" ctaTitle="Create Brand" icon={Tag} />
+          )}
+        </Panel>
+
+        <Panel title="Recent Customers" icon={Users} href="/admin/customer" ctaLabel="View all customers">
+          {data && data.customers?.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {data.customers.map((customer) => (
+                <ListRow key={customer.id} href="/admin/customer">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <UserRound className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">{customer.name}</span>
+                      <Badge
+                        className={cn(
+                          'rounded border-none px-1.5 py-0 text-[10px] font-semibold uppercase tracking-wide',
+                          customer.isActive
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {customer.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">{customer.email || customer.phone || '—'}</div>
+                  </div>
+                </ListRow>
+              ))}
+            </div>
+          ) : (
+            <DashboardEmptyState title="No recent customers" ctaUrl="/admin/customer" ctaTitle="Add Customer" icon={Users} />
+          )}
+        </Panel>
+
+        <Panel title="Recent Staff" icon={Briefcase} href="/admin/staff" ctaLabel="View all staff">
+          {data && data.staff?.length > 0 ? (
+            <div className="divide-y divide-border/60">
+              {data.staff.map((member) => (
+                <ListRow key={member.id} href="/admin/staff">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Briefcase className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">{member.user?.name || '—'}</span>
+                      <Badge
+                        className={cn(
+                          'rounded border-none px-1.5 py-0 text-[10px] font-semibold uppercase tracking-wide',
+                          member.isActive
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {member.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {member.position || member.department || member.user?.email || '—'}
+                    </div>
+                  </div>
+                </ListRow>
+              ))}
+            </div>
+          ) : (
+            <DashboardEmptyState title="No recent staff" ctaUrl="/admin/staff" ctaTitle="Add Staff" icon={Briefcase} />
           )}
         </Panel>
       </div>

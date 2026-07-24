@@ -82,8 +82,16 @@ export interface DistributionDto {
 export interface DashboardSummaryDto {
   products: Products[]
   attributes: Attributes[]
+  categories: Categories[]
+  brands: Brands[]
+  customers: Customers[]
+  staff: Staff[]
   productTotal: number
   attributeTotal: number
+  categoryTotal: number
+  brandTotal: number
+  customerTotal: number
+  staffTotal: number
   todaySale: number
   totalMonthSale: number
   todayPurchase: number
@@ -135,4 +143,51 @@ export interface ProductDistribution {
   count: number
   stock: number;
   percentage: number
+}
+
+export interface Categories {
+  id: number
+  name: string
+  description?: string | null
+  parentId?: number | null
+  storeCode: string
+  status: string
+  displayOrder?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Brands {
+  id: number
+  name: string
+  storeCode: string
+  status: string
+  displayOrder?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Customers {
+  id: number
+  userId: string
+  name: string
+  email: string
+  phone?: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export interface Staff {
+  id: number
+  userId: string
+  storeCode: string
+  position?: string | null
+  department?: string | null
+  isActive: boolean
+  createdAt: string
+  user?: {
+    name: string
+    email: string
+    phone?: string | null
+  }
 }

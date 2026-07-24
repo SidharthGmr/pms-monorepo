@@ -25,7 +25,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className=" mx-auto max-w-7xl space-y-6">
       <DashboardSummary />
     </div>
   );

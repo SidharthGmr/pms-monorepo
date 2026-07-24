@@ -1,3 +1,4 @@
+import { Role, Status } from '@prisma/client';
 import prisma from '../config/prisma';
 import { DashboardSummaryDto } from '../dtos/dashboard.dto';
 import { IDashboardRepository } from './interfaces/idashboard.repository';
@@ -13,6 +14,15 @@ export class DashboardRepository implements IDashboardRepository {
 
     const productWhere = storeCode ? { storeCode } : {};
     const attributeWhere = storeCode ? { storeCode } : {};
+    const categoryWhere = storeCode ? { storeCode } : {};
+    const brandWhere = storeCode ? { storeCode } : {};
+    const customerWhere: any = { role: Role.USER, NOT: { status: Status.Trash } };
+    const staffWhere: any = {};
+    if (storeCode) {
+      customerWhere.storeCode = storeCode;
+      staffWhere.storeCode = storeCode;
+    }
+    const customerSelect = { id: true, userId: true, name: true, email: true, phone: true, isActive: true, createdAt: true } as const;
 
     const todayOrderWhere: any = {
       orderDate: { gte: todayStart, lte: todayEnd },
@@ -43,6 +53,14 @@ export class DashboardRepository implements IDashboardRepository {
       productRecent,
       attributeTotal,
       attributeRecent,
+      categoryTotal,
+      categoryRecent,
+      brandTotal,
+      brandRecent,
+      customerTotal,
+      customerRecent,
+      staffTotal,
+      staffRecent,
       todaySaleResult,
       monthSaleResult,
       todayPurchaseResult,
@@ -56,6 +74,19 @@ export class DashboardRepository implements IDashboardRepository {
       prisma.product.findMany({ where: productWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
       prisma.attribute.count({ where: attributeWhere }),
       prisma.attribute.findMany({ where: attributeWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
+      prisma.category.count({ where: categoryWhere }),
+      prisma.category.findMany({ where: categoryWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
+      prisma.brandName.count({ where: brandWhere }),
+      prisma.brandName.findMany({ where: brandWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
+      prisma.users.count({ where: customerWhere }),
+      prisma.users.findMany({ where: customerWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT, select: customerSelect }),
+      prisma.staff.count({ where: staffWhere }),
+      prisma.staff.findMany({
+        where: staffWhere,
+        orderBy: { createdAt: 'desc' },
+        take: RECENT_LIMIT,
+        include: { user: { select: { name: true, email: true, phone: true } } },
+      }),
       prisma.order.aggregate({
         _sum: { grandTotal: true },
         where: todayOrderWhere,
@@ -111,8 +142,16 @@ export class DashboardRepository implements IDashboardRepository {
     return {
       products: productRecent,
       attributes: attributeRecent,
+      categories: categoryRecent,
+      brands: brandRecent,
+      customers: customerRecent,
+      staff: staffRecent,
       productTotal,
       attributeTotal,
+      categoryTotal,
+      brandTotal,
+      customerTotal,
+      staffTotal,
       todaySale: todaySaleResult._sum.grandTotal || 0,
       totalMonthSale: monthSaleResult._sum.grandTotal || 0,
       todayPurchase: todayPurchaseResult._sum.totalAmount || 0,

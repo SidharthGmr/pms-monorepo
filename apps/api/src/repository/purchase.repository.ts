@@ -20,7 +20,7 @@ export class PurchaseRepository implements IPurchaseRepository {
         where,
         include: {
           user: { select: { name: true, email: true } },
-          items: true,
+          items: { include: { product: true } },
         },
         skip,
         take: limit,

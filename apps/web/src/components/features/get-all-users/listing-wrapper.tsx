@@ -9,19 +9,19 @@ export default function GetAllUsersListingWrapper({ role }: { role?: string }) {
   const [showAddModal, setShowAddModal] = useState(false);
 
   return (
-    <>
-      {role}
+    <div className="space-y-4">
       <PageHeader
-        title={`${role ? 'Customer' : 'All Users'} List`}
+        title={`${role ? 'Customers' : 'All Users'}`}
+        description={role ? 'Manage your store customers.' : 'Manage user accounts, roles, and access.'}
         variant="add"
-        actionText="Add User"
+        actionText={role ? 'Add Customer' : 'Add User'}
         onClick={() => setShowAddModal(true)}
       />
-      <Card className="overflow-hidden space-y-4">
+      <Card className="overflow-hidden">
         <GetAllUserss role={role} />
       </Card>
 
       {showAddModal && <ManageUser isOpen={showAddModal} onClose={() => setShowAddModal(false)} role={role} />}
-    </>
+    </div>
   );
 }
