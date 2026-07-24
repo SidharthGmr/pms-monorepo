@@ -41,6 +41,10 @@ export class ProductService implements IProductService {
     return this.unitOfWork.Product.findAll(filters, filters?.page, filters?.recordPerPage);
   }
 
+  async getLowStock(filters?: ProductFilterParams) {
+    return this.unitOfWork.Product.findLowStock(filters, filters?.page, filters?.recordPerPage);
+  }
+
   async getById(id: number): Promise<ProductResponseDto | null> {
     const product = await this.unitOfWork.Product.findById(id);
     if (!product) throw new NotFoundError("Product not found");

@@ -135,6 +135,50 @@ productRouter.get('/public', asyncHandler(productController.getAllPublic));
 
 /**
  * @swagger
+ * /products/reports/low-stock:
+ *   get:
+ *     summary: Get low-stock products for the authenticated user's store
+ *     description: Returns products whose current stock is at or below their lowStockThreshold. Scoped to the caller's store.
+ *     tags: [Product]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *         required: false
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Low stock products fetched successfully
+ *       400:
+ *         description: Store code not found
+ */
+productRouter.get('/reports/low-stock', authenticateToken, asyncHandler(productController.getLowStock));
+
+/**
+ * @swagger
  * /products/{id}:
  *   get:
  *     summary: Get product by ID

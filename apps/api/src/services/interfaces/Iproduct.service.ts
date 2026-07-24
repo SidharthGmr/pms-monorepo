@@ -10,6 +10,7 @@ export interface AddStockModel {
 
 export interface IProductService {
   getAll(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
+  getLowStock(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
   getById(id: number): Promise<ProductResponseDto | null>;
   create(data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
   update(id: number, data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
