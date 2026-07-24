@@ -20,9 +20,9 @@ export default function ActiveUserSwitch() {
 
   return (
     <>
-      <Avatar className="h-8 w-8 rounded-lg">
+      <Avatar className=" w-[30px] h-[30px]  ring-1 ring-primary ring-offset-[2px] ring-offset-background">
         <AvatarImage src={profileImageUrl} alt={name} />
-        <AvatarFallback className="rounded-lg">{name}</AvatarFallback>
+        <AvatarFallback className="uppercase bg-primary text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-semibold">{currentUser.name}</span>

@@ -82,8 +82,14 @@ export interface DistributionDto {
 export interface DashboardSummaryDto {
   products: Products[]
   attributes: Attributes[]
+  productTotal: number
+  attributeTotal: number
   todaySale: number
   totalMonthSale: number
+  todayPurchase: number
+  totalMonthPurchase: number
+  todayOrderCount: number
+  totalMonthOrderCount: number
   productDistribution: ProductDistribution[]
 }
 

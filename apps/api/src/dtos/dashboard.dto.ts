@@ -16,7 +16,13 @@ export interface DashboardSectionDto<T> {
 export interface DashboardSummaryDto {
   products: ProductResponseDto[];
   attributes: AttributeDto[];
+  productTotal: number;
+  attributeTotal: number;
   todaySale: number;
   totalMonthSale: number;
+  todayPurchase: number;
+  totalMonthPurchase: number;
+  todayOrderCount: number;
+  totalMonthOrderCount: number;
   productDistribution: DistributionDto[];
 }

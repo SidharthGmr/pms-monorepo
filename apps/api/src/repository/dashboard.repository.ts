@@ -22,10 +22,20 @@ export class DashboardRepository implements IDashboardRepository {
       orderDate: { gte: monthStart, lte: todayEnd },
       status: { not: 'CANCELLED' },
     };
+    const todayPurchaseWhere: any = {
+      purchaseDate: { gte: todayStart, lte: todayEnd },
+      status: { not: 'CANCELLED' },
+    };
+    const monthPurchaseWhere: any = {
+      purchaseDate: { gte: monthStart, lte: todayEnd },
+      status: { not: 'CANCELLED' },
+    };
 
     if (storeCode) {
       todayOrderWhere.storeCode = storeCode;
       monthOrderWhere.storeCode = storeCode;
+      todayPurchaseWhere.storeCode = storeCode;
+      monthPurchaseWhere.storeCode = storeCode;
     }
 
     const [
@@ -35,6 +45,10 @@ export class DashboardRepository implements IDashboardRepository {
       attributeRecent,
       todaySaleResult,
       monthSaleResult,
+      todayPurchaseResult,
+      monthPurchaseResult,
+      todayOrderCount,
+      monthOrderCount,
       topProductsByOrder,
       totalQuantityResult
     ] = await Promise.all([
@@ -50,6 +64,16 @@ export class DashboardRepository implements IDashboardRepository {
         _sum: { grandTotal: true },
         where: monthOrderWhere,
       }),
+      prisma.purchase.aggregate({
+        _sum: { totalAmount: true },
+        where: todayPurchaseWhere,
+      }),
+      prisma.purchase.aggregate({
+        _sum: { totalAmount: true },
+        where: monthPurchaseWhere,
+      }),
+      prisma.order.count({ where: todayOrderWhere }),
+      prisma.order.count({ where: monthOrderWhere }),
       prisma.orderItem.groupBy({
         by: ['productId'],
         _sum: { quantity: true },
@@ -87,8 +111,14 @@ export class DashboardRepository implements IDashboardRepository {
     return {
       products: productRecent,
       attributes: attributeRecent,
+      productTotal,
+      attributeTotal,
       todaySale: todaySaleResult._sum.grandTotal || 0,
       totalMonthSale: monthSaleResult._sum.grandTotal || 0,
+      todayPurchase: todayPurchaseResult._sum.totalAmount || 0,
+      totalMonthPurchase: monthPurchaseResult._sum.totalAmount || 0,
+      todayOrderCount,
+      totalMonthOrderCount: monthOrderCount,
       productDistribution,
     };
   }

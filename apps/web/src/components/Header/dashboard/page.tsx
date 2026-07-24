@@ -47,7 +47,7 @@ export default function HeaderDashboard() {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger className={` flex justify-center  overflow-hidden items-center relative bg-blue size-12 rounded-full`}>
-                  <Avatar className=" w-[30px] h-[30px]  ring-1 ring-green-500 ring-offset-[2px] ring-offset-background">
+                  <Avatar className=" w-[30px] h-[30px]  ring-1 ring-primary ring-offset-[2px] ring-offset-background">
                     {!isError && profileImageUrl && <AvatarImage src={profileImageUrl} className="object-cover" alt={name} />}
                     <AvatarFallback className="uppercase bg-primary text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>
                   </Avatar>
