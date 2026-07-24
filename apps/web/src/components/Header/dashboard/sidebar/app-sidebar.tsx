@@ -22,14 +22,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarTrigger className=" bg-primary rounded-full  h-8 w-8  text-white" />
       </div>
       <SidebarHeader className=''>
-        <div className="text-center">
+        <div className="flex items-center justify-center">
           <Link href="/" className="inline-block" title={`${config.appName}`}>
-            <Image src={open ? logo : icon} width={180} height={50} alt="ShotMailer" className="dark:grayscale w-[180px] h-[50px]" />
+            {open ? (
+              <Image src={logo} width={180} height={50} alt={config.appName} className="dark:grayscale h-[50px] w-[160px] object-contain" />
+            ) : (
+              <Image src={icon} width={32} height={32} alt={config.appName} className="dark:grayscale h-8 w-8 object-contain" />
+            )}
           </Link>
         </div>
       </SidebarHeader>
       <SidebarContent className=''>
-        <ScrollArea className="h-svh pe-2 block">
+        <ScrollArea className="h-svh block pe-2 group-data-[collapsible=icon]:pe-0">
           <NavMain />
         </ScrollArea>
       </SidebarContent>

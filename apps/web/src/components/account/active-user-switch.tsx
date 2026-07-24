@@ -12,7 +12,6 @@ export default function ActiveUserSwitch() {
   const userId = ((currentUser as any)?.userId ?? currentUser?.usersId ?? '') as string;
   const { data: userResponse } = useGetUserById(userId, !!userId);
   const apiUser = userResponse?.data?.data;
-  console.log('userResponse', userResponse);
   if (!currentUser) return null;
 
   const name = currentUser.name || '';
@@ -20,11 +19,11 @@ export default function ActiveUserSwitch() {
 
   return (
     <>
-      <Avatar className=" w-[30px] h-[30px]  ring-1 ring-primary ring-offset-[2px] ring-offset-background">
+      <Avatar className="h-8 w-8 shrink-0 ring-1 ring-primary ring-offset-[2px] ring-offset-background">
         <AvatarImage src={profileImageUrl} alt={name} />
         <AvatarFallback className="uppercase bg-primary text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>
       </Avatar>
-      <div className="grid flex-1 text-left text-sm leading-tight">
+      <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
         <span className="truncate font-semibold">{currentUser.name}</span>
         <span className="truncate text-xs">{currentUser.email}</span>
       </div>

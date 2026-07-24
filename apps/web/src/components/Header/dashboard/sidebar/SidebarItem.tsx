@@ -23,7 +23,21 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
   // const router = useRouter();
   const hasChildren = !!item.submenu?.length;
   const Icon = item.icon;
-  const matchPath = pathname === item.url || item.submenu?.some((child) => pathname === child.url);
+
+  // Highlight the current page. Sub-routes (e.g. /admin/categories/create) should
+  // also highlight their parent nav item, while dashboard roots only match exactly
+  // so they don't light up on every page.
+  const normalize = (p: string) => (p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p);
+  const isActive = (url?: string) => {
+    if (!url) return false;
+    const path = normalize(pathname);
+    const target = normalize(url);
+    const isRoot = target === '/' || target === '/admin' || target === '/dashboard';
+    return isRoot ? path === target : path === target || path.startsWith(`${target}/`);
+  };
+
+  const childActive = item.submenu?.some((child) => isActive(child.url)) ?? false;
+  const matchPath = isActive(item.url) || childActive;
 
   // On mobile the sidebar is a sheet overlay; close it after navigating.
   const handleNavigate = () => {
@@ -70,7 +84,7 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
               <SidebarMenuSub>
                 {item.submenu?.map((child) => (
                   <SidebarMenuSubItem key={child.id}>
-                    <SidebarMenuSubButton asChild isActive={pathname === child.url}>
+                    <SidebarMenuSubButton asChild isActive={isActive(child.url)}>
                       <Link href={child.url} onClick={handleNavigate}>
                         {child.icon && <child.icon />}
                         <span>{child.title}</span>
@@ -84,8 +98,8 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
         </Collapsible>
       ) : (
         <SidebarMenuSubItem key={item.id}>
-          <SidebarMenuButton tooltip={item.title} isActive={matchPath} asChild className="">
-            <Link href={item.url || ''} onClick={handleNavigate} className="text-foreground">
+          <SidebarMenuButton tooltip={item.title} isActive={matchPath} asChild>
+            <Link href={item.url || ''} onClick={handleNavigate}>
               {Icon && <Icon />}
               <span>{item.title}</span>
             </Link>
