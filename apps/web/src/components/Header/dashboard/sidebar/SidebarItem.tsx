@@ -1,7 +1,7 @@
 'use client';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from '@/components/ui/sidebar';
+import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from '@/components/ui/sidebar';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,17 +18,26 @@ interface SidebarItemRendererProps {
 
 export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, index, openIndex, setOpenIndex, onClick }) => {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
   const isOpen = openIndex === index;
   // const router = useRouter();
   const hasChildren = !!item.submenu?.length;
   const Icon = item.icon;
   const matchPath = pathname === item.url || item.submenu?.some((child) => pathname === child.url);
 
+  // On mobile the sidebar is a sheet overlay; close it after navigating.
+  const handleNavigate = () => {
+    onClick?.();
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   if (!item.url && !item.submenu?.length) {
     return (
       <SidebarMenuSubItem key={item.id}>
         <SidebarMenuSubButton asChild isActive={false}>
-          <div className="flex items-center cursor-pointer px-2 py-2" onClick={onClick}>
+          <div className="flex items-center cursor-pointer px-2 py-2" onClick={handleNavigate}>
             {Icon && <Icon />}
             <span>{item.title}</span>
           </div>
@@ -62,7 +71,7 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
                 {item.submenu?.map((child) => (
                   <SidebarMenuSubItem key={child.id}>
                     <SidebarMenuSubButton asChild isActive={pathname === child.url}>
-                      <Link href={child.url}>
+                      <Link href={child.url} onClick={handleNavigate}>
                         {child.icon && <child.icon />}
                         <span>{child.title}</span>
                       </Link>
@@ -76,7 +85,7 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
       ) : (
         <SidebarMenuSubItem key={item.id}>
           <SidebarMenuButton tooltip={item.title} isActive={matchPath} asChild className="">
-            <Link href={item.url || ''} onClick={onClick} className="text-foreground">
+            <Link href={item.url || ''} onClick={handleNavigate} className="text-foreground">
               {Icon && <Icon />}
               <span>{item.title}</span>
             </Link>
