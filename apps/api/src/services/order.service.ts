@@ -63,7 +63,7 @@ export class OrderService implements IOrderService {
 
           // Resolve the price effective on the order date from the price-history
           // table. The client never sends a price — it is always resolved here.
-          const priceRow = await this.unitOfWork.ProductPrice.getEffectiveOn(item.productId, orderDate, transactionClient);
+          const priceRow = await this.unitOfWork.ProductVariant.getEffectiveOn(item.productId, orderDate, transactionClient);
           if (!priceRow) {
             throw new ClientError(`No price found for product ${product.name}. Please set a price before selling it.`);
           }

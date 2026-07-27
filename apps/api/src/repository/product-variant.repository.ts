@@ -5,6 +5,14 @@ import { ListResponseDto } from '../dtos/list-response.dto';
 import { CreateProductVariantModel } from '../models/product-variant.model';
 import { IProductVariantRepository } from './interfaces/iproduct-variant.repository';
 
+/**
+ * Prisma maps the price columns to `Decimal`, which serializes to a JSON string.
+ * The API contract exposes plain numbers, so convert at the repository boundary.
+ */
+function toVariantDto<T extends { sellingPrice: Prisma.Decimal; costPrice: Prisma.Decimal | null }>(row: T) {
+  return { ...row, sellingPrice: row.sellingPrice.toNumber(), costPrice: row.costPrice?.toNumber() ?? null };
+}
+
 export class ProductVariantRepository implements IProductVariantRepository {
   async create(data: CreateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
     // Deactivate the previously active variant row for this product.
@@ -13,7 +21,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
       data: { isActive: false },
     });
 
-    return tx.productVariant.create({
+    const created = await tx.productVariant.create({
       data: {
         productId: data.productId,
         storeCode: data.storeCode,
@@ -25,20 +33,23 @@ export class ProductVariantRepository implements IProductVariantRepository {
         createdById: data.createdById,
       },
     });
+    return toVariantDto(created);
   }
 
   async getActive(productId: number, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto | null> {
-    return tx.productVariant.findFirst({
+    const row = await tx.productVariant.findFirst({
       where: { productId, isActive: true },
       orderBy: { effectiveFrom: 'desc' },
     });
+    return row ? toVariantDto(row) : null;
   }
 
   async getEffectiveOn(productId: number, date: Date, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto | null> {
-    return tx.productVariant.findFirst({
+    const row = await tx.productVariant.findFirst({
       where: { productId, effectiveFrom: { lte: date } },
       orderBy: { effectiveFrom: 'desc' },
     });
+    return row ? toVariantDto(row) : null;
   }
 
   async getHistory(productId: number, storeCode: string, page = 1, limit = 10): Promise<ListResponseDto<ProductVariantResponseDto>> {
@@ -53,6 +64,6 @@ export class ProductVariantRepository implements IProductVariantRepository {
       }),
       prisma.productVariant.count({ where }),
     ]);
-    return { totalRecord: total, data };
+    return { totalRecord: total, data: data.map(toVariantDto) };
   }
 }

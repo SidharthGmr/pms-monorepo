@@ -6,6 +6,7 @@ import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import type { IDateTimeService } from "./interfaces/idatetime.service";
 import type { IUserService } from "./interfaces/Iuser.service";
 import { UserFilterParams } from "../params/user.params";
+import type { UserWithProfile } from "../repository/user-profile.mapper";
 
 @injectable()
 export class UserService implements IUserService {
@@ -128,12 +129,13 @@ export class UserService implements IUserService {
     return user;
   }
 
-  convertToDto(user: users, includePassword: boolean = false, token: boolean = false, refreshToken: boolean = false,): UserDto {
+  convertToDto(user: UserWithProfile, includePassword: boolean = false, token: boolean = false, refreshToken: boolean = false,): UserDto {
+    const profile = user.UserProfile;
     return {
       id: user.id,
       userId: user.userId,
       name: user.name,
-      userName: user.userName,
+      userName: profile?.userName ?? '',
       email: user.email,
       phone: user.phone,
       password: includePassword ? user.password : '',
@@ -146,7 +148,7 @@ export class UserService implements IUserService {
       lastLoginIP: user.lastLoginIP,
       emailVerificationToken: user.emailVerificationToken,
       emailVerificationExpires: user.emailVerificationExpires,
-      profileImageUrl: user.profileImageUrl,
+      profileImageUrl: profile?.profileImageUrl ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       status: user.status,
@@ -154,13 +156,13 @@ export class UserService implements IUserService {
       tokenUpdated: user.tokenUpdated,
       refreshToken: token ? user.refreshToken : null,
       storeCode: user.storeCode || null,
-      dateOfBirth: user.dateOfBirth || null,
-      address: user.address || null,
-      city: user.city || null,
-      state: user.state || null,
-      country: user.country || null,
-      pincode: user.pincode || null,
-      bio: user.bio || null,
+      dateOfBirth: profile?.dateOfBirth || null,
+      address: profile?.address || null,
+      city: profile?.city || null,
+      state: profile?.state || null,
+      country: profile?.country || null,
+      pincode: profile?.pincode || null,
+      bio: profile?.bio || null,
     };
   }
 }

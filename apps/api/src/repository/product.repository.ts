@@ -81,7 +81,7 @@ export class ProductRepository implements IProductRepository {
       brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
       attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
       productIds.length
-        ? prisma.productPrice.findMany({
+        ? prisma.productVariant.findMany({
           where: { productId: { in: productIds }, effectiveFrom: { lte: new Date() } },
           orderBy: { effectiveFrom: 'desc' },
           select: { productId: true, sellingPrice: true, costPrice: true },
@@ -106,7 +106,7 @@ export class ProductRepository implements IProductRepository {
     const currentPriceByProduct = new Map<number, { sellingPrice: number; costPrice: number | null }>();
     for (const price of effectivePrices) {
       if (!currentPriceByProduct.has(price.productId)) {
-        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice, costPrice: price.costPrice });
+        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice.toNumber(), costPrice: price.costPrice?.toNumber() ?? null });
       }
     }
 
@@ -170,7 +170,7 @@ export class ProductRepository implements IProductRepository {
       brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
       attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
       productIds.length
-        ? prisma.productPrice.findMany({
+        ? prisma.productVariant.findMany({
           where: { productId: { in: productIds }, effectiveFrom: { lte: new Date() } },
           orderBy: { effectiveFrom: 'desc' },
           select: { productId: true, sellingPrice: true, costPrice: true },
@@ -193,7 +193,7 @@ export class ProductRepository implements IProductRepository {
     const currentPriceByProduct = new Map<number, { sellingPrice: number; costPrice: number | null }>();
     for (const price of effectivePrices) {
       if (!currentPriceByProduct.has(price.productId)) {
-        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice, costPrice: price.costPrice });
+        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice.toNumber(), costPrice: price.costPrice?.toNumber() ?? null });
       }
     }
 
@@ -218,12 +218,48 @@ export class ProductRepository implements IProductRepository {
     return { totalRecord: total, data };
   }
 
-  async findById(id: number): Promise<ProductResponseDto | null> {
-    return prisma.product.findUnique({ where: { id }, include: productInclude });
+  async findById(id: number): Promise<ProductWithPriceResponseDto | null> {
+    const product = await prisma.product.findUnique({ where: { id }, include: productInclude });
+    if (!product) return null;
+
+    // Same derivation as the list endpoints: price comes from the latest effective
+    // ProductVariant, stock from the sum of stockHistory movements. The edit form
+    // needs both, since neither is a column on `product`.
+    const [category, brand, attribute, effectivePrice, stockSum] = await Promise.all([
+      prisma.category.findUnique({ where: { id: product.categoryId }, select: { name: true } }),
+      product.brandNameId != null
+        ? prisma.brandName.findUnique({ where: { id: product.brandNameId }, select: { name: true } })
+        : null,
+      product.attributeId != null
+        ? prisma.attribute.findUnique({ where: { id: product.attributeId }, select: { name: true } })
+        : null,
+      prisma.productVariant.findFirst({
+        where: { productId: id, effectiveFrom: { lte: new Date() } },
+        orderBy: { effectiveFrom: 'desc' },
+        select: { sellingPrice: true, costPrice: true },
+      }),
+      prisma.stockHistory.aggregate({ where: { productId: id }, _sum: { quantity: true } }),
+    ]);
+
+    return {
+      ...product,
+      category: category?.name ?? '',
+      brandName: brand?.name ?? null,
+      attribute: attribute?.name ?? null,
+      currentPrice: effectivePrice
+        ? { sellingPrice: effectivePrice.sellingPrice.toNumber(), costPrice: effectivePrice.costPrice?.toNumber() ?? null }
+        : null,
+      stock: stockSum._sum.quantity ?? 0,
+    };
   }
 
   async delete(id: number): Promise<ProductResponseDto> {
     return prisma.product.update({ where: { id }, data: { status: Status.Trash } });
+  }
+
+  async getCurrentStock(productId: number, tx: Prisma.TransactionClient = prisma): Promise<number> {
+    const result = await tx.stockHistory.aggregate({ where: { productId }, _sum: { quantity: true } });
+    return result._sum.quantity ?? 0;
   }
 
   async createStockHistory(

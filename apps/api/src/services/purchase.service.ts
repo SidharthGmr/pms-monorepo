@@ -64,19 +64,25 @@ export class PurchaseService implements IPurchaseService {
         new Map(data.items.map(item => [item.productId, { productId: item.productId, costPrice: item.costPrice }])).values()
       );
 
-      function calculateSellingPrice(costPrice: number, markupPercent: number = 30): string {
-        const selling = costPrice * (1 + markupPercent / 100);
-        return selling.toFixed(2);
-      }
+      // The new variants must end up active (a plain createMany used to leave them
+      // all isActive = false, so nothing was ever the active price). Do it in two
+      // batched queries rather than two per product — this runs inside an
+      // interactive transaction against a remote database, where a per-product
+      // round-trip loop blows the transaction timeout.
+      await transactionClient.productVariant.updateMany({
+        where: { productId: { in: uniquePrices.map((item) => item.productId) }, isActive: true },
+        data: { isActive: false },
+      });
 
-      await transactionClient.productPrice.createMany({
-        data: uniquePrices.map(p => ({
-          productId: p.productId,
+      await transactionClient.productVariant.createMany({
+        data: uniquePrices.map((item) => ({
+          productId: item.productId,
           storeCode,
-          costPrice: +p.costPrice,
+          sellingPrice: PricingUtils.costToSellingPrice(item.costPrice),
+          costPrice: +item.costPrice,
+          isActive: true,
+          reason: `Purchase #${purchase.id}`,
           createdById: userId,
-          isActive: false,
-          sellingPrice: PricingUtils.costToSellingPrice(p.costPrice)
         })),
       });
 

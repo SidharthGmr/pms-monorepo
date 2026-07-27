@@ -29,14 +29,19 @@ export default function ProductListRowActions<TData>({ row, deleteRecord }: Prod
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[160px]">
-          <DropdownMenuItem asChild className="cursor-pointer" >
+          <DropdownMenuItem asChild className="cursor-pointer">
             <Link href={`/admin/products/${item?.id}`}>Edit</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAddStockOpen(true)}>
-            Add Stock
-          </DropdownMenuItem>
+          {item.currentPrice?.costPrice && (
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAddStockOpen(true)}>
+              Add Stock
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem className="cursor-pointer" onClick={() => setIsStockHistoryOpen(true)}>
             Stock History
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href={`/admin/products/${item?.id}/variants`}>Variants</Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={() => deleteRecord(item.id)}>
             Delete
@@ -53,15 +58,11 @@ export default function ProductListRowActions<TData>({ row, deleteRecord }: Prod
           onSuccess={() => window.location.reload()}
         />
       )}
-      
+
       {isStockHistoryOpen && (
-        <StockHistoryModal
-          productId={item.id}
-          productName={item.name}
-          isOpen={isStockHistoryOpen}
-          onClose={() => setIsStockHistoryOpen(false)}
-        />
+        <StockHistoryModal productId={item.id} productName={item.name} isOpen={isStockHistoryOpen} onClose={() => setIsStockHistoryOpen(false)} />
       )}
+
     </>
   );
 }

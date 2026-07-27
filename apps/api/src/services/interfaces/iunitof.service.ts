@@ -2,7 +2,7 @@ import { IAccountService } from "./Iaccount.service";
 import { IUserService } from "./Iuser.service";
 import { ICategoryService } from "./Icategory.service";
 import { IProductService } from "./Iproduct.service";
-import { IProductPriceService } from "./Iproduct-price.service";
+import { IProductVariantService } from "./Iproduct-variant.service";
 import { IAttributeService } from "./Iattribute.service";
 import { IStaffAttendanceService } from "./Istaff-attendance.service";
 import { IOrderService } from "./Iorder.service";
@@ -21,7 +21,7 @@ export default interface IUnitOfService {
   Account: IAccountService;
   Category: ICategoryService;
   Product: IProductService;
-  ProductPrice: IProductPriceService;
+  ProductVariant: IProductVariantService;
   Attribute: IAttributeService;
   StaffAttendance: IStaffAttendanceService;
   Order: IOrderService;

@@ -33,10 +33,7 @@ export class ProductController {
    * Store-scoped low-stock report: products whose current stock is at or below their
    * own `lowStockThreshold`. Scoping is derived from the authenticated user's store.
    */
-  getLowStock = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
+  getLowStock = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
       return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
@@ -61,10 +58,7 @@ export class ProductController {
     });
   };
 
-  getAll = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
+  getAll = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
     const isAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === Role.ADMIN || req.user?.role === Role.USER || req.user?.role === Role.STAFF;
     const createdById = isAdmin ? undefined : req.user?.userId;
     const storeCode = req.user?.storeCode;

@@ -26,7 +26,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
 
   // Live per-line subtotal (quantity × unit cost).
   const quantity = useWatch({ control, name: `items.${index}.quantity` });
-  const unitCost = useWatch({ control, name: `items.${index}.unitCost` });
+  const unitCost = useWatch({ control, name: `items.${index}.costPrice` });
   const lineTotal = Number(quantity) > 0 && Number(unitCost) >= 0 ? Number(quantity) * Number(unitCost) : 0;
 
   return (
@@ -85,10 +85,10 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
       <div className="w-full sm:w-28">
         <FormField
           control={control}
-          name={`items.${index}.unitCost`}
+          name={`items.${index}.costPrice`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Unit Cost</FormLabel>
+              <FormLabel>costPrice</FormLabel>
               <FormControl>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>

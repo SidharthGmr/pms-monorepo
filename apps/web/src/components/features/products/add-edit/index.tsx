@@ -24,21 +24,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Card } from '@/components/ui/card';
 
 interface ManageProductProps {
   id: number;
 }
 
-/**
- * The shared `productFields` schema intentionally omits price/cost/stock, so a
- * plain `zodResolver(productFields)` STRIPS them from the submitted payload.
- * Extend it locally so the values the form collects actually reach the API.
- */
-const productFormSchema = productFields.extend({
-  price: z.number().nonnegative('Selling price must be 0 or more'),
-  cost: z.number().nonnegative('Cost must be 0 or more').nullable().optional(),
-  stock: z.number().int('Enter a whole number').nonnegative('Stock must be 0 or more').nullable().optional(),
-});
+// `productFields` carries price/cost/stock; the API turns them into the product's
+// initial ProductVariant and opening stock movement.
+const productFormSchema = productFields;
 
 /** A titled group of related fields, with a leading icon and helper text. */
 function Section({
@@ -53,7 +47,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid grid-cols-1 gap-x-8 gap-y-4 lg:grid-cols-[240px_1fr]">
+    <section className="space-y-2">
       <div className="flex items-start gap-3">
         <div className="mt-0.5 rounded-lg bg-primary/10 p-2 text-primary">
           <Icon className="h-4 w-4" />
@@ -78,7 +72,6 @@ export default function ManageProduct({ id }: ManageProductProps) {
   const getAllAttributes = useGetAllAttributes();
   const getAllProducts = useGetAllProducts();
 
-  const { currentUser } = useGetCurrentUser();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const { data: productResponse, isLoading: isFetching } = useGetProductById(id ?? 0, isEdit);
@@ -88,22 +81,22 @@ export default function ManageProduct({ id }: ManageProductProps) {
     defaultValues: {
       parentId: undefined,
       categoryId: 0,
-      brandNameId: undefined,
-      attributeId: undefined,
+      brandNameId: 0,
+      attributeId: 0,
       name: '',
       slug: '',
+      sellingPrice: undefined,
+      costPrice: undefined,
       description: '',
-      price: 0,
-      cost: undefined,
-      stock: 0,
-      lowStockThreshold: undefined,
       displayOrder: 0,
-      images: [],
       status: '',
     },
   });
 
-  const { handleSubmit, reset, setValue, getValues } = form;
+  const { handleSubmit, reset, setValue, getValues, watch } = form;
+
+  // Drives the conditional "Pricing & inventory" block below.
+  const haveCostPrice = watch('costPrice');
 
   const generateSlug = (name: string) =>
     name
@@ -120,9 +113,9 @@ export default function ManageProduct({ id }: ManageProductProps) {
         name: p.name,
         slug: p.slug,
         description: p.description ?? '',
-        price: p.price,
-        cost: p.cost ?? undefined,
-        stock: p.stock,
+        sellingPrice: p.currentPrice?.sellingPrice ?? 0,
+        costPrice: p.currentPrice?.costPrice ?? undefined,
+        stock: p.stock ?? 0,
         lowStockThreshold: p.lowStockThreshold ?? undefined,
         parentId: p.parentId ?? undefined,
         categoryId: p.categoryId,
@@ -164,10 +157,9 @@ export default function ManageProduct({ id }: ManageProductProps) {
 
   return (
     <Form {...form}>
-      <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-8">
-        {/* Basic details */}
-        <Section icon={Info} title="Basic details" description="The product name, URL slug and a short description.">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
+        <Card className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 ">
             <FormField
               control={form.control}
               name="name"
@@ -204,28 +196,28 @@ export default function ManageProduct({ id }: ManageProductProps) {
                 </FormItem>
               )}
             />
-
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 ">
             <FormField
               control={form.control}
-              name="description"
+              name="parentId"
               render={({ field }) => (
-                <FormItem className="sm:col-span-2">
-                  <FormLabel>Description</FormLabel>
+                <FormItem>
+                  <FormLabel>Parent product</FormLabel>
                   <FormControl>
-                    <Textarea rows={3} placeholder="Product description…" className="resize-none" {...field} value={field.value ?? ''} />
+                    <SelectSearch
+                      buttonClass="w-full"
+                      placeholder="Select parent product"
+                      disableSearch
+                      items={parentItems}
+                      value={field.value ?? ''}
+                      onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
-        </Section>
-
-        <Separator />
-
-        {/* Organization */}
-        <Section icon={Layers} title="Organization" description="Classify the product and control where it appears.">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="categoryId"
@@ -285,28 +277,106 @@ export default function ManageProduct({ id }: ManageProductProps) {
                 </FormItem>
               )}
             />
+          </div>
+        </Card>
+        {haveCostPrice && (
+          <Card>
+            <Section icon={Boxes} title="Pricing & inventory" description="Set the selling price, cost and how many units are in stock.">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="costPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase cost</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(numberChange(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sellingPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selling price *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(+e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <FormField
+                  control={form.control}
+                  name="lowStockThreshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Low stock alert</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="e.g. 5"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(numberChange(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Section>
+          </Card>
+        )}
+        <Card>
+          <Section icon={ImageIcon} title="Media" description="Upload product photos. The first image is used as the primary thumbnail.">
             <FormField
               control={form.control}
-              name="parentId"
+              name="images"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Parent product</FormLabel>
                   <FormControl>
-                    <SelectSearch
-                      buttonClass="w-full"
-                      placeholder="Select parent product"
-                      disableSearch
-                      items={parentItems}
-                      value={field.value ?? ''}
-                      onChange={(value) => field.onChange(value ? Number(value) : undefined)}
-                    />
+                    <ProductImageUploader value={field.value || []} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2">
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea rows={3} placeholder="Product description…" className="resize-none" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </Section>
+        </Card>
 
+        <Card>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="status"
@@ -353,109 +423,10 @@ export default function ManageProduct({ id }: ManageProductProps) {
               )}
             />
           </div>
-        </Section>
-
-        <Separator />
-
-        {/* Pricing & inventory */}
-        <Section icon={Boxes} title="Pricing & inventory" description="Set the selling price, cost and how many units are in stock.">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Selling price *</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(+e.target.value)} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="cost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Purchase cost</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(numberChange(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="stock"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Stock</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(numberChange(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="lowStockThreshold"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Low stock alert</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 5"
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(numberChange(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </Section>
-
-        <Separator />
-
-        {/* Media */}
-        <Section icon={ImageIcon} title="Media" description="Upload product photos. The first image is used as the primary thumbnail.">
-          <FormField
-            control={form.control}
-            name="images"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <ProductImageUploader value={field.value || []} onChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </Section>
+        </Card>
 
         {/* Actions */}
-        <div className="sticky bottom-0 -mx-3 flex items-center justify-end gap-2 border-t border-border bg-background/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:-mx-5 md:px-5">
+        <div className="sticky bottom-0  flex items-center justify-end gap-2 border-t border-border bg-background/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80   md:px-5">
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
             Cancel
           </Button>

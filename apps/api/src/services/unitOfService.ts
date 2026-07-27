@@ -5,7 +5,7 @@ import IUnitOfService from "./interfaces/iunitof.service";
 import { IUserService } from "./interfaces/Iuser.service";
 import { ICategoryService } from "./interfaces/Icategory.service";
 import { IProductService } from "./interfaces/Iproduct.service";
-import { IProductPriceService } from "./interfaces/Iproduct-price.service";
+import { IProductVariantService } from "./interfaces/Iproduct-variant.service";
 import { IAttributeService } from "./interfaces/Iattribute.service";
 import { IStaffAttendanceService } from "./interfaces/Istaff-attendance.service";
 import { IOrderService } from "./interfaces/Iorder.service";
@@ -24,7 +24,7 @@ export default class UnitOfService implements IUnitOfService {
   public Account: IAccountService;
   public Category: ICategoryService;
   public Product: IProductService;
-  public ProductPrice: IProductPriceService;
+  public ProductVariant: IProductVariantService;
   public Attribute: IAttributeService;
   public StaffAttendance: IStaffAttendanceService;
   public Order: IOrderService;
@@ -43,7 +43,7 @@ export default class UnitOfService implements IUnitOfService {
     account = container.get<IAccountService>(TYPES.IAccountService),
     category = container.get<ICategoryService>(TYPES.ICategoryService),
     product = container.get<IProductService>(TYPES.IProductService),
-    productPrice = container.get<IProductPriceService>(TYPES.IProductPriceService),
+    productVariant = container.get<IProductVariantService>(TYPES.IProductVariantService),
     attribute = container.get<IAttributeService>(TYPES.IAttributeService),
     staffAttendance = container.get<IStaffAttendanceService>(TYPES.IStaffAttendanceService),
     order = container.get<IOrderService>(TYPES.IOrderService),
@@ -61,7 +61,7 @@ export default class UnitOfService implements IUnitOfService {
     this.Account = account;
     this.Category = category;
     this.Product = product;
-    this.ProductPrice = productPrice;
+    this.ProductVariant = productVariant;
     this.Attribute = attribute;
     this.StaffAttendance = staffAttendance;
     this.Order = order;

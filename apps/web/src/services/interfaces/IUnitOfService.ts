@@ -11,6 +11,7 @@ import INewsletterService from './INewsletterService';
 import IOrderItemService from './IOrderItemService';
 import IOrderService from './IOrderService';
 import IProductService from './IProductService';
+import IProductVariantService from './IProductVariantService';
 import IStaffSalaryService from './IStaffSalaryService';
 import IStaffService from './IStaffService';
 import IStoreService from './IStoreService';
@@ -26,6 +27,7 @@ export default interface IUnitOfService {
   ErrorHandlerService: IErrorHandlerService;
   UserListService: IUserListService;
   ProductService: IProductService;
+  ProductVariantService: IProductVariantService;
   CategoryService: ICategoryService;
   AttributeService: IAttributeService;
   BrandNameService: IBrandNameService;

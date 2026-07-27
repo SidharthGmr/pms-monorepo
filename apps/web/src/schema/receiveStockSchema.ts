@@ -12,7 +12,7 @@ export const receiveStockSchema = Yup.object().shape({
       Yup.object().shape({
         productId: Yup.number().typeError('Product is required').required('Product is required'),
         quantity: Yup.number().typeError('Quantity is required').min(1, 'Quantity must be at least 1').required('Quantity is required'),
-        unitCost: Yup.number().typeError('Unit cost is required').min(0, 'Unit cost must be >= 0').required('Unit cost is required'),
+        costPrice: Yup.number().typeError('Unit cost is required').min(0, 'Unit cost must be >= 0').required('Unit cost is required'),
         totalCost: Yup.number().default(0),
       })
     )

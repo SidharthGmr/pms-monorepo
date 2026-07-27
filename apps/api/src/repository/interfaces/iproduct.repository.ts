@@ -6,8 +6,12 @@ import { ProductFilterParams } from '../../params/product.params';
 export interface IProductRepository {
   findAll(filters?: ProductFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
   findLowStock(filters?: ProductFilterParams, page?: number, limit?: number): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
-  findById(id: number): Promise<ProductResponseDto | null>;
+  /** Detail view: includes related names plus the current price and on-hand stock. */
+  findById(id: number): Promise<ProductWithPriceResponseDto | null>;
   delete(id: number): Promise<ProductResponseDto>;
+
+  /** Current on-hand stock: the sum of all stockHistory movements for a product. */
+  getCurrentStock(productId: number, tx?: Prisma.TransactionClient): Promise<number>;
 
   /** Appends a stock movement (positive = add) to the append-only stockHistory table. */
   createStockHistory(

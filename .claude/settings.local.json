@@ -4,7 +4,27 @@
       "Bash(npm install *)",
       "Bash(npx tsc *)",
       "Bash(grep -nv \"^\\\\s*\\\\*\\\\|^\\\\s*/\\\\*\\\\|^\\\\s*\\\\*/\" routes/authRoutes.ts)",
-      "Bash(grep -rln \"\\\\\\\\+ Add\\\\|onClick.*addToCart\\\\|addToCart\\\\|Add<\" src/components)"
+      "Bash(grep -rln \"\\\\\\\\+ Add\\\\|onClick.*addToCart\\\\|addToCart\\\\|Add<\" src/components)",
+      "Bash(npx prisma *)",
+      "Bash(sed -i \"s|require\\('@prisma/client'\\)|require\\('D:/React/monorepo/pms/apps/api/node_modules/@prisma/client'\\)|\" \"C:/Users/SIDHAR~1/AppData/Local/Temp/claude/D--React-monorepo-pms/24923357-c0cf-42c3-b6ca-37f8cd4f893e/scratchpad/inspect.js\")",
+      "Bash(node \"C:/Users/SIDHAR~1/AppData/Local/Temp/claude/D--React-monorepo-pms/24923357-c0cf-42c3-b6ca-37f8cd4f893e/scratchpad/inspect.js\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4000/api)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4000/product-variants -X POST)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4000/product-prices -X POST)",
+      "Bash(node \"C:/Users/SIDHAR~1/AppData/Local/Temp/claude/D--React-monorepo-pms/24923357-c0cf-42c3-b6ca-37f8cd4f893e/scratchpad/flow.js\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4000/api)",
+      "Bash(git rm *)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(node -e ' *)",
+      "Bash(rm -rf .next)",
+      "Bash(echo \"WEB_BUILD_EXIT=$?\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/next/package.json'\\).version\\)\")",
+      "Bash(awk '/^model purchase /,/^}/' prisma/schema.prisma)",
+      "Bash(awk '/^model purchaseItem /,/^}/' prisma/schema.prisma)",
+      "Bash(awk '/^model supplier /,/^}/' prisma/schema.prisma)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")"
     ]
   }
 }

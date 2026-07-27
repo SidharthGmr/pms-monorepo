@@ -38,7 +38,8 @@ export default function BrandNameList() {
   const searchParams = useSearchParams();
 
   const [filterParams, setFilterParams] = useState<BrandNameFilterParams>({
-    q: searchParams.get('q') || '',
+    search: searchParams.get('search') || '',
+    status: searchParams.get('status') || '',
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     sortBy: searchParams.get('sortBy') || 'createdon',
@@ -56,7 +57,7 @@ export default function BrandNameList() {
     }
   }, [getAllBrandNamesResponse.status, getAllBrandNamesResponse.data]);
 
- const { sorting, onSortingChange, field, order } = useTanstackTableSorting<BrandNameDto>(
+  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<BrandNameDto>(
     filterParams.sortBy ?? '',
     filterParams.sortDirection ?? '',
     columns
@@ -102,15 +103,13 @@ export default function BrandNameList() {
       return {
         status: searchParams.get('status') || '',
         page: +(searchParams.get('page') || 1),
-        q: searchParams.get('q') || '',
+        search: searchParams.get('search') || '',
         recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
         sortBy: searchParams.get('sortBy') || 'createdon',
         sortDirection: searchParams.get('sortDirection') || 'desc',
       };
     });
   };
-
-
 
   const handleDelete = async (id: number) => {
     const response = await deleteBrandNameMutation.mutateAsync(id);
@@ -129,30 +128,43 @@ export default function BrandNameList() {
 
   return (
     <>
-      <div className="p-4">
-        <BrandNameListFilter  table={table}
+      <div className="space-y-4">
+        <BrandNameListFilter
+          table={table}
           resetForm={resetForm}
-             onTextChange={(value) => {
+          onTextChange={(value) => {
             setFilterParams((oldValue) => {
               return {
                 ...oldValue,
-                q: value || '',
+                // The API reads `search`, not `q`.
+                search: value || '',
+                page: 1,
               };
             });
-          }}/>
-      </div>
-       
-      <CustomDataTable table={table} columns={columns} isLoading={getAllBrandNamesResponse.isLoading} />
-      <DataTablePagination table={table} />
-      {showEditModal && editId && (
-        <ManageBrandName
-          id={+editId}
-          isOpen={showEditModal}
-          onClose={(refresh) => {
-            closeEditModal(refresh);
+          }}
+          onStatusChange={(value) => {
+            setFilterParams((oldValue) => {
+              return {
+                ...oldValue,
+                status: value || '',
+                page: 1,
+              };
+            });
           }}
         />
-      )}
+        <DataTablePagination table={table} loading={getAllBrandNamesResponse.isLoading} />
+        <CustomDataTable table={table} columns={columns} isLoading={getAllBrandNamesResponse.isLoading} />
+        <DataTablePagination table={table} loading={getAllBrandNamesResponse.isLoading} />
+        {showEditModal && editId && (
+          <ManageBrandName
+            id={+editId}
+            isOpen={showEditModal}
+            onClose={(refresh) => {
+              closeEditModal(refresh);
+            }}
+          />
+        )}
+      </div>
       {showDeleteModal && deleteId && (
         <ConfirmBox
           isOpen={showDeleteModal}

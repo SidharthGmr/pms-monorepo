@@ -22,12 +22,14 @@ CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED
 -- CreateEnum
 CREATE TYPE "PurchaseStatus" AS ENUM ('PENDING', 'COMPLETED', 'CANCELLED');
 
+-- CreateEnum
+CREATE TYPE "CartStatus" AS ENUM ('ACTIVE', 'CONVERTED', 'ABANDONED', 'EXPIRED');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
     "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "userName" TEXT NOT NULL,
     "phone" TEXT,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
@@ -37,15 +39,7 @@ CREATE TABLE "users" (
     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
     "emailVerificationToken" TEXT,
     "emailVerificationExpires" TIMESTAMP(3),
-    "dateOfBirth" TIMESTAMP(3),
-    "address" TEXT,
-    "city" TEXT,
-    "state" TEXT,
-    "country" TEXT,
-    "pincode" TEXT,
-    "bio" TEXT,
     "isPhoneVerified" BOOLEAN NOT NULL DEFAULT false,
-    "profileImageUrl" TEXT,
     "loginAttempts" INTEGER NOT NULL DEFAULT 0,
     "lastLoginAt" TIMESTAMP(3),
     "lastLoginIP" TEXT,
@@ -55,10 +49,72 @@ CREATE TABLE "users" (
     "token" TEXT,
     "tokenUpdated" BOOLEAN NOT NULL DEFAULT false,
     "refreshToken" TEXT,
-    "metadata" JSONB,
     "storeCode" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserProfile" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "name" TEXT NOT NULL,
+    "userName" TEXT NOT NULL,
+    "dateOfBirth" TIMESTAMP(3),
+    "address" TEXT,
+    "city" TEXT,
+    "state" TEXT,
+    "country" TEXT,
+    "pincode" TEXT,
+    "bio" TEXT,
+    "profileImageUrl" TEXT,
+    "metadata" JSONB,
+
+    CONSTRAINT "UserProfile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserSession" (
+    "id" UUID NOT NULL,
+    "userId" TEXT NOT NULL,
+    "accessTokenHash" VARCHAR(255) NOT NULL,
+    "refreshTokenHash" VARCHAR(255),
+    "ipAddress" VARCHAR(64),
+    "userAgent" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "revokedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserSession_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Cart" (
+    "id" UUID NOT NULL,
+    "storeId" INTEGER NOT NULL,
+    "userId" TEXT,
+    "sessionToken" VARCHAR(255),
+    "status" "CartStatus" NOT NULL DEFAULT 'ACTIVE',
+    "currency" CHAR(3) NOT NULL DEFAULT 'IND',
+    "expiresAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Cart_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CartItem" (
+    "id" UUID NOT NULL,
+    "cartId" UUID NOT NULL,
+    "variantId" INTEGER NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "unitPrice" DECIMAL(12,2),
+    "addedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -85,7 +141,7 @@ CREATE TABLE "category" (
     "parentId" INTEGER,
     "storeCode" TEXT NOT NULL,
     "status" "Status" NOT NULL DEFAULT 'Published',
-    "displayOrder" INTEGER DEFAULT 0,
+    "displayOrder" INTEGER DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -102,13 +158,18 @@ CREATE TABLE "product" (
     "attributeId" INTEGER,
     "slug" TEXT NOT NULL,
     "description" TEXT,
+    "shortDescription" TEXT,
+    "seoTitle" VARCHAR(255),
+    "seoDescription" TEXT,
+    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
     "lowStockThreshold" INTEGER DEFAULT 5,
     "images" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "storeCode" TEXT NOT NULL,
     "status" "Status" NOT NULL DEFAULT 'Published',
-    "displayOrder" INTEGER DEFAULT 1,
+    "displayOrder" INTEGER DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMP(3),
     "createdById" TEXT NOT NULL,
     "updatedById" TEXT,
 
@@ -116,20 +177,65 @@ CREATE TABLE "product" (
 );
 
 -- CreateTable
-CREATE TABLE "productPrice" (
+CREATE TABLE "ProductVariant" (
     "id" SERIAL NOT NULL,
     "productId" INTEGER NOT NULL,
     "storeCode" TEXT NOT NULL,
-    "sellingPrice" DOUBLE PRECISION NOT NULL,
-    "costPrice" DOUBLE PRECISION,
+    "sellingPrice" DECIMAL(65,30) NOT NULL,
+    "costPrice" DECIMAL(65,30),
     "effectiveFrom" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
     "reason" TEXT,
     "createdById" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "ProductVariant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stockHistory" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "storeCode" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "reason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stockHistory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "purchase" (
+    "id" SERIAL NOT NULL,
+    "invoiceNumber" TEXT,
+    "invoiceUrl" TEXT,
+    "supplierId" TEXT,
+    "supplierName" TEXT,
+    "totalAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "notes" TEXT,
+    "storeCode" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "status" "PurchaseStatus" NOT NULL DEFAULT 'COMPLETED',
+    "purchaseDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "productPrice_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "purchase_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "purchaseItem" (
+    "id" SERIAL NOT NULL,
+    "purchaseId" INTEGER NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "costPrice" DOUBLE PRECISION NOT NULL,
+    "totalPrice" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "purchaseItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -160,9 +266,27 @@ CREATE TABLE "attribute" (
 );
 
 -- CreateTable
+CREATE TABLE "supplier" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "contactPerson" TEXT,
+    "email" TEXT,
+    "phone" TEXT,
+    "address" TEXT,
+    "notes" TEXT,
+    "storeCode" TEXT NOT NULL,
+    "status" "Status" NOT NULL DEFAULT 'Published',
+    "displayOrder" INTEGER DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "supplier_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "staff" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "storeCode" TEXT NOT NULL,
     "position" TEXT,
     "department" TEXT,
@@ -272,49 +396,6 @@ CREATE TABLE "staffSalary" (
 );
 
 -- CreateTable
-CREATE TABLE "stockHistory" (
-    "id" SERIAL NOT NULL,
-    "productId" INTEGER NOT NULL,
-    "storeCode" TEXT NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "reason" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "stockHistory_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "purchase" (
-    "id" SERIAL NOT NULL,
-    "invoiceNumber" TEXT,
-    "invoiceUrl" TEXT,
-    "supplierName" TEXT,
-    "totalAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "notes" TEXT,
-    "storeCode" TEXT NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "status" "PurchaseStatus" NOT NULL DEFAULT 'COMPLETED',
-    "purchaseDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "purchase_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "purchaseItem" (
-    "id" SERIAL NOT NULL,
-    "purchaseId" INTEGER NOT NULL,
-    "productId" INTEGER NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "unitCost" DOUBLE PRECISION NOT NULL,
-    "totalCost" DOUBLE PRECISION NOT NULL,
-
-    CONSTRAINT "purchaseItem_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "_brandNameTocategory" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL
@@ -322,9 +403,6 @@ CREATE TABLE "_brandNameTocategory" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_userId_key" ON "users"("userId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_userName_key" ON "users"("userName");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
@@ -345,6 +423,45 @@ CREATE INDEX "users_phone_idx" ON "users"("phone");
 CREATE INDEX "users_role_idx" ON "users"("role");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "UserProfile_userId_key" ON "UserProfile"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserProfile_userName_key" ON "UserProfile"("userName");
+
+-- CreateIndex
+CREATE INDEX "UserProfile_userId_idx" ON "UserProfile"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserProfile_city_state_idx" ON "UserProfile"("city", "state");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserSession_accessTokenHash_key" ON "UserSession"("accessTokenHash");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserSession_refreshTokenHash_key" ON "UserSession"("refreshTokenHash");
+
+-- CreateIndex
+CREATE INDEX "UserSession_userId_expiresAt_idx" ON "UserSession"("userId", "expiresAt");
+
+-- CreateIndex
+CREATE INDEX "UserSession_revokedAt_idx" ON "UserSession"("revokedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Cart_sessionToken_key" ON "Cart"("sessionToken");
+
+-- CreateIndex
+CREATE INDEX "Cart_storeId_status_updatedAt_idx" ON "Cart"("storeId", "status", "updatedAt");
+
+-- CreateIndex
+CREATE INDEX "Cart_userId_status_idx" ON "Cart"("userId", "status");
+
+-- CreateIndex
+CREATE INDEX "CartItem_variantId_idx" ON "CartItem"("variantId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CartItem_cartId_variantId_key" ON "CartItem"("cartId", "variantId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "store_name_key" ON "store"("name");
 
 -- CreateIndex
@@ -360,16 +477,37 @@ CREATE UNIQUE INDEX "category_name_storeCode_key" ON "category"("name", "storeCo
 CREATE UNIQUE INDEX "product_slug_key" ON "product"("slug");
 
 -- CreateIndex
-CREATE INDEX "productPrice_productId_idx" ON "productPrice"("productId");
+CREATE INDEX "ProductVariant_productId_idx" ON "ProductVariant"("productId");
 
 -- CreateIndex
-CREATE INDEX "productPrice_storeCode_idx" ON "productPrice"("storeCode");
+CREATE INDEX "ProductVariant_storeCode_idx" ON "ProductVariant"("storeCode");
 
 -- CreateIndex
-CREATE INDEX "productPrice_productId_effectiveFrom_idx" ON "productPrice"("productId", "effectiveFrom");
+CREATE INDEX "ProductVariant_productId_effectiveFrom_idx" ON "ProductVariant"("productId", "effectiveFrom");
 
 -- CreateIndex
-CREATE INDEX "productPrice_productId_isActive_idx" ON "productPrice"("productId", "isActive");
+CREATE INDEX "ProductVariant_productId_isActive_idx" ON "ProductVariant"("productId", "isActive");
+
+-- CreateIndex
+CREATE INDEX "stockHistory_productId_idx" ON "stockHistory"("productId");
+
+-- CreateIndex
+CREATE INDEX "stockHistory_storeCode_idx" ON "stockHistory"("storeCode");
+
+-- CreateIndex
+CREATE INDEX "stockHistory_userId_idx" ON "stockHistory"("userId");
+
+-- CreateIndex
+CREATE INDEX "purchase_storeCode_idx" ON "purchase"("storeCode");
+
+-- CreateIndex
+CREATE INDEX "purchase_userId_idx" ON "purchase"("userId");
+
+-- CreateIndex
+CREATE INDEX "purchaseItem_purchaseId_idx" ON "purchaseItem"("purchaseId");
+
+-- CreateIndex
+CREATE INDEX "purchaseItem_productId_idx" ON "purchaseItem"("productId");
 
 -- CreateIndex
 CREATE INDEX "brandName_id_idx" ON "brandName"("id");
@@ -385,6 +523,15 @@ CREATE INDEX "attribute_id_idx" ON "attribute"("id");
 
 -- CreateIndex
 CREATE INDEX "attribute_storeCode_idx" ON "attribute"("storeCode");
+
+-- CreateIndex
+CREATE INDEX "supplier_id_idx" ON "supplier"("id");
+
+-- CreateIndex
+CREATE INDEX "supplier_storeCode_idx" ON "supplier"("storeCode");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "supplier_name_storeCode_key" ON "supplier"("name", "storeCode");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "staff_userId_key" ON "staff"("userId");
@@ -456,27 +603,6 @@ CREATE INDEX "staffSalary_month_year_idx" ON "staffSalary"("month", "year");
 CREATE UNIQUE INDEX "staffSalary_staffId_month_year_key" ON "staffSalary"("staffId", "month", "year");
 
 -- CreateIndex
-CREATE INDEX "stockHistory_productId_idx" ON "stockHistory"("productId");
-
--- CreateIndex
-CREATE INDEX "stockHistory_storeCode_idx" ON "stockHistory"("storeCode");
-
--- CreateIndex
-CREATE INDEX "stockHistory_userId_idx" ON "stockHistory"("userId");
-
--- CreateIndex
-CREATE INDEX "purchase_storeCode_idx" ON "purchase"("storeCode");
-
--- CreateIndex
-CREATE INDEX "purchase_userId_idx" ON "purchase"("userId");
-
--- CreateIndex
-CREATE INDEX "purchaseItem_purchaseId_idx" ON "purchaseItem"("purchaseId");
-
--- CreateIndex
-CREATE INDEX "purchaseItem_productId_idx" ON "purchaseItem"("productId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "_brandNameTocategory_AB_unique" ON "_brandNameTocategory"("A", "B");
 
 -- CreateIndex
@@ -484,6 +610,24 @@ CREATE INDEX "_brandNameTocategory_B_index" ON "_brandNameTocategory"("B");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserProfile" ADD CONSTRAINT "UserProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserSession" ADD CONSTRAINT "UserSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Cart" ADD CONSTRAINT "Cart_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "store"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Cart" ADD CONSTRAINT "Cart_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_cartId_fkey" FOREIGN KEY ("cartId") REFERENCES "Cart"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "category" ADD CONSTRAINT "category_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -513,13 +657,34 @@ ALTER TABLE "product" ADD CONSTRAINT "product_storeCode_fkey" FOREIGN KEY ("stor
 ALTER TABLE "product" ADD CONSTRAINT "product_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "users"("userId") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "productPrice" ADD CONSTRAINT "productPrice_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ProductVariant" ADD CONSTRAINT "ProductVariant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "productPrice" ADD CONSTRAINT "productPrice_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ProductVariant" ADD CONSTRAINT "ProductVariant_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "productPrice" ADD CONSTRAINT "productPrice_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "users"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ProductVariant" ADD CONSTRAINT "ProductVariant_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "users"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stockHistory" ADD CONSTRAINT "stockHistory_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stockHistory" ADD CONSTRAINT "stockHistory_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stockHistory" ADD CONSTRAINT "stockHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "purchase" ADD CONSTRAINT "purchase_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "purchase" ADD CONSTRAINT "purchase_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "purchaseItem" ADD CONSTRAINT "purchaseItem_purchaseId_fkey" FOREIGN KEY ("purchaseId") REFERENCES "purchase"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "purchaseItem" ADD CONSTRAINT "purchaseItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "brandName" ADD CONSTRAINT "brandName_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -528,10 +693,13 @@ ALTER TABLE "brandName" ADD CONSTRAINT "brandName_storeCode_fkey" FOREIGN KEY ("
 ALTER TABLE "attribute" ADD CONSTRAINT "attribute_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "supplier" ADD CONSTRAINT "supplier_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "staff" ADD CONSTRAINT "staff_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "staff" ADD CONSTRAINT "staff_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "staff" ADD CONSTRAINT "staff_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "staffAttendance" ADD CONSTRAINT "staffAttendance_recordedBy_fkey" FOREIGN KEY ("recordedBy") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -571,27 +739,6 @@ ALTER TABLE "staffSalary" ADD CONSTRAINT "staffSalary_staffId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "staffSalary" ADD CONSTRAINT "staffSalary_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "stockHistory" ADD CONSTRAINT "stockHistory_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "stockHistory" ADD CONSTRAINT "stockHistory_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "stockHistory" ADD CONSTRAINT "stockHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "purchase" ADD CONSTRAINT "purchase_storeCode_fkey" FOREIGN KEY ("storeCode") REFERENCES "store"("code") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "purchase" ADD CONSTRAINT "purchase_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "purchaseItem" ADD CONSTRAINT "purchaseItem_purchaseId_fkey" FOREIGN KEY ("purchaseId") REFERENCES "purchase"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "purchaseItem" ADD CONSTRAINT "purchaseItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_brandNameTocategory" ADD CONSTRAINT "_brandNameTocategory_A_fkey" FOREIGN KEY ("A") REFERENCES "brandName"("id") ON DELETE CASCADE ON UPDATE CASCADE;

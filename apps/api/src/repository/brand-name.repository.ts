@@ -16,6 +16,8 @@ function toDto(b: BrandNameWithCategories): BrandNameDto {
         storeCode: b.storeCode,
         status: b.status,
         displayOrder: b.displayOrder,
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
     };
 }
 
@@ -81,7 +83,7 @@ export class BrandNameRepository implements IBrandNameRepository {
     }
 
     async delete(id: number): Promise<BrandNameDto> {
-        const result = await prisma.brandName.update({ where: { id }, data: { status: Status.Trash } });
+        const result = await prisma.brandName.update({ where: { id }, data: { status: Status.Trash, updatedAt: new Date() } });
         return result;
     }
 }

@@ -8,8 +8,8 @@ export interface CreateProductModel {
   attributeId?: number | null;
   slug: string;
   description?: string | null;
-  price: number;
-  cost?: number | null;
+  sellingPrice?: number | null;
+  costPrice?: number | null;
   stock?: number | null;
   lowStockThreshold?: number | null;
   images?: string[];

@@ -35,13 +35,11 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
     resolver: yupResolver(SupplierSchema),
     defaultValues: {
       name: '',
-      contactPerson: '',
       email: '',
       phone: '',
       address: '',
-      notes: '',
       status: StatusValues.Draft,
-      displayOrder: 1,
+      displayOrder: 0,
     },
   });
 
@@ -98,34 +96,19 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
               )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="contactPerson"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Person</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Jane Doe" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. +1 555 123 4567" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. +1 555 123 4567" {...field} value={field.value ?? ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -149,20 +132,6 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
                   <FormLabel>Address</FormLabel>
                   <FormControl>
                     <Textarea className="resize-none" rows={2} placeholder="Street, city, state, ZIP" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea className="resize-none" rows={2} placeholder="Any additional details..." {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

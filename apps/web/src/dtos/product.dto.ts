@@ -1,4 +1,4 @@
-import { ProductPriceDto } from './product-price.dto';
+import { ProductVariantDto } from './product-variant.dto';
 
 export interface ProductDto {
   id: number;
@@ -9,8 +9,9 @@ export interface ProductDto {
   price: number;
   cost?: number | null;
   stock: number;
-  prices?: ProductPriceDto[];
-  currentPrice?: ProductPriceDto | null;
+  variants?: ProductVariantDto[];
+  // The API exposes only the effective selling/cost price on list endpoints.
+  currentPrice?: Pick<ProductVariantDto, 'sellingPrice' | 'costPrice'> | null;
   lowStockThreshold?: number | null;
   categoryId: number;
   parentId?: number | null;

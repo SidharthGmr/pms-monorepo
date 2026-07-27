@@ -8,8 +8,10 @@ export interface ProductModel {
   attributeId?: number | null;
   slug: string;
   description?: string | null;
-  price: number;
-  cost?: number | null;
+  // Seed the product's first ProductVariant (price/cost) and opening stock
+  // movement. None of these are columns on `product`.
+  sellingPrice?: number;
+  costPrice?: number | null;
   stock?: number | null;
   lowStockThreshold?: number | null;
   images?: string[];

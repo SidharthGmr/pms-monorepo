@@ -3,7 +3,7 @@ import { IUserRepository } from "./iuser.repository";
 import { IAccountRepository } from "./iaccount.repository";
 import { ICategoryRepository } from "./icategory.repository";
 import { IProductRepository } from "./iproduct.repository";
-import { IProductPriceRepository } from "./iproduct-price.repository";
+import { IProductVariantRepository } from "./iproduct-variant.repository";
 import { IAttributeRepository } from "./iattribute.repository";
 import { IStaffAttendanceRepository } from "./istaff-attendance.repository";
 import { IOrderRepository } from "./iorder.repository";
@@ -22,7 +22,7 @@ export default interface IUnitOfWork {
   Account: IAccountRepository;
   Category: ICategoryRepository;
   Product: IProductRepository;
-  ProductPrice: IProductPriceRepository;
+  ProductVariant: IProductVariantRepository;
   Attribute: IAttributeRepository;
   StaffAttendance: IStaffAttendanceRepository;
   Order: IOrderRepository;

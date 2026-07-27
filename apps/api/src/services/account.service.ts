@@ -12,6 +12,7 @@ import { createUserName, generateStoreCode, generateUserGUID } from "../utils/au
 import { generateOtp } from "../utils/otp.util";
 import { IAccountService } from "./interfaces/Iaccount.service";
 import { getOtpExpiryDate } from "../utils/timeExpiry.util";
+import { toUserDto, userProfileInclude } from "../repository/user-profile.mapper";
 import { Role, Status, StatusEnum } from "@pms/types";
 
 @injectable()
@@ -48,7 +49,6 @@ export class AccountService implements IAccountService {
         data: {
           userId: generateUserGUID().toString(),
           name: `${data.firstName} ${data.lastName}`,
-          userName: createUserName(`${data.firstName}`, `${data.lastName}`),
           phone: data.phone || null,
           email: data.email,
           password: hashedPassword,
@@ -59,10 +59,17 @@ export class AccountService implements IAccountService {
           isPhoneVerified: false,
           storeCode: storeCode,
           role,
+          UserProfile: {
+            create: {
+              name: `${data.firstName} ${data.lastName}`,
+              userName: createUserName(`${data.firstName}`, `${data.lastName}`),
+            },
+          },
         },
+        include: userProfileInclude,
       });
 
-      return this.convertToDto(user);
+      return this.convertToDto(toUserDto(user));
     });
   }
 
@@ -75,7 +82,6 @@ export class AccountService implements IAccountService {
         data: {
           userId: generateUserGUID().toString(),
           name: `${data.firstName} ${data.lastName}`,
-          userName: createUserName(`${data.firstName}`, `${data.lastName}`),
           phone: data.phone || null,
           email: data.email,
           password: hashedPassword,
@@ -86,7 +92,14 @@ export class AccountService implements IAccountService {
           isPhoneVerified: false,
           role: data.role || Role.user,
           storeCode: storeCode,
+          UserProfile: {
+            create: {
+              name: `${data.firstName} ${data.lastName}`,
+              userName: createUserName(`${data.firstName}`, `${data.lastName}`),
+            },
+          },
         },
+        include: userProfileInclude,
       });
 
       // if (user.role === Role.STAFF) {
@@ -98,7 +111,7 @@ export class AccountService implements IAccountService {
       //   });
       // }
 
-      return this.convertToDto(user);
+      return this.convertToDto(toUserDto(user));
     });
   }
 
@@ -131,9 +144,10 @@ export class AccountService implements IAccountService {
           emailVerificationToken: otp,
           emailVerificationExpires: otpExpiresAt,
         },
+        include: userProfileInclude,
       });
 
-      return this.convertToDto(user);
+      return this.convertToDto(toUserDto(user));
     });
   }
 
@@ -148,9 +162,10 @@ export class AccountService implements IAccountService {
           emailVerificationToken: otp,
           emailVerificationExpires: otpExpiresAt,
         },
+        include: userProfileInclude,
       });
 
-      return this.convertToDto(user);
+      return this.convertToDto(toUserDto(user));
     });
   }
 
@@ -164,8 +179,9 @@ export class AccountService implements IAccountService {
           emailVerificationToken: null,
           emailVerificationExpires: null,
         },
+        include: userProfileInclude,
       });
-      return this.convertToDto(user);
+      return this.convertToDto(toUserDto(user));
     });
   }
 
@@ -200,9 +216,10 @@ export class AccountService implements IAccountService {
           token: null,
           tokenUpdated: false,
         },
+        include: userProfileInclude,
       });
 
-      return this.convertToDto(updatedUser);
+      return this.convertToDto(toUserDto(updatedUser));
     });
   }
 

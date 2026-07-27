@@ -11,7 +11,6 @@ model users {
   id                       Int               @id @default(autoincrement())
   userId                   String            @unique
   name                     String
-  userName                 String            @unique
   phone                    String?
   email                    String            @unique
   password                 String
@@ -21,15 +20,7 @@ model users {
   isEmailVerified          Boolean           @default(false)
   emailVerificationToken   String?           @unique
   emailVerificationExpires DateTime?
-  dateOfBirth              DateTime?
-  address                  String?
-  city                     String?
-  state                    String?
-  country                  String?
-  pincode                  String?
-  bio                      String?
   isPhoneVerified          Boolean           @default(false)
-  profileImageUrl          String?
   loginAttempts            Int               @default(0)
   lastLoginAt              DateTime?
   lastLoginIP              String?
@@ -39,8 +30,9 @@ model users {
   token                    String?
   tokenUpdated             Boolean           @default(false)
   refreshToken             String?
-  metadata                 Json?
   storeCode                String?
+  carts                    Cart[]
+  sessions                 UserSession[]
   orders                   order[]
   productsCreated          product[]         @relation("CreatedBy")
   productsUpdated          product[]         @relation("UpdatedBy")
@@ -52,12 +44,86 @@ model users {
   store                    store?            @relation(fields: [storeCode], references: [code])
   stockHistories           stockHistory[]
   purchases                purchase[]
-  productPrices            productPrice[]
+  productVariants          ProductVariant[]
+  UserProfile              UserProfile?
 
   @@index([userId])
   @@index([email])
   @@index([phone])
   @@index([role])
+}
+
+model UserProfile {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique // Enforces a strict 1-to-1 relationship
+  name            String
+  userName        String    @unique
+  dateOfBirth     DateTime?
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  pincode         String?
+  bio             String? // Text blobs are better stored here
+  profileImageUrl String?
+  metadata        Json? // Heavy JSON belongs in the less-frequently-queried table
+  user            users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([city, state]) // Helpful for geo-queries
+}
+
+model UserSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String
+  accessTokenHash  String    @unique @db.VarChar(255)
+  refreshTokenHash String?   @unique @db.VarChar(255)
+  ipAddress        String?   @db.VarChar(64)
+  userAgent        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([revokedAt])
+}
+
+model Cart {
+  id           String     @id @default(uuid()) @db.Uuid
+  storeId      Int
+  userId       String?
+  sessionToken String?    @unique @db.VarChar(255)
+  status       CartStatus @default(ACTIVE)
+  currency     String     @default("IND") @db.Char(3)
+  expiresAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  store store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  users?     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  items CartItem[]
+
+  @@index([storeId, status, updatedAt])
+  @@index([userId, status])
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  cartId    String   @db.Uuid
+  variantId Int
+  quantity  Int
+  unitPrice Decimal? @db.Decimal(12, 2)
+  addedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, variantId])
+  @@index([variantId])
 }
 
 model store {
@@ -84,8 +150,9 @@ model store {
   staff            users[]
   stockHistories   stockHistory[]
   purchases        purchase[]
-  productPrices    productPrice[]
+  productVariants  ProductVariant[]
   suppliers        supplier[]
+  Cart             Cart[]
 }
 
 model category {
@@ -109,56 +176,63 @@ model category {
 }
 
 model product {
-  id                Int            @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   name              String
   parentId          Int?
   categoryId        Int
   brandNameId       Int?
   attributeId       Int?
-  slug              String         @unique
+  slug              String           @unique
   description       String?
-  lowStockThreshold Int?           @default(5)
-  images            String[]       @default([])
+  shortDescription  String?
+  seoTitle          String?          @db.VarChar(255)
+  seoDescription    String?
+  isFeatured        Boolean          @default(false)
+  lowStockThreshold Int?             @default(5)
+  images            String[]         @default([])
   storeCode         String
-  status            Status         @default(Published)
-  displayOrder      Int?           @default(1)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  status            Status           @default(Published)
+  displayOrder      Int?             @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime?        @updatedAt
+  deletedAt         DateTime?
   createdById       String
   updatedById       String?
   orderItems        orderItem[]
-  attribute         attribute?     @relation(fields: [attributeId], references: [id])
-  brandName         brandName?     @relation(fields: [brandNameId], references: [id])
-  category          category       @relation(fields: [categoryId], references: [id])
-  createdBy         users          @relation("CreatedBy", fields: [createdById], references: [userId])
-  parent            product?       @relation("ProductHierarchy", fields: [parentId], references: [id])
-  children          product[]      @relation("ProductHierarchy")
-  store             store          @relation(fields: [storeCode], references: [code])
-  updatedBy         users?         @relation("UpdatedBy", fields: [updatedById], references: [userId])
+  attribute         attribute?       @relation(fields: [attributeId], references: [id])
+  brandName         brandName?       @relation(fields: [brandNameId], references: [id])
+  category          category         @relation(fields: [categoryId], references: [id])
+  createdBy         users            @relation("CreatedBy", fields: [createdById], references: [userId])
+  parent            product?         @relation("ProductHierarchy", fields: [parentId], references: [id])
+  children          product[]        @relation("ProductHierarchy")
+  store             store            @relation(fields: [storeCode], references: [code])
+  updatedBy         users?           @relation("UpdatedBy", fields: [updatedById], references: [userId])
   stockHistories    stockHistory[]
   purchaseItems     purchaseItem[]
-  prices            productPrice[]
+  variants          ProductVariant[]
 }
 
-/// Append-only price history for a product. `product.price`/`product.cost`
+/// Append-only priced variant history for a product. `product.price`/`product.cost`
 /// are kept as a denormalized "current" cache; this table is the source of
 /// truth for what a product's price was on any given date. The effective
-/// price on a date D is the row with the greatest `effectiveFrom <= D`.
-model productPrice {
-  id            Int      @id @default(autoincrement())
+/// variant on a date D is the row with the greatest `effectiveFrom <= D`.
+model ProductVariant {
+  id            Int        @id @default(autoincrement())
   productId     Int
   storeCode     String
-  sellingPrice  Float
-  costPrice     Float?
-  effectiveFrom DateTime @default(now())
-  isActive      Boolean  @default(false)
+  sellingPrice  Decimal
+  costPrice     Decimal?
+  effectiveFrom DateTime   @default(now())
+  isActive      Boolean    @default(false)
   reason        String?
   createdById   String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  product       product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  store         store    @relation(fields: [storeCode], references: [code])
-  createdBy     users    @relation(fields: [createdById], references: [userId])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime?  @updatedAt
+  deletedAt     DateTime?
+  product       product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store         store      @relation(fields: [storeCode], references: [code])
+  createdBy     users      @relation(fields: [createdById], references: [userId])
+  cartItems     CartItem[]
 
   @@index([productId])
   @@index([storeCode])
@@ -229,7 +303,7 @@ model brandName {
   status       Status     @default(Published)
   displayOrder Int?       @default(0)
   createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  updatedAt    DateTime?
   store        store      @relation(fields: [storeCode], references: [code])
   product      product[]
   categories   category[] @relation("brandNameTocategory")
@@ -468,4 +542,11 @@ enum PurchaseStatus {
   PENDING
   COMPLETED
   CANCELLED
+}
+
+enum CartStatus {
+  ACTIVE
+  CONVERTED
+  ABANDONED
+  EXPIRED
 }

@@ -30,9 +30,39 @@ export class ProductService implements IProductService {
           description: data.description || null,
           lowStockThreshold: data.lowStockThreshold || 5,
           status: data.status || StatusEnum.Published,
-          images: data.images ?? [],
         },
       });
+
+      // `sellingPrice`/`costPrice`/`stock` are not columns on `product`: the price
+      // becomes the product's first (active) ProductVariant and the stock becomes
+      // its first stockHistory movement. Without this they were silently discarded.
+      if (data.sellingPrice != null) {
+        await this.unitOfWork.ProductVariant.create(
+          {
+            productId: productData.id,
+            storeCode,
+            sellingPrice: data.sellingPrice,
+            costPrice: data.costPrice ?? null,
+            reason: 'Initial price',
+            createdById: userId,
+          },
+          transactionClient
+        );
+      }
+
+      if (data.stock != null && data.stock !== 0) {
+        await this.unitOfWork.Product.createStockHistory(
+          {
+            productId: productData.id,
+            storeCode,
+            userId,
+            quantity: data.stock,
+            reason: 'Opening stock',
+          },
+          transactionClient
+        );
+      }
+
       return productData;
     });
   }
@@ -77,6 +107,49 @@ export class ProductService implements IProductService {
         data: updateData,
       });
 
+      // Price/cost live in ProductVariant, so a price edit appends a new active
+      // variant — but only when the value actually changed, to avoid piling up
+      // identical rows on every unrelated save.
+      if (data.sellingPrice != null) {
+        const current = await this.unitOfWork.ProductVariant.getEffectiveOn(id, new Date(), transactionClient);
+        const newCost = data.costPrice ?? null;
+        const priceChanged = current == null || Number(current.sellingPrice) !== Number(data.sellingPrice);
+        const costChanged = current != null && Number(current.costPrice ?? NaN) !== Number(newCost ?? NaN);
+
+        if (priceChanged || costChanged) {
+          await this.unitOfWork.ProductVariant.create(
+            {
+              productId: id,
+              storeCode,
+              sellingPrice: data.sellingPrice,
+              costPrice: newCost,
+              reason: 'Price updated',
+              createdById: userId,
+            },
+            transactionClient
+          );
+        }
+      }
+
+      // Stock is the sum of stockHistory movements, so an absolute stock value
+      // from the form is recorded as the delta needed to reach it.
+      if (data.stock != null) {
+        const currentStock = await this.unitOfWork.Product.getCurrentStock(id, transactionClient);
+        const delta = data.stock - currentStock;
+        if (delta !== 0) {
+          await this.unitOfWork.Product.createStockHistory(
+            {
+              productId: id,
+              storeCode,
+              userId,
+              quantity: delta,
+              reason: 'Stock adjusted on product update',
+            },
+            transactionClient
+          );
+        }
+      }
+
       return storeData;
     });
   }
@@ -107,7 +180,7 @@ export class ProductService implements IProductService {
       // Optionally update the product's price alongside the stock change.
       // A new active price row is only created when a selling price is supplied.
       if (data.sellingPrice !== undefined) {
-        await this.unitOfWork.ProductPrice.create(
+        await this.unitOfWork.ProductVariant.create(
           {
             productId: id,
             storeCode,
@@ -129,4 +202,5 @@ export class ProductService implements IProductService {
     if (!existing) throw new NotFoundError("Product not found");
     return this.unitOfWork.Product.getStockHistory(id, page, limit);
   }
+
 }

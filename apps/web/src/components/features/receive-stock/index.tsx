@@ -81,7 +81,7 @@ export default function ReceiveStockPage() {
       supplierName: '',
       invoiceNumber: '',
       notes: '',
-      items: [{ productId: undefined as any, quantity: undefined as any, unitCost: undefined as any }],
+      items: [{ productId: undefined, quantity: undefined, costPrice: undefined }],
       totalAmount: 0,
     },
   });
@@ -93,12 +93,12 @@ export default function ReceiveStockPage() {
   const totalUnits = watchedItems?.reduce((acc, item) => acc + (Number(item?.quantity) || 0), 0) || 0;
   const totalCost =
     watchedItems?.reduce((acc, item) => {
-      if (item?.quantity && item?.unitCost) return acc + Number(item.quantity) * Number(item.unitCost);
+      if (item?.quantity && item?.costPrice) return acc + Number(item.quantity) * Number(item.costPrice);
       return acc;
     }, 0) || 0;
 
   // An item is "ready" once it has a product, a quantity and a unit cost.
-  const readyItems = watchedItems?.filter((item) => item?.productId && Number(item?.quantity) > 0 && item?.unitCost !== undefined).length || 0;
+  const readyItems = watchedItems?.filter((item) => item?.productId && Number(item?.quantity) > 0 && item?.costPrice !== undefined).length || 0;
   const hasReadyItem = readyItems > 0;
 
   const isSubmitting = createPurchase.isPending || isUploading;
@@ -131,8 +131,8 @@ export default function ReceiveStockPage() {
       const formattedItems = data.items.map((item) => ({
         productId: Number(item.productId),
         quantity: Number(item.quantity),
-        costPrice: Number(item.unitCost),
-        totalPrice: Number(item.quantity) * Number(item.unitCost),
+        costPrice: Number(item.costPrice),
+        totalPrice: Number(item.quantity) * Number(item.costPrice),
       }));
 
       const selectedSupplier = suppliers.find((s) => String(s.id) === String(data.supplierId));
@@ -187,7 +187,7 @@ export default function ReceiveStockPage() {
                   iconPlacement="left"
                   className="h-12 w-full border-2 border-dashed text-slate-600 transition-all hover:border-primary hover:bg-primary/5 hover:text-primary"
                   onClick={() =>
-                    append({ productId: undefined as any, quantity: undefined as any, unitCost: undefined as any, totalCost: undefined as any })
+                    append({ productId: undefined as any, quantity: undefined as any, costPrice: undefined as any, totalCost: undefined as any })
                   }
                 >
                   Add Another Product

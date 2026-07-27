@@ -41,13 +41,14 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
           </div>
         ),
         meta: { sortingKey: 'actions' },
-      }, {
+      },
+      {
         id: 'status',
         accessorKey: 'status',
         enableSorting: false,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'scusses' : 'orange'}>{row.original.status}</Badge>,
+        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'green' : 'orange'}>{row.original.status}</Badge>,
         meta: { sortingKey: 'status' },
       },
 
@@ -75,6 +76,22 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
           );
         },
         meta: { sortingKey: 'createdAt' },
+      },
+      {
+        id: 'updatedAt',
+        accessorKey: 'updatedAt',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Updated At" />,
+        cell: ({ row }) => {
+          const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+          return (
+            <span className="text-sm text-muted-foreground">
+              {row.original.updatedAt ? unitOfService.DateTimeService.convertToLocalDate(row.original.updatedAt, true) : '—'}
+            </span>
+          );
+        },
+        meta: { sortingKey: 'updatedAt' },
       },
     ],
     [editRecord, deleteRecord]

@@ -7,7 +7,7 @@ import { TYPES } from "../config/ioc.types";
 import { IAccountRepository } from "./interfaces/iaccount.repository";
 import { ICategoryRepository } from "./interfaces/icategory.repository";
 import { IProductRepository } from "./interfaces/iproduct.repository";
-import { IProductPriceRepository } from "./interfaces/iproduct-price.repository";
+import { IProductVariantRepository } from "./interfaces/iproduct-variant.repository";
 import { IAttributeRepository } from "./interfaces/iattribute.repository";
 import { IStaffAttendanceRepository } from "./interfaces/istaff-attendance.repository";
 import { IOrderRepository } from "./interfaces/iorder.repository";
@@ -26,7 +26,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Account: IAccountRepository;
   public Category: ICategoryRepository;
   public Product: IProductRepository;
-  public ProductPrice: IProductPriceRepository;
+  public ProductVariant: IProductVariantRepository;
   public Attribute: IAttributeRepository;
   public StaffAttendance: IStaffAttendanceRepository;
   public Order: IOrderRepository;
@@ -45,7 +45,7 @@ export default class UnitOfWork implements IUnitOfWork {
     account = container.get<IAccountRepository>(TYPES.IAccountRepository),
     category = container.get<ICategoryRepository>(TYPES.ICategoryRepository),
     product = container.get<IProductRepository>(TYPES.IProductRepository),
-    productPrice = container.get<IProductPriceRepository>(TYPES.IProductPriceRepository),
+    productVariant = container.get<IProductVariantRepository>(TYPES.IProductVariantRepository),
     attribute = container.get<IAttributeRepository>(TYPES.IAttributeRepository),
     staffAttendance = container.get<IStaffAttendanceRepository>(TYPES.IStaffAttendanceRepository),
     order = container.get<IOrderRepository>(TYPES.IOrderRepository),
@@ -63,7 +63,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Account = account;
     this.Category = category;
     this.Product = product;
-    this.ProductPrice = productPrice;
+    this.ProductVariant = productVariant;
     this.Attribute = attribute;
     this.StaffAttendance = staffAttendance;
     this.Order = order;
@@ -82,11 +82,18 @@ export default class UnitOfWork implements IUnitOfWork {
   //     return callback(transactionClient);
   //   });
   // }
+  // Prisma's defaults (maxWait 2s / timeout 5s) are too tight for this app: the
+  // database is remote, so a handful of sequential queries inside one interactive
+  // transaction can exceed 5s and fail with "Transaction already closed".
+  // Callers can still override either value.
   async transaction<T>(
     callback: (prisma: Prisma.TransactionClient) => Promise<T>,
     options?: { maxWait?: number; timeout?: number }
   ): Promise<T> {
-    return prisma.$transaction(callback, options);
+    return prisma.$transaction(callback, {
+      maxWait: options?.maxWait ?? 10_000,
+      timeout: options?.timeout ?? 20_000,
+    });
   }
 
 }

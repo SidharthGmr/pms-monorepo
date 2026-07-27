@@ -1,17 +1,15 @@
+// Mirrors the API's ProductVariant rows (`/product-variants/...`).
+// Append-only: each row is the price that took effect at `effectiveFrom`.
 export interface ProductVariantDto {
-id: number;
-  name: string;
-  slug?: string | null;
-  productId: number; 
-  productAttributeId?: number | null;
-  storeCode: string
-  attributeId?: number | null;
-  cost: number;
-  Price: number;
-  stock: number;
-  lowStockThreshold?: number | null;
-  images: string[];
-  status: string; 
+  id: number;
+  productId: number;
+  storeCode: string;
+  sellingPrice: number;
+  costPrice: number | null;
+  effectiveFrom: Date;
+  isActive: boolean;
+  reason: string | null;
+  createdById: string;
   createdAt: Date;
   updatedAt?: Date | null;
 }
