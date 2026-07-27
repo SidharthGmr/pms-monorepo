@@ -24,7 +24,14 @@
       "Bash(awk '/^model purchase /,/^}/' prisma/schema.prisma)",
       "Bash(awk '/^model purchaseItem /,/^}/' prisma/schema.prisma)",
       "Bash(awk '/^model supplier /,/^}/' prisma/schema.prisma)",
-      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")"
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
+      "Bash(echo \"=== exit=$? ===\")",
+      "Bash(echo \"=== api exit=$? ===\")",
+      "Bash(node *)",
+      "Bash(grep -o \"inlineSchema[^,]\\\\{0,60\\\\}\" node_modules/.prisma/client/index.js)",
+      "Bash(grep -o \"model brandName {\\\\\\(\\\\\\\\\\\\\\\\n[^\\\\\"]\\\\{0,80\\\\}\\\\\\)\\\\{0,14\\\\}\" node_modules/.prisma/client/index.js)",
+      "Bash(tr '\\\\\\\\' '\\\\n')",
+      "Bash(grep -o \"model category {\\\\\\(\\\\\\\\\\\\\\\\n[^\\\\\"]\\\\{0,80\\\\}\\\\\\)\\\\{0,14\\\\}\" node_modules/.prisma/client/index.js)"
     ]
   }
 }

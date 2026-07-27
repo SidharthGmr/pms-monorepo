@@ -11,5 +11,5 @@ export interface CategoryResponseDto {
   status: Status;
   displayOrder: number | null;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date | null;
 }

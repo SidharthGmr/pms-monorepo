@@ -10,7 +10,6 @@ export interface ProductDto {
   cost?: number | null;
   stock: number;
   variants?: ProductVariantDto[];
-  // The API exposes only the effective selling/cost price on list endpoints.
   currentPrice?: Pick<ProductVariantDto, 'sellingPrice' | 'costPrice'> | null;
   lowStockThreshold?: number | null;
   categoryId: number;
@@ -19,10 +18,10 @@ export interface ProductDto {
   storeCode: string;
   storeId?: number | null;
   images: string[];
-  createdById: number;
-  updatedById?: number | null;
+  createdById: string;
+  updatedById?: string | null;
   createdAt: Date;
-  displayOrder?: number | null;
   updatedAt: Date | null;
+  displayOrder?: number | null;
   status?: string;
 }

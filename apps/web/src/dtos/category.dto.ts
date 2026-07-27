@@ -5,5 +5,5 @@ export interface CategoryDto {
   parentId?: number | null;
   status: string | null;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date | null;
 }

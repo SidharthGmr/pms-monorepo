@@ -62,6 +62,9 @@ export class CategoryController {
         message: 'Store code not found. User must be associated with a store.'
       });
     }
+
+
+
     const category = await this.unitOfService.Category.create(body, storeCode);
     return res.status(201).json({ success: true, message: 'Category created successfully', data: category });
   };

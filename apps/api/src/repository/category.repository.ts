@@ -61,6 +61,6 @@ export class CategoryRepository implements ICategoryRepository {
   }
 
   async delete(id: number): Promise<CategoryResponseDto> {
-    return prisma.category.update({ where: { id }, data: { status: StatusEnum.Trash } });
+    return prisma.category.update({ where: { id }, data: { status: StatusEnum.Trash, updatedAt: new Date() } });
   }
 }

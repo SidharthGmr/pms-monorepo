@@ -93,7 +93,7 @@ export default function CategoryList() {
   };
   const handleDelete = async (id: number) => {
     const response = await deleteCategoryMutation.mutateAsync(id);
-    if (response && response.status === 204) {
+    if (response && response.status === 200) {
       toast({ variant: 'success', title: 'Category deleted successfully' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);

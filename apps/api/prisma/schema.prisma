@@ -164,7 +164,7 @@ model category {
   status       Status      @default(Published)
   displayOrder Int?        @default(1)
   createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  updatedAt    DateTime?
   parent       category?   @relation("CategoryToParent", fields: [parentId], references: [id])
   children     category[]  @relation("CategoryToParent")
   store        store       @relation(fields: [storeCode], references: [code])
