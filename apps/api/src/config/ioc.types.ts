@@ -19,6 +19,7 @@ export const TYPES = {
   IPurchaseService: Symbol.for("PurchaseService"),
   ISupplierService: Symbol.for("SupplierService"),
   ICartService: Symbol.for("CartService"),
+  ICheckoutService: Symbol.for("CheckoutService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -40,6 +41,7 @@ export const TYPES = {
   PurchaseController: Symbol.for("PurchaseController"),
   SupplierController: Symbol.for("SupplierController"),
   CartController: Symbol.for("CartController"),
+  CheckoutController: Symbol.for("CheckoutController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),

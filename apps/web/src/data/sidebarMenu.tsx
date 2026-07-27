@@ -1,5 +1,5 @@
 import { Roles } from '@/enums/roles.enum';
-import { FolderTree, LayoutDashboard, List, Package, Receipt, ShoppingBag, ShoppingCart, Sliders, Store, Tags, Truck, User, Users } from 'lucide-react';
+import { CreditCard, FolderTree, LayoutDashboard, List, Package, Receipt, ShoppingBag, ShoppingCart, Sliders, Store, Tags, Truck, User, Users } from 'lucide-react';
 
 export interface SideBarMenuDto {
   id: string;
@@ -148,6 +148,22 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Cart',
     icon: ShoppingCart,
     url: '/dashboard/cart',
+    role: [Roles.USER, Roles.STAFF],
+    isActive: false,
+  },
+  {
+    id: 'checkout',
+    title: 'Checkout',
+    icon: CreditCard,
+    url: '/admin/checkout',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'checkout-dashboard',
+    title: 'Checkout',
+    icon: CreditCard,
+    url: '/dashboard/checkout',
     role: [Roles.USER, Roles.STAFF],
     isActive: false,
   },

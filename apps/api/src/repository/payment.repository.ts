@@ -11,6 +11,10 @@ export class PaymentRepository implements IPaymentRepository {
     return prisma.payment.findUnique({ where: { id } });
   }
 
+  async findByTransactionId(transactionId: string): Promise<PaymentDto | null> {
+    return prisma.payment.findUnique({ where: { transactionId } });
+  }
+
   async create(data: CreatePaymentDto): Promise<PaymentDto> {
     return prisma.payment.create({ data });
   }

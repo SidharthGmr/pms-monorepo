@@ -17,6 +17,7 @@ import IOrderService from './interfaces/IOrderService';
 import IProductService from './interfaces/IProductService';
 import IProductVariantService from './interfaces/IProductVariantService';
 import ICartService from './interfaces/ICartService';
+import ICheckoutService from './interfaces/ICheckoutService';
 import IStaffSalaryService from './interfaces/IStaffSalaryService';
 import IStaffService from './interfaces/IStaffService';
 import IStoreService from './interfaces/IStoreService';
@@ -38,6 +39,7 @@ export default class UnitOfService implements IUnitOfService {
   public ProductService: IProductService;
   public ProductVariantService: IProductVariantService;
   public CartService: ICartService;
+  public CheckoutService: ICheckoutService;
   public CategoryService: ICategoryService;
   public AttributeService: IAttributeService;
   public BrandNameService: IBrandNameService;
@@ -60,6 +62,7 @@ export default class UnitOfService implements IUnitOfService {
     productService = container.get<IProductService>(TYPES.IProductService),
     productVariantService = container.get<IProductVariantService>(TYPES.IProductVariantService),
     cartService = container.get<ICartService>(TYPES.ICartService),
+    checkoutService = container.get<ICheckoutService>(TYPES.ICheckoutService),
     categoryService = container.get<ICategoryService>(TYPES.ICategoryService),
     attributeService = container.get<IAttributeService>(TYPES.IAttributeService),
     brandNameService = container.get<IBrandNameService>(TYPES.IBrandNameService),
@@ -81,6 +84,7 @@ export default class UnitOfService implements IUnitOfService {
     this.ProductService = productService;
     this.ProductVariantService = productVariantService;
     this.CartService = cartService;
+    this.CheckoutService = checkoutService;
     this.CategoryService = categoryService;
     this.AttributeService = attributeService;
     this.BrandNameService = brandNameService;

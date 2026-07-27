@@ -22,6 +22,7 @@ export default function CartPage() {
   // Mounted under both /admin and /dashboard, which middleware.ts gates by role,
   // so keep links inside the current area.
   const posHref = pathname?.startsWith('/dashboard') ? '/dashboard/purchase/' : '/admin/purchase/';
+  const checkoutHref = pathname?.startsWith('/dashboard') ? '/dashboard/checkout' : '/admin/checkout';
 
   const { data: cartResponse, isLoading, isError } = useGetActiveCart();
   const cart = cartResponse?.data?.data ?? null;
@@ -201,10 +202,8 @@ export default function CartPage() {
               <span className="text-xl font-bold text-primary">{money(cart?.totalAmount ?? 0)}</span>
             </div>
 
-            {/* Checkout needs a customer and the discount/tax fields, which live on the
-                POS screen - so send the user there rather than duplicating that form. */}
             <Button asChild className="mt-4 w-full">
-              <Link href={posHref}>Continue to checkout</Link>
+              <Link href={checkoutHref}>Continue to checkout</Link>
             </Button>
           </Card>
         </div>

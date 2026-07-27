@@ -8,7 +8,7 @@ import express, {
     type Response,
 } from "express";
 
-import { razorpay } from "./config/razorpay";
+import { getRazorpayClient } from "./config/razorpay";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -93,7 +93,11 @@ app.post(
 
                     if (order) {
                         order.status = "paid";
-                        order.razorpayPaymentId = payment?.id;
+                        // `exactOptionalPropertyTypes` is on, so only assign when the
+                        // webhook actually carried a payment id.
+                        if (payment?.id) {
+                            order.razorpayPaymentId = payment.id;
+                        }
                         orders.set(orderId, order);
                     }
                 }
@@ -163,7 +167,7 @@ app.post(
              */
             const amountInPaise = Math.round(amount * 100);
 
-            const order = await razorpay.orders.create({
+            const order = await getRazorpayClient().orders.create({
                 amount: amountInPaise,
                 currency: "INR",
                 receipt: `receipt_${Date.now()}`,
@@ -270,7 +274,7 @@ app.post(
              * Optionally fetch the payment from Razorpay to check its
              * current captured/authorized status.
              */
-            const payment = await razorpay.payments.fetch(paymentId);
+            const payment = await getRazorpayClient().payments.fetch(paymentId);
 
             storedOrder.razorpayPaymentId = paymentId;
 
@@ -298,7 +302,8 @@ app.post(
 app.get(
     "/api/razorpay/orders/:orderId",
     (request: Request, response: Response) => {
-        const order = orders.get(request.params.orderId);
+        // Express 5 types route params as string | string[].
+        const order = orders.get(String(request.params.orderId ?? ""));
 
         if (!order) {
             response.status(404).json({

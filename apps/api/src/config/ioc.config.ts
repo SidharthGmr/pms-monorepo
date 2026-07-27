@@ -104,6 +104,9 @@ import { ICartService } from '../services/interfaces/Icart.service';
 import { CartService } from '../services/cart.service';
 import { ICartRepository } from '../repository/interfaces/icart.repository';
 import { CartRepository } from '../repository/cart.repository';
+import { CheckoutController } from '../controllers/checkout.controller';
+import { ICheckoutService } from '../services/interfaces/Icheckout.service';
+import { CheckoutService } from '../services/checkout.service';
 
 export const container = new Container();
 
@@ -126,6 +129,7 @@ container.bind<StoreController>(TYPES.StoreController).to(StoreController);
 container.bind<PurchaseController>(TYPES.PurchaseController).to(PurchaseController);
 container.bind<SupplierController>(TYPES.SupplierController).to(SupplierController);
 container.bind<CartController>(TYPES.CartController).to(CartController);
+container.bind<CheckoutController>(TYPES.CheckoutController).to(CheckoutController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -145,6 +149,7 @@ container.bind<IStoreService>(TYPES.IStoreService).to(StoreService);
 container.bind<IPurchaseService>(TYPES.IPurchaseService).to(PurchaseService);
 container.bind<ISupplierService>(TYPES.ISupplierService).to(SupplierService);
 container.bind<ICartService>(TYPES.ICartService).to(CartService);
+container.bind<ICheckoutService>(TYPES.ICheckoutService).to(CheckoutService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
