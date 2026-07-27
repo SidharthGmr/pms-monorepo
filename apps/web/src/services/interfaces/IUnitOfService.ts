@@ -12,6 +12,7 @@ import IOrderItemService from './IOrderItemService';
 import IOrderService from './IOrderService';
 import IProductService from './IProductService';
 import IProductVariantService from './IProductVariantService';
+import ICartService from './ICartService';
 import IStaffSalaryService from './IStaffSalaryService';
 import IStaffService from './IStaffService';
 import IStoreService from './IStoreService';
@@ -28,6 +29,7 @@ export default interface IUnitOfService {
   UserListService: IUserListService;
   ProductService: IProductService;
   ProductVariantService: IProductVariantService;
+  CartService: ICartService;
   CategoryService: ICategoryService;
   AttributeService: IAttributeService;
   BrandNameService: IBrandNameService;

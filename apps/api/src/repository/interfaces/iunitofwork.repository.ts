@@ -16,6 +16,7 @@ import { IStaffRepository } from "./istaff.repository";
 import { IStoreRepository } from "./istore.repository";
 import { IPurchaseRepository } from "./ipurchase.repository";
 import { ISupplierRepository } from "./isupplier.repository";
+import { ICartRepository } from "./icart.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -35,6 +36,7 @@ export default interface IUnitOfWork {
   Store: IStoreRepository;
   Purchase: IPurchaseRepository;
   Supplier: ISupplierRepository;
+  Cart: ICartRepository;
 
   /**
    * Executes a set of operations within a database transaction.

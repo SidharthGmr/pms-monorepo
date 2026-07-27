@@ -80,6 +80,18 @@ export class StoreRepository {
   }
 
 
+  /**
+   * Tenancy is keyed on `storeCode` everywhere else, but Cart relates to
+   * `store.id`, so cart endpoints need to translate the JWT's storeCode.
+   */
+  async getByCode(code: string): Promise<StoreDto | null> {
+    const store = await prisma.store.findUnique({
+      where: { code },
+    });
+
+    return store ? this.mapToDto(store) : null;
+  }
+
   async delete(id: number): Promise<StoreDto> {
     const store = await prisma.store.findUnique({
       where: { id },

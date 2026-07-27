@@ -15,6 +15,7 @@ import { IStaffService } from "./Istaff.service";
 import { IStoreService } from "./Istore.service";
 import { IPurchaseService } from "./ipurchase.service";
 import { ISupplierService } from "./Isupplier.service";
+import { ICartService } from "./Icart.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -34,4 +35,5 @@ export default interface IUnitOfService {
   Store: IStoreService;
   Purchase: IPurchaseService;
   Supplier: ISupplierService;
+  Cart: ICartService;
 }

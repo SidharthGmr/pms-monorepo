@@ -24,13 +24,13 @@ import { SelectSearch } from '@/components/common/select-search';
 import { ProductDto } from '@/dtos/product.dto';
 import { OrderStatus } from '@/enums/order-status.enum';
 import { Roles } from '@/enums/roles.enum';
+import { useAddToCart, useClearCart, useGetActiveCart, useRemoveFromCart, useUpdateCartQuantity } from '@/hooks/service-hooks/useCartService';
 import { useCreateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { FileText, Landmark, Minus, Package, Percent, Plus, ShoppingBag, ShoppingCart, Trash2, User, X } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/common/page-header';
 
 import config from '@/config';
@@ -51,8 +51,19 @@ const CheckoutSchema = yup.object().shape({
 
 type CheckoutFormValues = yup.InferType<typeof CheckoutSchema>;
 
-interface CartItem extends ProductDto {
+/**
+ * One line of the persisted cart, shaped for this screen. The server cart is the
+ * source of truth; `stock` is filled in from the loaded catalog because the cart
+ * API returns product identity and price but not stock levels.
+ */
+interface CartLine {
+  /** productId - the cart API addresses items by product, not variant. */
+  id: number;
+  name: string;
+  price: number;
   cartQuantity: number;
+  stock: number;
+  images: string[];
 }
 
 /** Small quantity stepper reused in the catalog card and the cart list. */
@@ -155,10 +166,14 @@ function ProductCardImage({
 
 export default function PurchasePage() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
-  const { data: session } = useSession();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // This screen is mounted under both /admin and /dashboard, and middleware.ts
+  // gates those by role - so keep the cart link inside the current area rather
+  // than sending staff to an admin URL they cannot open.
+  const cartHref = pathname?.startsWith('/dashboard') ? '/dashboard/cart' : '/admin/cart';
   const createOrderMutation = useCreateOrder();
-  const [cart, setCart] = useState<Record<number, CartItem>>({});
   const [customerId, setCustomerId] = useState('');
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
@@ -248,53 +263,98 @@ export default function PurchasePage() {
   // not as a flat `price` field — resolve it safely here.
   const getSellingPrice = (p: ProductDto): number => p.currentPrice?.sellingPrice ?? p.price ?? 0;
 
-  const handleAddToCart = (product: ProductDto) => {
-    setCart((prev) => {
-      const current = prev[product.id];
-      const newQuantity = current ? current.cartQuantity + 1 : 1;
+  // The cart lives on the server and belongs to the signed-in operator. The
+  // selected customer is only attached to the order at checkout, which is how the
+  // previous local-state version behaved too.
+  const { data: cartResponse, isLoading: isCartLoading } = useGetActiveCart();
+  const serverCart = cartResponse?.data?.data ?? null;
 
-      if (newQuantity > product.stock) {
-        toast({ variant: 'destructive', title: 'Out of stock', description: `Cannot add more than ${product.stock} items.` });
-        return prev;
-      }
+  /** Stock by product for the currently loaded catalog page. */
+  const stockByProduct = useMemo(() => {
+    const map = new Map<number, number>();
+    products.forEach((p) => map.set(p.id, p.stock));
+    return map;
+  }, [products]);
 
-      return {
-        ...prev,
-        // Normalize the price onto the cart item so downstream totals are correct.
-        [product.id]: { ...product, price: getSellingPrice(product), cartQuantity: newQuantity },
+  /**
+   * Keyed by productId so the catalog can ask "how many of this are in the cart?"
+   * in one lookup. A cart line whose product is not on the current catalog page
+   * has no known stock ceiling, so treat it as unbounded rather than blocking the
+   * stepper on a value we do not have.
+   */
+  const cart = useMemo<Record<number, CartLine>>(() => {
+    const lines: Record<number, CartLine> = {};
+    (serverCart?.items ?? []).forEach((item) => {
+      lines[item.productId] = {
+        id: item.productId,
+        name: item.productName,
+        price: item.unitPrice ?? 0,
+        cartQuantity: item.quantity,
+        stock: stockByProduct.get(item.productId) ?? Number.POSITIVE_INFINITY,
+        images: item.productImages ?? [],
       };
     });
+    return lines;
+  }, [serverCart, stockByProduct]);
+
+  const cartItems = useMemo(() => Object.values(cart), [cart]);
+  const totalItemsCount = serverCart?.totalQuantity ?? 0;
+  const totalAmount = serverCart?.totalAmount ?? 0;
+
+  const addToCartMutation = useAddToCart();
+  const updateCartQuantityMutation = useUpdateCartQuantity();
+  const removeFromCartMutation = useRemoveFromCart();
+  const clearCartMutation = useClearCart();
+
+  const isCartMutating =
+    addToCartMutation.isPending || updateCartQuantityMutation.isPending || removeFromCartMutation.isPending || clearCartMutation.isPending;
+
+  /** Surfaces a failed cart mutation instead of leaving the UI silently unchanged. */
+  const reportCartError = (response: unknown, fallbackTitle: string) => {
+    const error = unitOfService.ErrorHandlerService.getErrorMessage(response as never);
+    toast({ variant: 'destructive', title: fallbackTitle, description: <span>{error}</span> });
   };
 
-  const handleRemoveFromCart = (productId: number) => {
-    setCart((prev) => {
-      const current = prev[productId];
-      if (!current) return prev;
-
-      if (current.cartQuantity <= 1) {
-        const newCart = { ...prev };
-        delete newCart[productId];
-        return newCart;
-      }
-
-      return {
-        ...prev,
-        [productId]: { ...current, cartQuantity: current.cartQuantity - 1 },
-      };
-    });
+  const runCartAction = async (action: () => Promise<any>, okStatus: number, failureTitle: string) => {
+    try {
+      const response = await action();
+      if (!response || response.status !== okStatus) reportCartError(response, failureTitle);
+    } catch (error) {
+      reportCartError(error, failureTitle);
+    }
   };
 
-  const handleDeleteFromCart = (productId: number) => {
-    setCart((prev) => {
-      const newCart = { ...prev };
-      delete newCart[productId];
-      return newCart;
-    });
+  // `product` may be a catalog ProductDto or an existing cart line; both carry the
+  // id and stock this needs.
+  const handleAddToCart = async (product: { id: number; stock: number }) => {
+    const current = cart[product.id]?.cartQuantity ?? 0;
+    if (current + 1 > product.stock) {
+      toast({ variant: 'destructive', title: 'Out of stock', description: `Cannot add more than ${product.stock} items.` });
+      return;
+    }
+    await runCartAction(() => addToCartMutation.mutateAsync({ productIds: [product.id] }), 201, 'Could not add to cart');
   };
 
-  const cartItems = Object.values(cart);
-  const totalItemsCount = cartItems.reduce((sum, item) => sum + item.cartQuantity, 0);
-  const totalAmount = cartItems.reduce((acc, item) => acc + item.price * item.cartQuantity, 0);
+  const handleRemoveFromCart = async (productId: number) => {
+    const current = cart[productId]?.cartQuantity ?? 0;
+    if (current === 0) return;
+
+    // Quantity 0 is how the API removes a line, so one endpoint covers both.
+    await runCartAction(
+      () => updateCartQuantityMutation.mutateAsync({ productId, model: { quantity: current - 1 } }),
+      200,
+      'Could not update cart'
+    );
+  };
+
+  const handleDeleteFromCart = async (productId: number) => {
+    await runCartAction(() => removeFromCartMutation.mutateAsync({ productId }), 200, 'Could not remove item');
+  };
+
+  const handleClearCart = async () => {
+    if (cartItems.length === 0) return;
+    await runCartAction(() => clearCartMutation.mutateAsync(undefined), 200, 'Could not clear cart');
+  };
 
   const { discount, tax, shippingCost } = form.watch();
   const grandTotal = totalAmount + (tax || 0) + (shippingCost || 0) - (discount || 0);
@@ -325,7 +385,9 @@ export default function PurchasePage() {
       const response = await createOrderMutation.mutateAsync(orderPayload);
       if (response && (response.status === 201 || response.status === 200)) {
         toast({ variant: 'success', title: 'Order placed successfully' });
-        setCart({});
+        // The order owns the line items now, so empty the persisted cart. If this
+        // fails the order still stands, so surface it rather than throwing.
+        await runCartAction(() => clearCartMutation.mutateAsync(undefined), 200, 'Order placed, but the cart could not be emptied');
         setCustomerId('');
         form.reset();
         setMobileCartOpen(false);
@@ -435,16 +497,37 @@ export default function PurchasePage() {
                   </div>
 
                   {inCartQty > 0 ? (
-                    <QuantityStepper
-                      quantity={inCartQty}
-                      onDecrease={() => handleRemoveFromCart(product.id)}
-                      onIncrease={() => handleAddToCart(product)}
-                      canIncrease={inCartQty < product.stock}
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <QuantityStepper
+                        quantity={inCartQty}
+                        onDecrease={() => handleRemoveFromCart(product.id)}
+                        onIncrease={() => handleAddToCart(product)}
+                        canIncrease={inCartQty < product.stock && !isCartMutating}
+                      />
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9 shrink-0 rounded-lg"
+                        onClick={() => handleAddToCart(product)}
+                        disabled={inCartQty >= product.stock || isCartMutating}
+                        title={inCartQty >= product.stock ? 'No more stock available' : `Add another ${product.name} to cart`}
+                        aria-label={`Add another ${product.name} to cart`}
+                        type="button"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ) : (
-                    <Button size="sm" className="h-9 rounded-lg font-semibold" onClick={() => handleAddToCart(product)} disabled={soldOut}>
-                      <Plus className="mr-1 h-4 w-4" />
-                      Add
+                    <Button
+                      size="icon"
+                      className="h-9 w-9 rounded-lg"
+                      onClick={() => handleAddToCart(product)}
+                      disabled={soldOut || isCartMutating}
+                      title={soldOut ? 'Out of stock' : `Add ${product.name} to cart`}
+                      aria-label={soldOut ? `${product.name} is out of stock` : `Add ${product.name} to cart`}
+                      type="button"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
@@ -481,7 +564,7 @@ export default function PurchasePage() {
               variant="ghost"
               size="sm"
               className="h-8 gap-1.5 rounded-lg text-xs text-muted-foreground hover:text-destructive"
-              onClick={() => setCart({})}
+              onClick={handleClearCart}
               type="button"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -519,13 +602,14 @@ export default function PurchasePage() {
                       quantity={item.cartQuantity}
                       onDecrease={() => handleRemoveFromCart(item.id)}
                       onIncrease={() => handleAddToCart(item)}
-                      canIncrease={item.cartQuantity < item.stock}
+                      canIncrease={item.cartQuantity < item.stock && !isCartMutating}
                     />
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleDeleteFromCart(item.id)}
+                      disabled={isCartMutating}
                       type="button"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -533,6 +617,12 @@ export default function PurchasePage() {
                   </div>
                 </div>
               </div>
+            ))}
+          </div>
+        ) : isCartLoading ? (
+          <div className="space-y-2 p-4">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-xl" />
             ))}
           </div>
         ) : (
@@ -691,7 +781,15 @@ export default function PurchasePage() {
 
   return (
     <div className="flex h-full flex-col space-y-4">
-      <PageHeader title="Point of Sale" description="Select products and complete a purchase" />
+      {/* The header action doubles as the cart indicator: it carries the live item
+          count and links through to the full cart page. */}
+      <PageHeader
+        title="Point of Sale"
+        description="Select products and complete a purchase"
+        actionText={totalItemsCount > 0 ? `Cart (${totalItemsCount})` : 'Cart'}
+        href={cartHref}
+        icon={ShoppingCart}
+      />
 
       {/* Shared search + filters (same as the ProductList listing) */}
       <div className="flex items-start gap-2">

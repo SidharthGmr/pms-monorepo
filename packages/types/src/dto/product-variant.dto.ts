@@ -1,6 +1,6 @@
 export interface ProductVariantResponseDto {
-  // id: number;
-  // productId: number;
+  id: number;
+  productId: number;
   // storeCode: string;
   sellingPrice: number;
   costPrice: number | null;

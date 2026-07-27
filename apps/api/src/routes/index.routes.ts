@@ -17,6 +17,7 @@ import staffRouter from "./staffRoutes";
 import storeRouter from "./storeRoutes";
 import purchaseRouter from "./purchaseRoutes";
 import supplierRouter from "./supplierRoutes";
+import cartRouter from "./cartRoutes";
 
 const routes = express.Router();
 
@@ -38,5 +39,6 @@ routes.use("/staff", staffRouter);
 routes.use("/stores", storeRouter);
 routes.use("/purchases", purchaseRouter);
 routes.use("/suppliers", supplierRouter);
+routes.use("/carts", cartRouter);
 
 export default routes;

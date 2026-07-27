@@ -10,6 +10,7 @@ import useLogout from '@/hooks/use-logout';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BreadCrumb } from '../breadcrumb';
+import { CartIndicator } from '../cart-indicator';
 import { ModeToggle } from './sidebar/thememode';
 import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
@@ -42,6 +43,7 @@ export default function HeaderDashboard() {
               <BreadCrumb />
             </div>
             <div className="flex items-center justify-end gap-4">
+              <CartIndicator />
               <div>
                 <ModeToggle />
               </div>

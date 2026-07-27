@@ -99,6 +99,11 @@ import { ISupplierService } from '../services/interfaces/Isupplier.service';
 import { SupplierService } from '../services/supplier.service';
 import { ISupplierRepository } from '../repository/interfaces/isupplier.repository';
 import { SupplierRepository } from '../repository/supplier.repository';
+import { CartController } from '../controllers/cart.controller';
+import { ICartService } from '../services/interfaces/Icart.service';
+import { CartService } from '../services/cart.service';
+import { ICartRepository } from '../repository/interfaces/icart.repository';
+import { CartRepository } from '../repository/cart.repository';
 
 export const container = new Container();
 
@@ -120,6 +125,7 @@ container.bind<StaffController>(TYPES.StaffController).to(StaffController);
 container.bind<StoreController>(TYPES.StoreController).to(StoreController);
 container.bind<PurchaseController>(TYPES.PurchaseController).to(PurchaseController);
 container.bind<SupplierController>(TYPES.SupplierController).to(SupplierController);
+container.bind<CartController>(TYPES.CartController).to(CartController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -138,6 +144,7 @@ container.bind<IStaffService>(TYPES.IStaffService).to(StaffService);
 container.bind<IStoreService>(TYPES.IStoreService).to(StoreService);
 container.bind<IPurchaseService>(TYPES.IPurchaseService).to(PurchaseService);
 container.bind<ISupplierService>(TYPES.ISupplierService).to(SupplierService);
+container.bind<ICartService>(TYPES.ICartService).to(CartService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -156,6 +163,7 @@ container.bind<IStaffRepository>(TYPES.IStaffRepository).to(StaffRepository);
 container.bind<IStoreRepository>(TYPES.IStoreRepository).to(StoreRepository);
 container.bind<IPurchaseRepository>(TYPES.IPurchaseRepository).to(PurchaseRepository);
 container.bind<ISupplierRepository>(TYPES.ISupplierRepository).to(SupplierRepository);
+container.bind<ICartRepository>(TYPES.ICartRepository).to(CartRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

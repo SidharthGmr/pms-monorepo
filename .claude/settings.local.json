@@ -31,7 +31,8 @@
       "Bash(grep -o \"inlineSchema[^,]\\\\{0,60\\\\}\" node_modules/.prisma/client/index.js)",
       "Bash(grep -o \"model brandName {\\\\\\(\\\\\\\\\\\\\\\\n[^\\\\\"]\\\\{0,80\\\\}\\\\\\)\\\\{0,14\\\\}\" node_modules/.prisma/client/index.js)",
       "Bash(tr '\\\\\\\\' '\\\\n')",
-      "Bash(grep -o \"model category {\\\\\\(\\\\\\\\\\\\\\\\n[^\\\\\"]\\\\{0,80\\\\}\\\\\\)\\\\{0,14\\\\}\" node_modules/.prisma/client/index.js)"
+      "Bash(grep -o \"model category {\\\\\\(\\\\\\\\\\\\\\\\n[^\\\\\"]\\\\{0,80\\\\}\\\\\\)\\\\{0,14\\\\}\" node_modules/.prisma/client/index.js)",
+      "Bash(npx next *)"
     ]
   }
 }

@@ -20,6 +20,7 @@ import { IStaffRepository } from "./interfaces/istaff.repository";
 import { IStoreRepository } from "./interfaces/istore.repository";
 import { IPurchaseRepository } from "./interfaces/ipurchase.repository";
 import { ISupplierRepository } from "./interfaces/isupplier.repository";
+import { ICartRepository } from "./interfaces/icart.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -39,6 +40,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Store: IStoreRepository;
   public Purchase: IPurchaseRepository;
   public Supplier: ISupplierRepository;
+  public Cart: ICartRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -58,6 +60,7 @@ export default class UnitOfWork implements IUnitOfWork {
     store = container.get<IStoreRepository>(TYPES.IStoreRepository),
     purchase = container.get<IPurchaseRepository>(TYPES.IPurchaseRepository),
     supplier = container.get<ISupplierRepository>(TYPES.ISupplierRepository),
+    cart = container.get<ICartRepository>(TYPES.ICartRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -76,6 +79,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Store = store;
     this.Purchase = purchase;
     this.Supplier = supplier;
+    this.Cart = cart;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

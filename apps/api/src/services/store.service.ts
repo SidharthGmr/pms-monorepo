@@ -73,6 +73,10 @@ export class StoreService implements IStoreService {
     return this.unitOfWork.Store.getById(id);
   }
 
+  async getByCode(code: string): Promise<StoreDto | null> {
+    return this.unitOfWork.Store.getByCode(code);
+  }
+
   async update(id: number, data: UpdateStoreModel): Promise<StoreDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
       const existing = await transactionClient.store.findUnique({ where: { id } });
