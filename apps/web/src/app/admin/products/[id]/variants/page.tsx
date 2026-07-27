@@ -17,7 +17,7 @@ export default function ProductVariantsPage({ params }: ProductVariantsPageProps
   const { id } = params;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         title="Product Variants"
         description="Append-only price history. Adding a variant supersedes the current active price."

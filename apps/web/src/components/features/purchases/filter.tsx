@@ -14,12 +14,7 @@ interface PurchaseListFilterProps<TData> {
   initialSearch?: string;
 }
 
-export default function PurchaseListFilter<TData>({
-  table,
-  onTextChange,
-  resetForm,
-  initialSearch = ''
-}: PurchaseListFilterProps<TData>) {
+export default function PurchaseListFilter<TData>({ table, onTextChange, resetForm, initialSearch = '' }: PurchaseListFilterProps<TData>) {
   const [searchedText, setSearchedText] = useState(initialSearch);
   const [searchedValue] = useDebounce(searchedText, 1000);
   const [isFiltered, setIsFiltered] = useState(false);

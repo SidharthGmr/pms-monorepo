@@ -140,60 +140,60 @@ export default function StaffListFilter<TData>({
   const hasFilters = searchedText || isStatusFiltered || isDepartmentFiltered || isPositionFiltered || dateRange;
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <Input
-          placeholder="Search by name, email..."
-          value={searchedText}
-          onChange={(event) => setSearchedText(event.target.value)}
-          className="h-10 w-full md:max-w-sm"
-        />
+    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
+      <Input
+        placeholder="Search by name, email..."
+        value={searchedText}
+        onChange={(event) => setSearchedText(event.target.value)}
+        className="h-10 w-full md:max-w-sm"
+      />
+      <SelectSearch
+        buttonClass="w-full"
+        placeholder="Status"
+        disableSearch={true}
+        items={statusList}
+        value={status}
+        onChange={(value) => {
+          onStatusValueChange(value);
+          setIsFiltered(true);
+        }}
+      />
 
-        <SelectSearch
-          buttonClass="w-full md:w-[150px]"
-          placeholder="Status"
-          disableSearch={true}
-          items={statusList}
-          value={status}
-          onChange={(value) => {
-            onStatusValueChange(value);
-            setIsFiltered(true);
-          }}
-        />
+      <SelectSearch
+        buttonClass="w-full "
+        placeholder="Department"
+        disableSearch={true}
+        items={departmentsList}
+        value={department}
+        onChange={(value) => {
+          onDepartmentValueChange(value);
+          setIsFiltered(true);
+        }}
+      />
 
-        <SelectSearch
-          buttonClass="w-full md:w-[180px]"
-          placeholder="Department"
-          disableSearch={true}
-          items={departmentsList}
-          value={department}
-          onChange={(value) => {
-            onDepartmentValueChange(value);
-            setIsFiltered(true);
-          }}
-        />
+      <SelectSearch
+        buttonClass="w-full "
+        placeholder="Position"
+        disableSearch={true}
+        items={positionsList}
+        value={position}
+        onChange={(value) => {
+          onPositionValueChange(value);
+          setIsFiltered(true);
+        }}
+      />
+      <div className="overflow-hidden">
+        <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
+      </div>
 
-        <SelectSearch
-          buttonClass="w-full md:w-[180px]"
-          placeholder="Position"
-          disableSearch={true}
-          items={positionsList}
-          value={position}
-          onChange={(value) => {
-            onPositionValueChange(value);
-            setIsFiltered(true);
-          }}
-        />
-
-        <div className="overflow-hidden">
-              <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
-            </div>
-
+      <div className="place-content-center">
         {hasFilters && (
-          <Button variant="ghost" onClick={resetFilter} className="h-10 px-4">
-            Reset
-            <Cross2Icon className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex justify-start">
+            <Button variant="destructive" onClick={resetFilter} className="h-8 px-2 lg:px-3">
+              Reset
+              <Cross2Icon className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
     </div>

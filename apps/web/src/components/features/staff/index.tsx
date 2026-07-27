@@ -95,7 +95,7 @@ export default function StaffList() {
 
   const handleDelete = async (id: number) => {
     const response = await deleteStaffMutation.mutateAsync(id);
-    if (response && response.status === 204) {
+    if (response && response.status === 200) {
       toast({ variant: 'success', title: 'Staff member deleted successfully' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
@@ -160,34 +160,23 @@ export default function StaffList() {
             });
           }}
         />
-
-        {getAllStaffResponse.isLoading ? (
-          <RecentPostSkeleton />
-        ) : (
-          <>
-            <CustomDataTable table={table} columns={columns} />
-            <DataTablePagination table={table} totalRecord={recordCount} />
-          </>
-        )}
+        <CustomDataTable table={table} columns={columns} isLoading={getAllStaffResponse.isLoading} />
+        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllStaffResponse.isLoading} />
       </div>
 
       {showEditModal && <ManageStaff id={+(editId ?? 0)} isOpen={showEditModal} onClose={closeEditModal} />}
-   
-   
-   
+
       {showDeleteModal && (
-           <ConfirmBox
-             isOpen={showDeleteModal}
-             onClose={() => closeDeleteModal(false)}
-             onSubmit={() => handleDelete(+(deleteId ?? 0))}
-             bodyText="Are you sure you want to delete this staff member? This action cannot be undone."
-             noButtonText="Cancel"
-             yesButtonText="Delete"
-             loading={deleteStaffMutation.isPending}
-           />
-         )}
-             
-   
+        <ConfirmBox
+          isOpen={showDeleteModal}
+          onClose={() => closeDeleteModal(false)}
+          onSubmit={() => handleDelete(+(deleteId ?? 0))}
+          bodyText="Are you sure you want to delete this staff member? This action cannot be undone."
+          noButtonText="Cancel"
+          yesButtonText="Delete"
+          loading={deleteStaffMutation.isPending}
+        />
+      )}
     </>
   );
 }
