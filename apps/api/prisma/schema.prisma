@@ -46,6 +46,9 @@ model users {
   purchases                purchase[]
   productVariants          ProductVariant[]
   UserProfile              UserProfile?
+  Review                   Review[]
+  ReviewReply              ReviewReply[]
+  Wishlist                 Wishlist[]
 
   @@index([userId])
   @@index([email])
@@ -153,6 +156,7 @@ model store {
   productVariants  ProductVariant[]
   suppliers        supplier[]
   Cart             Cart[]
+  Wishlist         Wishlist[]
 }
 
 model category {
@@ -210,6 +214,8 @@ model product {
   stockHistories    stockHistory[]
   purchaseItems     purchaseItem[]
   variants          ProductVariant[]
+  Review            Review[]
+  Wishlist          Wishlist[]
 }
 
 /// Append-only priced variant history for a product. `product.price`/`product.cost`
@@ -293,6 +299,58 @@ model purchaseItem {
   product  product  @relation(fields: [productId], references: [id])
 
   @@index([purchaseId])
+  @@index([productId])
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  orderId    Int // Can only review purchased items
+  productId  Int
+  userId     String
+  rating     Int // 1-5
+  title      String?
+  comment    String?
+  images     String[] @default([])
+  isVerified Boolean  @default(false) // Verified purchase badge
+  status     Status   @default(Published)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  order       order         @relation(fields: [orderId], references: [id])
+  product     product       @relation(fields: [productId], references: [id])
+  user        users         @relation(fields: [userId], references: [userId])
+  ReviewReply ReviewReply[]
+
+  @@unique([orderId, productId, userId]) // One review per product per order
+  @@index([productId])
+  @@index([rating])
+}
+
+model ReviewReply {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  userId    String // Staff/Admin replying
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   users  @relation(fields: [userId], references: [userId])
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  productId Int
+  storeCode String
+  addedAt   DateTime @default(now())
+
+  user    users   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  product product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store   store   @relation(fields: [storeCode], references: [code])
+
+  @@unique([userId, productId])
+  @@index([userId])
   @@index([productId])
 }
 
@@ -411,6 +469,7 @@ model order {
   store         store       @relation(fields: [storeCode], references: [code])
   items         orderItem[]
   payments      payment[]
+  Review        Review[]
 
   @@index([customerId])
   @@index([orderNumber])

@@ -9,7 +9,6 @@ import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-paginatio
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
-import Loader from '../../loader';
 import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { container } from '@/config/ioc';
@@ -42,8 +41,10 @@ export default function BrandNameList() {
     status: searchParams.get('status') || '',
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-    sortBy: searchParams.get('sortBy') || 'createdon',
-    sortDirection: searchParams.get('sortDirection') || 'desc',
+    // `createdAt` is the actual column, and the sorting hook only reads an
+    // uppercase 'DESC' - lowercase silently flipped the list to oldest-first.
+    sortBy: searchParams.get('sortBy') || 'createdAt',
+    sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
   const getAllBrandNamesResponse = useGetAllBrandNames(filterParams);
@@ -105,8 +106,8 @@ export default function BrandNameList() {
         page: +(searchParams.get('page') || 1),
         search: searchParams.get('search') || '',
         recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-        sortBy: searchParams.get('sortBy') || 'createdon',
-        sortDirection: searchParams.get('sortDirection') || 'desc',
+        sortBy: searchParams.get('sortBy') || 'createdAt',
+        sortDirection: searchParams.get('sortDirection') || 'DESC',
       };
     });
   };

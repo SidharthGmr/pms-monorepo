@@ -14,7 +14,7 @@ export class BrandNameService implements IBrandNameService {
   ) { }
 
   async getAll(filters?: BrandNameFilterParams): Promise<ListResponseDto<BrandNameDto>> {
-    return this.unitOfWork.BrandName.findAll(filters);
+    return this.unitOfWork.BrandName.findAll(filters, filters?.page, filters?.recordPerPage, filters?.sortBy, filters?.sortOrder);
   }
 
   async getById(id: number): Promise<BrandNameDto | null> {

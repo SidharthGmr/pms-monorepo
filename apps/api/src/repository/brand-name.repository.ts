@@ -21,13 +21,17 @@ function toDto(b: BrandNameWithCategories): BrandNameDto {
     };
 }
 
+// Sorting is client-driven, so only real columns are honoured - anything else falls
+// back to the default instead of failing the query.
+const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
+
 export class BrandNameRepository implements IBrandNameRepository {
     async findAll(
         filters?: BrandNameFilterParams,
         page = 1,
         limit = 10,
-        sortBy = 'displayOrder',
-        sortOrder: 'asc' | 'desc' = 'asc'
+        sortBy = 'createdAt',
+        sortOrder: 'asc' | 'desc' = 'desc'
     ): Promise<ListResponseDto<BrandNameDto>> {
         const where: Prisma.brandNameWhereInput = { NOT: { status: Status.Trash } };
 
@@ -60,11 +64,22 @@ export class BrandNameRepository implements IBrandNameRepository {
 
         const include = { categories: { select: { id: true as const } } };
 
+        // A brand that was just added has displayOrder = null, and Postgres sorts NULLs
+        // last on ASC - so the old `displayOrder asc` default stranded every new record
+        // on the last page. Default to newest-first, and when displayOrder *is* the sort
+        // key keep the unordered rows at the end rather than letting them lead.
+        const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
+        const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+        const orderBy: Prisma.brandNameOrderByWithRelationInput[] =
+            column === 'displayOrder'
+                ? [{ displayOrder: { sort: direction, nulls: 'last' } }, { id: 'desc' }]
+                : [{ [column]: direction }, { id: 'desc' }];
+
         const [data, total] = await Promise.all([
             prisma.brandName.findMany({
                 where,
                 include,
-                orderBy: { [sortBy]: sortOrder },
+                orderBy,
                 ...(skip !== undefined && { skip }),
                 ...(take !== undefined && { take }),
             }),

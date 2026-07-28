@@ -18,6 +18,10 @@ export class BrandNameController {
         .map(Number).filter(n => !isNaN(n))
       : undefined;
 
+    // The client sends `sortDirection`; accept `sortOrder` too rather than silently
+    // dropping the sort, which is how the list ended up ignoring it entirely.
+    const rawSortDirection = (req.query['sortDirection'] || req.query['sortOrder']) as string | undefined;
+
     const filters: BrandNameFilterParams = Object.fromEntries(
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
@@ -27,6 +31,8 @@ export class BrandNameController {
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined,
         storeCode: req.user?.storeCode || undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortOrder: rawSortDirection ? (rawSortDirection.toLowerCase() === 'asc' ? 'asc' : 'desc') : undefined,
       }).filter(([, v]) => v !== undefined)
     );
     const data = await this.unitOfService.BrandName.getAll(filters);
