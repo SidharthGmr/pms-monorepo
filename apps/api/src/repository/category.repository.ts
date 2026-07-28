@@ -3,13 +3,17 @@ import prisma from '../config/prisma';
 import { ICategoryRepository } from './interfaces/icategory.repository';
 import { CategoryFilterParams, CategoryResponseDto, ListResponseDto, StatusEnum } from '@pms/types';
 
+// Sorting is client-driven, so only real columns are honoured - anything else falls
+// back to the default instead of failing the query.
+const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
+
 export class CategoryRepository implements ICategoryRepository {
   async findAll(
     filters?: CategoryFilterParams,
     page = 1,
     limit = 10,
-    sortBy = 'displayOrder',
-    sortOrder: 'asc' | 'desc' = 'asc'
+    sortBy = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<ListResponseDto<CategoryResponseDto>> {
     const where: Prisma.categoryWhereInput = { NOT: { status: StatusEnum.Trash } };
 
@@ -43,10 +47,21 @@ export class CategoryRepository implements ICategoryRepository {
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
+    // A category just added has displayOrder = null (create stores `|| null`), and
+    // Postgres sorts NULLs last on ASC - so the old `displayOrder asc` default
+    // stranded every new record on the last page. Default to newest-first, and when
+    // displayOrder *is* the sort key keep the unordered rows at the end.
+    const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
+    const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy: Prisma.categoryOrderByWithRelationInput[] =
+      column === 'displayOrder'
+        ? [{ displayOrder: { sort: direction, nulls: 'last' } }, { id: 'desc' }]
+        : [{ [column]: direction }, { id: 'desc' }];
+
     const [data, total] = await Promise.all([
       prisma.category.findMany({
         where,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy,
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
       }),

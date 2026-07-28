@@ -13,7 +13,10 @@ export class CategoryService implements ICategoryService {
   ) { }
 
   async getAll(filters?: CategoryFilterParams): Promise<ListResponseDto<CategoryResponseDto>> {
-    return this.unitOfWork.Category.findAll(filters);
+    // `sortDirection` arrives as a free-text query value, so normalise it here rather
+    // than letting an unexpected string reach Prisma.
+    const sortOrder = filters?.sortDirection?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+    return this.unitOfWork.Category.findAll(filters, filters?.page, filters?.recordPerPage, filters?.sortBy ?? undefined, sortOrder);
   }
 
   async getById(id: number, storeCode: string): Promise<CategoryResponseDto | null> {

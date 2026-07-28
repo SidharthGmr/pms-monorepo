@@ -19,6 +19,9 @@ import purchaseRouter from "./purchaseRoutes";
 import supplierRouter from "./supplierRoutes";
 import cartRouter from "./cartRoutes";
 import checkoutRouter from "./checkoutRoutes";
+import reviewRouter from "./reviewRoutes";
+import reviewReplyRouter from "./reviewReplyRoutes";
+import wishlistRouter from "./wishlistRoutes";
 
 const routes = express.Router();
 
@@ -42,5 +45,8 @@ routes.use("/purchases", purchaseRouter);
 routes.use("/suppliers", supplierRouter);
 routes.use("/carts", cartRouter);
 routes.use("/checkout", checkoutRouter);
+routes.use("/reviews", reviewRouter);
+routes.use("/review-replies", reviewReplyRouter);
+routes.use("/wishlists", wishlistRouter);
 
 export default routes;

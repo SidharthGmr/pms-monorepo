@@ -111,6 +111,21 @@ import { IUserSessionService } from '../services/interfaces/Iuser-session.servic
 import { UserSessionService } from '../services/user-session.service';
 import { IUserSessionRepository } from '../repository/interfaces/iuser-session.repository';
 import { UserSessionRepository } from '../repository/user-session.repository';
+import { ReviewController } from '../controllers/review.controller';
+import { IReviewService } from '../services/interfaces/Ireview.service';
+import { ReviewService } from '../services/review.service';
+import { IReviewRepository } from '../repository/interfaces/ireview.repository';
+import { ReviewRepository } from '../repository/review.repository';
+import { ReviewReplyController } from '../controllers/review-reply.controller';
+import { IReviewReplyService } from '../services/interfaces/Ireview-reply.service';
+import { ReviewReplyService } from '../services/review-reply.service';
+import { IReviewReplyRepository } from '../repository/interfaces/ireview-reply.repository';
+import { ReviewReplyRepository } from '../repository/review-reply.repository';
+import { WishlistController } from '../controllers/wishlist.controller';
+import { IWishlistService } from '../services/interfaces/Iwishlist.service';
+import { WishlistService } from '../services/wishlist.service';
+import { IWishlistRepository } from '../repository/interfaces/iwishlist.repository';
+import { WishlistRepository } from '../repository/wishlist.repository';
 
 export const container = new Container();
 
@@ -134,6 +149,9 @@ container.bind<PurchaseController>(TYPES.PurchaseController).to(PurchaseControll
 container.bind<SupplierController>(TYPES.SupplierController).to(SupplierController);
 container.bind<CartController>(TYPES.CartController).to(CartController);
 container.bind<CheckoutController>(TYPES.CheckoutController).to(CheckoutController);
+container.bind<ReviewController>(TYPES.ReviewController).to(ReviewController);
+container.bind<ReviewReplyController>(TYPES.ReviewReplyController).to(ReviewReplyController);
+container.bind<WishlistController>(TYPES.WishlistController).to(WishlistController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -155,6 +173,9 @@ container.bind<ISupplierService>(TYPES.ISupplierService).to(SupplierService);
 container.bind<ICartService>(TYPES.ICartService).to(CartService);
 container.bind<ICheckoutService>(TYPES.ICheckoutService).to(CheckoutService);
 container.bind<IUserSessionService>(TYPES.IUserSessionService).to(UserSessionService);
+container.bind<IReviewService>(TYPES.IReviewService).to(ReviewService);
+container.bind<IReviewReplyService>(TYPES.IReviewReplyService).to(ReviewReplyService);
+container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -175,6 +196,9 @@ container.bind<IPurchaseRepository>(TYPES.IPurchaseRepository).to(PurchaseReposi
 container.bind<ISupplierRepository>(TYPES.ISupplierRepository).to(SupplierRepository);
 container.bind<ICartRepository>(TYPES.ICartRepository).to(CartRepository);
 container.bind<IUserSessionRepository>(TYPES.IUserSessionRepository).to(UserSessionRepository);
+container.bind<IReviewRepository>(TYPES.IReviewRepository).to(ReviewRepository);
+container.bind<IReviewReplyRepository>(TYPES.IReviewReplyRepository).to(ReviewReplyRepository);
+container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(WishlistRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

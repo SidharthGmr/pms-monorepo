@@ -18,6 +18,9 @@ import { ISupplierService } from "./Isupplier.service";
 import { ICartService } from "./Icart.service";
 import { ICheckoutService } from "./Icheckout.service";
 import { IUserSessionService } from "./Iuser-session.service";
+import { IReviewService } from "./Ireview.service";
+import { IReviewReplyService } from "./Ireview-reply.service";
+import { IWishlistService } from "./Iwishlist.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -40,4 +43,7 @@ export default interface IUnitOfService {
   Cart: ICartService;
   Checkout: ICheckoutService;
   UserSession: IUserSessionService;
+  Review: IReviewService;
+  ReviewReply: IReviewReplyService;
+  Wishlist: IWishlistService;
 }

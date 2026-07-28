@@ -21,6 +21,10 @@ export class CategoryController {
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
         storeCode: req.user?.storeCode || undefined,
+        // The client sends `sortDirection`; accept `sortOrder` too rather than
+        // silently dropping the sort, which is how the list ignored it entirely.
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortDirection: (req.query['sortDirection'] || req.query['sortOrder']) as string | undefined,
       }).filter(([, v]) => v !== undefined)
     );
     const categories = await this.unitOfService.Category.getAll(filters);

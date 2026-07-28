@@ -42,8 +42,10 @@ export default function CategoryList() {
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
     endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
-    sortBy: searchParams.get('sortBy') || 'createdon',
-    sortDirection: searchParams.get('sortDirection') || 'desc',
+    // `createdAt` is the actual column, and the sorting hook only reads an
+    // uppercase 'DESC' - lowercase silently flipped the list to oldest-first.
+    sortBy: searchParams.get('sortBy') || 'createdAt',
+    sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
   const getAllCategoriesResponse = useGetAllCategories(filterParams);
@@ -89,6 +91,8 @@ export default function CategoryList() {
       endDate: undefined,
       page: 1,
       recordPerPage: config.recordPerPage,
+      sortBy: 'createdAt',
+      sortDirection: 'DESC',
     });
   };
   const handleDelete = async (id: number) => {

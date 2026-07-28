@@ -18,6 +18,9 @@ import { IPurchaseRepository } from "./ipurchase.repository";
 import { ISupplierRepository } from "./isupplier.repository";
 import { ICartRepository } from "./icart.repository";
 import { IUserSessionRepository } from "./iuser-session.repository";
+import { IReviewRepository } from "./ireview.repository";
+import { IReviewReplyRepository } from "./ireview-reply.repository";
+import { IWishlistRepository } from "./iwishlist.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -39,6 +42,9 @@ export default interface IUnitOfWork {
   Supplier: ISupplierRepository;
   Cart: ICartRepository;
   UserSession: IUserSessionRepository;
+  Review: IReviewRepository;
+  ReviewReply: IReviewReplyRepository;
+  Wishlist: IWishlistRepository;
 
   /**
    * Executes a set of operations within a database transaction.

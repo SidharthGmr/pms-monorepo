@@ -21,6 +21,9 @@ export const TYPES = {
   ICartService: Symbol.for("CartService"),
   ICheckoutService: Symbol.for("CheckoutService"),
   IUserSessionService: Symbol.for("UserSessionService"),
+  IReviewService: Symbol.for("ReviewService"),
+  IReviewReplyService: Symbol.for("ReviewReplyService"),
+  IWishlistService: Symbol.for("WishlistService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -43,6 +46,9 @@ export const TYPES = {
   SupplierController: Symbol.for("SupplierController"),
   CartController: Symbol.for("CartController"),
   CheckoutController: Symbol.for("CheckoutController"),
+  ReviewController: Symbol.for("ReviewController"),
+  ReviewReplyController: Symbol.for("ReviewReplyController"),
+  WishlistController: Symbol.for("WishlistController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -65,4 +71,7 @@ export const TYPES = {
   ISupplierRepository: Symbol.for("SupplierRepository"),
   ICartRepository: Symbol.for("CartRepository"),
   IUserSessionRepository: Symbol.for("UserSessionRepository"),
+  IReviewRepository: Symbol.for("ReviewRepository"),
+  IReviewReplyRepository: Symbol.for("ReviewReplyRepository"),
+  IWishlistRepository: Symbol.for("WishlistRepository"),
 };

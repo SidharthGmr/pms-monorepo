@@ -21,6 +21,9 @@ import { ISupplierService } from "./interfaces/Isupplier.service";
 import { ICartService } from "./interfaces/Icart.service";
 import { ICheckoutService } from "./interfaces/Icheckout.service";
 import { IUserSessionService } from "./interfaces/Iuser-session.service";
+import { IReviewService } from "./interfaces/Ireview.service";
+import { IReviewReplyService } from "./interfaces/Ireview-reply.service";
+import { IWishlistService } from "./interfaces/Iwishlist.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -43,6 +46,9 @@ export default class UnitOfService implements IUnitOfService {
   public Cart: ICartService;
   public Checkout: ICheckoutService;
   public UserSession: IUserSessionService;
+  public Review: IReviewService;
+  public ReviewReply: IReviewReplyService;
+  public Wishlist: IWishlistService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -65,6 +71,9 @@ export default class UnitOfService implements IUnitOfService {
     cart = container.get<ICartService>(TYPES.ICartService),
     checkout = container.get<ICheckoutService>(TYPES.ICheckoutService),
     userSession = container.get<IUserSessionService>(TYPES.IUserSessionService),
+    review = container.get<IReviewService>(TYPES.IReviewService),
+    reviewReply = container.get<IReviewReplyService>(TYPES.IReviewReplyService),
+    wishlist = container.get<IWishlistService>(TYPES.IWishlistService),
   ) {
     this.User = user;
     this.Account = account;
@@ -86,5 +95,8 @@ export default class UnitOfService implements IUnitOfService {
     this.Cart = cart;
     this.Checkout = checkout;
     this.UserSession = userSession;
+    this.Review = review;
+    this.ReviewReply = reviewReply;
+    this.Wishlist = wishlist;
   }
 }

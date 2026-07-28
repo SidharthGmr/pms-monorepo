@@ -22,6 +22,9 @@ import { IPurchaseRepository } from "./interfaces/ipurchase.repository";
 import { ISupplierRepository } from "./interfaces/isupplier.repository";
 import { ICartRepository } from "./interfaces/icart.repository";
 import { IUserSessionRepository } from "./interfaces/iuser-session.repository";
+import { IReviewRepository } from "./interfaces/ireview.repository";
+import { IReviewReplyRepository } from "./interfaces/ireview-reply.repository";
+import { IWishlistRepository } from "./interfaces/iwishlist.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -43,6 +46,9 @@ export default class UnitOfWork implements IUnitOfWork {
   public Supplier: ISupplierRepository;
   public Cart: ICartRepository;
   public UserSession: IUserSessionRepository;
+  public Review: IReviewRepository;
+  public ReviewReply: IReviewReplyRepository;
+  public Wishlist: IWishlistRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -64,6 +70,9 @@ export default class UnitOfWork implements IUnitOfWork {
     supplier = container.get<ISupplierRepository>(TYPES.ISupplierRepository),
     cart = container.get<ICartRepository>(TYPES.ICartRepository),
     userSession = container.get<IUserSessionRepository>(TYPES.IUserSessionRepository),
+    review = container.get<IReviewRepository>(TYPES.IReviewRepository),
+    reviewReply = container.get<IReviewReplyRepository>(TYPES.IReviewReplyRepository),
+    wishlist = container.get<IWishlistRepository>(TYPES.IWishlistRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -84,6 +93,9 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Supplier = supplier;
     this.Cart = cart;
     this.UserSession = userSession;
+    this.Review = review;
+    this.ReviewReply = reviewReply;
+    this.Wishlist = wishlist;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

@@ -1,0 +1,230 @@
+import { Router } from "express";
+import { container } from "../config/ioc.config";
+import { TYPES } from "../config/ioc.types";
+import { WishlistController } from "../controllers/wishlist.controller";
+import asyncHandler from "../middleware/asyncHandler.middleware";
+import { authenticateToken } from "../middleware/authentication.middleware";
+import { validate } from "../middleware/validate";
+import { createWishlistSchema } from "../schemas/wishlistSchema";
+
+const wishlistRouter = Router();
+const wishlistController = container.get<WishlistController>(TYPES.WishlistController);
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Wishlist
+ *     description: Saved products. Every route is scoped to the signed-in user.
+ */
+
+/**
+ * @swagger
+ * /wishlists:
+ *   get:
+ *     summary: Get the signed-in user's wishlist (staff may pass userId)
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Matches the saved product's name
+ *       - in: query
+ *         name: productId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         description: Staff only - ignored for customers, who are pinned to their own list
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [addedAt, productId]
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *     responses:
+ *       200:
+ *         description: Wishlist fetched successfully
+ */
+wishlistRouter.get("/", authenticateToken, asyncHandler(wishlistController.getAll));
+
+/**
+ * @swagger
+ * /wishlists/has/{productId}:
+ *   get:
+ *     summary: Whether the signed-in user has saved a product
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     description: Lets a product page render the filled/empty heart without fetching the whole list.
+ *     responses:
+ *       200:
+ *         description: Wishlist status fetched successfully
+ */
+wishlistRouter.get("/has/:productId", authenticateToken, asyncHandler(wishlistController.has));
+
+/**
+ * @swagger
+ * /wishlists/{id}:
+ *   get:
+ *     summary: Get a wishlist item by ID
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Wishlist item fetched successfully
+ *       403:
+ *         description: Not your wishlist item
+ *       404:
+ *         description: Wishlist item not found
+ */
+wishlistRouter.get("/:id", authenticateToken, asyncHandler(wishlistController.getById));
+
+/**
+ * @swagger
+ * /wishlists:
+ *   post:
+ *     summary: Save a product to the wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - productId
+ *             properties:
+ *               productId:
+ *                 type: integer
+ *                 example: 4
+ *     description: >
+ *       Idempotent - saving a product that is already on the list returns the existing
+ *       entry instead of failing. The owner comes from the token and the storeCode from
+ *       the product, so neither can be spoofed through the body.
+ *     responses:
+ *       201:
+ *         description: Added to wishlist
+ *       404:
+ *         description: Product not found in this store
+ */
+wishlistRouter.post("/", authenticateToken, validate(createWishlistSchema), asyncHandler(wishlistController.create));
+
+/**
+ * @swagger
+ * /wishlists/product/{productId}:
+ *   delete:
+ *     summary: Remove a product from the signed-in user's wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     description: Convenience for a toggle button, which knows the productId but not the row id.
+ *     responses:
+ *       204:
+ *         description: Removed from wishlist
+ *       404:
+ *         description: Wishlist item not found
+ */
+wishlistRouter.delete("/product/:productId", authenticateToken, asyncHandler(wishlistController.deleteByProduct));
+
+/**
+ * @swagger
+ * /wishlists/{id}:
+ *   delete:
+ *     summary: Remove a wishlist item by ID
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Removed from wishlist
+ *       403:
+ *         description: Not your wishlist item
+ */
+wishlistRouter.delete("/:id", authenticateToken, asyncHandler(wishlistController.delete));
+
+export default wishlistRouter;
