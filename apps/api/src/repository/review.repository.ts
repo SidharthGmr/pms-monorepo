@@ -119,8 +119,10 @@ export class ReviewRepository implements IReviewRepository {
         return { totalRecord: total, data: data.map(toDto) };
     }
 
-    async findById(id: number): Promise<ReviewDto | null> {
-        const review = await prisma.review.findUnique({ where: { id }, include: reviewInclude });
+    // `tx` matters when the caller is inside a transaction: a read on the global client
+    // cannot see rows the open transaction has not committed yet.
+    async findById(id: number, tx: Prisma.TransactionClient = prisma): Promise<ReviewDto | null> {
+        const review = await tx.review.findUnique({ where: { id }, include: reviewInclude });
         return review ? toDto(review) : null;
     }
 

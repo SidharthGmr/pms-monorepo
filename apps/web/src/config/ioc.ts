@@ -48,6 +48,16 @@ import StaffService from '@/services/StaffService';
 import StoreService from '@/services/StoreService';
 import SupplierService from '@/services/SupplierService';
 import ISupplierService from '@/services/interfaces/ISupplierService';
+import ReviewService from '@/services/ReviewService';
+import IReviewService from '@/services/interfaces/IReviewService';
+import ReviewReplyService from '@/services/ReviewReplyService';
+import IReviewReplyService from '@/services/interfaces/IReviewReplyService';
+import WishlistService from '@/services/WishlistService';
+import IWishlistService from '@/services/interfaces/IWishlistService';
+import MasterAttributeService from '@/services/MasterAttributeService';
+import IMasterAttributeService from '@/services/interfaces/IMasterAttributeService';
+import MasterEntryService from '@/services/MasterEntryService';
+import IMasterEntryService from '@/services/interfaces/IMasterEntryService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -76,6 +86,11 @@ container.bind<IPurchaseService>(TYPES.IPurchaseService).to(PurchaseService);
 container.bind<IOrderService>(TYPES.IOrderService).to(OrderService);
 container.bind<IOrderItemService>(TYPES.IOrderItemService).to(OrderItemService);
 container.bind<ISupplierService>(TYPES.ISupplierService).to(SupplierService);
+container.bind<IReviewService>(TYPES.IReviewService).to(ReviewService);
+container.bind<IReviewReplyService>(TYPES.IReviewReplyService).to(ReviewReplyService);
+container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
+container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(MasterAttributeService);
+container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
 
 export { container };
 

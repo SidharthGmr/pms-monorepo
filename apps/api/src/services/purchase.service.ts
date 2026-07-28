@@ -6,6 +6,7 @@ import IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import { PricingUtils } from '../utils/authHelpers.service';
+import { buildVariantSku } from '../utils/variant-sku';
 
 @injectable()
 export class PurchaseService implements IPurchaseService {
@@ -83,6 +84,11 @@ export class PurchaseService implements IPurchaseService {
           isActive: true,
           reason: `Purchase #${purchase.id}`,
           createdById: userId,
+          // sku is @unique and NOT NULL. `uniquePrices` is keyed by productId, so
+          // productId + purchase id is unique both within this batch and across
+          // purchases - a timestamp would not be, since every row shares one tick.
+          sku: buildVariantSku(storeCode, item.productId, `PUR${purchase.id}`),
+          attributes: {},
         })),
       });
 

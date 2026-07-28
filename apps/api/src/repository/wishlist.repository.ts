@@ -71,8 +71,10 @@ export class WishlistRepository implements IWishlistRepository {
         return { totalRecord: total, data: data.map(toDto) };
     }
 
-    async findById(id: number): Promise<WishlistDto | null> {
-        const entry = await prisma.wishlist.findUnique({ where: { id }, include: wishlistInclude });
+    // `tx` matters when the caller is inside a transaction: a read on the global client
+    // cannot see rows the open transaction has not committed yet.
+    async findById(id: number, tx: Prisma.TransactionClient = prisma): Promise<WishlistDto | null> {
+        const entry = await tx.wishlist.findUnique({ where: { id }, include: wishlistInclude });
         return entry ? toDto(entry) : null;
     }
 

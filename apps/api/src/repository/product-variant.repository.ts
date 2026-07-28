@@ -3,6 +3,7 @@ import prisma from '../config/prisma';
 import { ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { CreateProductVariantModel } from '../models/product-variant.model';
+import { buildVariantSku } from '../utils/variant-sku';
 import { IProductVariantRepository } from './interfaces/iproduct-variant.repository';
 
 /**
@@ -26,6 +27,9 @@ export class ProductVariantRepository implements IProductVariantRepository {
         productId: data.productId,
         storeCode: data.storeCode,
         sellingPrice: data.sellingPrice,
+        // Both are NOT NULL, so `null` is not an option - default them instead.
+        attributes: data.attributes ?? {},
+        sku: data.sku ?? buildVariantSku(data.storeCode, data.productId),
         costPrice: data.costPrice ?? null,
         effectiveFrom: data.effectiveFrom ?? new Date(),
         isActive: true,

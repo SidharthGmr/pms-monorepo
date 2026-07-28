@@ -25,6 +25,8 @@ import { IUserSessionRepository } from "./interfaces/iuser-session.repository";
 import { IReviewRepository } from "./interfaces/ireview.repository";
 import { IReviewReplyRepository } from "./interfaces/ireview-reply.repository";
 import { IWishlistRepository } from "./interfaces/iwishlist.repository";
+import { IMasterAttributeRepository } from "./interfaces/imaster-attribute.repository";
+import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -49,6 +51,8 @@ export default class UnitOfWork implements IUnitOfWork {
   public Review: IReviewRepository;
   public ReviewReply: IReviewReplyRepository;
   public Wishlist: IWishlistRepository;
+  public MasterAttribute: IMasterAttributeRepository;
+  public MasterEntry: IMasterEntryRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -73,6 +77,8 @@ export default class UnitOfWork implements IUnitOfWork {
     review = container.get<IReviewRepository>(TYPES.IReviewRepository),
     reviewReply = container.get<IReviewReplyRepository>(TYPES.IReviewReplyRepository),
     wishlist = container.get<IWishlistRepository>(TYPES.IWishlistRepository),
+    masterAttribute = container.get<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository),
+    masterEntry = container.get<IMasterEntryRepository>(TYPES.IMasterEntryRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -96,6 +102,8 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Review = review;
     this.ReviewReply = reviewReply;
     this.Wishlist = wishlist;
+    this.MasterAttribute = masterAttribute;
+    this.MasterEntry = masterEntry;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

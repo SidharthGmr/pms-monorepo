@@ -126,6 +126,16 @@ import { IWishlistService } from '../services/interfaces/Iwishlist.service';
 import { WishlistService } from '../services/wishlist.service';
 import { IWishlistRepository } from '../repository/interfaces/iwishlist.repository';
 import { WishlistRepository } from '../repository/wishlist.repository';
+import { MasterAttributeController } from '../controllers/master-attribute.controller';
+import { IMasterAttributeService } from '../services/interfaces/Imaster-attribute.service';
+import { MasterAttributeService } from '../services/master-attribute.service';
+import { IMasterAttributeRepository } from '../repository/interfaces/imaster-attribute.repository';
+import { MasterAttributeRepository } from '../repository/master-attribute.repository';
+import { MasterEntryController } from '../controllers/master-entry.controller';
+import { IMasterEntryService } from '../services/interfaces/Imaster-entry.service';
+import { MasterEntryService } from '../services/master-entry.service';
+import { IMasterEntryRepository } from '../repository/interfaces/imaster-entry.repository';
+import { MasterEntryRepository } from '../repository/master-entry.repository';
 
 export const container = new Container();
 
@@ -152,6 +162,8 @@ container.bind<CheckoutController>(TYPES.CheckoutController).to(CheckoutControll
 container.bind<ReviewController>(TYPES.ReviewController).to(ReviewController);
 container.bind<ReviewReplyController>(TYPES.ReviewReplyController).to(ReviewReplyController);
 container.bind<WishlistController>(TYPES.WishlistController).to(WishlistController);
+container.bind<MasterAttributeController>(TYPES.MasterAttributeController).to(MasterAttributeController);
+container.bind<MasterEntryController>(TYPES.MasterEntryController).to(MasterEntryController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -176,6 +188,8 @@ container.bind<IUserSessionService>(TYPES.IUserSessionService).to(UserSessionSer
 container.bind<IReviewService>(TYPES.IReviewService).to(ReviewService);
 container.bind<IReviewReplyService>(TYPES.IReviewReplyService).to(ReviewReplyService);
 container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
+container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(MasterAttributeService);
+container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -199,6 +213,8 @@ container.bind<IUserSessionRepository>(TYPES.IUserSessionRepository).to(UserSess
 container.bind<IReviewRepository>(TYPES.IReviewRepository).to(ReviewRepository);
 container.bind<IReviewReplyRepository>(TYPES.IReviewReplyRepository).to(ReviewReplyRepository);
 container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(WishlistRepository);
+container.bind<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository).to(MasterAttributeRepository);
+container.bind<IMasterEntryRepository>(TYPES.IMasterEntryRepository).to(MasterEntryRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

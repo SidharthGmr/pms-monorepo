@@ -51,7 +51,8 @@ export class WishlistService implements IWishlistService {
         select: { id: true },
       });
 
-      const created = await this.unitOfWork.Wishlist.findById(entry.id);
+      // Read back through the transaction client - the global one cannot see this row yet.
+      const created = await this.unitOfWork.Wishlist.findById(entry.id, transactionClient);
       if (!created) throw new NotFoundError("Wishlist item not found");
       return created;
     });

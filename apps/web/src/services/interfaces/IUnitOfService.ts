@@ -18,6 +18,11 @@ import IStaffSalaryService from './IStaffSalaryService';
 import IStaffService from './IStaffService';
 import IStoreService from './IStoreService';
 import ISupplierService from './ISupplierService';
+import IReviewService from './IReviewService';
+import IReviewReplyService from './IReviewReplyService';
+import IWishlistService from './IWishlistService';
+import IMasterAttributeService from './IMasterAttributeService';
+import IMasterEntryService from './IMasterEntryService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -42,4 +47,9 @@ export default interface IUnitOfService {
   OrderService: IOrderService;
   OrderItemService: IOrderItemService;
   SupplierService: ISupplierService;
+  ReviewService: IReviewService;
+  ReviewReplyService: IReviewReplyService;
+  WishlistService: IWishlistService;
+  MasterAttributeService: IMasterAttributeService;
+  MasterEntryService: IMasterEntryService;
 }

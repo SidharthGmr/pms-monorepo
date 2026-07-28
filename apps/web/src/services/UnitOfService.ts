@@ -22,6 +22,11 @@ import IStaffSalaryService from './interfaces/IStaffSalaryService';
 import IStaffService from './interfaces/IStaffService';
 import IStoreService from './interfaces/IStoreService';
 import ISupplierService from './interfaces/ISupplierService';
+import IReviewService from './interfaces/IReviewService';
+import IReviewReplyService from './interfaces/IReviewReplyService';
+import IWishlistService from './interfaces/IWishlistService';
+import IMasterAttributeService from './interfaces/IMasterAttributeService';
+import IMasterEntryService from './interfaces/IMasterEntryService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -50,6 +55,11 @@ export default class UnitOfService implements IUnitOfService {
   public OrderService: IOrderService;
   public OrderItemService: IOrderItemService;
   public SupplierService: ISupplierService;
+  public ReviewService: IReviewService;
+  public ReviewReplyService: IReviewReplyService;
+  public WishlistService: IWishlistService;
+  public MasterAttributeService: IMasterAttributeService;
+  public MasterEntryService: IMasterEntryService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -73,6 +83,11 @@ export default class UnitOfService implements IUnitOfService {
     orderService = container.get<IOrderService>(TYPES.IOrderService),
     orderItemService = container.get<IOrderItemService>(TYPES.IOrderItemService),
     supplierService = container.get<ISupplierService>(TYPES.ISupplierService),
+    reviewService = container.get<IReviewService>(TYPES.IReviewService),
+    reviewReplyService = container.get<IReviewReplyService>(TYPES.IReviewReplyService),
+    wishlistService = container.get<IWishlistService>(TYPES.IWishlistService),
+    masterAttributeService = container.get<IMasterAttributeService>(TYPES.IMasterAttributeService),
+    masterEntryService = container.get<IMasterEntryService>(TYPES.IMasterEntryService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -95,5 +110,10 @@ export default class UnitOfService implements IUnitOfService {
     this.OrderService = orderService;
     this.OrderItemService = orderItemService;
     this.SupplierService = supplierService;
+    this.ReviewService = reviewService;
+    this.ReviewReplyService = reviewReplyService;
+    this.WishlistService = wishlistService;
+    this.MasterAttributeService = masterAttributeService;
+    this.MasterEntryService = masterEntryService;
   }
 }

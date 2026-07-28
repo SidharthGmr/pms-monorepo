@@ -68,7 +68,8 @@ export class ReviewService implements IReviewService {
         select: { id: true },
       });
 
-      const created = await this.unitOfWork.Review.findById(review.id);
+      // Read back through the transaction client - the global one cannot see this row yet.
+      const created = await this.unitOfWork.Review.findById(review.id, transactionClient);
       if (!created) throw new NotFoundError("Review not found");
       return created;
     });
@@ -101,7 +102,7 @@ export class ReviewService implements IReviewService {
         },
       });
 
-      const updated = await this.unitOfWork.Review.findById(id);
+      const updated = await this.unitOfWork.Review.findById(id, transactionClient);
       if (!updated) throw new NotFoundError("Review not found");
       return updated;
     });

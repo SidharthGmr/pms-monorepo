@@ -50,7 +50,8 @@ export class ReviewReplyService implements IReviewReplyService {
         select: { id: true },
       });
 
-      const created = await this.unitOfWork.ReviewReply.findById(reply.id);
+      // Read back through the transaction client - the global one cannot see this row yet.
+      const created = await this.unitOfWork.ReviewReply.findById(reply.id, transactionClient);
       if (!created) throw new NotFoundError("Review reply not found");
       return created;
     });
@@ -72,7 +73,7 @@ export class ReviewReplyService implements IReviewReplyService {
         data: { comment: data.comment },
       });
 
-      const updated = await this.unitOfWork.ReviewReply.findById(id);
+      const updated = await this.unitOfWork.ReviewReply.findById(id, transactionClient);
       if (!updated) throw new NotFoundError("Review reply not found");
       return updated;
     });

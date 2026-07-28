@@ -24,6 +24,8 @@ import { IUserSessionService } from "./interfaces/Iuser-session.service";
 import { IReviewService } from "./interfaces/Ireview.service";
 import { IReviewReplyService } from "./interfaces/Ireview-reply.service";
 import { IWishlistService } from "./interfaces/Iwishlist.service";
+import { IMasterAttributeService } from "./interfaces/Imaster-attribute.service";
+import { IMasterEntryService } from "./interfaces/Imaster-entry.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -49,6 +51,8 @@ export default class UnitOfService implements IUnitOfService {
   public Review: IReviewService;
   public ReviewReply: IReviewReplyService;
   public Wishlist: IWishlistService;
+  public MasterAttribute: IMasterAttributeService;
+  public MasterEntry: IMasterEntryService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -74,6 +78,8 @@ export default class UnitOfService implements IUnitOfService {
     review = container.get<IReviewService>(TYPES.IReviewService),
     reviewReply = container.get<IReviewReplyService>(TYPES.IReviewReplyService),
     wishlist = container.get<IWishlistService>(TYPES.IWishlistService),
+    masterAttribute = container.get<IMasterAttributeService>(TYPES.IMasterAttributeService),
+    masterEntry = container.get<IMasterEntryService>(TYPES.IMasterEntryService),
   ) {
     this.User = user;
     this.Account = account;
@@ -98,5 +104,7 @@ export default class UnitOfService implements IUnitOfService {
     this.Review = review;
     this.ReviewReply = reviewReply;
     this.Wishlist = wishlist;
+    this.MasterAttribute = masterAttribute;
+    this.MasterEntry = masterEntry;
   }
 }

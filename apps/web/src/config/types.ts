@@ -22,4 +22,9 @@ export const TYPES = {
   IOrderItemService: Symbol.for('IOrderItemService'),
   IPurchaseService: Symbol.for('IPurchaseService'),
   ISupplierService: Symbol.for('ISupplierService'),
+  IReviewService: Symbol.for('IReviewService'),
+  IReviewReplyService: Symbol.for('IReviewReplyService'),
+  IWishlistService: Symbol.for('IWishlistService'),
+  IMasterAttributeService: Symbol.for('IMasterAttributeService'),
+  IMasterEntryService: Symbol.for('IMasterEntryService'),
 };

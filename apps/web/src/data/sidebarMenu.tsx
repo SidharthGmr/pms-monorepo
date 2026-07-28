@@ -73,6 +73,22 @@ export const SideBarMenu: SideBarMenuDto[] = [
         role: [Roles.ADMIN],
         isActive: false,
       },
+      {
+        id: 'master-attributes',
+        title: 'Master Attributes',
+        icon: List,
+        url: '/admin/master-attributes/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'master-entries',
+        title: 'Master Entries',
+        icon: Tags,
+        url: '/admin/master-entries/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
 
       {
         id: 'categories',

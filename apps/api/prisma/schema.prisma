@@ -157,6 +157,8 @@ model store {
   suppliers        supplier[]
   Cart             Cart[]
   Wishlist         Wishlist[]
+  masterAttributes MasterAttribute[]
+  masterEntries    MasterEntry[]
 }
 
 model category {
@@ -354,6 +356,52 @@ model ReviewReply {
 
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   user   users  @relation(fields: [userId], references: [userId])
+}
+
+/// A reusable lookup group - "Size", "Color", "Weight". `code` is the stable key the
+/// rest of the app selects by, so renaming the label never breaks a caller.
+model MasterAttribute {
+  id           Int           @id @default(autoincrement())
+  name         String
+  code         String
+  description  String?
+  /// For measured attributes: "kg", "cm", "ml".
+  unit         String?
+  storeCode    String
+  status       Status        @default(Published)
+  displayOrder Int?          @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime?     @updatedAt
+  store        store         @relation(fields: [storeCode], references: [code])
+  entries      MasterEntry[]
+
+  @@unique([code, storeCode])
+  @@unique([name, storeCode])
+  @@index([storeCode])
+}
+
+/// One selectable value inside a MasterAttribute - "L" under Size, "Red" under Color.
+model MasterEntry {
+  id           Int             @id @default(autoincrement())
+  attributeId  Int
+  /// Human label shown in a dropdown: "Large".
+  name         String
+  /// Stored/compared value: "L". Unique within its attribute.
+  value        String
+  /// Swatch for colour-style attributes.
+  colorHex     String?
+  metadata     Json?
+  storeCode    String
+  status       Status          @default(Published)
+  displayOrder Int?            @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime?       @updatedAt
+  attribute    MasterAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  store        store           @relation(fields: [storeCode], references: [code])
+
+  @@unique([attributeId, value])
+  @@index([attributeId])
+  @@index([storeCode])
 }
 
 model Wishlist {

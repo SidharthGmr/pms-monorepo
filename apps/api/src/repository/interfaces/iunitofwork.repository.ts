@@ -21,6 +21,8 @@ import { IUserSessionRepository } from "./iuser-session.repository";
 import { IReviewRepository } from "./ireview.repository";
 import { IReviewReplyRepository } from "./ireview-reply.repository";
 import { IWishlistRepository } from "./iwishlist.repository";
+import { IMasterAttributeRepository } from "./imaster-attribute.repository";
+import { IMasterEntryRepository } from "./imaster-entry.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -45,6 +47,8 @@ export default interface IUnitOfWork {
   Review: IReviewRepository;
   ReviewReply: IReviewReplyRepository;
   Wishlist: IWishlistRepository;
+  MasterAttribute: IMasterAttributeRepository;
+  MasterEntry: IMasterEntryRepository;
 
   /**
    * Executes a set of operations within a database transaction.

@@ -24,6 +24,8 @@ export const TYPES = {
   IReviewService: Symbol.for("ReviewService"),
   IReviewReplyService: Symbol.for("ReviewReplyService"),
   IWishlistService: Symbol.for("WishlistService"),
+  IMasterAttributeService: Symbol.for("MasterAttributeService"),
+  IMasterEntryService: Symbol.for("MasterEntryService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -49,6 +51,8 @@ export const TYPES = {
   ReviewController: Symbol.for("ReviewController"),
   ReviewReplyController: Symbol.for("ReviewReplyController"),
   WishlistController: Symbol.for("WishlistController"),
+  MasterAttributeController: Symbol.for("MasterAttributeController"),
+  MasterEntryController: Symbol.for("MasterEntryController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -74,4 +78,6 @@ export const TYPES = {
   IReviewRepository: Symbol.for("ReviewRepository"),
   IReviewReplyRepository: Symbol.for("ReviewReplyRepository"),
   IWishlistRepository: Symbol.for("WishlistRepository"),
+  IMasterAttributeRepository: Symbol.for("MasterAttributeRepository"),
+  IMasterEntryRepository: Symbol.for("MasterEntryRepository"),
 };

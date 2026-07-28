@@ -22,6 +22,8 @@ import checkoutRouter from "./checkoutRoutes";
 import reviewRouter from "./reviewRoutes";
 import reviewReplyRouter from "./reviewReplyRoutes";
 import wishlistRouter from "./wishlistRoutes";
+import masterAttributeRouter from "./masterAttributeRoutes";
+import masterEntryRouter from "./masterEntryRoutes";
 
 const routes = express.Router();
 
@@ -48,5 +50,7 @@ routes.use("/checkout", checkoutRouter);
 routes.use("/reviews", reviewRouter);
 routes.use("/review-replies", reviewReplyRouter);
 routes.use("/wishlists", wishlistRouter);
+routes.use("/master-attributes", masterAttributeRouter);
+routes.use("/master-entries", masterEntryRouter);
 
 export default routes;

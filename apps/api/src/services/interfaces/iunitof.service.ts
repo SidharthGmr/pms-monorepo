@@ -21,6 +21,8 @@ import { IUserSessionService } from "./Iuser-session.service";
 import { IReviewService } from "./Ireview.service";
 import { IReviewReplyService } from "./Ireview-reply.service";
 import { IWishlistService } from "./Iwishlist.service";
+import { IMasterAttributeService } from "./Imaster-attribute.service";
+import { IMasterEntryService } from "./Imaster-entry.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -46,4 +48,6 @@ export default interface IUnitOfService {
   Review: IReviewService;
   ReviewReply: IReviewReplyService;
   Wishlist: IWishlistService;
+  MasterAttribute: IMasterAttributeService;
+  MasterEntry: IMasterEntryService;
 }
