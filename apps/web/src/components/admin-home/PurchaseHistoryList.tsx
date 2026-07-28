@@ -41,7 +41,7 @@ export default function PurchaseHistoryList() {
         return (
           <Link
             key={purchase.id}
-            href={`/admin/purchase/${purchase.id}`}
+            href={`/admin/stock-purchase/history/${purchase.id}`}
             className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0"
           >
             <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">

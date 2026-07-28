@@ -9,28 +9,26 @@ import { BsEnvelope, BsPhone } from 'react-icons/bs';
 import { GoCheckCircleFill } from 'react-icons/go';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
-
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import ECardListRowActions from './row-action';
-import ActiveStatusToggle from './active-status-toggle';
-
+import ActiveStatusToggle from '@/components/common/active-status-toggle';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
 export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?: (id: string) => void) =>
   useMemo<ColumnDef<UserDto>[]>(
     () => [
-
       {
         id: 'actions',
         cell: ({ row }) => {
           return (
             <ECardListRowActions
               row={row}
-              editRecord={editRecord ? () => editRecord(row.original?.usersId) : () => { }}
-              deleteRecord={deleteRecord ? () => deleteRecord(row.original?.usersId) : () => { }} />
+              editRecord={editRecord ? () => editRecord(row.original?.usersId) : () => {}}
+              deleteRecord={deleteRecord ? () => deleteRecord(row.original?.usersId) : () => {}}
+            />
           );
         },
       },
@@ -39,20 +37,14 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         accessorKey: 'name',
         enableSorting: true,
         enableHiding: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="User" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="User" />,
         cell: ({ row }) => {
           const user = row.original;
           return (
             <div className="flex items-center gap-3">
               <Avatar className="h-9 w-9 ring-1 ring-border ring-offset-2 ring-offset-background">
-                {user?.profileImageUrl && (
-                  <AvatarImage src={user.profileImageUrl} className="object-cover" alt={user.name} />
-                )}
-                <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">
-                  {user?.name?.slice(0, 2)}
-                </AvatarFallback>
+                {user?.profileImageUrl && <AvatarImage src={user.profileImageUrl} className="object-cover" alt={user.name} />}
+                <AvatarFallback className="bg-primary/10 text-xs font-semibold uppercase text-primary">{user?.name?.slice(0, 2)}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-foreground">{user.name}</span>
@@ -68,9 +60,7 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         accessorKey: 'email',
         enableSorting: false,
         enableHiding: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Contact" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Contact" />,
         cell: ({ row }) => {
           const user = row.original;
           return (
@@ -93,9 +83,7 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         accessorKey: 'isActive',
         enableSorting: true,
         enableHiding: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Activity" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Activity" />,
         cell: ({ row }) => <ActiveStatusToggle user={row.original} />,
         meta: { sortingKey: 'isActive' },
       },
@@ -104,9 +92,7 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         accessorKey: 'isEmailVerified',
         enableSorting: true,
         enableHiding: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Verification" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Verification" />,
         cell: ({ row }) =>
           row.original.isEmailVerified ? (
             <Badge variant="green" className="flex items-center gap-1">
@@ -125,18 +111,14 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
         accessorKey: 'tokenUpdated',
         enableSorting: true,
         enableHiding: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Last Active" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Last Active" />,
         cell: ({ row }) => {
           const tokenUpdated = row.original.tokenUpdated;
           if (!tokenUpdated) {
             return <span className="text-muted-foreground text-xs">Never</span>;
           }
           return (
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {unitOfService.DateTimeService.convertToLocalDate(tokenUpdated, true)}
-            </span>
+            <span className="text-xs tabular-nums text-muted-foreground">{unitOfService.DateTimeService.convertToLocalDate(tokenUpdated, true)}</span>
           );
         },
         meta: { sortingKey: 'tokenUpdated' },
@@ -161,8 +143,7 @@ export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?:
           </div>
         ),
         meta: { sortingKey: 'status' },
-      }
-
+      },
     ],
     [editRecord, deleteRecord]
   );

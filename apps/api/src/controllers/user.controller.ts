@@ -187,6 +187,22 @@ export class UserController {
 
     const { isActive } = req.body as { isActive: boolean };
 
+    // This route is open to ADMIN as well as SUPER_ADMIN, so it needs the guards
+    // that a super-admin-only route did not: an admin must not be able to lock out
+    // a super admin, and nobody may deactivate their own account.
+    const target = await this.unitOfService.User.getUserById(userId);
+    if (!target) {
+      throw new CustomError('User not found', 404);
+    }
+
+    if (req.user?.userId === userId && !isActive) {
+      throw new CustomError('You cannot deactivate your own account', 403);
+    }
+
+    if (req.user?.role !== Role.SUPER_ADMIN && target.role === Role.SUPER_ADMIN) {
+      throw new CustomError('Only a super admin can change a super admin\'s status', 403);
+    }
+
     const user = await this.unitOfService.User.updateActiveStatus(userId, isActive);
 
     if (!user) {

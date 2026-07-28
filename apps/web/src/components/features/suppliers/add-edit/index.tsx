@@ -14,6 +14,7 @@ import { CreateSupplierModel } from '@/models/supplier.model';
 import SupplierSchema from '@/schema/supplierSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -21,12 +22,13 @@ interface ManageSupplierProps {
   id?: number;
   isOpen: boolean;
   onClose: (refresh: boolean) => void;
+  required?: boolean;
 }
 
-export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierProps) {
+export default function ManageSupplier({ id, isOpen, onClose, required = true }: ManageSupplierProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
-
+  const router = useRouter();
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
   const { data: supplierResponse, isLoading: isFetching } = useGetSupplierById(id ?? 0, isEdit);
@@ -48,7 +50,6 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
       const s = supplierResponse.data.data;
       form.reset({
         name: s.name,
-        contactPerson: s.contactPerson ?? '',
         email: s.email ?? '',
         phone: s.phone ?? '',
         address: s.address ?? '',
@@ -65,6 +66,7 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: `Supplier ${isEdit ? 'updated' : 'created'} successfully` });
       onClose(true);
+      router.push('/admin/suppliers/');
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -74,14 +76,21 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose(false)}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose(false);
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit' : 'Add'} Supplier</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-4">
+          <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-2">
             <FormField
               control={form.control}
               name="name"
@@ -101,7 +110,7 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Phone*</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. +1 555 123 4567" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -115,7 +124,7 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email*</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="e.g. jane@acme.com" {...field} value={field.value ?? ''} />
                   </FormControl>
@@ -123,47 +132,48 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Textarea className="resize-none" rows={2} placeholder="Street, city, state, ZIP" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {required && (
               <FormField
                 control={form.control}
-                name="displayOrder"
+                name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Display Order</FormLabel>
+                    <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="e.g. 1, 2, 3 (optional)"
-                        value={field.value ?? ''}
-                        onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
-                      />
+                      <Textarea className="resize-none" rows={2} placeholder="Street, city, state, ZIP" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {required && (
+                <FormField
+                  control={form.control}
+                  name="displayOrder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Display Order</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 1, 2, 3 (optional)"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status *</FormLabel>
+                    <FormLabel>Status*</FormLabel>
                     <FormControl>
                       <div className="flex">
                         <SelectSearch
@@ -171,8 +181,8 @@ export default function ManageSupplier({ id, isOpen, onClose }: ManageSupplierPr
                           buttonClass="w-full"
                           disableSearch={true}
                           items={[
-                            { label: 'Published', value: StatusValues.Published },
                             { label: 'Draft', value: StatusValues.Draft },
+                            { label: 'Published', value: StatusValues.Published },
                           ]}
                           value={field.value}
                           valueType="string"

@@ -108,26 +108,26 @@ export default function GetAllUserss({ role }: { role?: string }) {
       </div>
     );
   }
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <div className="overflow-hidden rounded-xl border border-border/60">
-          {[...Array(6)].map((_, index) => (
-            <div key={index} className="flex items-center gap-4 border-b border-border/60 p-4 last:border-b-0">
-              <Skeleton className="h-9 w-9 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-3 w-40" />
-                <Skeleton className="h-3 w-24" />
-              </div>
-              <Skeleton className="h-6 w-16 rounded-full" />
-              <Skeleton className="h-6 w-20 rounded-full" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="space-y-4">
+  //       <Skeleton className="h-16 w-full rounded-xl" />
+  //       <div className="overflow-hidden rounded-xl border border-border/60">
+  //         {[...Array(6)].map((_, index) => (
+  //           <div key={index} className="flex items-center gap-4 border-b border-border/60 p-4 last:border-b-0">
+  //             <Skeleton className="h-9 w-9 rounded-full" />
+  //             <div className="flex-1 space-y-2">
+  //               <Skeleton className="h-3 w-40" />
+  //               <Skeleton className="h-3 w-24" />
+  //             </div>
+  //             <Skeleton className="h-6 w-16 rounded-full" />
+  //             <Skeleton className="h-6 w-20 rounded-full" />
+  //           </div>
+  //         ))}
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>

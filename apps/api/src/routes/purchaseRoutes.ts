@@ -104,6 +104,34 @@ router.post('/', authenticateToken, validate(CreatePurchaseValidator), asyncHand
  *         name: search
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         required: false
+ *         description: Only purchases dated on or after this date (optional)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         required: false
+ *         description: Only purchases dated on or before this date (optional)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [invoiceNumber, supplierName, totalAmount, purchaseDate, createdAt, status]
+ *         required: false
+ *         description: Column to sort by (optional, defaults to purchaseDate)
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *         required: false
+ *         description: Sort direction (optional, defaults to DESC)
  *     responses:
  *       200:
  *         description: Purchases fetched successfully

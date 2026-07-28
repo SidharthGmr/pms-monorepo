@@ -23,6 +23,10 @@ export default function PurchasesList() {
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     search: searchParams.get('search') || '',
+    startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
+    endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
+    sortBy: searchParams.get('sortBy') || 'purchaseDate',
+    sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
   const columns = usePurchaseColumns();
@@ -36,7 +40,11 @@ export default function PurchasesList() {
     }
   }, [purchasesResponse]);
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<PurchaseDto>('', 'desc', columns);
+  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<PurchaseDto>(
+    filterParams.sortBy ?? 'purchaseDate',
+    filterParams.sortDirection ?? 'DESC',
+    columns
+  );
   const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
 
   const table = useCustomDataTable({
@@ -60,9 +68,21 @@ export default function PurchasesList() {
     }));
   }, [pagination]);
 
+  useEffect(() => {
+    setFilterParams((prev) => ({
+      ...prev,
+      sortBy: field,
+      sortDirection: order,
+    }));
+  }, [field, order]);
+
   const resetForm = () => {
     setFilterParams({
       search: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      sortBy: 'purchaseDate',
+      sortDirection: 'DESC',
       page: 1,
       recordPerPage: config.recordPerPage,
     });
@@ -79,6 +99,17 @@ export default function PurchasesList() {
         resetForm={resetForm}
         initialSearch={filterParams.search}
         onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || undefined, page: 1 }))}
+        onStartDateChanged={(value) => {
+          // Widen to the whole day so a same-day range still matches.
+          const selectedDate = value ? new Date(value) : undefined;
+          selectedDate?.setHours(0, 0, 0, 0);
+          setFilterParams((prev) => ({ ...prev, startDate: selectedDate?.toISOString(), page: 1 }));
+        }}
+        onEndDateChanged={(value) => {
+          const selectedDate = value ? new Date(value) : undefined;
+          selectedDate?.setHours(23, 59, 59, 999);
+          setFilterParams((prev) => ({ ...prev, endDate: selectedDate?.toISOString(), page: 1 }));
+        }}
       />
       <div className="rounded-md border bg-white shadow-sm overflow-hidden">
         <CustomDataTable columns={columns} table={table} isLoading={isLoading} />

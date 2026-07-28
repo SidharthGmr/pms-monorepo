@@ -1,9 +1,9 @@
 import * as Yup from 'yup';
 
 export const receiveStockSchema = Yup.object().shape({
-  supplierId: Yup.string().nullable().optional(),
+  supplierId: Yup.string().required('Please select a supplier'),
   supplierName: Yup.string().nullable().optional(),
-  invoiceNumber: Yup.string().nullable().optional(),
+  invoiceNumber: Yup.string().required('Invoice Number is required'),
   invoiceUrl: Yup.string().nullable().optional(),
   notes: Yup.string().nullable().optional(),
   totalAmount: Yup.number().default(0),

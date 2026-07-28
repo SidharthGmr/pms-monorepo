@@ -63,6 +63,20 @@ const supplierController = container.get<SupplierController>(TYPES.SupplierContr
  *           type: boolean
  *         required: false
  *         description: Show all records without pagination (optional)
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         required: false
+ *         description: Only suppliers created on or after this date (optional)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         required: false
+ *         description: Only suppliers created on or before this date (optional)
  *     responses:
  *       200:
  *         description: Suppliers fetched successfully

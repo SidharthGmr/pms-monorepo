@@ -36,10 +36,14 @@ export default function SupplierList() {
 
   const searchParams = useSearchParams();
 
+  // `search` (not `q`) is the key the API reads.
   const [filterParams, setFilterParams] = useState<SupplierFilterParams>({
-    q: searchParams.get('q') || '',
+    search: searchParams.get('search') || '',
+    status: searchParams.get('status') || '',
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
+    startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
+    endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
     sortBy: searchParams.get('sortBy') || 'createdon',
     sortDirection: searchParams.get('sortDirection') || 'desc',
   });
@@ -97,14 +101,14 @@ export default function SupplierList() {
   }, [field, order]);
 
   const resetForm = () => {
-    setFilterParams(() => {
+    setFilterParams((oldValue) => {
       return {
-        status: searchParams.get('status') || '',
-        page: +(searchParams.get('page') || 1),
-        q: searchParams.get('q') || '',
-        recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-        sortBy: searchParams.get('sortBy') || 'createdon',
-        sortDirection: searchParams.get('sortDirection') || 'desc',
+        ...oldValue,
+        search: '',
+        status: '',
+        startDate: undefined,
+        endDate: undefined,
+        page: 1,
       };
     });
   };
@@ -126,23 +130,34 @@ export default function SupplierList() {
 
   return (
     <>
-      <div className="p-4">
+      <div className="space-y-4">
         <SupplierListFilter
           table={table}
           resetForm={resetForm}
           onTextChange={(value) => {
-            setFilterParams((oldValue) => {
-              return {
-                ...oldValue,
-                q: value || '',
-              };
-            });
+            setFilterParams((oldValue) => ({ ...oldValue, search: value || '', page: 1 }));
+          }}
+          onStatusChange={(value) => {
+            setFilterParams((oldValue) => ({ ...oldValue, status: value || '', page: 1 }));
+          }}
+          onStartDateChanged={(value) => {
+            // Widen to the whole day so a same-day range still matches.
+            const selectedDate = value ? new Date(value) : undefined;
+            selectedDate?.setHours(0, 0, 0, 0);
+            setFilterParams((oldValue) => ({ ...oldValue, startDate: selectedDate?.toISOString(), page: 1 }));
+          }}
+          onEndDateChanged={(value) => {
+            const selectedDate = value ? new Date(value) : undefined;
+            selectedDate?.setHours(23, 59, 59, 999);
+            setFilterParams((oldValue) => ({ ...oldValue, endDate: selectedDate?.toISOString(), page: 1 }));
           }}
         />
+        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllSuppliersResponse.isLoading} />
+        <div className="rounded-md border">
+          <CustomDataTable columns={columns} table={table} isLoading={getAllSuppliersResponse.isLoading} />
+        </div>
+        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllSuppliersResponse.isLoading} />
       </div>
-
-      <CustomDataTable table={table} columns={columns} isLoading={getAllSuppliersResponse.isLoading} />
-      <DataTablePagination table={table} />
       {showEditModal && editId && (
         <ManageSupplier
           id={+editId}

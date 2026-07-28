@@ -102,14 +102,14 @@ export class AccountService implements IAccountService {
         include: userProfileInclude,
       });
 
-      // if (user.role === Role.STAFF) {
-      //   await transactionClient.staff.create({
-      //     data: {
-      //       userId: ,
-      //       storeCode: storeCode,
-      //     }
-      //   });
-      // }
+      if (user.role === Role.staff) {
+        await transactionClient.staff.create({
+          data: {
+            userId: user.userId,
+            storeCode: storeCode,
+          }
+        });
+      }
 
       return this.convertToDto(toUserDto(user));
     });

@@ -17,7 +17,7 @@ export default function GetAllUsersListingWrapper({ role }: { role?: string }) {
         actionText={role ? 'Add Customer' : 'Add User'}
         onClick={() => setShowAddModal(true)}
       />
-      <Card className="overflow-hidden">
+      <Card>
         <GetAllUserss role={role} />
       </Card>
 

@@ -88,42 +88,33 @@ export default function UserListListFilter<TData>({
   }, [isStatusFiltered, searchedText, dateRange]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/30 p-3 lg:flex-row lg:items-center">
-      <div className="relative w-full lg:max-w-xs">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name..."
-          value={searchedText}
-          onChange={(event) => setSearchedText(event.target.value)}
-          className="bg-background pl-9"
-        />
-      </div>
-
-      <div className="w-full lg:w-[190px]">
-        <SelectSearch
-          value={status}
-          placeholder="Filter by status"
-          items={statusDatas}
-          onChange={onStatusValueChange}
-          buttonClass="bg-background"
-          disableSearch={true}
-        />
-      </div>
-
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+      <Input
+        placeholder="Search by name..."
+        value={searchedText}
+        onChange={(event) => setSearchedText(event.target.value)}
+        className="bg-background pl-9"
+      />
+      <SelectSearch
+        value={status}
+        placeholder="Filter by status"
+        items={statusDatas}
+        onChange={onStatusValueChange}
+        buttonClass="bg-background"
+        disableSearch={true}
+      />
       <div className="w-full overflow-hidden lg:w-auto">
         <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
       </div>
 
-      {isFiltered && (
-        <Button
-          variant="ghost"
-          onClick={resetFilter}
-          className="h-9 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive lg:ml-auto"
-        >
-          Reset
-          <Cross2Icon className="ml-1.5 h-4 w-4" />
-        </Button>
-      )}
+      <div className="place-content-center">
+        {isFiltered && (
+          <Button variant="destructive" onClick={resetFilter} className="h-8 px-2 lg:px-3">
+            Reset
+            <Cross2Icon className="ml-2 h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

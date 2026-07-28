@@ -37,6 +37,13 @@ export class SupplierRepository implements ISupplierRepository {
             if (filters.storeCode !== undefined) {
                 where.storeCode = filters.storeCode;
             }
+
+            if (filters.startDate != null || filters.endDate != null) {
+                where.createdAt = {
+                    ...(filters.startDate != null && { gte: filters.startDate }),
+                    ...(filters.endDate != null && { lte: filters.endDate }),
+                };
+            }
         }
 
         const showAll = filters?.showAllRecords === true;
@@ -61,6 +68,7 @@ export class SupplierRepository implements ISupplierRepository {
     }
 
     async delete(id: number): Promise<SupplierDto> {
-        return prisma.supplier.update({ where: { id }, data: { status: Status.Trash } });
+        // A soft delete is still a change to the row, so it stamps updatedAt.
+        return prisma.supplier.update({ where: { id }, data: { status: Status.Trash, updatedAt: new Date() } });
     }
 }

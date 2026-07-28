@@ -14,11 +14,46 @@ export const useStaffColumns = (editRecord: (id: number) => void, deleteRecord: 
   useMemo<ColumnDef<StaffDto>[]>(
     () => [
       {
+        id: 'actions',
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Action" />,
+        cell: ({ row }) => <StaffListRowActions row={row} editRecord={editRecord} deleteRecord={deleteRecord} />,
+      },
+
+      {
+        id: 'user',
+        accessorKey: 'userId',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Staff Member" />,
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <span className="font-medium block">{row.original.user?.name || `User #${row.original.userId}`}</span>
+            {row.original.user?.email && <span className="text-xs text-muted-foreground">{row.original.user.email}</span>}
+            {row.original.user?.phone && <span className="text-xs text-muted-foreground block">{row.original.user.phone}</span>}
+          </div>
+        ),
+        meta: { sortingKey: 'userId' },
+      },
+      {
+        id: 'store',
+        accessorKey: 'storeId',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Store" />,
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <span className="font-medium block">{row.original.store?.name}</span>
+            {row.original.store?.code && <span className="text-xs text-muted-foreground">Code: {row.original.store.code}</span>}
+          </div>
+        ),
+        meta: { sortingKey: 'storeId' },
+      },
+      {
         id: 'actions-mobile',
         accessorKey: 'actions',
         enableHiding: false,
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Action" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="" />,
         cell: ({ row }) => {
           return (
             <>
@@ -45,36 +80,6 @@ export const useStaffColumns = (editRecord: (id: number) => void, deleteRecord: 
         meta: {
           sortingKey: 'actions',
         },
-      },
-
-      {
-        id: 'user',
-        accessorKey: 'userId',
-        enableSorting: false,
-        enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Staff Member" />,
-        cell: ({ row }) => (
-          <div className="space-y-0.5">
-            <span className="font-medium block">{row.original.user?.name || `User #${row.original.userId}`}</span>
-            {row.original.user?.email && <span className="text-xs text-muted-foreground">{row.original.user.email}</span>}
-            {row.original.user?.phone && <span className="text-xs text-muted-foreground block">{row.original.user.phone}</span>}
-          </div>
-        ),
-        meta: { sortingKey: 'userId' },
-      },
-      {
-        id: 'store',
-        accessorKey: 'storeId',
-        enableSorting: false,
-        enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Store" />,
-        cell: ({ row }) => (
-          <div className="space-y-0.5">
-            <span className="font-medium block">{row.original.store?.name || `Store #${row.original.storeId}`}</span>
-            {row.original.store?.code && <span className="text-xs text-muted-foreground">Code: {row.original.store.code}</span>}
-          </div>
-        ),
-        meta: { sortingKey: 'storeId' },
       },
       {
         id: 'position',
@@ -127,11 +132,6 @@ export const useStaffColumns = (editRecord: (id: number) => void, deleteRecord: 
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Status" />,
         cell: ({ row }) => <Badge variant={row.original.isActive ? true : false}>{row.original.isActive ? 'Active' : 'Inactive'}</Badge>,
         meta: { sortingKey: 'isActive' },
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => <StaffListRowActions row={row} editRecord={editRecord} deleteRecord={deleteRecord} />,
       },
     ],
     [editRecord, deleteRecord]

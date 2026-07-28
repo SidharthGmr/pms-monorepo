@@ -38,9 +38,7 @@ export default function ProductList() {
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
   });
 
-  const columns = useProductColumns(
-    (id) => openDeleteModal(id)
-  );
+  const columns = useProductColumns((id) => openDeleteModal(id));
 
   const getAllProductsResponse = useGetAllProducts(filterParams);
   const deleteProductMutation = useDeleteProduct();
@@ -147,15 +145,12 @@ export default function ProductList() {
             });
           }}
         />
-
+        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllProductsResponse.isLoading} />
         <div className="rounded-md border">
           <CustomDataTable columns={columns} table={table} isLoading={getAllProductsResponse.isLoading} />
         </div>
-
         <DataTablePagination table={table} totalRecord={recordCount} loading={getAllProductsResponse.isLoading} />
       </div>
-
-
 
       {showDeleteModal && (
         <ConfirmBox

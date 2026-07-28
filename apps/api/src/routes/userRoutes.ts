@@ -393,7 +393,7 @@ userRouter.put('/status/:userId', authenticateToken, authorization([Role.SUPER_A
  * @swagger
  * /users/active-status/{userId}:
  *   put:
- *     summary: Activate or deactivate a user (super admin only)
+ *     summary: Activate or deactivate a user (admin or super admin)
  *     tags: [User]
  *     security:
  *       - bearerAuth: []
@@ -430,11 +430,11 @@ userRouter.put('/status/:userId', authenticateToken, authorization([Role.SUPER_A
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden - Only super admin can access
+ *         description: Forbidden - not an admin, deactivating your own account, or an admin targeting a super admin
  *       404:
  *         description: User not found
  */
-userRouter.put('/active-status/:userId', authenticateToken, authorization([Role.SUPER_ADMIN]), validate(updateActiveStatusSchema), asyncHandler(usersController.updateActiveStatusById));
+userRouter.put('/active-status/:userId', authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), validate(updateActiveStatusSchema), asyncHandler(usersController.updateActiveStatusById));
 
 
 /**

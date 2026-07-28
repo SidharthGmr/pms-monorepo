@@ -1,8 +1,8 @@
 export interface CreateSupplierModel {
   name: string;
   contactPerson?: string | null;
-  email?: string | null;
-  phone?: string | null;
+  email: string;
+  phone: string;
   address?: string | null;
   notes?: string | null;
   status: string;

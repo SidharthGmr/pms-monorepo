@@ -1,15 +1,7 @@
-
-
 'use client';
 
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
 import { cn } from '@/lib/utils';
@@ -85,10 +77,7 @@ export function SelectSearch({
     const result = items.filter(
       (item) =>
         item.label.toLowerCase().includes(term.toLowerCase()) ||
-        (item.childItems &&
-          item.childItems.some((child) =>
-            child.label.toLowerCase().includes(term.toLowerCase())
-          ))
+        (item.childItems && item.childItems.some((child) => child.label.toLowerCase().includes(term.toLowerCase())))
     );
     setFilteredOptions(result);
     setSearchTerm(term);
@@ -99,17 +88,14 @@ export function SelectSearch({
     const normalized = String(value ?? '').toLowerCase();
     for (const item of items) {
       if (String(item.value).toLowerCase() === normalized) return item;
-      const child = item.childItems?.find(
-        (c) => String(c.value).toLowerCase() === normalized
-      );
+      const child = item.childItems?.find((c) => String(c.value).toLowerCase() === normalized);
       if (child) return child;
     }
     return undefined;
   }, [value, items]);
 
   const handleSelect = (selectedValue: string | number) => {
-    const parsedValue =
-      valueType === 'number' ? Number(selectedValue) : selectedValue;
+    const parsedValue = valueType === 'number' ? Number(selectedValue) : selectedValue;
     onChange(parsedValue);
     setOpen(false);
   };
@@ -122,12 +108,7 @@ export function SelectSearch({
       className={isChild ? 'ps-5' : ''}
     >
       {item.label}
-      <CheckIcon
-        className={cn(
-          'ml-auto h-4 w-4',
-          value == item.value ? 'opacity-100' : 'opacity-0'
-        )}
-      />
+      <CheckIcon className={cn('ml-auto h-4 w-4', value == item.value ? 'opacity-100' : 'opacity-0')} />
     </CommandItem>
   );
 
@@ -140,11 +121,9 @@ export function SelectSearch({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'min-w-40 h-11 w-full text-sm',
+            'min-w-40 h-11 w-full text-sm justify-between',
             buttonClass,
-            varient === 'color' && value
-              ? statusStyles[value as keyof typeof statusStyles]
-              : ''
+            varient === 'color' && value ? statusStyles[value as keyof typeof statusStyles] : ''
           )}
         >
           {findItem?.label ?? placeholder}

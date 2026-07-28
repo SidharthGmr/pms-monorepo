@@ -16,9 +16,11 @@ export class SupplierController {
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
         recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
-        search: req.query['search'] as string | undefined,
+        search: (req.query['search'] || req.query['q']) as string | undefined,
         status: req.query['status'] ? req.query['status'] as Status : undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
+        endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
         storeCode: req.user?.storeCode || undefined,
       }).filter(([, v]) => v !== undefined)
     );

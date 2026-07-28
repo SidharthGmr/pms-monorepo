@@ -330,7 +330,7 @@ model attribute {
 }
 
 model supplier {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   name          String
   contactPerson String?
   email         String?
@@ -338,11 +338,11 @@ model supplier {
   address       String?
   notes         String?
   storeCode     String
-  status        Status   @default(Published)
-  displayOrder  Int?     @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  store         store    @relation(fields: [storeCode], references: [code])
+  status        Status    @default(Published)
+  displayOrder  Int?      @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime?
+  store         store     @relation(fields: [storeCode], references: [code])
 
   @@unique([name, storeCode])
   @@index([id])

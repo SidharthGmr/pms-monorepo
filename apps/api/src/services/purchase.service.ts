@@ -90,8 +90,17 @@ export class PurchaseService implements IPurchaseService {
     });
   }
 
-  async getAllPurchases(storeCode: string, page: number, limit: number, search?: string): Promise<ListResponseDto<PurchaseResponseDto>> {
-    return this.unitOfWork.Purchase.getAllPurchases(storeCode, page, limit, search);
+  async getAllPurchases(
+    storeCode: string,
+    page: number,
+    limit: number,
+    search?: string,
+    startDate?: Date,
+    endDate?: Date,
+    sortBy?: string,
+    sortOrder?: string
+  ): Promise<ListResponseDto<PurchaseResponseDto>> {
+    return this.unitOfWork.Purchase.getAllPurchases(storeCode, page, limit, search, startDate, endDate, sortBy, sortOrder);
   }
 
   async getPurchaseById(id: number, storeCode: string): Promise<PurchaseResponseDto> {

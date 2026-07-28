@@ -11,6 +11,14 @@ export class PurchaseController {
     private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)
   ) { }
 
+  // An unparseable date is ignored rather than turned into an Invalid Date,
+  // which Prisma would reject at query time.
+  private parseDate = (value?: string): Date | undefined => {
+    if (!value) return undefined;
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? undefined : parsed;
+  };
+
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<PurchaseResponseDto>>> => {
     const userId = req.user?.userId as string;
     const storeCode = req.user?.storeCode;
@@ -34,8 +42,12 @@ export class PurchaseController {
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
     const limit = req.query.recordPerPage ? parseInt(req.query.recordPerPage as string) : 10;
     const search = req.query.search as string | undefined;
+    const startDate = this.parseDate(req.query.startDate as string | undefined);
+    const endDate = this.parseDate(req.query.endDate as string | undefined);
+    const sortBy = req.query.sortBy as string | undefined;
+    const sortOrder = (req.query.sortDirection || req.query.sortOrder) as string | undefined;
 
-    const result = await this.unitOfService.Purchase.getAllPurchases(storeCode, page, limit, search);
+    const result = await this.unitOfService.Purchase.getAllPurchases(storeCode, page, limit, search, startDate, endDate, sortBy, sortOrder);
     return res.status(200).json({ success: true, message: 'Purchases fetched successfully', data: result });
   };
 
