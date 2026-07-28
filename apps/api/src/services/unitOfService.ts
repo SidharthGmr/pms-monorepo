@@ -20,6 +20,7 @@ import { IPurchaseService } from "./interfaces/ipurchase.service";
 import { ISupplierService } from "./interfaces/Isupplier.service";
 import { ICartService } from "./interfaces/Icart.service";
 import { ICheckoutService } from "./interfaces/Icheckout.service";
+import { IUserSessionService } from "./interfaces/Iuser-session.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -41,6 +42,7 @@ export default class UnitOfService implements IUnitOfService {
   public Supplier: ISupplierService;
   public Cart: ICartService;
   public Checkout: ICheckoutService;
+  public UserSession: IUserSessionService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -62,6 +64,7 @@ export default class UnitOfService implements IUnitOfService {
     supplier = container.get<ISupplierService>(TYPES.ISupplierService),
     cart = container.get<ICartService>(TYPES.ICartService),
     checkout = container.get<ICheckoutService>(TYPES.ICheckoutService),
+    userSession = container.get<IUserSessionService>(TYPES.IUserSessionService),
   ) {
     this.User = user;
     this.Account = account;
@@ -82,5 +85,6 @@ export default class UnitOfService implements IUnitOfService {
     this.Supplier = supplier;
     this.Cart = cart;
     this.Checkout = checkout;
+    this.UserSession = userSession;
   }
 }

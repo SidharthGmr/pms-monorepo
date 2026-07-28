@@ -7,8 +7,8 @@ import { AccountController } from "../controllers/auth.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import { validate } from "../middleware/validate";
-import { createUserByAdminSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, signupSchema, verifyOtpSchema, verifyOtpByIdSchema, sendOtpSchema, verifyEmailTokenSchema } from "../schemas/userSchema";
-import { authLimiter } from "../middleware/rateLimiter.middleware";
+import { createUserByAdminSchema, forgotPasswordSchema, loginSchema, refreshTokenSchema, resetPasswordSchema, signupSchema, verifyOtpSchema, verifyOtpByIdSchema, sendOtpSchema, verifyEmailTokenSchema } from "../schemas/userSchema";
+import { authLimiter, refreshLimiter } from "../middleware/rateLimiter.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { Role } from "../enum/user.enum";
 
@@ -202,12 +202,39 @@ accountRouter.post("/logout", authenticateToken, asyncHandler(accountController.
 
 /**
  * @swagger
- * /auth/refresh-token:
+ * /auth/logout-all:
  *   post:
- *     summary: Refresh JWT Token
+ *     summary: Revoke every active session for the current user
  *     tags: [Account]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All sessions revoked
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+accountRouter.post("/logout-all", authenticateToken, asyncHandler(accountController.logoutAll));
+
+/**
+ * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Exchange a refresh token for a new access/refresh pair
+ *     description: >
+ *       Public endpoint — it is called precisely when the access token has expired,
+ *       so it must not require an Authorization header. The refresh token is
+ *       single-use: presenting an already-rotated one revokes the whole session.
+ *     tags: [Account]
  *     parameters:
  *       - in: header
  *         name: clientId
@@ -233,11 +260,68 @@ accountRouter.post("/logout", authenticateToken, asyncHandler(accountController.
  *       400:
  *         description: Validation error
  *       401:
- *         description: Unauthorized
+ *         description: Invalid, expired or already-used refresh token
  *       500:
  *         description: Server error
  */
-accountRouter.post("/refresh-token", authenticateToken, asyncHandler(accountController.refreshToken));
+accountRouter.post("/refresh-token", refreshLimiter, validate(refreshTokenSchema), asyncHandler(accountController.refreshToken));
+
+// The web client historically called the camelCase path; keep it working.
+accountRouter.post("/refreshToken", refreshLimiter, validate(refreshTokenSchema), asyncHandler(accountController.refreshToken));
+
+/**
+ * @swagger
+ * /auth/sessions:
+ *   get:
+ *     summary: List the current user's active sessions
+ *     tags: [Account]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sessions fetched successfully
+ *       401:
+ *         description: Unauthorized
+ */
+accountRouter.get("/sessions", authenticateToken, asyncHandler(accountController.listSessions));
+
+/**
+ * @swagger
+ * /auth/sessions/{sessionId}:
+ *   delete:
+ *     summary: Revoke one of the current user's sessions
+ *     tags: [Account]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: sessionId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Session id returned by GET /auth/sessions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Session revoked successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ */
+accountRouter.delete("/sessions/:sessionId", authenticateToken, asyncHandler(accountController.revokeSession));
 
 
 /**

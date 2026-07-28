@@ -17,6 +17,7 @@ import { IPurchaseService } from "./ipurchase.service";
 import { ISupplierService } from "./Isupplier.service";
 import { ICartService } from "./Icart.service";
 import { ICheckoutService } from "./Icheckout.service";
+import { IUserSessionService } from "./Iuser-session.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -38,4 +39,5 @@ export default interface IUnitOfService {
   Supplier: ISupplierService;
   Cart: ICartService;
   Checkout: ICheckoutService;
+  UserSession: IUserSessionService;
 }

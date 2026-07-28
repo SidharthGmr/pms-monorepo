@@ -107,6 +107,10 @@ import { CartRepository } from '../repository/cart.repository';
 import { CheckoutController } from '../controllers/checkout.controller';
 import { ICheckoutService } from '../services/interfaces/Icheckout.service';
 import { CheckoutService } from '../services/checkout.service';
+import { IUserSessionService } from '../services/interfaces/Iuser-session.service';
+import { UserSessionService } from '../services/user-session.service';
+import { IUserSessionRepository } from '../repository/interfaces/iuser-session.repository';
+import { UserSessionRepository } from '../repository/user-session.repository';
 
 export const container = new Container();
 
@@ -150,6 +154,7 @@ container.bind<IPurchaseService>(TYPES.IPurchaseService).to(PurchaseService);
 container.bind<ISupplierService>(TYPES.ISupplierService).to(SupplierService);
 container.bind<ICartService>(TYPES.ICartService).to(CartService);
 container.bind<ICheckoutService>(TYPES.ICheckoutService).to(CheckoutService);
+container.bind<IUserSessionService>(TYPES.IUserSessionService).to(UserSessionService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -169,6 +174,7 @@ container.bind<IStoreRepository>(TYPES.IStoreRepository).to(StoreRepository);
 container.bind<IPurchaseRepository>(TYPES.IPurchaseRepository).to(PurchaseRepository);
 container.bind<ISupplierRepository>(TYPES.ISupplierRepository).to(SupplierRepository);
 container.bind<ICartRepository>(TYPES.ICartRepository).to(CartRepository);
+container.bind<IUserSessionRepository>(TYPES.IUserSessionRepository).to(UserSessionRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

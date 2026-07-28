@@ -4,6 +4,10 @@ import axios from 'axios';
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
+/** Refresh this far before the access token actually expires. Must stay larger
+ *  than the client-side pre-emptive refresh window in `utils/auth.ts`. */
+const REFRESH_SKEW_MS = 120_000;
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -79,14 +83,19 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
-      // 2. Return previous token if the access token has not expired yet
-      if (Date.now() < (token.accessTokenExpires as number)) {
+      // 2. Return previous token while it is still comfortably valid.
+      //    The skew keeps a caller that pre-empts expiry (see utils/auth.ts) from
+      //    getting the old token back and immediately asking again.
+      if (Date.now() < (token.accessTokenExpires as number) - REFRESH_SKEW_MS) {
         return token;
       }
 
-      // 3. Access token has expired, try to update it using the refresh token
+      // 3. Access token is expiring, exchange the refresh token for a fresh pair.
+      //    This callback is the ONLY place the refresh token is spent: the API
+      //    rotates it on every use and revokes the session if an old one comes back,
+      //    so a second refresher would sign the user out.
       try {
-        const response = await axios.post(`${config.apiBaseUrl}/auth/refreshToken`, {
+        const response = await axios.post(`${config.apiBaseUrl}/auth/refresh-token`, {
           token: token.refreshToken,
         }, {
           headers: { 'clientId': config.clientId, 'content-type': 'application/json' }
@@ -100,6 +109,7 @@ export const authOptions: NextAuthOptions = {
           token: refreshedTokens.newToken,
           refreshToken: refreshedTokens.refreshToken ?? token.refreshToken,
           accessTokenExpires: parsedNewToken.exp * 1000,
+          error: undefined,
         };
       } catch (error) {
         return {
@@ -110,7 +120,10 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      session.user = token as unknown as UserDto;
+      // The refresh token stays in the encrypted NextAuth cookie — it must not be
+      // handed to the browser, which only ever needs the short-lived access token.
+      const { refreshToken, ...clientSafeToken } = token as Record<string, unknown>;
+      session.user = clientSafeToken as unknown as UserDto;
       (session as any).error = token.error as string; // Pass any refresh errors to the client
       return session;
     },

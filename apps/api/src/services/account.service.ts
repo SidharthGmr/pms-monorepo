@@ -22,8 +22,8 @@ export class AccountService implements IAccountService {
   ) { }
 
 
-  async login(data: LoginModel, token: string,): Promise<UserDto | null> {
-    const user = await this.unitOfWork.Account.login(data, token);
+  async recordLogin(userId: string, ipAddress?: string | null): Promise<UserDto | null> {
+    const user = await this.unitOfWork.Account.recordLogin(userId, ipAddress);
     if (!user) {
       return null;
     }

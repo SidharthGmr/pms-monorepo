@@ -20,6 +20,7 @@ export const TYPES = {
   ISupplierService: Symbol.for("SupplierService"),
   ICartService: Symbol.for("CartService"),
   ICheckoutService: Symbol.for("CheckoutService"),
+  IUserSessionService: Symbol.for("UserSessionService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -63,4 +64,5 @@ export const TYPES = {
   IPurchaseRepository: Symbol.for("PurchaseRepository"),
   ISupplierRepository: Symbol.for("SupplierRepository"),
   ICartRepository: Symbol.for("CartRepository"),
+  IUserSessionRepository: Symbol.for("UserSessionRepository"),
 };

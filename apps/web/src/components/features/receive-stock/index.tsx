@@ -158,7 +158,7 @@ export default function ReceiveStockPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 pb-12">
+    <div className="mx-auto max-w-7xl space-y-4 pb-12">
       <PageHeader
         title="Add Stock"
         description="Add incoming products to your inventory and attach supplier invoices for record-keeping."
@@ -167,9 +167,45 @@ export default function ReceiveStockPage() {
 
       <Form {...form}>
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-5 lg:grid-cols-6">
-          <div className="space-y-5 lg:col-span-4">
-            <SectionCard title="Add Products Stock" icon={Package2} href="/admin/products" ctaTitle="View All Orders">
-              <div className="space-y-3">
+          <div className="space-y-5 lg:col-span-4 ">
+            <div className="space-y-2">
+              <FormField
+                control={control}
+                name="supplierId"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-slate-700">
+                        Supplier <span className="font-normal text-slate-400">(optional)</span>
+                      </FormLabel>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        icon={Plus}
+                        iconPlacement="left"
+                        className="h-auto p-0 text-xs font-medium"
+                        onClick={() => setShowAddSupplier(true)}
+                      >
+                        Add New
+                      </Button>
+                    </div>
+                    <FormControl>
+                      <SelectSearch
+                        placeholder="Select a supplier"
+                        buttonClass="w-full"
+                        items={supplierItems}
+                        value={field.value || ''}
+                        valueType="string"
+                        containerName="receive-stock-supplier"
+                        onChange={(value) => field.onChange(value)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="space-y-4">
                 {fields.map((field, index) => (
                   <PurchaseItemRow
                     key={field.id}
@@ -193,7 +229,7 @@ export default function ReceiveStockPage() {
                   Add Another Product
                 </Button>
               </div>
-            </SectionCard>
+            </div>
 
             {/* <Section
               step={1}
@@ -211,42 +247,6 @@ export default function ReceiveStockPage() {
             <div className="sticky top-6 space-y-5">
               <SectionCard title="Supplier & Invoice" icon={Receipt} href="/admin/stock-purchase/history/" ctaTitle="View All Supplier">
                 <div className="space-y-4">
-                  <FormField
-                    control={control}
-                    name="supplierId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="text-slate-700">
-                            Supplier <span className="font-normal text-slate-400">(optional)</span>
-                          </FormLabel>
-                          <Button
-                            type="button"
-                            variant="link"
-                            size="sm"
-                            icon={Plus}
-                            iconPlacement="left"
-                            className="h-auto p-0 text-xs font-medium"
-                            onClick={() => setShowAddSupplier(true)}
-                          >
-                            Add New
-                          </Button>
-                        </div>
-                        <FormControl>
-                          <SelectSearch
-                            placeholder="Select a supplier"
-                            buttonClass="w-full"
-                            items={supplierItems}
-                            value={field.value || ''}
-                            valueType="string"
-                            containerName="receive-stock-supplier"
-                            onChange={(value) => field.onChange(value)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   <FormField
                     control={control}
                     name="invoiceNumber"

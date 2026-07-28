@@ -9,6 +9,8 @@ declare global {
         name?: string;
         role?: string;
         storeCode?: string | null;
+        /** UserSession the bearer token was issued against (`sid` claim). */
+        sessionId?: string;
       };
     }
   }

@@ -1,60 +1,78 @@
 import { NextFunction, Request, Response } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import config from "../config";
+import { container } from "../config/ioc.config";
+import { TYPES } from "../config/ioc.types";
 import CustomResponse from "../dtos/custom-response";
 import PlainDto from "../dtos/plain.dto";
+import IUnitOfService from "../services/interfaces/iunitof.service";
+import { ACCESS_TOKEN_TYPE, verifySessionToken } from "../utils/token.util";
+import config from "../config";
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+const unauthorized = (res: Response, message: string) => {
+  const response: CustomResponse<PlainDto> = {
+    success: false,
+    message,
+  };
+  res.status(401).json(response);
+};
+
+/**
+ * Verifies the bearer token *and* the UserSession it was issued against.
+ *
+ * The signature check alone is not enough any more: a session can be revoked
+ * (logout, "sign out everywhere", refresh-token reuse) while its access token is
+ * still inside its 5-minute validity window, and only the DB knows that.
+ */
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    const response: CustomResponse<PlainDto> = {
-      success: false,
-      message: "Token missing",
-    };
-    res.status(401).json(response);
-    return;
+    return unauthorized(res, "Token missing");
   }
 
   const token = authHeader.split(" ")[1];
   if (!token) {
+    return unauthorized(res, "Token missing");
+  }
+
+  if (!config.jwt.secret) {
     const response: CustomResponse<PlainDto> = {
       success: false,
-      message: "Token missing",
+      message: "JWT secret not configured",
     };
-    res.status(401).json(response);
+    res.status(500).json(response);
     return;
   }
 
   try {
-    if (!config.jwt.secret) {
-      const response: CustomResponse<PlainDto> = {
-        success: false,
-        message: "JWT secret not configured",
-      };
-      res.status(500).json(response);
-      return;
+    const decoded = verifySessionToken(token);
+
+    // A refresh token must never authenticate a normal request.
+    if (decoded.type !== ACCESS_TOKEN_TYPE) {
+      return unauthorized(res, "Invalid or expired token");
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret, {
-      algorithms: ["HS256"],
-      audience: config.jwt.audience || undefined,
-      issuer: config.jwt.issuer || undefined,
-    }) as JwtPayload;
+    const sessionId = decoded.sid;
+    if (!sessionId) {
+      // Tokens minted before sessions existed carry no `sid`.
+      return unauthorized(res, "Session is no longer valid. Please login again.");
+    }
+
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+    const session = await unitOfService.UserSession.validateAccessToken(sessionId, token);
+
+    if (!session) {
+      return unauthorized(res, "Session has expired or been revoked. Please login again.");
+    }
 
     req.user = {
-      userId: decoded.userId,
+      userId: decoded.userId as string,
       name: decoded.name,
       email: decoded.email,
       role: decoded.role,
       storeCode: decoded.storeCode,
+      sessionId,
     };
     return next();
-  } catch (err: any) {
-    const response: CustomResponse<PlainDto> = {
-      success: false,
-      message: "Invalid or expired token",
-    };
-    res.status(401).json(response);
-    return;
+  } catch {
+    return unauthorized(res, "Invalid or expired token");
   }
 };

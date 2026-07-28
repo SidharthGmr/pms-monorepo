@@ -41,7 +41,12 @@
       "Bash(sed -i -e 's|^import ICartService from '\\\\''./ICartService'\\\\'';|import ICartService from '\\\\''./ICartService'\\\\'';\\\\nimport ICheckoutService from '\\\\''./ICheckoutService'\\\\'';|' -e 's|^  CartService: ICartService;|  CartService: ICartService;\\\\n  CheckoutService: ICheckoutService;|' src/services/interfaces/IUnitOfService.ts)",
       "Bash(sed -i -e 's|^import ICartService from '\\\\''./interfaces/ICartService'\\\\'';|import ICartService from '\\\\''./interfaces/ICartService'\\\\'';\\\\nimport ICheckoutService from '\\\\''./interfaces/ICheckoutService'\\\\'';|' -e 's|^  public CartService: ICartService;|  public CartService: ICartService;\\\\n  public CheckoutService: ICheckoutService;|' -e 's|^    cartService = container.get<ICartService>\\(TYPES.ICartService\\),|    cartService = container.get<ICartService>\\(TYPES.ICartService\\),\\\\n    checkoutService = container.get<ICheckoutService>\\(TYPES.ICheckoutService\\),|' -e 's|^    this.CartService = cartService;|    this.CartService = cartService;\\\\n    this.CheckoutService = checkoutService;|' src/services/UnitOfService.ts)",
       "PowerShell($p = Get-CimInstance Win32_Process -Filter \"ProcessId=10112\"; $parent = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($p.ParentProcessId\\)\" -ErrorAction SilentlyContinue; if \\($parent\\) { Write-Output \"PARENT PID $\\($parent.ProcessId\\): $\\($parent.Name\\)\"; Write-Output \"PARENT CMD: $\\($parent.CommandLine\\)\" } else { Write-Output \"parent PID $\\($p.ParentProcessId\\) no longer exists \\(orphaned child\\)\" })",
-      "PowerShell(Get-CimInstance *)"
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue; foreach \\($x in $c\\) { $p = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($x.OwningProcess\\)\"; $par = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($p.ParentProcessId\\)\" -ErrorAction SilentlyContinue; Write-Output \"PID $\\($x.OwningProcess\\) started $\\($p.CreationDate\\)\"; if \\($par\\) { $pc = $par.CommandLine; if \\($pc.Length -gt 80\\) { $pc = $pc.Substring\\(0,80\\) }; Write-Output \"supervised by PID $\\($par.ProcessId\\): $pc\" } else { Write-Output \"ORPHANED again\" } })",
+      "PowerShell(npx prisma generate)",
+      "PowerShell(npx tsc --noEmit)",
+      "PowerShell(npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script)",
+      "PowerShell(npx prisma migrate status)"
     ]
   }
 }

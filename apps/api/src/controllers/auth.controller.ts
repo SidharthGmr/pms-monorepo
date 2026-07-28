@@ -5,7 +5,8 @@ import config from '../config';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import CustomResponse from '../dtos/custom-response';
-import { refreshTokenResponseDto } from '../dtos/loginResponse.dto';
+import { LoginResponseDto, refreshTokenResponseDto } from '../dtos/loginResponse.dto';
+import { SessionContext, UserSessionDto } from '../dtos/user-session.dto';
 import { UserDto } from '../dtos/user.dto';
 import { Role } from '../enum/user.enum';
 import CustomError from '../exceptions/custom-error';
@@ -16,13 +17,34 @@ import IUnitOfService from '../services/interfaces/iunitof.service';
 import { isExpired } from '../utils/timeExpiry.util';
 import { generateStoreCode, nowISO } from '../utils/authHelpers.service';
 import { dispatchEmailAsync } from '../utils/email/emailDispatcher.util';
+import { clientIpAddress } from '../utils/token.util';
+
+/** Audit fields recorded against the session the request opens. */
+const sessionContext = (req: Request): SessionContext => ({
+  ipAddress: clientIpAddress(req.headers['x-forwarded-for'], req.ip),
+  userAgent: req.headers['user-agent'] ?? null,
+});
+
+/**
+ * The login/refresh payloads must never leak the password hash or a pending
+ * OTP, and the tokens they do carry come from the freshly issued session
+ * rather than from a column on `users`.
+ */
+const toAuthUser = (user: UserDto, token: string, refreshToken: string): UserDto => ({
+  ...user,
+  password: null,
+  emailVerificationToken: null,
+  emailVerificationExpires: null,
+  token,
+  refreshToken,
+});
 
 export class AccountController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {
     this.unitOfService = unitOfService;
   }
 
-  login = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
+  login = async (req: Request, res: Response): Promise<Response<CustomResponse<LoginResponseDto>>> => {
     const model = req.body as LoginModel;
 
     if (!model.email || !model.password) {
@@ -56,23 +78,22 @@ export class AccountController {
       });
     }
 
-    const tokenPayload = {
-      id: loggedInUser.id,
-      userId: loggedInUser.userId,
-      name: loggedInUser.name,
-      email: loggedInUser.email,
-      role: loggedInUser.role,
-      storeCode: loggedInUser.storeCode || null,
-    };
+    // One UserSession row per login, so signing in on a second device no longer
+    // evicts the first and either can be revoked on its own.
+    const context = sessionContext(req);
+    const { accessToken, refreshToken } = await this.unitOfService.UserSession.issue(
+      {
+        id: loggedInUser.id,
+        userId: loggedInUser.userId,
+        name: loggedInUser.name,
+        email: loggedInUser.email,
+        role: loggedInUser.role,
+        storeCode: loggedInUser.storeCode || null,
+      },
+      context
+    );
 
-    const token = jwt.sign(tokenPayload, config.jwt.secret, {
-      expiresIn: config.jwt.accessExpires as any, // was hardcoded "10h"
-      algorithm: 'HS256',
-      audience: config.jwt.audience,
-      issuer: config.jwt.issuer,
-    });
-
-    const user = await this.unitOfService.Account.login(model, token);
+    const user = await this.unitOfService.Account.recordLogin(loggedInUser.userId, context.ipAddress);
 
     if (!user) {
       throw new CustomError('Login processing failed', 500);
@@ -81,7 +102,11 @@ export class AccountController {
     return res.status(200).json({
       success: true,
       message: 'Login successful',
-      data: { token, user },
+      data: {
+        token: accessToken,
+        refreshToken,
+        user: toAuthUser(user, accessToken, refreshToken),
+      },
     });
   };
 
@@ -181,21 +206,19 @@ export class AccountController {
 
   logout = async (req: Request, res: Response): Promise<Response<CustomResponse<null>>> => {
     const userId = req.user?.userId;
+    const sessionId = req.user?.sessionId;
 
     if (!userId) {
       throw new CustomError('User ID is required', 400);
     }
 
-    const clearToken = await this.unitOfService.Account.logout(userId);
-
-    if (!clearToken) {
-      throw new CustomError('Clear Token failed', 400);
+    // Only the session this request came in on is closed — other devices stay signed in.
+    if (sessionId) {
+      await this.unitOfService.UserSession.revoke(sessionId);
     }
 
-    const user = await this.unitOfService.User.getUserById(userId);
-    if (!user) {
-      throw new CustomError('User not found', 404);
-    }
+    // Clears the legacy `users.token`/`users.refreshToken` columns.
+    await this.unitOfService.Account.logout(userId);
 
     const response: CustomResponse<null> = {
       success: true,
@@ -206,77 +229,83 @@ export class AccountController {
     return res.status(200).json(response);
   };
 
-  refreshToken = async (req: Request, res: Response): Promise<Response<CustomResponse<refreshTokenResponseDto>>> => {
-    const { token: oldToken } = req.body as { token: string };
+  logoutAll = async (req: Request, res: Response): Promise<Response<CustomResponse<{ revoked: number }>>> => {
+    const userId = req.user?.userId;
 
-    if (!oldToken) {
+    if (!userId) {
+      throw new CustomError('User ID is required', 400);
+    }
+
+    const revoked = await this.unitOfService.UserSession.revokeAllForUser(userId);
+    await this.unitOfService.Account.logout(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Signed out of ${revoked} session(s)`,
+      data: { revoked },
+    });
+  };
+
+  refreshToken = async (req: Request, res: Response): Promise<Response<CustomResponse<refreshTokenResponseDto>>> => {
+    const { token: presentedToken } = req.body as { token: string };
+
+    if (!presentedToken) {
       throw new CustomError('Token is required', 400);
     }
 
-    let decoded: jwt.JwtPayload;
-
-    try {
-      decoded = jwt.verify(oldToken, config.jwt.secret, {
-        algorithms: ['HS256'],
-        audience: config.jwt.audience || undefined,
-        issuer: config.jwt.issuer || undefined,
-      }) as jwt.JwtPayload;
-    } catch {
-      throw new CustomError('Invalid or expired refresh token', 401);
-    }
-
-
-    const userId = (decoded.userId);
-
-    if (!userId) {
-      throw new CustomError('Invalid refresh token', 400);
-    }
-
-    const user = await this.unitOfService.User.getUserById(userId);
-
-    if (!user) {
-      throw new CustomError('User not found', 404);
-    }
-
-    if (!user.refreshToken || user.refreshToken !== oldToken) {
-      throw new CustomError('Invalid refresh token', 401);
-    }
-
-    const tokenPayload = {
-      id: decoded.id,
-      userId: decoded.userId,
-      name: decoded.name,
-      email: decoded.email,
-      role: decoded.role,
-      profileImageUrl: decoded.profileImageUrl,
-      storeCode: decoded.storeCode || null,
-      tokenUpdated: 'Yes',
-    };
-
-    const token = jwt.sign(tokenPayload, config.jwt.secret, {
-      expiresIn: config.jwt.accessExpires as any,
-      algorithm: 'HS256',
-      audience: config.jwt.audience,
-      issuer: config.jwt.issuer,
-      notBefore: '0', // Cannot use before now, can be configured to be deferred.
-    });
-
-    await this.unitOfService.Account.updateToken(userId, token);
-
-    const updateUser = await this.unitOfService.User.getUserById(userId);
-
-    if (!updateUser || !updateUser.token || !updateUser.refreshToken) {
-      throw new CustomError('Token not found', 400);
-    }
-    const newToken = updateUser.token;
-    const refreshToken = updateUser.refreshToken;
+    // Rotation, session lookup and reuse detection all live in the session service.
+    const rotated = await this.unitOfService.UserSession.rotate(presentedToken, sessionContext(req));
 
     const response: CustomResponse<refreshTokenResponseDto> = {
       success: true,
       message: 'Token refreshed successfully',
-      data: { newToken, refreshToken },
+      data: {
+        newToken: rotated.accessToken,
+        refreshToken: rotated.refreshToken,
+      },
     };
     return res.status(200).json(response);
+  };
+
+  listSessions = async (req: Request, res: Response): Promise<Response<CustomResponse<UserSessionDto[]>>> => {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      throw new CustomError('User ID is required', 400);
+    }
+
+    const sessions = await this.unitOfService.UserSession.listActive(userId, req.user?.sessionId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Sessions fetched successfully',
+      data: sessions,
+    });
+  };
+
+  revokeSession = async (req: Request, res: Response): Promise<Response<CustomResponse<null>>> => {
+    const userId = req.user?.userId;
+    const sessionId = String(req.params.sessionId || '');
+
+    if (!userId) {
+      throw new CustomError('User ID is required', 400);
+    }
+
+    if (!sessionId) {
+      throw new CustomError('Session id is required', 400);
+    }
+
+    const revoked = await this.unitOfService.UserSession.revokeForUser(userId, sessionId);
+
+    if (!revoked) {
+      throw new CustomError('Session not found', 404);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Session revoked successfully',
+      data: null,
+    });
   };
 
   sendVerificationOtp = async (req: Request, res: Response) => {

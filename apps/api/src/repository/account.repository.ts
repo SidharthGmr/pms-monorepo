@@ -1,15 +1,21 @@
 import prisma from "../config/prisma";
-import { CreateUserDto, UserDto } from "../dtos/user.dto";
+import { UserDto } from "../dtos/user.dto";
 import { IAccountRepository } from "./interfaces/iaccount.repository";
 import { toUserDto, userProfileInclude } from "./user-profile.mapper";
 
 export class AccountRepository implements IAccountRepository {
 
-  async login(data: CreateUserDto, token: string): Promise<UserDto | null> {
+  /**
+   * Access tokens are no longer written to `users.token` — they live (hashed) on
+   * `UserSession`. A successful login only stamps the audit columns.
+   */
+  async recordLogin(userId: string, ipAddress?: string | null): Promise<UserDto | null> {
     const user = await prisma.users.update({
-      where: { email: data.email },
+      where: { userId },
       data: {
-        token: token,
+        loginAttempts: 0,
+        lastLoginAt: new Date(),
+        lastLoginIP: ipAddress ?? null,
       },
       include: userProfileInclude,
     });

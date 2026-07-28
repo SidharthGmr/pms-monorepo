@@ -21,6 +21,7 @@ import { IStoreRepository } from "./interfaces/istore.repository";
 import { IPurchaseRepository } from "./interfaces/ipurchase.repository";
 import { ISupplierRepository } from "./interfaces/isupplier.repository";
 import { ICartRepository } from "./interfaces/icart.repository";
+import { IUserSessionRepository } from "./interfaces/iuser-session.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -41,6 +42,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Purchase: IPurchaseRepository;
   public Supplier: ISupplierRepository;
   public Cart: ICartRepository;
+  public UserSession: IUserSessionRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -61,6 +63,7 @@ export default class UnitOfWork implements IUnitOfWork {
     purchase = container.get<IPurchaseRepository>(TYPES.IPurchaseRepository),
     supplier = container.get<ISupplierRepository>(TYPES.ISupplierRepository),
     cart = container.get<ICartRepository>(TYPES.ICartRepository),
+    userSession = container.get<IUserSessionRepository>(TYPES.IUserSessionRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -80,6 +83,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Purchase = purchase;
     this.Supplier = supplier;
     this.Cart = cart;
+    this.UserSession = userSession;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

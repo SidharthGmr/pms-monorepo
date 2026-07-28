@@ -32,9 +32,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
   return (
     <div className="relative flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-2 pl-6 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md sm:flex-row sm:items-start">
       {/* Index Badge */}
-      <div className="absolute left-2 top-4 hidden h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white shadow-sm sm:flex">
-        {index + 1}
-      </div>
+      <div className=" h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white shadow-sm sm:flex">{index + 1}</div>
 
       <div className="flex-1 w-full">
         <FormField
@@ -42,7 +40,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
           name={`items.${index}.productId`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Product</FormLabel>
+              {/* <FormLabel>Product</FormLabel> */}
               <FormControl>
                 <SelectSearch
                   value={field.value}
@@ -65,7 +63,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
           name={`items.${index}.quantity`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Quantity</FormLabel>
+              {/* <FormLabel>Quantity</FormLabel> */}
               <FormControl>
                 <Input
                   type="text"
@@ -88,7 +86,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
           name={`items.${index}.costPrice`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>costPrice</FormLabel>
+              {/* <FormLabel>costPrice</FormLabel> */}
               <FormControl>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
@@ -110,11 +108,11 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
 
       {/* Line total */}
       <div className="w-full sm:w-24">
-        <FormLabel className="text-slate-400">Subtotal</FormLabel>
+        {/* <FormLabel className="text-slate-400">Subtotal</FormLabel> */}
         <div className="flex h-11 items-center font-semibold text-slate-800">${lineTotal.toFixed(2)}</div>
       </div>
 
-      <div className="flex w-full justify-end pt-0 sm:w-auto sm:pt-6">
+      <div className="flex w-full justify-end   sm:w-auto ">
         <Button
           type="button"
           variant="ghost"

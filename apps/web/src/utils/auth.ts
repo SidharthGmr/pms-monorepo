@@ -1,10 +1,11 @@
-import { container } from "@/config/ioc";
-import { TYPES } from "@/config/types";
-import IUnitOfService from "@/services/interfaces/IUnitOfService";
+import { getSession } from "next-auth/react";
 
 const ACCESS_TOKEN_KEY = "at";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const REFRESH_BUFFER_MS = 90_000; // 90 sec before expiry
+/** Never re-arm the timer tighter than this, so a token that fails to advance
+ *  cannot turn into a refresh loop. */
+const MIN_RESCHEDULE_MS = 15_000;
 
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let onRefreshFailedHandler: (() => void) | null = null;
@@ -71,9 +72,18 @@ export function scheduleAccessTokenRefresh(accessToken: string, onRefreshFailed?
   refreshTimer = setTimeout(() => {
     //console.log("[auth] Timer fired, refreshing now...");
     void refreshAccessToken(onRefreshFailedHandler || undefined, onRefreshSuccessHandler || undefined);
-  }, refreshInMs);
+  }, Math.max(refreshInMs, MIN_RESCHEDULE_MS));
 }
 
+/**
+ * Pre-emptively renews the access token *through NextAuth*.
+ *
+ * The API rotates refresh tokens on every use and revokes the session when an
+ * already-spent one is replayed, so exactly one place may hold and spend it —
+ * the `jwt` callback in `[...nextauth]/options.ts`. Calling `getSession()` runs
+ * that callback; this function only mirrors the resulting access token into
+ * localStorage, where HttpService picks it up.
+ */
 export async function refreshAccessToken(onRefreshFailed?: () => void, onRefreshSuccess?: () => void): Promise<string | undefined> {
   const at = localStorage.getItem(ACCESS_TOKEN_KEY);
   if (!at) {
@@ -81,36 +91,33 @@ export async function refreshAccessToken(onRefreshFailed?: () => void, onRefresh
     return;
   }
 
-  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const failLogout = () => {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    if (onRefreshFailed) {
+      try { onRefreshFailed(); } catch { }
+    }
+  };
 
   try {
-    const refreshResponse = await unitOfService.AccountService.getRefreshToken(at);
+    const session = await getSession();
+    const newAccessToken = (session?.user as { token?: string } | undefined)?.token;
 
-    const newAccessToken = refreshResponse?.data?.data?.newToken as string | undefined;
-    const newRefreshToken = refreshResponse?.data?.data?.refreshToken as string | undefined;
-
-    if (refreshResponse.status !== 200 || !newAccessToken) {
-      //console.error("[auth] Refresh failed", refreshResponse.status);
-
-      // ✅ optional: logout if refresh fails
-      localStorage.removeItem(ACCESS_TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
-      if (onRefreshFailed) {
-        try { onRefreshFailed(); } catch { }
-      }
+    if ((session as { error?: string } | null)?.error === "RefreshAccessTokenError" || !newAccessToken) {
+      //console.error("[auth] Refresh failed");
+      failLogout();
       return;
     }
 
     localStorage.setItem(ACCESS_TOKEN_KEY, newAccessToken);
-    if (newRefreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
 
     //console.log("[auth] Token refreshed ✅");
-    if (onRefreshSuccess) {
+    if (newAccessToken !== at && onRefreshSuccess) {
       try { onRefreshSuccess(); } catch { }
     }
 
     // ✅ important: schedule again with new token
-    scheduleAccessTokenRefresh(newAccessToken);
+    scheduleAccessTokenRefresh(newAccessToken, onRefreshFailed, onRefreshSuccess);
 
     return newAccessToken;
   } catch (error) {

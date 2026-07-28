@@ -43,9 +43,15 @@ export default class AccountService implements IAccountService {
     return result;
   }
 
-  getRefreshToken(token: string): Promise<AxiosResponse<Response<refreshTokenResponseDto>>> {
-    return this.httpService.call().post<refreshTokenResponseDto, AxiosResponse<Response<refreshTokenResponseDto>>>('/auth/refreshToken', {
-      token: token,
+  /**
+   * Takes the *refresh* token, not the access token, and is unauthenticated —
+   * it is called exactly when the access token is no longer usable.
+   * Prefer letting NextAuth's `jwt` callback own this call: the API rotates the
+   * refresh token and revokes the session if a spent one is replayed.
+   */
+  getRefreshToken(refreshToken: string): Promise<AxiosResponse<Response<refreshTokenResponseDto>>> {
+    return this.httpService.externalCall().post<refreshTokenResponseDto, AxiosResponse<Response<refreshTokenResponseDto>>>('/auth/refresh-token', {
+      token: refreshToken,
     });
   }
 
