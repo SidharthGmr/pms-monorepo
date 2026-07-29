@@ -244,8 +244,10 @@ model ProductVariant {
   product       product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   store         store          @relation(fields: [storeCode], references: [code])
   createdBy     users          @relation(fields: [createdById], references: [userId])
-  cartItems     CartItem[]
-  priceHistory  PriceHistory[]
+  cartItems      CartItem[]
+  priceHistory   PriceHistory[]
+  /// Movements booked against this variant. `stockQuantity` caches their sum.
+  stockHistories stockHistory[]
 
   @@index([productId])
   @@index([storeCode])
@@ -269,17 +271,23 @@ model PriceHistory {
 model stockHistory {
   id        Int      @id @default(autoincrement())
   productId Int
+  /// Which variant the movement applies to. Nullable because rows written before stock
+  /// became variant-level (and the product/order/purchase flows that are still
+  /// product-keyed) carry no variant. New manual stock movements always set it.
+  variantId Int?
   storeCode String
   userId    String
   quantity  Int
   reason    String?
   createdAt DateTime @default(now())
 
-  product product @relation(fields: [productId], references: [id])
-  store   store   @relation(fields: [storeCode], references: [code])
-  user    users   @relation(fields: [userId], references: [userId])
+  product product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  store   store           @relation(fields: [storeCode], references: [code])
+  user    users           @relation(fields: [userId], references: [userId])
 
   @@index([productId])
+  @@index([variantId])
   @@index([storeCode])
   @@index([userId])
 }

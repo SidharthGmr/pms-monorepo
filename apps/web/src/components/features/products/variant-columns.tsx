@@ -1,7 +1,9 @@
 'use client';
+import ActionTooltip from '@/components/common/tooltip-action-button';
 import { ProductVariantDto } from '@/dtos/product-variant.dto';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import { History } from 'lucide-react';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { Badge } from '../../ui/badge';
@@ -9,6 +11,59 @@ import { Badge } from '../../ui/badge';
 export const useProductVariantColumns = () =>
   useMemo<ColumnDef<ProductVariantDto>[]>(
     () => [
+      {
+        id: 'actions',
+        header: 'Action',
+        enableSorting: false,
+        // Prices are changed on the ledger screen, not here, so each row links to its
+        // own price history rather than offering an inline edit.
+        cell: ({ row }) => (
+          <ActionTooltip
+            variant="default"
+            icon={<History className="h-4 w-4" />}
+            tooltip="Price history for this variant"
+            href={`/admin/price-histories?productId=${row.original.productId}&variantId=${row.original.id}`}
+          />
+        ),
+      },
+      {
+        id: 'variant',
+        enableSorting: false,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Variant" />
+        ),
+        cell: ({ row }) => {
+          const attributes = row.original.attributes;
+          const pairs = attributes && typeof attributes === 'object' ? Object.entries(attributes) : [];
+
+          return (
+            <div className="flex flex-col gap-1">
+              {pairs.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {pairs.map(([key, value]) => (
+                    <Badge key={key} variant="zinc" className="font-normal">
+                      <span className="uppercase text-muted-foreground">{key}</span>
+                      <span className="mx-1">·</span>
+                      <span className="font-medium">{String(value)}</span>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                // Rows created by a bare price change carry no attributes.
+                <span className="text-xs text-muted-foreground">Price-only row</span>
+              )}
+              {row.original.sku && <code className="font-mono text-xs text-muted-foreground">{row.original.sku}</code>}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'stockQuantity',
+        accessorKey: 'stockQuantity',
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Stock" />,
+        cell: ({ row }) => <div className="tabular-nums">{row.original.stockQuantity ?? 0}</div>,
+      },
       {
         id: 'effectiveFrom',
         accessorKey: 'effectiveFrom',

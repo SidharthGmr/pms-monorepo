@@ -63,7 +63,7 @@ export default class ProductService implements IProductService {
             .patch<ProductDto, AxiosResponse<Response<ProductDto>>>(`/products/${id}/stock`, model);
     }
 
-    getStockHistory(id: number | string, params?: { page?: number, recordPerPage?: number }): Promise<AxiosResponse<Response<ListResponseDto<any>>>> {
+    getStockHistory(id: number | string, params?: { page?: number, recordPerPage?: number, variantId?: number }): Promise<AxiosResponse<Response<ListResponseDto<any>>>> {
         return this.httpService
             .call()
             .get<ListResponseDto<any>, AxiosResponse<Response<ListResponseDto<any>>>>(`/products/${id}/stock-history`, { params });

@@ -16,21 +16,27 @@ function toVariantDto<T extends { sellingPrice: Prisma.Decimal; costPrice: Prism
 
 export class ProductVariantRepository implements IProductVariantRepository {
   async create(data: CreateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
-    // Deactivate the previously active variant row for this product.
-    await tx.productVariant.updateMany({
-      where: { productId: data.productId, isActive: true },
-      data: { isActive: false },
-    });
+    // A price change supersedes the old price, so the previous active row is retired.
+    // A real sibling variant must not do that - Small and Large coexist.
+    if (data.supersedePrevious !== false) {
+      await tx.productVariant.updateMany({
+        where: { productId: data.productId, isActive: true },
+        data: { isActive: false },
+      });
+    }
 
     const created = await tx.productVariant.create({
       data: {
         productId: data.productId,
         storeCode: data.storeCode,
+        // Seeded here because the column is NOT NULL; PriceHistory is the source of
+        // truth and these are kept in step with it.
         sellingPrice: data.sellingPrice,
+        costPrice: data.costPrice ?? null,
         // Both are NOT NULL, so `null` is not an option - default them instead.
         attributes: data.attributes ?? {},
         sku: data.sku ?? buildVariantSku(data.storeCode, data.productId),
-        costPrice: data.costPrice ?? null,
+        stockQuantity: data.stockQuantity ?? 0,
         effectiveFrom: data.effectiveFrom ?? new Date(),
         isActive: true,
         reason: data.reason ?? null,
@@ -38,6 +44,19 @@ export class ProductVariantRepository implements IProductVariantRepository {
       },
     });
     return toVariantDto(created);
+  }
+
+  /**
+   * Rewrites `stockQuantity` from the variant's stockHistory movements, keeping the cache
+   * honest. Recomputed rather than incremented so a retry or a manual correction cannot
+   * leave the cache drifting from the ledger.
+   */
+  async syncVariantStock(variantId: number, tx: Prisma.TransactionClient = prisma): Promise<number> {
+    const movements = await tx.stockHistory.aggregate({ where: { variantId }, _sum: { quantity: true } });
+    const onHand = movements._sum.quantity ?? 0;
+
+    await tx.productVariant.update({ where: { id: variantId }, data: { stockQuantity: onHand } });
+    return onHand;
   }
 
   async getActive(productId: number, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto | null> {

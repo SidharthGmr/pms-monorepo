@@ -6,6 +6,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { ProductDto } from '@/dtos/product.dto';
 import { useAddToCart } from '@/hooks/service-hooks/useCartService';
+import { useAddToWishlist, useIsInWishlist, useRemoveProductFromWishlist } from '@/hooks/service-hooks/useWishlistService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
@@ -26,9 +27,39 @@ export default function ProductListRowActions<TData>({ row, deleteRecord }: Prod
   const [isStockHistoryOpen, setIsStockHistoryOpen] = useState(false);
   const addToCartMutation = useAddToCart();
 
+  const { data: wishlistResponse } = useIsInWishlist(item.id);
+  const addToWishlistMutation = useAddToWishlist();
+  const removeFromWishlistMutation = useRemoveProductFromWishlist();
+  const inWishlist = wishlistResponse?.data?.data?.inWishlist === true;
+  const isWishlistPending = addToWishlistMutation.isPending || removeFromWishlistMutation.isPending;
+
   // The cart snapshots a price from the product's effective variant, so a
   // product with no price cannot be added at all.
   const isPriced = item.currentPrice?.sellingPrice != null;
+
+  const handleWishlistToggle = async () => {
+    try {
+      const response = inWishlist
+        ? await removeFromWishlistMutation.mutateAsync(item.id)
+        : await addToWishlistMutation.mutateAsync(item.id);
+
+      if (response && (response.status === 200 || response.status === 201 || response.status === 204)) {
+        toast({
+          variant: 'success',
+          title: inWishlist ? 'Removed from wishlist' : 'Saved to wishlist',
+          description: item.name,
+        });
+      } else {
+        // Explicit type argument: add returns the row, remove returns void, and the
+        // union of the two leaves the generic uninferrable.
+        const error = unitOfService.ErrorHandlerService.getErrorMessage<unknown>(response);
+        toast({ variant: 'destructive', title: 'Wishlist update failed', description: <span>{error}</span> });
+      }
+    } catch (error: any) {
+      const message = unitOfService.ErrorHandlerService.getErrorMessage(error);
+      toast({ variant: 'destructive', title: 'Wishlist update failed', description: <span>{message || 'Unknown error occurred'}</span> });
+    }
+  };
 
   const handleAddToCart = async () => {
     try {
@@ -74,6 +105,9 @@ export default function ProductListRowActions<TData>({ row, deleteRecord }: Prod
               {addToCartMutation.isPending ? 'Adding...' : 'Add to Cart'}
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem className="cursor-pointer" disabled={isWishlistPending} onClick={handleWishlistToggle}>
+            {isWishlistPending ? 'Saving...' : inWishlist ? 'Remove from Wishlist' : 'Save to Wishlist'}
+          </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={() => deleteRecord(item.id)}>
             Delete
           </DropdownMenuItem>

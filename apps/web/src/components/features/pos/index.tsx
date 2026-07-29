@@ -14,7 +14,7 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -28,6 +28,11 @@ import { useAddToCart, useClearCart, useGetActiveCart, useRemoveFromCart, useUpd
 import { useCreateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
+import { useGetAllWishlists } from '@/hooks/service-hooks/useWishlistService';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import WishlistToggle from '@/components/common/wishlist-toggle';
+import ProductRating from './product-rating';
+import ProductVariantsStrip from './product-variants-strip';
 import { FileText, Landmark, Minus, Package, Percent, Plus, ShoppingBag, ShoppingCart, Trash2, User, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -111,11 +116,14 @@ function ProductCardImage({
   name,
   soldOut,
   badge,
+  action,
 }: {
   images?: string[];
   name: string;
   soldOut: boolean;
   badge: React.ReactNode;
+  /** Rendered over the top-right corner, opposite the stock badge. */
+  action?: React.ReactNode;
 }) {
   const gallery = (images || []).filter(Boolean);
   const [active, setActive] = useState(0);
@@ -127,15 +135,13 @@ function ProductCardImage({
       <div className="relative flex h-40 items-center justify-center overflow-hidden border-b border-border bg-muted/40">
         {activeSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={activeSrc}
-            alt={name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <img src={activeSrc} alt={name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
           <Package className="h-10 w-10 text-muted-foreground/40 transition-transform duration-500 group-hover:scale-110" />
         )}
         <div className="absolute left-3 top-3">{badge}</div>
+        {/* Above the sold-out scrim so the heart stays usable on an unavailable product. */}
+        {action && <div className="absolute right-2 top-2 z-10">{action}</div>}
         {soldOut && <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />}
       </div>
 
@@ -199,7 +205,7 @@ export default function PurchasePage() {
       setProducts(getAllProductsResponse.data.data.data.data ?? []);
       setRecordCount(getAllProductsResponse.data.data.data.totalRecord ?? 0);
     }
-  }, [getAllProductsResponse.isSuccess, getAllProductsResponse.data]);
+  }, [getAllProductsResponse.isSuccess, getAllProductsResponse.data?.data?.data]);
 
   // Headless table instance — drives the shared filter + pagination controls;
   // the catalog itself renders as cards, not table rows (columns stay empty).
@@ -238,6 +244,25 @@ export default function PurchasePage() {
       recordPerPage: config.recordPerPage,
     });
   };
+
+  /**
+   * The whole wishlist in one request, so each card can render its heart from a lookup
+   * instead of asking `/wishlists/has/:productId` 25 times per page.
+   *
+   * `userId` is sent explicitly: the API only pins plain customers to their own list and
+   * treats ADMIN/STAFF as staff, who would otherwise get every user's saved products and
+   * see hearts filled for rows that are not theirs.
+   */
+  const { currentUser } = useGetCurrentUser();
+  const { data: wishlistResponse } = useGetAllWishlists(
+    { userId: currentUser?.usersId, showAllRecords: true },
+    !!currentUser?.usersId
+  );
+
+  const wishlistedProductIds = useMemo(
+    () => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.productId)),
+    [wishlistResponse]
+  );
 
   // Customers available to sell to (users with the USER role).
   const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
@@ -340,11 +365,7 @@ export default function PurchasePage() {
     if (current === 0) return;
 
     // Quantity 0 is how the API removes a line, so one endpoint covers both.
-    await runCartAction(
-      () => updateCartQuantityMutation.mutateAsync({ productId, model: { quantity: current - 1 } }),
-      200,
-      'Could not update cart'
-    );
+    await runCartAction(() => updateCartQuantityMutation.mutateAsync({ productId, model: { quantity: current - 1 } }), 200, 'Could not update cart');
   };
 
   const handleDeleteFromCart = async (productId: number) => {
@@ -441,7 +462,7 @@ export default function PurchasePage() {
   const renderProductGrid = () => {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} className="overflow-hidden rounded-2xl border-border">
               <Skeleton className="h-40 w-full rounded-none" />
@@ -471,7 +492,7 @@ export default function PurchasePage() {
     }
 
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {products.map((product) => {
           const inCartQty = cart[product.id]?.cartQuantity || 0;
           const soldOut = product.stock <= 0;
@@ -479,16 +500,34 @@ export default function PurchasePage() {
           return (
             <Card
               key={product.id}
-              className="group flex flex-col overflow-hidden rounded-2xl border-border bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md"
+              className="group flex flex-col overflow-hidden rounded-2xl border-border bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md !p-0"
             >
-              {/* Image gallery */}
-              <ProductCardImage images={product.images} name={product.name} soldOut={soldOut} badge={renderStockBadge(product)} />
+              <ProductCardImage
+                images={product.images}
+                name={product.name}
+                soldOut={soldOut}
+                badge={renderStockBadge(product)}
+                action={
+                  <WishlistToggle
+                    productId={product.id}
+                    productName={product.name}
+                    inWishlist={wishlistedProductIds.has(product.id)}
+                    className="rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
+                  />
+                }
+              />
 
               {/* Body */}
               <div className="flex flex-1 flex-col p-4">
-                <h3 className="mb-3 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                <CardTitle className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
                   {product.name}
-                </h3>
+                </CardTitle>
+
+                <div className="mb-2 mt-1">
+                  <ProductRating productId={product.id} />
+                </div>
+
+                <ProductVariantsStrip variants={product.variants} />
 
                 <div className="mt-auto flex items-center justify-between">
                   <div className="flex flex-col">
@@ -780,9 +819,7 @@ export default function PurchasePage() {
   }
 
   return (
-    <div className="flex h-full flex-col space-y-4">
-      {/* The header action doubles as the cart indicator: it carries the live item
-          count and links through to the full cart page. */}
+    <div className="space-y-4">
       <PageHeader
         title="Point of Sale"
         description="Select products and complete a purchase"
@@ -791,7 +828,6 @@ export default function PurchasePage() {
         icon={ShoppingCart}
       />
 
-      {/* Shared search + filters (same as the ProductList listing) */}
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <ProductListFilter
@@ -815,22 +851,22 @@ export default function PurchasePage() {
         </Button>
       </div>
 
-      {/* Content: catalog + persistent cart sidebar */}
-      <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid flex-1 grid-cols-1 gap-6">
         <div className="flex min-w-0 flex-col gap-4">
-          {!isLoading && recordCount > 0 && (
+          {/* {!isLoading && recordCount > 0 && (
             <p className="text-xs font-medium text-muted-foreground">
               <span className="font-semibold text-foreground">{recordCount}</span> product{recordCount === 1 ? '' : 's'} found
             </p>
-          )}
-          {renderProductGrid()}
-          <div className="mt-auto pt-2">
+          )} */}
+          <div className="space-y-2">
+            {/* <DataTablePagination table={table} totalRecord={recordCount} loading={isLoading} /> */}
+            {renderProductGrid()}
             <DataTablePagination table={table} totalRecord={recordCount} loading={isLoading} />
           </div>
         </div>
 
         {/* Desktop sidebar */}
-        <aside className="hidden lg:block">
+        <aside className="hidden">
           <Card className="sticky top-4 h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border-border bg-card p-0 shadow-sm">
             {renderCartPanel('sidebar')}
           </Card>

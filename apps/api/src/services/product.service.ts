@@ -1,7 +1,10 @@
+import { Prisma } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import { ListResponseDto, ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
+import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
+import { CreateProductVariantModel } from "../models/product-variant.model";
 import { ProductFilterParams } from "../params/product.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { AddStockModel, IProductService } from "./interfaces/Iproduct.service";
@@ -14,6 +17,33 @@ export class ProductService implements IProductService {
   constructor(
     @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork
   ) { }
+
+  /**
+   * Appends a priced variant row and files that price in the PriceHistory ledger, which
+   * is the source of truth for what a variant costs; the variant's own price columns are
+   * a cache of the currently effective row.
+   *
+   * Product saves talk to the repository rather than `ProductVariantService` because they
+   * already own a transaction, so the ledger write lives here too - otherwise a price set
+   * from the product form would never reach the ledger.
+   */
+  private async recordPricedVariant(model: CreateProductVariantModel, tx: Prisma.TransactionClient) {
+    const variant = await this.unitOfWork.ProductVariant.create(model, tx);
+
+    await this.unitOfWork.PriceHistory.create(
+      {
+        variantId: variant.id,
+        sellingPrice: model.sellingPrice,
+        costPrice: model.costPrice ?? null,
+        ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom }),
+        reason: model.reason ?? null,
+      },
+      tx
+    );
+
+    await this.unitOfWork.PriceHistory.syncVariantPrice(variant.id, tx);
+    return variant;
+  }
 
   async create(data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
@@ -37,7 +67,7 @@ export class ProductService implements IProductService {
       // becomes the product's first (active) ProductVariant and the stock becomes
       // its first stockHistory movement. Without this they were silently discarded.
       if (data.sellingPrice != null) {
-        await this.unitOfWork.ProductVariant.create(
+        await this.recordPricedVariant(
           {
             productId: productData.id,
             storeCode,
@@ -117,7 +147,7 @@ export class ProductService implements IProductService {
         const costChanged = current != null && Number(current.costPrice ?? NaN) !== Number(newCost ?? NaN);
 
         if (priceChanged || costChanged) {
-          await this.unitOfWork.ProductVariant.create(
+          await this.recordPricedVariant(
             {
               productId: id,
               storeCode,
@@ -160,15 +190,27 @@ export class ProductService implements IProductService {
     return this.unitOfWork.Product.delete(id);
   }
 
+  /**
+   * Books stock against one variant. Stock is held per variant - Small and Large keep
+   * their own counts - so the movement records which variant it belongs to and the
+   * variant's `stockQuantity` cache is recomputed from the movements afterwards.
+   */
   async addStock(id: number, data: AddStockModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
     const existing = await this.unitOfWork.Product.findById(id);
     if (!existing) throw new NotFoundError("Product not found");
 
     return this.unitOfWork.transaction(async (transactionClient) => {
-      // Record the stock movement.
+      // The variant has to be one of this product's, in this store - otherwise stock
+      // could be booked against someone else's variant by passing its id.
+      const scope = await this.unitOfWork.PriceHistory.getVariantScope(data.variantId, transactionClient);
+      if (!scope) throw new NotFoundError("Product variant not found");
+      if (scope.productId !== id) throw new ForbiddenError("That variant belongs to a different product");
+      if (scope.storeCode !== storeCode) throw new ForbiddenError("That variant belongs to a different store");
+
       await this.unitOfWork.Product.createStockHistory(
         {
           productId: id,
+          variantId: data.variantId,
           storeCode,
           userId,
           quantity: data.quantity,
@@ -177,30 +219,31 @@ export class ProductService implements IProductService {
         transactionClient
       );
 
-      // Optionally update the product's price alongside the stock change.
-      // A new active price row is only created when a selling price is supplied.
+      await this.unitOfWork.ProductVariant.syncVariantStock(data.variantId, transactionClient);
+
+      // An optional price change goes to this variant's ledger rather than spawning
+      // another variant row, which is what the old product-level flow did.
       if (data.sellingPrice !== undefined) {
-        await this.unitOfWork.ProductVariant.create(
+        await this.unitOfWork.PriceHistory.create(
           {
-            productId: id,
-            storeCode,
+            variantId: data.variantId,
             sellingPrice: data.sellingPrice,
             costPrice: data.costPrice ?? null,
             reason: data.reason ?? null,
-            createdById: userId,
           },
           transactionClient
         );
+        await this.unitOfWork.PriceHistory.syncVariantPrice(data.variantId, transactionClient);
       }
 
       return existing;
     });
   }
 
-  async getStockHistory(id: number, page?: number, limit?: number): Promise<ListResponseDto<any>> {
+  async getStockHistory(id: number, page?: number, limit?: number, variantId?: number): Promise<ListResponseDto<any>> {
     const existing = await this.unitOfWork.Product.findById(id);
     if (!existing) throw new NotFoundError("Product not found");
-    return this.unitOfWork.Product.getStockHistory(id, page, limit);
+    return this.unitOfWork.Product.getStockHistory(id, page, limit, variantId);
   }
 
 }

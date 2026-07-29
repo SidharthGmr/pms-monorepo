@@ -22,10 +22,14 @@ export class ProductVariantController {
 
     const body = req.body as {
       productId: number;
+      sku?: string;
+      attributes?: Record<string, string | number | boolean>;
+      stockQuantity?: number;
       sellingPrice: number;
       costPrice?: number | null;
       effectiveFrom?: string | Date;
       reason?: string | null;
+      supersedePrevious?: boolean;
     };
 
     const model: CreateProductVariantModel = {
@@ -35,7 +39,12 @@ export class ProductVariantController {
       costPrice: body.costPrice ?? null,
       reason: body.reason ?? null,
       createdById: userId,
+      ...(body.sku && { sku: body.sku }),
+      // Omit rather than send `{}` so the repository's own default applies.
+      ...(body.attributes && Object.keys(body.attributes).length > 0 && { attributes: body.attributes }),
+      ...(body.stockQuantity !== undefined && { stockQuantity: body.stockQuantity }),
       ...(body.effectiveFrom && { effectiveFrom: new Date(body.effectiveFrom) }),
+      ...(body.supersedePrevious !== undefined && { supersedePrevious: body.supersedePrevious }),
     };
 
     const variant = await this.unitOfService.ProductVariant.record(model);

@@ -13,7 +13,7 @@ import { useUpdateProfile } from '@/hooks/service-hooks/useAccountService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import IAccountService from '@/services/interfaces/IAccountService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

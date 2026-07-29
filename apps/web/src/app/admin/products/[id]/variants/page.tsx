@@ -20,7 +20,7 @@ export default function ProductVariantsPage({ params }: ProductVariantsPageProps
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         title="Product Variants"
-        description="Append-only price history. Adding a variant supersedes the current active price."
+        description="Sellable combinations of this product. Each variant's price is kept in the price history ledger."
         variant="back"
       />
 

@@ -1,5 +1,5 @@
 import { Roles } from '@/enums/roles.enum';
-import { CreditCard, FolderTree, LayoutDashboard, List, Package, Receipt, ShoppingBag, ShoppingCart, Sliders, Store, Tags, Truck, User, Users } from 'lucide-react';
+import { CreditCard, FolderTree, Heart, LayoutDashboard, List, Package, Receipt, ShoppingBag, ShoppingCart, Sliders, Star, Store, Tags, TrendingUp, Truck, User, Users } from 'lucide-react';
 
 export interface SideBarMenuDto {
   id: string;
@@ -116,6 +116,14 @@ export const SideBarMenu: SideBarMenuDto[] = [
         role: [Roles.ADMIN],
         isActive: false,
       },
+      {
+        id: 'price-histories',
+        title: 'Price History',
+        icon: TrendingUp,
+        url: '/admin/price-histories/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
     ],
   },
 
@@ -124,6 +132,22 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Orders',
     icon: ShoppingBag,
     url: '/admin/orders/',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'reviews',
+    title: 'Reviews',
+    icon: Star,
+    url: '/admin/reviews/',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'wishlists',
+    title: 'Customer Wishlists',
+    icon: Heart,
+    url: '/admin/wishlist/',
     role: [Roles.ADMIN],
     isActive: false,
   },
@@ -164,6 +188,22 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Cart',
     icon: ShoppingCart,
     url: '/dashboard/cart',
+    role: [Roles.USER, Roles.STAFF],
+    isActive: false,
+  },
+  {
+    id: 'wishlist-dashboard',
+    title: 'My Wishlist',
+    icon: Heart,
+    url: '/dashboard/wishlist',
+    role: [Roles.USER, Roles.STAFF],
+    isActive: false,
+  },
+  {
+    id: 'reviews-dashboard',
+    title: 'My Reviews',
+    icon: Star,
+    url: '/dashboard/reviews',
     role: [Roles.USER, Roles.STAFF],
     isActive: false,
   },

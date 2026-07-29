@@ -23,6 +23,7 @@ import { IReviewReplyRepository } from "./ireview-reply.repository";
 import { IWishlistRepository } from "./iwishlist.repository";
 import { IMasterAttributeRepository } from "./imaster-attribute.repository";
 import { IMasterEntryRepository } from "./imaster-entry.repository";
+import { IPriceHistoryRepository } from "./iprice-history.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -49,6 +50,7 @@ export default interface IUnitOfWork {
   Wishlist: IWishlistRepository;
   MasterAttribute: IMasterAttributeRepository;
   MasterEntry: IMasterEntryRepository;
+  PriceHistory: IPriceHistoryRepository;
 
   /**
    * Executes a set of operations within a database transaction.

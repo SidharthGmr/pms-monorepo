@@ -20,10 +20,15 @@ export const productFields = z.object({
 export const updateProductFields = productFields.partial();
 
 export const addStockFields = z.object({
+  /**
+   * Which variant receives the stock. Stock is held per variant - Small and Large keep
+   * their own counts - so a movement must say which one it belongs to.
+   */
+  variantId: z.number().int().positive("Variant is required"),
   quantity: z.number().int().positive("Quantity must be a positive integer"),
   reason: z.string().optional(),
-  // Optional price update applied alongside the stock change. When
-  // `sellingPrice` is provided a new active price row is created for the product.
+  // Optional price update applied alongside the stock change. When `sellingPrice` is
+  // provided, a row is appended to that variant's PriceHistory ledger.
   sellingPrice: z.number().nonnegative("Selling price must be zero or greater").optional(),
   costPrice: z.number().nonnegative("Cost price must be zero or greater").nullable().optional(),
 });

@@ -9,7 +9,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useGetUserById, useUpdateUser } from '@/hooks/service-hooks/useUserList.service.hook';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

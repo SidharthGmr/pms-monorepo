@@ -26,6 +26,7 @@ export const TYPES = {
   IWishlistService: Symbol.for("WishlistService"),
   IMasterAttributeService: Symbol.for("MasterAttributeService"),
   IMasterEntryService: Symbol.for("MasterEntryService"),
+  IPriceHistoryService: Symbol.for("PriceHistoryService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -53,6 +54,7 @@ export const TYPES = {
   WishlistController: Symbol.for("WishlistController"),
   MasterAttributeController: Symbol.for("MasterAttributeController"),
   MasterEntryController: Symbol.for("MasterEntryController"),
+  PriceHistoryController: Symbol.for("PriceHistoryController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -80,4 +82,5 @@ export const TYPES = {
   IWishlistRepository: Symbol.for("WishlistRepository"),
   IMasterAttributeRepository: Symbol.for("MasterAttributeRepository"),
   IMasterEntryRepository: Symbol.for("MasterEntryRepository"),
+  IPriceHistoryRepository: Symbol.for("PriceHistoryRepository"),
 };

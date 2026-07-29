@@ -13,8 +13,39 @@ import { IProductVariantService } from './interfaces/Iproduct-variant.service';
 export class ProductVariantService implements IProductVariantService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) {}
 
+  /**
+   * Creates a variant and files its price in the PriceHistory ledger, which is the source
+   * of truth for what the variant costs. The variant's own price columns are NOT NULL, so
+   * the repository seeds them and `syncVariantPrice` then keeps them in step with the
+   * ledger's currently effective row.
+   */
   async record(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto> {
-    return this.unitOfWork.ProductVariant.create(data, tx);
+    // Already inside someone else's transaction (a product save, say) - join it rather
+    // than opening a nested one.
+    if (tx) return this.createWithPrice(data, tx);
+
+    return this.unitOfWork.transaction((transactionClient) => this.createWithPrice(data, transactionClient));
+  }
+
+  private async createWithPrice(data: CreateProductVariantModel, tx: Prisma.TransactionClient): Promise<ProductVariantResponseDto> {
+    const variant = await this.unitOfWork.ProductVariant.create(data, tx);
+
+    await this.unitOfWork.PriceHistory.create(
+      {
+        variantId: variant.id,
+        sellingPrice: data.sellingPrice,
+        costPrice: data.costPrice ?? null,
+        ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
+        reason: data.reason ?? null,
+      },
+      tx
+    );
+
+    // A future-dated price is staged, so this leaves the seeded figures alone until the
+    // date arrives - which is also how product listings read the variant.
+    await this.unitOfWork.PriceHistory.syncVariantPrice(variant.id, tx);
+
+    return variant;
   }
 
   async getEffectiveOn(productId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null> {

@@ -54,7 +54,8 @@
       "Bash(timeout 40 npx ts-node index.ts)",
       "Bash(echo \"=== exit: $? ===\")",
       "Bash(timeout 45 npx ts-node index.ts)",
-      "Bash(xargs grep -ln \"CreateProductValidator = \")"
+      "Bash(xargs grep -ln \"CreateProductValidator = \")",
+      "Bash(npm view *)"
     ]
   }
 }

@@ -24,6 +24,7 @@ import reviewReplyRouter from "./reviewReplyRoutes";
 import wishlistRouter from "./wishlistRoutes";
 import masterAttributeRouter from "./masterAttributeRoutes";
 import masterEntryRouter from "./masterEntryRoutes";
+import priceHistoryRouter from "./priceHistoryRoutes";
 
 const routes = express.Router();
 
@@ -52,5 +53,6 @@ routes.use("/review-replies", reviewReplyRouter);
 routes.use("/wishlists", wishlistRouter);
 routes.use("/master-attributes", masterAttributeRouter);
 routes.use("/master-entries", masterEntryRouter);
+routes.use("/price-histories", priceHistoryRouter);
 
 export default routes;

@@ -136,6 +136,11 @@ import { IMasterEntryService } from '../services/interfaces/Imaster-entry.servic
 import { MasterEntryService } from '../services/master-entry.service';
 import { IMasterEntryRepository } from '../repository/interfaces/imaster-entry.repository';
 import { MasterEntryRepository } from '../repository/master-entry.repository';
+import { PriceHistoryController } from '../controllers/price-history.controller';
+import { IPriceHistoryService } from '../services/interfaces/Iprice-history.service';
+import { PriceHistoryService } from '../services/price-history.service';
+import { IPriceHistoryRepository } from '../repository/interfaces/iprice-history.repository';
+import { PriceHistoryRepository } from '../repository/price-history.repository';
 
 export const container = new Container();
 
@@ -164,6 +169,7 @@ container.bind<ReviewReplyController>(TYPES.ReviewReplyController).to(ReviewRepl
 container.bind<WishlistController>(TYPES.WishlistController).to(WishlistController);
 container.bind<MasterAttributeController>(TYPES.MasterAttributeController).to(MasterAttributeController);
 container.bind<MasterEntryController>(TYPES.MasterEntryController).to(MasterEntryController);
+container.bind<PriceHistoryController>(TYPES.PriceHistoryController).to(PriceHistoryController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -190,6 +196,7 @@ container.bind<IReviewReplyService>(TYPES.IReviewReplyService).to(ReviewReplySer
 container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
 container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(MasterAttributeService);
 container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
+container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistoryService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -215,6 +222,7 @@ container.bind<IReviewReplyRepository>(TYPES.IReviewReplyRepository).to(ReviewRe
 container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(WishlistRepository);
 container.bind<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository).to(MasterAttributeRepository);
 container.bind<IMasterEntryRepository>(TYPES.IMasterEntryRepository).to(MasterEntryRepository);
+container.bind<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository).to(PriceHistoryRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

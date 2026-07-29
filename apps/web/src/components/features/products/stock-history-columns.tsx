@@ -29,6 +29,35 @@ export const useStockHistoryColumns = () =>
         meta: { sortingKey: 'quantity' },
       },
       {
+        id: 'variant',
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Variant" />,
+        cell: ({ row }) => {
+          const variant = row.original.variant;
+          if (!variant) {
+            // Order and purchase movements are still booked at product level, as are rows
+            // written before stock became variant-level.
+            return <span className="text-xs text-muted-foreground">Product level</span>;
+          }
+
+          const attributes = variant.attributes;
+          const description =
+            attributes && typeof attributes === 'object'
+              ? Object.values(attributes)
+                  .filter((value: unknown) => value !== null && value !== undefined && value !== '')
+                  .map(String)
+                  .join(' / ')
+              : '';
+
+          return (
+            <div className="flex flex-col">
+              {description && <span className="font-medium">{description}</span>}
+              {variant.sku && <code className="font-mono text-xs text-muted-foreground">{variant.sku}</code>}
+            </div>
+          );
+        },
+      },
+      {
         id: 'reason',
         accessorKey: 'reason',
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Reason" />,

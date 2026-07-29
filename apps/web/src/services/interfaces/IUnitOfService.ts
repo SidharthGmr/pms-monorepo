@@ -23,6 +23,7 @@ import IReviewReplyService from './IReviewReplyService';
 import IWishlistService from './IWishlistService';
 import IMasterAttributeService from './IMasterAttributeService';
 import IMasterEntryService from './IMasterEntryService';
+import IPriceHistoryService from './IPriceHistoryService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -52,4 +53,5 @@ export default interface IUnitOfService {
   WishlistService: IWishlistService;
   MasterAttributeService: IMasterAttributeService;
   MasterEntryService: IMasterEntryService;
+  PriceHistoryService: IPriceHistoryService;
 }

@@ -27,6 +27,7 @@ import { IReviewReplyRepository } from "./interfaces/ireview-reply.repository";
 import { IWishlistRepository } from "./interfaces/iwishlist.repository";
 import { IMasterAttributeRepository } from "./interfaces/imaster-attribute.repository";
 import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
+import { IPriceHistoryRepository } from "./interfaces/iprice-history.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -53,6 +54,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Wishlist: IWishlistRepository;
   public MasterAttribute: IMasterAttributeRepository;
   public MasterEntry: IMasterEntryRepository;
+  public PriceHistory: IPriceHistoryRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -79,6 +81,7 @@ export default class UnitOfWork implements IUnitOfWork {
     wishlist = container.get<IWishlistRepository>(TYPES.IWishlistRepository),
     masterAttribute = container.get<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository),
     masterEntry = container.get<IMasterEntryRepository>(TYPES.IMasterEntryRepository),
+    priceHistory = container.get<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -104,6 +107,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Wishlist = wishlist;
     this.MasterAttribute = masterAttribute;
     this.MasterEntry = masterEntry;
+    this.PriceHistory = priceHistory;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

@@ -13,6 +13,11 @@ export interface ProductVariantResponseDto {
   storeCode: string;
   sku: string;
   attributes: JsonValue;
+  stockQuantity: number;
+  /**
+   * Cache of the variant's currently effective PriceHistory row - that ledger is the
+   * source of truth for what the variant costs on any given date.
+   */
   sellingPrice: number;
   costPrice: number | null;
   effectiveFrom: Date;

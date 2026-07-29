@@ -46,10 +46,34 @@ const productVariantController = container.get<ProductVariantController>(TYPES.P
  *                 type: integer
  *                 example: 5
  *                 description: Product to record a variant for (required)
+ *               sku:
+ *                 type: string
+ *                 example: "TSHIRT-001-RED-L"
+ *                 description: Unique SKU. Generated from store + product when omitted.
+ *               attributes:
+ *                 type: object
+ *                 additionalProperties:
+ *                   oneOf:
+ *                     - type: string
+ *                     - type: number
+ *                     - type: boolean
+ *                 example: { "size": "L", "color": "Red" }
+ *                 description: What makes this variant distinct. Keys are master-attribute codes, values are master-entry values.
+ *               stockQuantity:
+ *                 type: integer
+ *                 example: 25
+ *                 description: Opening stock for this variant (defaults to 0)
+ *               supersedePrevious:
+ *                 type: boolean
+ *                 example: false
+ *                 description: >
+ *                   Defaults to true, which retires the product's other active variants - the
+ *                   price-change behaviour. Send false when adding a real sibling variant so
+ *                   Small and Large both stay active.
  *               sellingPrice:
  *                 type: number
  *                 example: 1099.99
- *                 description: Selling price (required)
+ *                 description: Selling price (required). Filed in the PriceHistory ledger; the variant's own columns cache it.
  *               costPrice:
  *                 type: number
  *                 nullable: true
@@ -71,7 +95,12 @@ const productVariantController = container.get<ProductVariantController>(TYPES.P
  *         description: Validation error or store code not found
  *       401:
  *         description: Unauthorized - Invalid or missing token
- *     description: Records a new variant. The previously active variant is deactivated automatically. storeCode and createdById are taken from the authenticated user's token.
+ *     description: >
+ *       Records a variant and files its price in the PriceHistory ledger, which is the source of
+ *       truth for what the variant costs; the variant's own price columns are a cache of the
+ *       effective ledger row. By default the previously active variant is deactivated (a price
+ *       change) - pass supersedePrevious=false to add a sibling variant instead. storeCode and
+ *       createdById are taken from the authenticated user's token.
  */
 productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantValidator), asyncHandler(productVariantController.create));
 

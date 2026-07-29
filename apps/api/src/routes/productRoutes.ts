@@ -468,7 +468,12 @@ productRouter.delete('/:id', authenticateToken, asyncHandler(productController.d
  * @swagger
  * /products/{id}/stock:
  *   patch:
- *     summary: Add stock (and optionally update price) for a product
+ *     summary: Add stock to one variant of a product (and optionally update its price)
+ *     description: >
+ *       Stock is held per variant, so the movement is booked against `variantId` and that
+ *       variant's cached `stockQuantity` is recomputed from its movements. The variant must
+ *       belong to this product and to the caller's store. When `sellingPrice` is supplied a
+ *       row is appended to that variant's PriceHistory ledger.
  *     tags: [Product]
  *     security:
  *       - bearerAuth: []
@@ -491,8 +496,13 @@ productRouter.delete('/:id', authenticateToken, asyncHandler(productController.d
  *           schema:
  *             type: object
  *             required:
+ *               - variantId
  *               - quantity
  *             properties:
+ *               variantId:
+ *                 type: integer
+ *                 example: 12
+ *                 description: Variant receiving the stock. Must belong to this product.
  *               quantity:
  *                 type: integer
  *                 minimum: 1
@@ -512,8 +522,10 @@ productRouter.delete('/:id', authenticateToken, asyncHandler(productController.d
  *     responses:
  *       200:
  *         description: Stock added successfully
+ *       403:
+ *         description: The variant belongs to a different product or store
  *       404:
- *         description: Product not found
+ *         description: Product or variant not found
  */
 productRouter.patch('/:id/stock', authenticateToken, validate(addStockSchema), asyncHandler(productController.addStock));
 

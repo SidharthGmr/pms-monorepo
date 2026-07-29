@@ -1,4 +1,5 @@
 import { Status } from "../enum/status.enum";
+import { JsonValue } from "./product-variant.dto";
 
 
 
@@ -33,6 +34,20 @@ export interface CurrentPriceDto {
 }
 
 /**
+ * A sellable variant of a product, trimmed for catalog cards and pickers.
+ * `sellingPrice`/`costPrice` cache the variant's currently effective PriceHistory row.
+ */
+export interface ProductVariantSummaryDto {
+  id: number;
+  sku: string;
+  /** e.g. `{ "size": "L", "color": "Red" }`. Empty for rows created by a bare price change. */
+  attributes: JsonValue;
+  stockQuantity: number;
+  sellingPrice: number;
+  costPrice: number | null;
+}
+
+/**
  * Product enriched with related names (category, brand, attribute) as flat
  * fields, plus its current (active) price, for list/detail views.
  * `currentPrice` is null when the product has no active price.
@@ -44,4 +59,9 @@ export interface ProductWithPriceResponseDto extends ProductResponseDto {
   currentPrice: CurrentPriceDto | null;
   // Current on-hand stock: the sum of all stockHistory quantity movements.
   stock: number;
+  /**
+   * The product's active variants. Populated by the paginated list endpoint (which
+   * batches them for the whole page); absent on the low-stock and detail responses.
+   */
+  variants?: ProductVariantSummaryDto[];
 }

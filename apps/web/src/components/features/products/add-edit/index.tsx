@@ -18,7 +18,7 @@ import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { CreateProductModel } from '@/models/product.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFields } from '@pms/types';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zod-resolver';
 import { Boxes, ImageIcon, Info, Layers } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';

@@ -23,6 +23,7 @@ import { IReviewReplyService } from "./Ireview-reply.service";
 import { IWishlistService } from "./Iwishlist.service";
 import { IMasterAttributeService } from "./Imaster-attribute.service";
 import { IMasterEntryService } from "./Imaster-entry.service";
+import { IPriceHistoryService } from "./Iprice-history.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -50,4 +51,5 @@ export default interface IUnitOfService {
   Wishlist: IWishlistService;
   MasterAttribute: IMasterAttributeService;
   MasterEntry: IMasterEntryService;
+  PriceHistory: IPriceHistoryService;
 }

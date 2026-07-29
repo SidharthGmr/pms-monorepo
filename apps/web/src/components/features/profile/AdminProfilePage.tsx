@@ -14,7 +14,7 @@ import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { profileFields, type ProfileFormValues, type UpdateProfileModel } from '@pms/types';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zod-resolver';
 import { motion } from 'framer-motion';
 import { Building, CheckCircle2, Compass, FileText, Globe, Hash, Loader2, Mail, Map, MapPin, Phone, Save, Shield, User, UserCog } from 'lucide-react';
 import { ReactNode, useEffect, useMemo, useState } from 'react';

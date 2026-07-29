@@ -1,6 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductResponseDto, ProductWithPriceResponseDto } from '@pms/types';
+import { ProductResponseDto, ProductVariantSummaryDto, ProductWithPriceResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { ProductFilterParams } from '../params/product.params';
 import { IProductRepository } from './interfaces/iproduct.repository';
@@ -76,7 +76,7 @@ export class ProductRepository implements IProductRepository {
     // Resolve related names + the current price in batched queries (no `include`).
     // "Current" price = the latest price effective as of now (by effectiveFrom).
     // Current stock = the sum of all stockHistory quantity movements per product.
-    const [categories, brands, attributes, effectivePrices, stockSums] = await Promise.all([
+    const [categories, brands, attributes, effectivePrices, stockSums, activeVariants] = await Promise.all([
       categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }) : [],
       brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
       attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
@@ -94,12 +94,30 @@ export class ProductRepository implements IProductRepository {
           _sum: { quantity: true },
         })
         : [],
+      // Active variants for the whole page in one query, so a catalog card can list
+      // "S / M / L" without a request per product.
+      productIds.length
+        ? prisma.productVariant.findMany({
+          where: { productId: { in: productIds }, isActive: true, deletedAt: null },
+          orderBy: [{ productId: 'asc' }, { id: 'asc' }],
+          select: { id: true, productId: true, sku: true, attributes: true, stockQuantity: true, sellingPrice: true, costPrice: true },
+        })
+        : [],
     ]);
 
     const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
     const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]));
     const attributeNames = new Map(attributes.map((attribute) => [attribute.id, attribute.name]));
     const stockByProduct = new Map(stockSums.map((row) => [row.productId, row._sum.quantity ?? 0]));
+
+    const variantsByProduct = new Map<number, ProductVariantSummaryDto[]>();
+    for (const variant of activeVariants) {
+      const { productId, sellingPrice, costPrice, ...rest } = variant;
+      const list = variantsByProduct.get(productId) ?? [];
+      // Decimal serializes to a string; the API contract is plain numbers.
+      list.push({ ...rest, sellingPrice: sellingPrice.toNumber(), costPrice: costPrice?.toNumber() ?? null });
+      variantsByProduct.set(productId, list);
+    }
 
     // Prices are latest-first, so the first row seen per product is its current price.
     // Expose only sellingPrice + costPrice.
@@ -121,6 +139,7 @@ export class ProductRepository implements IProductRepository {
         attribute: attributeId != null ? attributeNames.get(attributeId) ?? null : null,
         currentPrice: currentPriceByProduct.get(product.id) ?? null,
         stock: stockByProduct.get(product.id) ?? 0,
+        variants: variantsByProduct.get(product.id) ?? [],
       };
     });
 
@@ -262,13 +281,19 @@ export class ProductRepository implements IProductRepository {
     return result._sum.quantity ?? 0;
   }
 
+  async getVariantStock(variantId: number, tx: Prisma.TransactionClient = prisma): Promise<number> {
+    const result = await tx.stockHistory.aggregate({ where: { variantId }, _sum: { quantity: true } });
+    return result._sum.quantity ?? 0;
+  }
+
   async createStockHistory(
-    data: { productId: number; storeCode: string; userId: string; quantity: number; reason?: string | null },
+    data: { productId: number; variantId?: number | null; storeCode: string; userId: string; quantity: number; reason?: string | null },
     tx: Prisma.TransactionClient = prisma
   ): Promise<void> {
     await tx.stockHistory.create({
       data: {
         productId: data.productId,
+        variantId: data.variantId ?? null,
         storeCode: data.storeCode,
         userId: data.userId,
         quantity: data.quantity,
@@ -277,16 +302,21 @@ export class ProductRepository implements IProductRepository {
     });
   }
 
-  async getStockHistory(productId: number, page = 1, limit = 10): Promise<ListResponseDto<any>> {
+  async getStockHistory(productId: number, page = 1, limit = 10, variantId?: number): Promise<ListResponseDto<any>> {
     const skip = (page - 1) * limit;
-    const where = { productId };
+    // Narrowing to one variant is optional so the product-level view still shows every
+    // movement, including the product-keyed rows from orders and purchases.
+    const where: Prisma.stockHistoryWhereInput = { productId, ...(variantId !== undefined && { variantId }) };
     const [data, total] = await Promise.all([
       prisma.stockHistory.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
-        include: { user: { select: { userId: true, name: true } } },
+        include: {
+          user: { select: { userId: true, name: true } },
+          variant: { select: { id: true, sku: true, attributes: true } },
+        },
       }),
       prisma.stockHistory.count({ where }),
     ]);

@@ -58,6 +58,8 @@ import MasterAttributeService from '@/services/MasterAttributeService';
 import IMasterAttributeService from '@/services/interfaces/IMasterAttributeService';
 import MasterEntryService from '@/services/MasterEntryService';
 import IMasterEntryService from '@/services/interfaces/IMasterEntryService';
+import PriceHistoryService from '@/services/PriceHistoryService';
+import IPriceHistoryService from '@/services/interfaces/IPriceHistoryService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -91,6 +93,7 @@ container.bind<IReviewReplyService>(TYPES.IReviewReplyService).to(ReviewReplySer
 container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
 container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(MasterAttributeService);
 container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
+container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistoryService);
 
 export { container };
 

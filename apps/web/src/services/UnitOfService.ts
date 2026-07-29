@@ -27,6 +27,7 @@ import IReviewReplyService from './interfaces/IReviewReplyService';
 import IWishlistService from './interfaces/IWishlistService';
 import IMasterAttributeService from './interfaces/IMasterAttributeService';
 import IMasterEntryService from './interfaces/IMasterEntryService';
+import IPriceHistoryService from './interfaces/IPriceHistoryService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -60,6 +61,7 @@ export default class UnitOfService implements IUnitOfService {
   public WishlistService: IWishlistService;
   public MasterAttributeService: IMasterAttributeService;
   public MasterEntryService: IMasterEntryService;
+  public PriceHistoryService: IPriceHistoryService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -88,6 +90,7 @@ export default class UnitOfService implements IUnitOfService {
     wishlistService = container.get<IWishlistService>(TYPES.IWishlistService),
     masterAttributeService = container.get<IMasterAttributeService>(TYPES.IMasterAttributeService),
     masterEntryService = container.get<IMasterEntryService>(TYPES.IMasterEntryService),
+    priceHistoryService = container.get<IPriceHistoryService>(TYPES.IPriceHistoryService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -115,5 +118,6 @@ export default class UnitOfService implements IUnitOfService {
     this.WishlistService = wishlistService;
     this.MasterAttributeService = masterAttributeService;
     this.MasterEntryService = masterEntryService;
+    this.PriceHistoryService = priceHistoryService;
   }
 }

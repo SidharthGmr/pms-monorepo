@@ -4,12 +4,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { SelectSearch } from '@/components/common/select-search';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
+import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import IProductService from '@/services/interfaces/IProductService';
-import { PackagePlus, Boxes, Tag, Wallet, TrendingUp } from 'lucide-react';
+import { PackagePlus, Boxes, Layers, Tag, Wallet, TrendingUp } from 'lucide-react';
 
 interface AddStockModalProps {
   productId: number;
@@ -20,12 +22,40 @@ interface AddStockModalProps {
 }
 
 export default function AddStockModal({ productId, productName, isOpen, onClose, onSuccess }: AddStockModalProps) {
+  const [variantId, setVariantId] = useState<number | undefined>(undefined);
   const [quantity, setQuantity] = useState<number | ''>('');
   const [sellingPrice, setSellingPrice] = useState<number | ''>('');
   const [costPrice, setCostPrice] = useState<number | ''>('');
   const [reason, setReason] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Stock is held per variant, so the movement needs one picked.
+  const { data: variantResponse, isLoading: isLoadingVariants } = useGetProductVariants(productId, { recordPerPage: 100 }, isOpen);
+
+  const variants = useMemo(
+    () => (variantResponse?.data?.data?.data ?? []).filter((variant) => variant.isActive),
+    [variantResponse]
+  );
+
+  const variantItems = useMemo(
+    () =>
+      variants.map((variant) => {
+        const attributes = variant.attributes;
+        const description =
+          attributes && typeof attributes === 'object'
+            ? Object.values(attributes)
+                .filter((value) => value !== null && value !== undefined && value !== '')
+                .map(String)
+                .join(' / ')
+            : '';
+        const label = description || variant.sku || `Variant #${variant.id}`;
+        return { label: `${label} · ${variant.stockQuantity ?? 0} in stock`, value: variant.id };
+      }),
+    [variants]
+  );
+
+  const selectedVariant = variants.find((variant) => variant.id === variantId);
 
   // Live profit margin preview when both prices are entered.
   const margin =
@@ -35,6 +65,10 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!variantId) {
+      toast({ title: 'Error', description: 'Pick the variant this stock belongs to', variant: 'destructive' });
+      return;
+    }
     if (!quantity || quantity <= 0) {
       toast({ title: 'Error', description: 'Quantity must be a positive integer', variant: 'destructive' });
       return;
@@ -52,6 +86,7 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
     try {
       const productService = container.get<IProductService>(TYPES.IProductService);
       await productService.addStock(productId, {
+        variantId,
         quantity: Number(quantity),
         reason: reason || undefined,
         ...(sellingPrice !== '' && { sellingPrice: Number(sellingPrice) }),
@@ -85,6 +120,36 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
 
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-5 space-y-5">
+            {/* Variant */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-slate-700">
+                <Layers className="w-3.5 h-3.5 text-slate-400" />
+                Variant <span className="text-destructive">*</span>
+              </Label>
+              <SelectSearch
+                items={variantItems}
+                value={variantId}
+                valueType="number"
+                placeholder={isLoadingVariants ? 'Loading variants...' : variantItems.length ? 'Select a variant' : 'No active variants'}
+                buttonClass="w-full"
+                containerName="add-stock-variant"
+                onChange={(value) => setVariantId(value === '' || value === undefined ? undefined : +value)}
+              />
+              {selectedVariant ? (
+                <p className="text-xs text-slate-400">
+                  Currently {selectedVariant.stockQuantity ?? 0} in stock
+                  {quantity !== '' && Number(quantity) > 0 && <> → {(selectedVariant.stockQuantity ?? 0) + Number(quantity)} after this</>}
+                </p>
+              ) : (
+                !isLoadingVariants &&
+                variantItems.length === 0 && (
+                  <p className="text-xs text-destructive">
+                    This product has no active variants yet. Add one on the product&rsquo;s Variants page first.
+                  </p>
+                )
+              )}
+            </div>
+
             {/* Quantity */}
             <div className="space-y-2">
               <Label htmlFor="quantity" className="flex items-center gap-1.5 text-slate-700">
@@ -162,7 +227,9 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-slate-400">Leave blank to keep the current price unchanged.</p>
+              <p className="text-xs text-slate-400">
+                Leave blank to keep the current price. A price entered here is filed in the selected variant&rsquo;s price history.
+              </p>
             </div>
 
             {/* Reason */}

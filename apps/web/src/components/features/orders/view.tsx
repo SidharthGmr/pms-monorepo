@@ -27,6 +27,9 @@ import {
 import { container } from "@/config/ioc";
 import { TYPES } from "@/config/types";
 import { useGetOrderById } from "@/hooks/service-hooks/useOrderService";
+import { useGetAllReviews } from "@/hooks/service-hooks/useReviewService";
+import useGetCurrentUser from "@/hooks/useGetCurrentUser";
+import OrderItemReviewCell from "@/components/features/reviews/order-item-review-cell";
 import IUnitOfService from "@/services/interfaces/IUnitOfService";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -66,6 +69,13 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const { data: response, isLoading, isError } = useGetOrderById(id);
   const order = response?.data?.data;
+
+  // Rating is only offered to the buyer looking at their own order - the API rejects a
+  // review for anyone else's order, so showing the control to staff would just 403.
+  const { currentUser } = useGetCurrentUser();
+  const isOwnOrder = !!order?.customerId && !!currentUser?.usersId && order.customerId === currentUser.usersId;
+  const { data: reviewsResponse } = useGetAllReviews({ orderId: id }, isOwnOrder);
+  const myReviews = reviewsResponse?.data?.data?.data ?? [];
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -329,6 +339,9 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
                       <TableHead className="font-semibold py-3 px-4 text-xs uppercase tracking-wider text-right">Unit Price</TableHead>
                       <TableHead className="font-semibold py-3 px-4 text-xs uppercase tracking-wider text-center">Quantity</TableHead>
                       <TableHead className="font-semibold py-3 px-6 text-xs uppercase tracking-wider text-right">Subtotal</TableHead>
+                      {isOwnOrder && (
+                        <TableHead className="font-semibold py-3 px-6 text-xs uppercase tracking-wider text-center">Your Rating</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -360,11 +373,18 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
                         <TableCell className="py-4 px-6 text-right text-foreground font-bold font-mono">
                           ${(item.unitPrice * item.quantity).toFixed(2)}
                         </TableCell>
+                        {isOwnOrder && (
+                          <TableCell className="py-4 px-6">
+                            <div className="flex justify-center">
+                              <OrderItemReviewCell orderId={order.id} productId={item.productId} reviews={myReviews} />
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                     {(!order.items || order.items.length === 0) && (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-12 text-center text-muted-foreground font-medium">
+                        <TableCell colSpan={isOwnOrder ? 5 : 4} className="py-12 text-center text-muted-foreground font-medium">
                           <div className="flex flex-col items-center justify-center space-y-2">
                             <ShoppingBag className="h-8 w-8 text-muted-foreground/40" />
                             <span>No items listed in this order record.</span>

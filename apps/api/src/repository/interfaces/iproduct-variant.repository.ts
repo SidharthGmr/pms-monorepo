@@ -12,6 +12,12 @@ export interface IProductVariantRepository {
    */
   create(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto>;
 
+  /**
+   * Recomputes `stockQuantity` from the variant's stockHistory movements and returns the
+   * new on-hand figure. The column is a cache; the movements are the source of truth.
+   */
+  syncVariantStock(variantId: number, tx?: Prisma.TransactionClient): Promise<number>;
+
   /** The currently active variant row for a product (isActive = true). */
   getActive(productId: number, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null>;
 

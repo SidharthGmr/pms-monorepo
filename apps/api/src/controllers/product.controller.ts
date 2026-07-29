@@ -213,10 +213,10 @@ export class ProductController {
       return res.status(403).json({ success: false, message: "Not enough permissions to update this product" });
     }
 
-    const { quantity, reason, sellingPrice, costPrice } = req.body as {
-      quantity: number; reason?: string; sellingPrice?: number; costPrice?: number | null;
+    const { variantId, quantity, reason, sellingPrice, costPrice } = req.body as {
+      variantId: number; quantity: number; reason?: string; sellingPrice?: number; costPrice?: number | null;
     };
-    const product = await this.unitOfService.Product.addStock(id, { quantity, reason, sellingPrice, costPrice }, userId, storeCode);
+    const product = await this.unitOfService.Product.addStock(id, { variantId, quantity, reason, sellingPrice, costPrice }, userId, storeCode);
     return res.status(200).json({ success: true, message: "Stock added successfully", data: product });
   };
 
@@ -234,7 +234,9 @@ export class ProductController {
 
     const page = req.query["page"] ? parseInt(req.query["page"] as string) : undefined;
     const recordPerPage = req.query["recordPerPage"] ? parseInt(req.query["recordPerPage"] as string) : undefined;
-    const result = await this.unitOfService.Product.getStockHistory(id, page, recordPerPage);
+    // Optional: narrow the movements to one variant.
+    const variantId = req.query["variantId"] ? parseInt(req.query["variantId"] as string) : undefined;
+    const result = await this.unitOfService.Product.getStockHistory(id, page, recordPerPage, variantId);
     return res.status(200).json({
       success: true,
       message: "Stock history fetched successfully",

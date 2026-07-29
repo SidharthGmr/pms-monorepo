@@ -27,4 +27,5 @@ export const TYPES = {
   IWishlistService: Symbol.for('IWishlistService'),
   IMasterAttributeService: Symbol.for('IMasterAttributeService'),
   IMasterEntryService: Symbol.for('IMasterEntryService'),
+  IPriceHistoryService: Symbol.for('IPriceHistoryService'),
 };
