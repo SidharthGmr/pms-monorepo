@@ -1,8 +1,8 @@
 /**
- * `PriceHistory` is the append-only price ledger for a `ProductVariant`.
- * `ProductVariant.sellingPrice`/`costPrice` are a denormalized "current" cache;
- * these rows are the source of truth for what a variant cost on any given date.
- * The effective row on a date D is the one with the greatest `effectiveFrom <= D`.
+ * `PriceHistory` is the price ledger for a `ProductVariant` and the only place a price is
+ * stored - the variant itself carries no price columns. The row in force on a date D is the
+ * one with the greatest `effectiveFrom <= D` whose `effectiveTo` is null or still in the
+ * future; a future-dated row stages a price without making it current.
  */
 
 /** Trimmed product shape carried alongside a price row, for list/detail screens. */
@@ -24,10 +24,14 @@ export interface PriceHistoryVariantDto {
 export interface PriceHistoryDto {
   id: number;
   variantId: number;
+  storeCode: string;
   /** Prisma exposes these as `Decimal`; the API contract is plain numbers. */
   sellingPrice: number;
   costPrice: number | null;
+  compareAtPrice: number | null;
   effectiveFrom: Date;
+  /** Null while this is the row in force; set when a later price supersedes it. */
+  effectiveTo: Date | null;
   reason: string | null;
   variant?: PriceHistoryVariantDto | null;
 }

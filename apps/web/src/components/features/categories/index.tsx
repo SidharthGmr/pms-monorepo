@@ -89,6 +89,7 @@ export default function CategoryList() {
       status: undefined,
       startDate: undefined,
       endDate: undefined,
+      includeDeleted: undefined,
       page: 1,
       recordPerPage: config.recordPerPage,
       sortBy: 'createdAt',
@@ -96,12 +97,20 @@ export default function CategoryList() {
     });
   };
   const handleDelete = async (id: number) => {
-    const response = await deleteCategoryMutation.mutateAsync(id);
-    if (response && response.status === 200) {
-      toast({ variant: 'success', title: 'Category deleted successfully' });
-    } else {
-      const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
+    // HttpService rejects on a non-2xx, so the 409 the API returns while sub-categories or
+    // products still reference the category arrives as a throw, not as a response.
+    try {
+      const response = await deleteCategoryMutation.mutateAsync(id);
+      if (response && response.status === 200) {
+        toast({ variant: 'success', title: 'Category deleted successfully' });
+        getAllCategoriesResponse.refetch();
+      } else {
+        const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
+        toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
+      }
+    } catch (error) {
+      const message = unitOfService.ErrorHandlerService.getErrorMessage(error as never);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{message}</span> });
     }
     closeDeleteModal(true);
   };
@@ -128,6 +137,7 @@ export default function CategoryList() {
             if (selectedDate) selectedDate.setHours(23, 59, 59, 999);
             setFilterParams((prev) => ({ ...prev, endDate: selectedDate?.toISOString() }));
           }}
+          onIncludeDeletedChange={(value) => setFilterParams((prev) => ({ ...prev, includeDeleted: value || undefined, page: 1 }))}
         />
 
         <div className="overflow-hidden rounded-xl border border-border/60">

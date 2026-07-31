@@ -7,6 +7,28 @@ import { ListResponseDto, PurchaseResponseDto } from "@pms/types";
 // anything else falls back to the default ordering instead of failing the query.
 const SORTABLE_COLUMNS = new Set(['invoiceNumber', 'supplierName', 'totalAmount', 'purchaseDate', 'createdAt', 'status']);
 
+const purchaseInclude = {
+  user: { select: { name: true, email: true } },
+  items: { include: { product: true } },
+} satisfies Prisma.purchaseInclude;
+
+type PurchaseRow = Prisma.purchaseGetPayload<{ include: typeof purchaseInclude }>;
+
+/**
+ * `purchaseItem.costPrice`/`totalPrice` are `Decimal` columns, which serialize to strings.
+ * The API contract is plain numbers, so they are converted at the repository boundary.
+ */
+function toPurchaseDto(row: PurchaseRow): PurchaseResponseDto {
+  return {
+    ...row,
+    items: row.items.map((item) => ({
+      ...item,
+      costPrice: item.costPrice.toNumber(),
+      totalPrice: item.totalPrice.toNumber(),
+    })),
+  };
+}
+
 export class PurchaseRepository implements IPurchaseRepository {
   async getAllPurchases(
     storeCode: string,
@@ -43,10 +65,7 @@ export class PurchaseRepository implements IPurchaseRepository {
     const [data, totalRecord] = await Promise.all([
       prisma.purchase.findMany({
         where,
-        include: {
-          user: { select: { name: true, email: true } },
-          items: { include: { product: true } },
-        },
+        include: purchaseInclude,
         skip,
         take: limit,
         orderBy,
@@ -54,16 +73,14 @@ export class PurchaseRepository implements IPurchaseRepository {
       prisma.purchase.count({ where }),
     ]);
 
-    return { data, totalRecord };
+    return { data: data.map(toPurchaseDto), totalRecord };
   }
 
   async getPurchaseById(id: number, storeCode: string): Promise<PurchaseResponseDto | null> {
-    return prisma.purchase.findFirst({
+    const row = await prisma.purchase.findFirst({
       where: { id, storeCode },
-      include: {
-        user: { select: { name: true, email: true } },
-        items: { include: { product: true } },
-      },
+      include: purchaseInclude,
     });
+    return row ? toPurchaseDto(row) : null;
   }
 }

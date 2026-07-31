@@ -65,35 +65,22 @@ export class PriceHistoryService implements IPriceHistoryService {
   private async append(data: CreatePriceHistoryModel, storeCode: string, tx: Prisma.TransactionClient): Promise<PriceHistoryDto> {
     await this.assertVariantInStore(data.variantId, storeCode, tx);
 
-    const created = await this.unitOfWork.PriceHistory.create(data, tx);
-
-    // The ledger is the source of truth; the variant's own price is a cache of the
-    // currently effective row. A future-dated insert leaves the cache untouched.
-    await this.unitOfWork.PriceHistory.syncVariantPrice(data.variantId, tx);
-
-    return created;
+    // The ledger is the only place a price lives now, so there is no cache to refresh
+    // afterwards - the insert (and the `effectiveTo` it closes) is the whole write.
+    return this.unitOfWork.PriceHistory.create(data, tx);
   }
 
   async update(id: number, data: UpdatePriceHistoryModel, storeCode: string): Promise<PriceHistoryDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
-      const existing = await this.findInStore(id, storeCode, transactionClient);
-
-      const updated = await this.unitOfWork.PriceHistory.update(id, data, transactionClient);
-      await this.unitOfWork.PriceHistory.syncVariantPrice(existing.variantId, transactionClient);
-
-      return updated;
+      await this.findInStore(id, storeCode, transactionClient);
+      return this.unitOfWork.PriceHistory.update(id, data, transactionClient);
     });
   }
 
   async delete(id: number, storeCode: string): Promise<PriceHistoryDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
-      const existing = await this.findInStore(id, storeCode, transactionClient);
-
-      const deleted = await this.unitOfWork.PriceHistory.delete(id, transactionClient);
-      // Dropping the newest row must roll the variant back to the previous price.
-      await this.unitOfWork.PriceHistory.syncVariantPrice(existing.variantId, transactionClient);
-
-      return deleted;
+      await this.findInStore(id, storeCode, transactionClient);
+      return this.unitOfWork.PriceHistory.delete(id, transactionClient);
     });
   }
 }

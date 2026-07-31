@@ -33,46 +33,51 @@ export class OrderService implements IOrderService {
   async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
       let calculatedTotalAmount = 0;
-      const orderItemsToCreate: { productId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
+      const orderItemsToCreate: { productId: number; variantId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
 
       // Date the order is placed on — allows backdating; drives the price lookup.
       const orderDate = data.orderDate ? new Date(data.orderDate) : new Date();
 
-      // Verify stock (derived from stockHistory) and resolve prices for each item.
+      // Stock and price are both per variant, so every check below is too. Checking at
+      // product level (as this did) let one variant oversell while another held the stock.
       if (data.items && data.items.length > 0) {
         for (const item of data.items) {
-          const product = await transactionClient.product.findUnique({ where: { id: item.productId } });
-          if (!product) {
-            throw new NotFoundError(`Product with ID ${item.productId} not found`);
+          const variant = await transactionClient.productVariant.findUnique({
+            where: { id: item.variantId },
+            include: { product: { select: { name: true } } },
+          });
+          if (!variant || variant.deletedAt) {
+            throw new NotFoundError(`Product variant with ID ${item.variantId} not found`);
           }
-          if (product.storeCode !== storeCode) {
-            throw new ForbiddenError(`Product with ID ${item.productId} does not belong to your store`);
+          if (variant.storeCode !== storeCode) {
+            throw new ForbiddenError(`Product variant with ID ${item.variantId} does not belong to your store`);
           }
 
-          // Current on-hand stock = the sum of all stockHistory quantity movements.
+          const label = `${variant.product.name}${variant.sku ? ` (${variant.sku})` : ''}`;
+
+          // On-hand stock for this variant = the sum of its own movements.
           const stockAgg = await transactionClient.stockHistory.aggregate({
-            where: { productId: item.productId },
+            where: { variantId: item.variantId },
             _sum: { quantity: true },
           });
           const availableStock = stockAgg._sum.quantity ?? 0;
           if (availableStock < item.quantity) {
-            throw new ClientError(
-              `Insufficient stock for product ${product.name}. Requested: ${item.quantity}, Available: ${availableStock}`
-            );
+            throw new ClientError(`Insufficient stock for ${label}. Requested: ${item.quantity}, Available: ${availableStock}`);
           }
 
-          // Resolve the price effective on the order date from the price-history
-          // table. The client never sends a price — it is always resolved here.
-          const priceRow = await this.unitOfWork.ProductVariant.getEffectiveOn(item.productId, orderDate, transactionClient);
+          // Resolve the price in force on the order date from the ledger. The client never
+          // sends a price — it is always resolved here.
+          const priceRow = await this.unitOfWork.PriceHistory.getEffectiveOn(item.variantId, orderDate, transactionClient);
           if (!priceRow) {
-            throw new ClientError(`No price found for product ${product.name}. Please set a price before selling it.`);
+            throw new ClientError(`No price found for ${label}. Please set a price before selling it.`);
           }
           const unitPrice = priceRow.sellingPrice;
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 
           orderItemsToCreate.push({
-            productId: item.productId,
+            productId: variant.productId,
+            variantId: item.variantId,
             quantity: item.quantity,
             unitPrice,
             totalPrice,
@@ -112,17 +117,21 @@ export class OrderService implements IOrderService {
             orderId: order.id,
             orderNumber,
             productId: item.productId,
+            variantId: item.variantId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
           },
         });
 
+        // Booked against the variant, so the deduction is visible to the same per-variant
+        // stock query the availability check above uses.
         await transactionClient.stockHistory.create({
           data: {
             productId: item.productId,
+            variantId: item.variantId,
             storeCode,
-            userId: createdById,
+            createdById,
             quantity: -item.quantity,
             reason: `Order #${orderNumber}`,
           },

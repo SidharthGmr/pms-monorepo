@@ -105,19 +105,29 @@ export class PriceHistoryController {
       return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
     }
 
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
+    }
+
     const body = req.body as {
       variantId: number;
       sellingPrice: number;
       costPrice?: number | null;
+      compareAtPrice?: number | null;
       effectiveFrom?: string | Date;
       reason?: string | null;
     };
 
     const model: CreatePriceHistoryModel = {
       variantId: body.variantId,
+      // Tenancy and authorship come from the token, never from the body.
+      storeCode,
       sellingPrice: body.sellingPrice,
       costPrice: body.costPrice ?? null,
+      compareAtPrice: body.compareAtPrice ?? null,
       reason: body.reason ?? null,
+      createdById: userId,
       ...(body.effectiveFrom && { effectiveFrom: new Date(body.effectiveFrom) }),
     };
 

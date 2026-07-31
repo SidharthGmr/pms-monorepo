@@ -19,12 +19,17 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
         enableSorting: false,
         enableHiding: false,
         header: () => <span className="text-xs font-semibold uppercase text-muted-foreground">Action</span>,
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <ActionTooltip variant="edit" tooltip="Edit category" onClick={() => editRecord(+row.original.id)} />
-            <ActionTooltip variant="delete" tooltip="Delete category" onClick={() => deleteRecord(+row.original.id)} />
-          </div>
-        ),
+        // A soft-deleted row is only visible via the "Show deleted" filter, and there is nothing
+        // useful to edit or delete on it.
+        cell: ({ row }) =>
+          row.original.deletedAt ? (
+            <span className="text-sm text-muted-foreground">—</span>
+          ) : (
+            <div className="flex items-center gap-2">
+              <ActionTooltip variant="edit" tooltip="Edit category" onClick={() => editRecord(+row.original.id)} />
+              <ActionTooltip variant="delete" tooltip="Delete category" onClick={() => deleteRecord(+row.original.id)} />
+            </div>
+          ),
       },
       {
         id: 'name',
@@ -61,12 +66,26 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
         meta: { sortingKey: 'parentId' },
       },
       {
+        id: 'displayOrder',
+        accessorKey: 'displayOrder',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Display Order" />,
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.displayOrder ?? 0}</span>,
+        meta: { sortingKey: 'displayOrder' },
+      },
+      {
         id: 'status',
         accessorKey: 'status',
         enableSorting: false,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'green' : 'orange'}>{row.original.status}</Badge>,
+        cell: ({ row }) =>
+          row.original.deletedAt ? (
+            <Badge variant="destructive">Deleted</Badge>
+          ) : (
+            <Badge variant={row.original.status === StatusValues.Published ? 'green' : 'orange'}>{row.original.status}</Badge>
+          ),
         meta: { sortingKey: 'status' },
       },
       {

@@ -26,14 +26,17 @@ export class CartService implements ICartService {
   }
 
   /**
-   * CartItem references ProductVariant, but callers pass products. Resolve using
-   * the same rule product listings use for `currentPrice`: the variant with the
-   * greatest effectiveFrom that is not in the future.
+   * CartItem references ProductVariant, but callers pass products. Resolve to the product's
+   * default (first active) variant and price it from the ledger, matching what product
+   * listings show as `currentPrice`.
    */
   private async resolveVariant(productId: number, tx: Prisma.TransactionClient): Promise<{ variantId: number; unitPrice: number }> {
-    const variant = await this.unitOfWork.ProductVariant.getEffectiveOn(productId, new Date(), tx);
+    const [variant] = await this.unitOfWork.ProductVariant.getActive(productId, tx);
     if (!variant) {
-      throw new ClientError(`Product ${productId} has no active price yet, so it cannot be added to a cart.`);
+      throw new ClientError(`Product ${productId} has no active variant yet, so it cannot be added to a cart.`);
+    }
+    if (variant.sellingPrice == null) {
+      throw new ClientError(`Product ${productId} has no price yet, so it cannot be added to a cart.`);
     }
     return { variantId: variant.id, unitPrice: variant.sellingPrice };
   }

@@ -65,7 +65,9 @@ const useDeleteCategory = () => {
     return useMutation({
         mutationFn: (id: number | string) => unitOfService.CategoryService.delete(id),
         onSettled: (response) => {
-            if (response && response.status === 204) {
+            // The API answers 200 with a `status: 204` field in the body - keying off 204 here
+            // meant the list was never invalidated after a delete.
+            if (response && response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ['CategoryService.getAll'] });
             }
         },

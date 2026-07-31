@@ -18,6 +18,7 @@ export class CategoryController {
         parentId: req.query['parentId'] ? parseInt(req.query['parentId'] as string) : undefined,
         status: req.query['status'] ? req.query['status'] as Status : undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        includeDeleted: req.query['includeDeleted'] !== undefined ? req.query['includeDeleted'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
         storeCode: req.user?.storeCode || undefined,
@@ -59,6 +60,7 @@ export class CategoryController {
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<CategoryResponseDto>>> => {
     const body = req.body as CategoryModel;
     const storeCode = req.user?.storeCode; // Get from logged-in user
+    const userId = req.user?.userId;
 
     if (!storeCode) {
       return res.status(400).json({
@@ -66,10 +68,12 @@ export class CategoryController {
         message: 'Store code not found. User must be associated with a store.'
       });
     }
+    // `createdById` is a required FK, so a token without a userId cannot create.
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
+    }
 
-
-
-    const category = await this.unitOfService.Category.create(body, storeCode);
+    const category = await this.unitOfService.Category.create(body, storeCode, userId);
     return res.status(201).json({ success: true, message: 'Category created successfully', data: category });
   };
 
@@ -79,6 +83,7 @@ export class CategoryController {
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
     const body = req.body as CategoryModel;
     const storeCode = req.user?.storeCode; // Get from logged-in user
+    const userId = req.user?.userId;
 
     if (!storeCode) {
       return res.status(400).json({
@@ -86,7 +91,10 @@ export class CategoryController {
         message: 'Store code not found. User must be associated with a store.'
       });
     }
-    const category = await this.unitOfService.Category.update(id, body, storeCode);
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
+    }
+    const category = await this.unitOfService.Category.update(id, body, storeCode, userId);
     return res.status(200).json({ success: true, message: 'Category updated successfully', data: category });
   };
 
@@ -94,6 +102,7 @@ export class CategoryController {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
     const storeCode = req.user?.storeCode; // Get from logged-in user
+    const userId = req.user?.userId;
 
     if (!storeCode) {
       return res.status(400).json({
@@ -101,7 +110,11 @@ export class CategoryController {
         message: 'Store code not found. User must be associated with a store.'
       });
     }
-    const category = await this.unitOfService.Category.delete(id, storeCode);
+    // Recorded as `deletedById`, so the delete cannot proceed anonymously.
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
+    }
+    const category = await this.unitOfService.Category.delete(id, storeCode, userId);
     return res.status(200).json({ success: true, status: 204, message: 'Category deleted successfully', data: category });
   };
 }

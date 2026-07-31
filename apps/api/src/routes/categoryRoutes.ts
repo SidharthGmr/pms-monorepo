@@ -64,6 +64,12 @@ const categoryController = container.get<CategoryController>(TYPES.CategoryContr
  *           type: boolean
  *         required: false
  *       - in: query
+ *         name: includeDeleted
+ *         schema:
+ *           type: boolean
+ *         required: false
+ *         description: Include soft-deleted categories (rows with `deletedAt` set). Defaults to false.
+ *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
@@ -152,20 +158,31 @@ categoryRouter.get("/:id", authenticateToken, asyncHandler(categoryController.ge
  *                 description: Category status (optional, defaults to Draft)
  *               displayOrder:
  *                 type: integer
+ *                 minimum: 0
  *                 example: 1
- *                 description: Display order for sorting (optional)
+ *                 description: Display order for sorting (optional, defaults to 0)
+ *               metadata:
+ *                 type: object
+ *                 additionalProperties: true
+ *                 nullable: true
+ *                 example: { "icon": "laptop", "bannerColor": "#0af" }
+ *                 description: Free-form JSON for store-specific extras (optional)
  *           example:
  *             name: "Electronics"
  *             description: "Electronic items and gadgets"
  *             status: "Published"
+ *             displayOrder: 1
  *     responses:
  *       201:
  *         description: Category created successfully
  *       400:
- *         description: Validation error or store code not found
+ *         description: Validation error, store code not found, or parent category not found in this store
  *       401:
  *         description: Unauthorized - Invalid or missing token
- *     description: Creates a new category. The storeCode is automatically taken from the authenticated user's token.
+ *     description: >
+ *       Creates a new category. `storeCode` and `createdById` are taken from the authenticated
+ *       user's token and are never read from the request body. A `parentId` must reference a
+ *       category in the same store.
  */
 categoryRouter.post("/", authenticateToken, validate(categoryValidator), asyncHandler(categoryController.create));
 /**
@@ -194,16 +211,39 @@ categoryRouter.post("/", authenticateToken, validate(categoryValidator), asyncHa
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
  *             properties:
  *               name:
  *                 type: string
+ *                 example: "Electronics"
  *               description:
  *                 type: string
+ *                 nullable: true
  *               parentId:
  *                 type: integer
+ *                 nullable: true
+ *                 description: Must reference a category in the same store. Self-parenting and circular hierarchies are rejected.
+ *               status:
+ *                 type: string
+ *                 enum: [Published, Draft]
+ *               displayOrder:
+ *                 type: integer
+ *                 minimum: 0
+ *               metadata:
+ *                 type: object
+ *                 additionalProperties: true
+ *                 nullable: true
  *     responses:
  *       200:
  *         description: Category updated successfully
+ *       400:
+ *         description: Validation error, or the parent would create a circular hierarchy
+ *       404:
+ *         description: Category not found
+ *     description: >
+ *       `storeCode` is always taken from the token, so a category cannot be moved to another
+ *       store. `updatedById` is recorded automatically.
  */
 categoryRouter.put("/:id", authenticateToken, validate(categoryValidator), asyncHandler(categoryController.update));
 
@@ -230,6 +270,14 @@ categoryRouter.put("/:id", authenticateToken, validate(categoryValidator), async
  *     responses:
  *       200:
  *         description: Category deleted successfully
+ *       404:
+ *         description: Category not found
+ *       409:
+ *         description: Category still has sub-categories or products and cannot be deleted
+ *     description: >
+ *       Soft delete - sets `deletedAt` and `deletedById` rather than removing the row. Deleted
+ *       categories are hidden from the list unless `includeDeleted=true` is passed to GET
+ *       /categories. Rejected with 409 while sub-categories or products still reference it.
  */
 categoryRouter.delete("/:id", authenticateToken, asyncHandler(categoryController.delete));
 

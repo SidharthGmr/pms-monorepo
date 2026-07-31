@@ -14,8 +14,8 @@ export interface IPriceHistoryRepository {
   findByVariant(variantId: number, page?: number, limit?: number): Promise<ListResponseDto<PriceHistoryDto>>;
 
   /**
-   * The price that was effective on a given date: the row with the greatest
-   * `effectiveFrom` that is <= date. Used to price a sale in the past.
+   * The price in force on a given date: the row with the greatest `effectiveFrom` that is
+   * <= date and not yet superseded. Used to price a sale, including a backdated one.
    */
   getEffectiveOn(variantId: number, date: Date, tx?: Prisma.TransactionClient): Promise<PriceHistoryDto | null>;
 
@@ -35,11 +35,4 @@ export interface IPriceHistoryRepository {
    * parent's `storeCode` before it can allow a read or a write.
    */
   getVariantScope(variantId: number, tx?: Prisma.TransactionClient): Promise<PriceHistoryVariantScopeDto | null>;
-
-  /**
-   * Rewrites `ProductVariant.sellingPrice`/`costPrice` from the currently
-   * effective ledger row, keeping the denormalized cache honest after a
-   * create/update/delete. No-op when the variant has no effective row yet.
-   */
-  syncVariantPrice(variantId: number, tx?: Prisma.TransactionClient): Promise<void>;
 }

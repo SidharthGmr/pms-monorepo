@@ -10,6 +10,8 @@ import useFilterHook from '@/hooks/use-filter-hook';
 import { StatusValues } from '@/enums/status-values.enum';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { SelectSearch } from '@/components/common/select-search';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const ATTRIBUTE_STATUS_OPTIONS = [
   { label: 'Published', value: StatusValues.Published },
@@ -23,6 +25,7 @@ interface CategoryListFilterProps<TData> {
   resetForm?: () => void;
   onStartDateChanged?: (date: Date | undefined) => void;
   onEndDateChanged?: (date: Date | undefined) => void;
+  onIncludeDeletedChange?: (value: boolean) => void;
 }
 
 export default function CategoryListFilter<TData>({
@@ -32,11 +35,13 @@ export default function CategoryListFilter<TData>({
   resetForm,
   onStartDateChanged,
   onEndDateChanged,
+  onIncludeDeletedChange,
 }: CategoryListFilterProps<TData>) {
   const [searchedText, setSearchedText] = useState('');
   const [searchedValue] = useDebounce(searchedText, 1000);
   const [isFiltered, setIsFiltered] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   useEffect(() => {
     if (onTextChange) {
@@ -73,14 +78,15 @@ export default function CategoryListFilter<TData>({
     setIsStatusFiltered(false);
     setIsFiltered(false);
     setDateRange(undefined);
+    setIncludeDeleted(false);
     table.setPageIndex(0);
     resetForm?.();
   };
 
   useEffect(() => {
     const isDateRangeFiltered = !!(dateRange?.from || dateRange?.to);
-    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered);
-  }, [isStatusFiltered, searchedText, dateRange]);
+    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered || includeDeleted);
+  }, [isStatusFiltered, searchedText, dateRange, includeDeleted]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
@@ -97,6 +103,21 @@ export default function CategoryListFilter<TData>({
           buttonClass="bg-background"
           disableSearch
         />
+      </div>
+      <div className="flex items-center gap-2 place-content-center">
+        <Checkbox
+          id="category-include-deleted"
+          checked={includeDeleted}
+          onCheckedChange={(checked) => {
+            const next = checked === true;
+            setIncludeDeleted(next);
+            onIncludeDeletedChange?.(next);
+            table.setPageIndex(0);
+          }}
+        />
+        <Label htmlFor="category-include-deleted" className="text-sm font-normal whitespace-nowrap">
+          Show deleted
+        </Label>
       </div>
       <div className="place-content-center">
         {isFiltered && (

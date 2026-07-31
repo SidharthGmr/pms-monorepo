@@ -12,17 +12,21 @@ export interface ProductVariantResponseDto {
   productId: number;
   storeCode: string;
   sku: string;
+  name: string | null;
+  barcode: string | null;
   attributes: JsonValue;
+  /** Summed from the variant's stockHistory movements - not a stored column. */
   stockQuantity: number;
   /**
-   * Cache of the variant's currently effective PriceHistory row - that ledger is the
-   * source of truth for what the variant costs on any given date.
+   * Resolved from the variant's currently effective PriceHistory row, which is the only
+   * place a price is stored. Null when the variant has never been priced - distinct from a
+   * price of zero.
    */
-  sellingPrice: number;
+  sellingPrice: number | null;
   costPrice: number | null;
-  effectiveFrom: Date;
+  compareAtPrice: number | null;
+  lowStockThreshold: number | null;
   isActive: boolean;
-  reason: string | null;
   createdById: string;
   createdAt: Date;
 }

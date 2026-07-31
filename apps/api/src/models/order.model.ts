@@ -11,9 +11,10 @@ export interface CreateOrderModel {
   notes?: string | null;
   createdById?: string | null;
   createdByName?: string | null;
-  // Only product + quantity — unit price and totals are resolved on the server.
+  // Only variant + quantity — the product, unit price and totals are all resolved on the
+  // server. The variant is what is actually sold, so the caller has to name it.
   items?: {
-    productId: number;
+    variantId: number;
     quantity: number;
   }[];
 }

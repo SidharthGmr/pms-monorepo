@@ -29,6 +29,7 @@ export class OrderItemService implements IOrderItemService {
           orderId: data.orderId,
           orderNumber: data.orderNumber,
           productId: data.productId,
+          variantId: data.variantId,
           quantity: data.quantity,
           unitPrice: data.unitPrice,
           totalPrice: data.totalPrice

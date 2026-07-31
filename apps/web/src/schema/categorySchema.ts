@@ -6,6 +6,7 @@ const CategorySchema: Yup.ObjectSchema<CreateCategoryModel> = Yup.object().shape
   description: Yup.string().optional(),
   parentId: Yup.number().integer().positive().optional(),
   status: Yup.string().oneOf(['Published', 'Draft'], 'Status must be Published or Draft').required('Status is required'),
+  displayOrder: Yup.number().integer().min(0, 'Display order cannot be negative').optional(),
 });
 
 export default CategorySchema;

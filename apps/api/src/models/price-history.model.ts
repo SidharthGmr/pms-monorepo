@@ -1,10 +1,15 @@
 export interface CreatePriceHistoryModel {
   variantId: number;
+  /** Tenancy is stored on the row now, so a price query does not have to join the variant. */
+  storeCode: string;
   sellingPrice: number;
   costPrice?: number | null;
+  /** Strike-through / MRP shown next to the selling price. */
+  compareAtPrice?: number | null;
   /** Defaults to now. A future date stages a price without making it current. */
   effectiveFrom?: Date;
   reason?: string | null;
+  createdById: string;
 }
 
 /**
@@ -14,6 +19,8 @@ export interface CreatePriceHistoryModel {
 export interface UpdatePriceHistoryModel {
   sellingPrice?: number;
   costPrice?: number | null;
+  compareAtPrice?: number | null;
   effectiveFrom?: Date;
   reason?: string | null;
+  updatedById?: string;
 }

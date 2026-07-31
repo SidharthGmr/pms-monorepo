@@ -6,7 +6,6 @@ import IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import { PricingUtils } from '../utils/authHelpers.service';
-import { buildVariantSku } from '../utils/variant-sku';
 
 @injectable()
 export class PurchaseService implements IPurchaseService {
@@ -14,14 +13,17 @@ export class PurchaseService implements IPurchaseService {
 
   async create(data: CreatePurchaseModel, userId: string, storeCode: string): Promise<PurchaseResponseDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
-      const productIds = [...new Set(data.items.map((item) => item.productId))];
-      const products = await transactionClient.product.findMany({
-        where: { id: { in: productIds }, storeCode },
-        select: { id: true },
+      // Stock is received against variants now, so the store check is on variants and the
+      // product id for each line comes from its variant rather than from the request.
+      const variantIds = [...new Set(data.items.map((item) => item.variantId))];
+      const variants = await transactionClient.productVariant.findMany({
+        where: { id: { in: variantIds }, storeCode, deletedAt: null },
+        select: { id: true, productId: true },
       });
-      if (products.length !== productIds.length) {
-        throw new NotFoundError('One or more products were not found in this store');
+      if (variants.length !== variantIds.length) {
+        throw new NotFoundError('One or more product variants were not found in this store');
       }
+      const productIdByVariant = new Map(variants.map((variant) => [variant.id, variant.productId]));
 
       const user = await transactionClient.users.findUnique({ where: { userId } });
       if (!user) {
@@ -41,7 +43,8 @@ export class PurchaseService implements IPurchaseService {
           purchaseDate: data.purchaseDate || new Date(),
           items: {
             create: data.items.map((item) => ({
-              productId: item.productId,
+              productId: productIdByVariant.get(item.variantId)!,
+              variantId: item.variantId,
               quantity: item.quantity,
               costPrice: item.costPrice,
               totalPrice: item.totalPrice,
@@ -53,46 +56,43 @@ export class PurchaseService implements IPurchaseService {
 
       await transactionClient.stockHistory.createMany({
         data: data.items.map((item) => ({
-          productId: item.productId,
+          productId: productIdByVariant.get(item.variantId)!,
+          variantId: item.variantId,
           storeCode,
-          userId: userId,
+          createdById: userId,
           quantity: item.quantity,
           reason: `Purchase #${purchase.id}`,
         })),
       });
 
-      const uniquePrices = Array.from(
-        new Map(data.items.map(item => [item.productId, { productId: item.productId, costPrice: item.costPrice }])).values()
-      );
+      // A purchase re-costs what it receives. That is a price change on the existing
+      // variant, so it goes to the ledger - the old code minted a throwaway variant per
+      // purchase, which is what turned every restock into a phantom size.
+      const latestCostByVariant = new Map(data.items.map((item) => [item.variantId, item.costPrice]));
 
-      // The new variants must end up active (a plain createMany used to leave them
-      // all isActive = false, so nothing was ever the active price). Do it in two
-      // batched queries rather than two per product — this runs inside an
-      // interactive transaction against a remote database, where a per-product
-      // round-trip loop blows the transaction timeout.
-      await transactionClient.productVariant.updateMany({
-        where: { productId: { in: uniquePrices.map((item) => item.productId) }, isActive: true },
-        data: { isActive: false },
-      });
+      for (const [variantId, costPrice] of latestCostByVariant) {
+        await this.unitOfWork.PriceHistory.create(
+          {
+            variantId,
+            storeCode,
+            sellingPrice: PricingUtils.costToSellingPrice(costPrice),
+            costPrice: +costPrice,
+            reason: `Purchase #${purchase.id}`,
+            createdById: userId,
+          },
+          transactionClient
+        );
+      }
 
-      await transactionClient.productVariant.createMany({
-        data: uniquePrices.map((item) => ({
-          productId: item.productId,
-          storeCode,
-          sellingPrice: PricingUtils.costToSellingPrice(item.costPrice),
-          costPrice: +item.costPrice,
-          isActive: true,
-          reason: `Purchase #${purchase.id}`,
-          createdById: userId,
-          // sku is @unique and NOT NULL. `uniquePrices` is keyed by productId, so
-          // productId + purchase id is unique both within this batch and across
-          // purchases - a timestamp would not be, since every row shares one tick.
-          sku: buildVariantSku(storeCode, item.productId, `PUR${purchase.id}`),
-          attributes: {},
+      // Decimal columns serialize to strings; the API contract is plain numbers.
+      return {
+        ...purchase,
+        items: purchase.items.map((item) => ({
+          ...item,
+          costPrice: item.costPrice.toNumber(),
+          totalPrice: item.totalPrice.toNumber(),
         })),
-      });
-
-      return purchase;
+      };
     });
   }
 

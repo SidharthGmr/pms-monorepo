@@ -19,13 +19,10 @@ export class ProductService implements IProductService {
   ) { }
 
   /**
-   * Appends a priced variant row and files that price in the PriceHistory ledger, which
-   * is the source of truth for what a variant costs; the variant's own price columns are
-   * a cache of the currently effective row.
-   *
-   * Product saves talk to the repository rather than `ProductVariantService` because they
-   * already own a transaction, so the ledger write lives here too - otherwise a price set
-   * from the product form would never reach the ledger.
+   * Creates the product's first variant, files its opening price in the PriceHistory ledger
+   * - the only place a price is stored - and books any opening stock as that variant's first
+   * movement. Product saves own their own transaction, so this is inlined here rather than
+   * calling ProductVariantService, which would mean a service depending on a service.
    */
   private async recordPricedVariant(model: CreateProductVariantModel, tx: Prisma.TransactionClient) {
     const variant = await this.unitOfWork.ProductVariant.create(model, tx);
@@ -33,15 +30,31 @@ export class ProductService implements IProductService {
     await this.unitOfWork.PriceHistory.create(
       {
         variantId: variant.id,
+        storeCode: model.storeCode,
         sellingPrice: model.sellingPrice,
         costPrice: model.costPrice ?? null,
+        compareAtPrice: model.compareAtPrice ?? null,
         ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom }),
         reason: model.reason ?? null,
+        createdById: model.createdById,
       },
       tx
     );
 
-    await this.unitOfWork.PriceHistory.syncVariantPrice(variant.id, tx);
+    if (model.stockQuantity) {
+      await this.unitOfWork.Product.createStockHistory(
+        {
+          productId: model.productId,
+          variantId: variant.id,
+          storeCode: model.storeCode,
+          userId: model.createdById,
+          quantity: model.stockQuantity,
+          reason: 'Opening stock',
+        },
+        tx
+      );
+    }
+
     return variant;
   }
 
@@ -58,14 +71,13 @@ export class ProductService implements IProductService {
           categoryId: data.categoryId,
           slug: data.slug,
           description: data.description || null,
-          lowStockThreshold: data.lowStockThreshold || 5,
           status: data.status || StatusEnum.Published,
         },
       });
 
-      // `sellingPrice`/`costPrice`/`stock` are not columns on `product`: the price
-      // becomes the product's first (active) ProductVariant and the stock becomes
-      // its first stockHistory movement. Without this they were silently discarded.
+      // `sellingPrice`/`costPrice`/`stock`/`lowStockThreshold` are not columns on `product`.
+      // The price becomes the first variant's opening ledger entry and the stock becomes that
+      // variant's first movement, so the two stay reconcilable.
       if (data.sellingPrice != null) {
         await this.recordPricedVariant(
           {
@@ -73,14 +85,16 @@ export class ProductService implements IProductService {
             storeCode,
             sellingPrice: data.sellingPrice,
             costPrice: data.costPrice ?? null,
+            ...(data.stock != null && { stockQuantity: data.stock }),
+            ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
             reason: 'Initial price',
             createdById: userId,
           },
           transactionClient
         );
-      }
-
-      if (data.stock != null && data.stock !== 0) {
+      } else if (data.stock != null && data.stock !== 0) {
+        // Stock but no price: there is no variant to hang it on, so it stays a
+        // product-level movement until the product is priced.
         await this.unitOfWork.Product.createStockHistory(
           {
             productId: productData.id,
@@ -121,7 +135,6 @@ export class ProductService implements IProductService {
         attributeId: data.attributeId || null,
         slug: data.slug,
         description: data.description || null,
-        lowStockThreshold: data.lowStockThreshold || 5,
         categoryId: data.categoryId,
         status: data.status || StatusEnum.Published,
         updatedById: userId,
@@ -137,39 +150,69 @@ export class ProductService implements IProductService {
         data: updateData,
       });
 
-      // Price/cost live in ProductVariant, so a price edit appends a new active
-      // variant — but only when the value actually changed, to avoid piling up
-      // identical rows on every unrelated save.
-      if (data.sellingPrice != null) {
-        const current = await this.unitOfWork.ProductVariant.getEffectiveOn(id, new Date(), transactionClient);
-        const newCost = data.costPrice ?? null;
-        const priceChanged = current == null || Number(current.sellingPrice) !== Number(data.sellingPrice);
-        const costChanged = current != null && Number(current.costPrice ?? NaN) !== Number(newCost ?? NaN);
+      // The product form edits the default variant - the first active one. A price change
+      // appends to that variant's ledger; it no longer spawns a whole new variant, which is
+      // what the old price-versioned design did and would now create phantom sizes.
+      const [defaultVariant] = await this.unitOfWork.ProductVariant.getActive(id, transactionClient);
 
-        if (priceChanged || costChanged) {
+      if (data.sellingPrice != null) {
+        const newCost = data.costPrice ?? null;
+
+        if (!defaultVariant) {
           await this.recordPricedVariant(
             {
               productId: id,
               storeCode,
               sellingPrice: data.sellingPrice,
               costPrice: newCost,
-              reason: 'Price updated',
+              ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
+              reason: 'Initial price',
               createdById: userId,
             },
             transactionClient
           );
+        } else {
+          // Only when the figure actually moved, so an unrelated save does not pile up
+          // identical ledger rows.
+          const priceChanged = Number(defaultVariant.sellingPrice ?? NaN) !== Number(data.sellingPrice);
+          const costChanged = Number(defaultVariant.costPrice ?? NaN) !== Number(newCost ?? NaN);
+
+          if (priceChanged || costChanged) {
+            await this.unitOfWork.PriceHistory.create(
+              {
+                variantId: defaultVariant.id,
+                storeCode,
+                sellingPrice: data.sellingPrice,
+                costPrice: newCost,
+                reason: 'Price updated',
+                createdById: userId,
+              },
+              transactionClient
+            );
+          }
         }
       }
 
-      // Stock is the sum of stockHistory movements, so an absolute stock value
-      // from the form is recorded as the delta needed to reach it.
+      if (data.lowStockThreshold != null && defaultVariant) {
+        await transactionClient.productVariant.update({
+          where: { id: defaultVariant.id },
+          data: { lowStockThreshold: data.lowStockThreshold, updatedById: userId },
+        });
+      }
+
+      // Stock is the sum of stockHistory movements, so an absolute stock value from the form
+      // is recorded as the delta needed to reach it - booked against the default variant when
+      // there is one, so variant stock and product stock agree.
       if (data.stock != null) {
-        const currentStock = await this.unitOfWork.Product.getCurrentStock(id, transactionClient);
+        const currentStock = defaultVariant
+          ? await this.unitOfWork.ProductVariant.getVariantStock(defaultVariant.id, transactionClient)
+          : await this.unitOfWork.Product.getCurrentStock(id, transactionClient);
         const delta = data.stock - currentStock;
         if (delta !== 0) {
           await this.unitOfWork.Product.createStockHistory(
             {
               productId: id,
+              ...(defaultVariant && { variantId: defaultVariant.id }),
               storeCode,
               userId,
               quantity: delta,
@@ -191,9 +234,9 @@ export class ProductService implements IProductService {
   }
 
   /**
-   * Books stock against one variant. Stock is held per variant - Small and Large keep
-   * their own counts - so the movement records which variant it belongs to and the
-   * variant's `stockQuantity` cache is recomputed from the movements afterwards.
+   * Books stock against one variant. Stock is held per variant - Small and Large keep their
+   * own counts - so the movement records which variant it belongs to. There is no cache to
+   * recompute: the movements themselves are the stock.
    */
   async addStock(id: number, data: AddStockModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
     const existing = await this.unitOfWork.Product.findById(id);
@@ -219,21 +262,20 @@ export class ProductService implements IProductService {
         transactionClient
       );
 
-      await this.unitOfWork.ProductVariant.syncVariantStock(data.variantId, transactionClient);
-
       // An optional price change goes to this variant's ledger rather than spawning
       // another variant row, which is what the old product-level flow did.
       if (data.sellingPrice !== undefined) {
         await this.unitOfWork.PriceHistory.create(
           {
             variantId: data.variantId,
+            storeCode,
             sellingPrice: data.sellingPrice,
             costPrice: data.costPrice ?? null,
             reason: data.reason ?? null,
+            createdById: userId,
           },
           transactionClient
         );
-        await this.unitOfWork.PriceHistory.syncVariantPrice(data.variantId, transactionClient);
       }
 
       return existing;

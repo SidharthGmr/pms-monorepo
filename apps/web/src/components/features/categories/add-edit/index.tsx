@@ -34,7 +34,7 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
 
   const form = useForm<CreateCategoryModel>({
     resolver: yupResolver(CategorySchema),
-    defaultValues: { name: '', description: '', status: StatusValues.Published, parentId: undefined },
+    defaultValues: { name: '', description: '', status: StatusValues.Published, parentId: undefined, displayOrder: 0 },
   });
 
   useEffect(() => {
@@ -45,9 +45,16 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
         description: c.description ?? '',
         parentId: c.parentId ?? undefined,
         status: c.status ?? StatusValues.Draft,
+        displayOrder: c.displayOrder ?? 0,
       });
     }
   }, [isEdit, categoryResponse, form]);
+
+  // The API rejects self-parenting, so don't offer the category being edited as its own parent.
+  const parentOptions =
+    getAllCategories?.data?.data?.data?.data
+      ?.filter((item) => !isEdit || item.id !== id)
+      .map((item) => ({ value: item.id, label: item.name })) ?? [];
 
   const submitData = async (model: CreateCategoryModel) => {
     const response = isEdit ? await updateCategory.mutateAsync({ id: id!, model }) : await createCategory.mutateAsync(model);
@@ -83,12 +90,7 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
                       buttonClass={`w-full`}
                       placeholder="Select Parent Category"
                       disableSearch={false}
-                      items={
-                        getAllCategories?.data?.data?.data?.data?.map((item) => ({
-                          value: item.id,
-                          label: item.name,
-                        })) ?? []
-                      }
+                      items={parentOptions}
                       value={field.value ?? ''}
                       onChange={(value) => field.onChange(value ? Number(value) : undefined)}
                     />
@@ -124,6 +126,26 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
                       placeholder="Description..."
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                       {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="displayOrder"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Display Order</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                     />
                   </FormControl>
                   <FormMessage />

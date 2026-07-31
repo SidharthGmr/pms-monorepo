@@ -9,7 +9,8 @@ export interface StoreDto {
   email?: string | null;
   isActive: boolean;
   createdAt: Date;
-  updatedAt: Date;
+  // `store.updatedAt` is nullable in the schema - a store that has never been edited has none.
+  updatedAt: Date | null;
   status: Status;
 }
 

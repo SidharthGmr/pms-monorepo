@@ -4,10 +4,9 @@ import { ListResponseDto } from '../dtos/list-response.dto';
 import { PriceHistoryDto, PriceHistorySummaryDto, PriceHistoryVariantScopeDto } from '../dtos/price-history.dto';
 import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../models/price-history.model';
 import { PriceHistoryFilterParams } from '../params/price-history.params';
+import { EFFECTIVE_ORDER, effectiveOn } from '../utils/variant-pricing';
 import { IPriceHistoryRepository } from './interfaces/iprice-history.repository';
 
-// PriceHistory has no storeCode of its own - it is scoped through the variant the
-// row belongs to, so every tenant filter goes through the relation.
 const priceHistoryInclude = {
   variant: {
     select: {
@@ -34,9 +33,12 @@ function toDto(row: PriceHistoryWithVariant): PriceHistoryDto {
   return {
     id: row.id,
     variantId: row.variantId,
+    storeCode: row.storeCode,
     sellingPrice: row.sellingPrice.toNumber(),
     costPrice: row.costPrice?.toNumber() ?? null,
+    compareAtPrice: row.compareAtPrice?.toNumber() ?? null,
     effectiveFrom: row.effectiveFrom,
+    effectiveTo: row.effectiveTo,
     reason: row.reason,
     variant: row.variant,
   };
@@ -68,8 +70,8 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       if (filters.variantId !== undefined) where.variantId = filters.variantId;
       if (filters.productId !== undefined) variantWhere.productId = filters.productId;
 
-      // Tenancy lives on the variant, not on the price row.
-      if (filters.storeCode !== undefined) variantWhere.storeCode = filters.storeCode;
+      // `storeCode` is a column on the price row now, so tenancy no longer needs the join.
+      if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
 
       if (filters.minPrice != null || filters.maxPrice != null) {
         where.sellingPrice = {
@@ -136,10 +138,9 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
 
   async getEffectiveOn(variantId: number, date: Date, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto | null> {
     const row = await tx.priceHistory.findFirst({
-      where: { variantId, effectiveFrom: { lte: date } },
+      where: { variantId, ...effectiveOn(date) },
       include: priceHistoryInclude,
-      // Two rows can share an effective date; the later-recorded one wins.
-      orderBy: [{ effectiveFrom: 'desc' }, { id: 'desc' }],
+      orderBy: EFFECTIVE_ORDER,
     });
     return row ? toDto(row) : null;
   }
@@ -158,8 +159,8 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       prisma.priceHistory.findFirst({ where, orderBy: [{ effectiveFrom: 'asc' }, { id: 'asc' }] }),
       // "Current" ignores future-dated rows, which are staged rather than live.
       prisma.priceHistory.findFirst({
-        where: { variantId, effectiveFrom: { lte: new Date() } },
-        orderBy: [{ effectiveFrom: 'desc' }, { id: 'desc' }],
+        where: { variantId, ...effectiveOn(new Date()) },
+        orderBy: EFFECTIVE_ORDER,
       }),
     ]);
 
@@ -180,14 +181,29 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
     };
   }
 
+  /**
+   * Appends a price and closes off whichever row it supersedes, so at most one row is open
+   * at any moment. Closing at `effectiveFrom` rather than "now" is what makes a future-dated
+   * price stage correctly - the outgoing row stays in force right up to the changeover.
+   */
   async create(data: CreatePriceHistoryModel, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto> {
+    const effectiveFrom = data.effectiveFrom ?? new Date();
+
+    await tx.priceHistory.updateMany({
+      where: { variantId: data.variantId, effectiveTo: null, effectiveFrom: { lte: effectiveFrom }, deletedAt: null },
+      data: { effectiveTo: effectiveFrom },
+    });
+
     const created = await tx.priceHistory.create({
       data: {
         variantId: data.variantId,
+        storeCode: data.storeCode,
         sellingPrice: data.sellingPrice,
         costPrice: data.costPrice ?? null,
-        effectiveFrom: data.effectiveFrom ?? new Date(),
+        compareAtPrice: data.compareAtPrice ?? null,
+        effectiveFrom,
         reason: data.reason ?? null,
+        createdById: data.createdById,
       },
       include: priceHistoryInclude,
     });
@@ -200,8 +216,10 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       data: {
         ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
         ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
+        ...(data.compareAtPrice !== undefined && { compareAtPrice: data.compareAtPrice }),
         ...(data.effectiveFrom !== undefined && { effectiveFrom: data.effectiveFrom }),
         ...(data.reason !== undefined && { reason: data.reason || null }),
+        ...(data.updatedById !== undefined && { updatedById: data.updatedById }),
       },
       include: priceHistoryInclude,
     });
@@ -219,21 +237,5 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       select: { id: true, productId: true, storeCode: true },
     });
     return variant ? { variantId: variant.id, productId: variant.productId, storeCode: variant.storeCode } : null;
-  }
-
-  async syncVariantPrice(variantId: number, tx: Prisma.TransactionClient = prisma): Promise<void> {
-    const effective = await tx.priceHistory.findFirst({
-      where: { variantId, effectiveFrom: { lte: new Date() } },
-      orderBy: [{ effectiveFrom: 'desc' }, { id: 'desc' }],
-    });
-
-    // Nothing effective yet (ledger empty, or every row is future-dated) - leave
-    // the variant's own price alone rather than zeroing it out.
-    if (!effective) return;
-
-    await tx.productVariant.update({
-      where: { id: variantId },
-      data: { sellingPrice: effective.sellingPrice, costPrice: effective.costPrice },
-    });
   }
 }

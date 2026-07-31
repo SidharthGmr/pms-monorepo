@@ -15,24 +15,32 @@ export class CategoryRepository implements ICategoryRepository {
     sortBy = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<ListResponseDto<CategoryResponseDto>> {
-    const where: Prisma.categoryWhereInput = { NOT: { status: StatusEnum.Trash } };
+    // Soft delete is the only delete now, so `deletedAt` - not `status: Trash` - decides
+    // whether a row is visible. `includeDeleted` lets an admin see the trashed ones.
+    const where: Prisma.categoryWhereInput = {};
 
     if (filters) {
       page = filters.page ?? page;
       limit = filters.recordPerPage ?? limit;
+
+      if (filters.includeDeleted !== true) {
+        where.deletedAt = null;
+      }
 
       if (filters.search) {
         where.OR = [{ name: { contains: filters.search, mode: 'insensitive' } }];
       }
 
       if (filters.status !== undefined) {
-        where.status = filters.status as StatusEnum.Published;
-      } else {
-        where.NOT = { status: StatusEnum.Trash };
+        where.status = filters.status as StatusEnum;
       }
 
       if (filters.storeCode !== undefined) {
         where.storeCode = filters.storeCode;
+      }
+
+      if (filters.parentId !== undefined) {
+        where.parentId = filters.parentId;
       }
 
       if (filters.startDate != null || filters.endDate != null) {
@@ -41,22 +49,19 @@ export class CategoryRepository implements ICategoryRepository {
           ...(filters.endDate != null && { lte: filters.endDate }),
         };
       }
+    } else {
+      where.deletedAt = null;
     }
 
     const showAll = filters?.showAllRecords === true;
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
-    // A category just added has displayOrder = null (create stores `|| null`), and
-    // Postgres sorts NULLs last on ASC - so the old `displayOrder asc` default
-    // stranded every new record on the last page. Default to newest-first, and when
-    // displayOrder *is* the sort key keep the unordered rows at the end.
+    // `displayOrder` is NOT NULL with a 0 default now, so the old nulls-last workaround is
+    // gone. Newest-first stays the default so a freshly added category lands on page one.
     const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
     const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
-    const orderBy: Prisma.categoryOrderByWithRelationInput[] =
-      column === 'displayOrder'
-        ? [{ displayOrder: { sort: direction, nulls: 'last' } }, { id: 'desc' }]
-        : [{ [column]: direction }, { id: 'desc' }];
+    const orderBy: Prisma.categoryOrderByWithRelationInput[] = [{ [column]: direction }, { id: 'desc' }];
 
     const [data, total] = await Promise.all([
       prisma.category.findMany({
@@ -71,11 +76,26 @@ export class CategoryRepository implements ICategoryRepository {
     return { totalRecord: total, data };
   }
 
-  async findById(id: number, storeCode: string): Promise<CategoryResponseDto | null> {
-    return prisma.category.findUnique({ where: { id, storeCode } });
+  // `findFirst`, not `findUnique`: the `deletedAt` predicate is not part of the
+  // `@@unique([storeCode, id])` key, so it cannot go in a unique where-clause.
+  async findById(id: number, storeCode: string, includeDeleted = false): Promise<CategoryResponseDto | null> {
+    return prisma.category.findFirst({
+      where: { id, storeCode, ...(includeDeleted ? {} : { deletedAt: null }) },
+    });
   }
 
-  async delete(id: number): Promise<CategoryResponseDto> {
-    return prisma.category.update({ where: { id }, data: { status: StatusEnum.Trash, updatedAt: new Date() } });
+  async countChildren(id: number, storeCode: string): Promise<number> {
+    return prisma.category.count({ where: { parentId: id, storeCode, deletedAt: null } });
+  }
+
+  async countProducts(id: number, storeCode: string): Promise<number> {
+    return prisma.product.count({ where: { categoryId: id, storeCode, deletedAt: null } });
+  }
+
+  async delete(id: number, storeCode: string, userId: string): Promise<CategoryResponseDto> {
+    return prisma.category.update({
+      where: { storeCode_id: { storeCode, id } },
+      data: { deletedAt: new Date(), deletedById: userId },
+    });
   }
 }

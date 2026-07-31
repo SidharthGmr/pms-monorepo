@@ -3,7 +3,11 @@ import prisma from '../config/prisma';
 import { ProductResponseDto, ProductVariantSummaryDto, ProductWithPriceResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { ProductFilterParams } from '../params/product.params';
+import { priceForVariant, pricesForVariants, stockForVariants } from '../utils/variant-pricing';
 import { IProductRepository } from './interfaces/iproduct.repository';
+
+/** Applied when a variant sets no threshold of its own. Mirrors the schema default. */
+const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
 const productInclude = {
   // brandName: { select: { id: true, name: true } },
@@ -73,20 +77,13 @@ export class ProductRepository implements IProductRepository {
     const brandNameIds = [...new Set(products.map((product) => product.brandNameId).filter((id): id is number => id != null))];
     const attributeIds = [...new Set(products.map((product) => product.attributeId).filter((id): id is number => id != null))];
 
-    // Resolve related names + the current price in batched queries (no `include`).
-    // "Current" price = the latest price effective as of now (by effectiveFrom).
-    // Current stock = the sum of all stockHistory quantity movements per product.
-    const [categories, brands, attributes, effectivePrices, stockSums, activeVariants] = await Promise.all([
+    // Resolve related names + the active variants in batched queries (no `include`).
+    // Price and stock are not columns any more: price comes from each variant's effective
+    // PriceHistory row, stock from the sum of stockHistory movements.
+    const [categories, brands, attributes, stockSums, activeVariants] = await Promise.all([
       categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }) : [],
       brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
       attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
-      productIds.length
-        ? prisma.productVariant.findMany({
-          where: { productId: { in: productIds }, effectiveFrom: { lte: new Date() } },
-          orderBy: { effectiveFrom: 'desc' },
-          select: { productId: true, sellingPrice: true, costPrice: true },
-        })
-        : [],
       productIds.length
         ? prisma.stockHistory.groupBy({
           by: ['productId'],
@@ -100,10 +97,14 @@ export class ProductRepository implements IProductRepository {
         ? prisma.productVariant.findMany({
           where: { productId: { in: productIds }, isActive: true, deletedAt: null },
           orderBy: [{ productId: 'asc' }, { id: 'asc' }],
-          select: { id: true, productId: true, sku: true, attributes: true, stockQuantity: true, sellingPrice: true, costPrice: true },
+          select: { id: true, productId: true, sku: true, name: true, attributes: true, lowStockThreshold: true },
         })
         : [],
     ]);
+
+    // One more batched pair for the page's variants, now that their ids are known.
+    const variantIds = activeVariants.map((variant) => variant.id);
+    const [variantPrices, variantStock] = await Promise.all([pricesForVariants(variantIds), stockForVariants(variantIds)]);
 
     const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
     const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]));
@@ -112,20 +113,25 @@ export class ProductRepository implements IProductRepository {
 
     const variantsByProduct = new Map<number, ProductVariantSummaryDto[]>();
     for (const variant of activeVariants) {
-      const { productId, sellingPrice, costPrice, ...rest } = variant;
+      const { productId, ...rest } = variant;
+      const price = variantPrices.get(variant.id) ?? null;
       const list = variantsByProduct.get(productId) ?? [];
-      // Decimal serializes to a string; the API contract is plain numbers.
-      list.push({ ...rest, sellingPrice: sellingPrice.toNumber(), costPrice: costPrice?.toNumber() ?? null });
+      list.push({
+        ...rest,
+        stockQuantity: variantStock.get(variant.id) ?? 0,
+        sellingPrice: price?.sellingPrice ?? null,
+        costPrice: price?.costPrice ?? null,
+      });
       variantsByProduct.set(productId, list);
     }
 
-    // Prices are latest-first, so the first row seen per product is its current price.
-    // Expose only sellingPrice + costPrice.
+    // A product's headline price is its first active variant's - variants are ordered by id,
+    // so this is stable rather than whichever row the database happened to return first.
     const currentPriceByProduct = new Map<number, { sellingPrice: number; costPrice: number | null }>();
-    for (const price of effectivePrices) {
-      if (!currentPriceByProduct.has(price.productId)) {
-        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice.toNumber(), costPrice: price.costPrice?.toNumber() ?? null });
-      }
+    for (const variant of activeVariants) {
+      if (currentPriceByProduct.has(variant.productId)) continue;
+      const price = variantPrices.get(variant.id);
+      if (price) currentPriceByProduct.set(variant.productId, { sellingPrice: price.sellingPrice, costPrice: price.costPrice });
     }
 
     // Attach the related names (flat) + the current price to each product.
@@ -170,9 +176,9 @@ export class ProductRepository implements IProductRepository {
       }
     }
 
-    // Stock is not a column — it is the sum of stockHistory movements — so we cannot
-    // filter it in the SQL query. Fetch the store's products, compute each product's
-    // stock, then keep only those at/below their own low-stock threshold.
+    // Stock is not a column — it is the sum of stockHistory movements — so it cannot be
+    // filtered in SQL. Fetch the store's products, compute stock per variant, then keep the
+    // products that have at least one variant at or below its own threshold.
     const products = await prisma.product.findMany({
       where,
       include: productInclude,
@@ -184,17 +190,10 @@ export class ProductRepository implements IProductRepository {
     const brandNameIds = [...new Set(products.map((product) => product.brandNameId).filter((id): id is number => id != null))];
     const attributeIds = [...new Set(products.map((product) => product.attributeId).filter((id): id is number => id != null))];
 
-    const [categories, brands, attributes, effectivePrices, stockSums] = await Promise.all([
+    const [categories, brands, attributes, stockSums, activeVariants] = await Promise.all([
       categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }) : [],
       brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
       attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
-      productIds.length
-        ? prisma.productVariant.findMany({
-          where: { productId: { in: productIds }, effectiveFrom: { lte: new Date() } },
-          orderBy: { effectiveFrom: 'desc' },
-          select: { productId: true, sellingPrice: true, costPrice: true },
-        })
-        : [],
       productIds.length
         ? prisma.stockHistory.groupBy({
           by: ['productId'],
@@ -202,7 +201,17 @@ export class ProductRepository implements IProductRepository {
           _sum: { quantity: true },
         })
         : [],
+      productIds.length
+        ? prisma.productVariant.findMany({
+          where: { productId: { in: productIds }, isActive: true, deletedAt: null },
+          orderBy: [{ productId: 'asc' }, { id: 'asc' }],
+          select: { id: true, productId: true, lowStockThreshold: true },
+        })
+        : [],
     ]);
+
+    const variantIds = activeVariants.map((variant) => variant.id);
+    const [variantPrices, variantStock] = await Promise.all([pricesForVariants(variantIds), stockForVariants(variantIds)]);
 
     const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
     const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]));
@@ -210,13 +219,23 @@ export class ProductRepository implements IProductRepository {
     const stockByProduct = new Map(stockSums.map((row) => [row.productId, row._sum.quantity ?? 0]));
 
     const currentPriceByProduct = new Map<number, { sellingPrice: number; costPrice: number | null }>();
-    for (const price of effectivePrices) {
-      if (!currentPriceByProduct.has(price.productId)) {
-        currentPriceByProduct.set(price.productId, { sellingPrice: price.sellingPrice.toNumber(), costPrice: price.costPrice?.toNumber() ?? null });
+    for (const variant of activeVariants) {
+      if (currentPriceByProduct.has(variant.productId)) continue;
+      const price = variantPrices.get(variant.id);
+      if (price) currentPriceByProduct.set(variant.productId, { sellingPrice: price.sellingPrice, costPrice: price.costPrice });
+    }
+
+    // The threshold sits on the variant now, so a product is "low" as soon as any one of its
+    // variants is - a product is not restocked just because its other sizes are healthy.
+    const lowProductIds = new Set<number>();
+    for (const variant of activeVariants) {
+      if ((variantStock.get(variant.id) ?? 0) <= (variant.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD)) {
+        lowProductIds.add(variant.productId);
       }
     }
 
     const enriched = products
+      .filter((product) => lowProductIds.has(product.id))
       .map((product) => {
         const { categoryId, brandNameId, attributeId, parentId, ...rest } = product;
         return {
@@ -227,8 +246,7 @@ export class ProductRepository implements IProductRepository {
           currentPrice: currentPriceByProduct.get(product.id) ?? null,
           stock: stockByProduct.get(product.id) ?? 0,
         };
-      })
-      .filter((product) => product.stock <= (product.lowStockThreshold ?? 5));
+      });
 
     const total = enriched.length;
     const showAll = filters?.showAllRecords === true;
@@ -241,10 +259,10 @@ export class ProductRepository implements IProductRepository {
     const product = await prisma.product.findUnique({ where: { id }, include: productInclude });
     if (!product) return null;
 
-    // Same derivation as the list endpoints: price comes from the latest effective
-    // ProductVariant, stock from the sum of stockHistory movements. The edit form
-    // needs both, since neither is a column on `product`.
-    const [category, brand, attribute, effectivePrice, stockSum] = await Promise.all([
+    // Same derivation as the list endpoints: price comes from the effective PriceHistory row
+    // of the product's first active variant, stock from the sum of stockHistory movements.
+    // The edit form needs both, since neither is a column on `product`.
+    const [category, brand, attribute, firstVariant, stockSum] = await Promise.all([
       prisma.category.findUnique({ where: { id: product.categoryId }, select: { name: true } }),
       product.brandNameId != null
         ? prisma.brandName.findUnique({ where: { id: product.brandNameId }, select: { name: true } })
@@ -253,21 +271,21 @@ export class ProductRepository implements IProductRepository {
         ? prisma.attribute.findUnique({ where: { id: product.attributeId }, select: { name: true } })
         : null,
       prisma.productVariant.findFirst({
-        where: { productId: id, effectiveFrom: { lte: new Date() } },
-        orderBy: { effectiveFrom: 'desc' },
-        select: { sellingPrice: true, costPrice: true },
+        where: { productId: id, isActive: true, deletedAt: null },
+        orderBy: { id: 'asc' },
+        select: { id: true },
       }),
       prisma.stockHistory.aggregate({ where: { productId: id }, _sum: { quantity: true } }),
     ]);
+
+    const effectivePrice = firstVariant ? await priceForVariant(firstVariant.id) : null;
 
     return {
       ...product,
       category: category?.name ?? '',
       brandName: brand?.name ?? null,
       attribute: attribute?.name ?? null,
-      currentPrice: effectivePrice
-        ? { sellingPrice: effectivePrice.sellingPrice.toNumber(), costPrice: effectivePrice.costPrice?.toNumber() ?? null }
-        : null,
+      currentPrice: effectivePrice ? { sellingPrice: effectivePrice.sellingPrice, costPrice: effectivePrice.costPrice } : null,
       stock: stockSum._sum.quantity ?? 0,
     };
   }
@@ -295,7 +313,8 @@ export class ProductRepository implements IProductRepository {
         productId: data.productId,
         variantId: data.variantId ?? null,
         storeCode: data.storeCode,
-        userId: data.userId,
+        // The column was renamed `createdById` when the audit fields landed.
+        createdById: data.userId,
         quantity: data.quantity,
         reason: data.reason ?? null,
       },
@@ -314,7 +333,7 @@ export class ProductRepository implements IProductRepository {
         skip,
         take: limit,
         include: {
-          user: { select: { userId: true, name: true } },
+          createdBy: { select: { userId: true, name: true } },
           variant: { select: { id: true, sku: true, attributes: true } },
         },
       }),

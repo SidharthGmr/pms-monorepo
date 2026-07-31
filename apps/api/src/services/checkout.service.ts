@@ -154,7 +154,9 @@ export class CheckoutService implements ICheckoutService {
         notes: model.notes ?? null,
         // Paid up front, so the order does not sit in PENDING awaiting money.
         status: OrderStatus.CONFIRMED,
-        items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+        // The cart is already variant-keyed, so the chosen size/colour carries through to the
+        // order line instead of being flattened back to the product.
+        items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
       },
       ctx.storeCode,
       ctx.userId,
@@ -189,7 +191,9 @@ export class CheckoutService implements ICheckoutService {
         notes: model.notes ?? null,
         // No money has moved, so the order stays PENDING until it is settled.
         status: OrderStatus.PENDING,
-        items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+        // The cart is already variant-keyed, so the chosen size/colour carries through to the
+        // order line instead of being flattened back to the product.
+        items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
       },
       ctx.storeCode,
       ctx.userId,

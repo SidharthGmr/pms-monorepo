@@ -23,7 +23,9 @@ export interface PurchaseItemResponseDto {
   id: number;
   purchaseId: number;
   productId: number;
+  variantId: number;
   quantity: number;
+  /** Stored as `Decimal(12,2)`/`Decimal(14,2)`; exposed as plain numbers by the repository. */
   costPrice: number;
   totalPrice: number;
   product?: ProductResponseDto;

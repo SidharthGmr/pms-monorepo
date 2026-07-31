@@ -1,5 +1,6 @@
 export interface CreatePurchaseItemModel {
-    productId: number;
+    /** Stock is received against a specific variant, so the caller has to name it. */
+    variantId: number;
     quantity: number;
     costPrice: number;
     totalPrice: number;

@@ -14,10 +14,9 @@ export class ProductVariantService implements IProductVariantService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) {}
 
   /**
-   * Creates a variant and files its price in the PriceHistory ledger, which is the source
-   * of truth for what the variant costs. The variant's own price columns are NOT NULL, so
-   * the repository seeds them and `syncVariantPrice` then keeps them in step with the
-   * ledger's currently effective row.
+   * Creates a variant and files its price in the PriceHistory ledger, which is the only
+   * place a price is stored. Any opening stock becomes the variant's first stockHistory
+   * movement, so the ledger and the movements together are the whole truth about it.
    */
   async record(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto> {
     // Already inside someone else's transaction (a product save, say) - join it rather
@@ -33,23 +32,40 @@ export class ProductVariantService implements IProductVariantService {
     await this.unitOfWork.PriceHistory.create(
       {
         variantId: variant.id,
+        storeCode: data.storeCode,
         sellingPrice: data.sellingPrice,
         costPrice: data.costPrice ?? null,
+        compareAtPrice: data.compareAtPrice ?? null,
         ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
         reason: data.reason ?? null,
+        createdById: data.createdById,
       },
       tx
     );
 
-    // A future-dated price is staged, so this leaves the seeded figures alone until the
-    // date arrives - which is also how product listings read the variant.
-    await this.unitOfWork.PriceHistory.syncVariantPrice(variant.id, tx);
+    // Opening stock has to be booked as a movement - there is no stock column to seed, and
+    // a variant whose movements do not add up to its stock would be unreconcilable.
+    if (data.stockQuantity) {
+      await this.unitOfWork.Product.createStockHistory(
+        {
+          productId: data.productId,
+          variantId: variant.id,
+          storeCode: data.storeCode,
+          userId: data.createdById,
+          quantity: data.stockQuantity,
+          reason: 'Opening stock',
+        },
+        tx
+      );
+    }
 
-    return variant;
+    // Re-read so the caller gets the price and stock just written rather than the empty
+    // shell `create` returns.
+    return (await this.unitOfWork.ProductVariant.findById(variant.id, tx)) ?? variant;
   }
 
-  async getEffectiveOn(productId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null> {
-    return this.unitOfWork.ProductVariant.getEffectiveOn(productId, date, tx);
+  async getEffectiveOn(variantId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null> {
+    return this.unitOfWork.ProductVariant.getEffectiveOn(variantId, date, tx);
   }
 
   async getHistory(productId: number, storeCode: string, page = 1, limit = 10): Promise<ListResponseDto<ProductVariantResponseDto>> {

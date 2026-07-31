@@ -12,7 +12,6 @@ export interface ProductResponseDto {
   // parentId?: number | null;
   slug: string;
   description?: string | null;
-  lowStockThreshold?: number | null;
   images: string[];
   storeCode: string
   status: Status;
@@ -34,17 +33,21 @@ export interface CurrentPriceDto {
 }
 
 /**
- * A sellable variant of a product, trimmed for catalog cards and pickers.
- * `sellingPrice`/`costPrice` cache the variant's currently effective PriceHistory row.
+ * A sellable variant of a product, trimmed for catalog cards and pickers. Price comes from
+ * the variant's currently effective PriceHistory row and stock from its stockHistory
+ * movements - neither is a stored column, so both can be null/0 for a brand-new variant.
  */
 export interface ProductVariantSummaryDto {
   id: number;
   sku: string;
-  /** e.g. `{ "size": "L", "color": "Red" }`. Empty for rows created by a bare price change. */
+  name: string | null;
+  /** e.g. `{ "size": "L", "color": "Red" }`. Empty when the product has a single variant. */
   attributes: JsonValue;
   stockQuantity: number;
-  sellingPrice: number;
+  sellingPrice: number | null;
   costPrice: number | null;
+  /** Stock lives on the variant, so the low-stock trigger does too. */
+  lowStockThreshold: number | null;
 }
 
 /**

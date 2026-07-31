@@ -4,12 +4,12 @@ import { ListResponseDto } from '../../dtos/list-response.dto';
 import { CreateProductVariantModel } from '../../models/product-variant.model';
 
 export interface IProductVariantService {
-  /** Record a new variant for a product (append-only history). */
+  /** Create a variant, file its opening price in the ledger and book any opening stock. */
   record(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto>;
 
-  /** Resolve the variant effective on a given date for a product. */
-  getEffectiveOn(productId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null>;
+  /** Resolve a variant priced as at a given date. */
+  getEffectiveOn(variantId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null>;
 
-  /** Paginated variant-change history, store-scoped. */
+  /** Paginated list of a product's variants, store-scoped. */
   getHistory(productId: number, storeCode: string, page?: number, limit?: number): Promise<ListResponseDto<ProductVariantResponseDto>>;
 }
