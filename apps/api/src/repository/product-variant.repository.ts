@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
-import { CreateProductVariantModel } from '../models/product-variant.model';
+import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { buildVariantSku } from '../utils/variant-sku';
 import { EffectivePrice, priceForVariant, pricesForVariants, stockForVariant, stockForVariants } from '../utils/variant-pricing';
@@ -107,16 +107,40 @@ export class ProductVariantRepository implements IProductVariantRepository {
     return { totalRecord: total, data };
   }
 
+  /**
+   * A store-unique SKU built from `base`, appending -2, -3, ... only when it collides
+   * (e.g. two attribute-less rows on the same product). The DB unique index is the final
+   * guard; this just keeps the readable form and avoids a guaranteed constraint error.
+   */
+  private async uniqueSku(tx: Prisma.TransactionClient, storeCode: string, base: string): Promise<string> {
+    let candidate = base;
+    let n = 1;
+    while (await tx.productVariant.findFirst({ where: { storeCode, sku: candidate }, select: { id: true } })) {
+      n += 1;
+      candidate = `${base}-${n}`;
+    }
+    return candidate;
+  }
+
   async create(data: CreateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
+    let sku = data.sku;
+    if (!sku) {
+      // Readable SKU from the product slug + the variant's attribute values, e.g. IPHONE-15-64GB-4GB.
+      const product = await tx.product.findUnique({ where: { id: data.productId }, select: { slug: true, name: true } });
+      const base = buildVariantSku(product?.slug || product?.name || `P${data.productId}`, data.attributes as unknown as Record<string, unknown> | undefined);
+      sku = await this.uniqueSku(tx, data.storeCode, base);
+    }
+
     const created = await tx.productVariant.create({
       data: {
         productId: data.productId,
         storeCode: data.storeCode,
         // Both are NOT NULL, so `null` is not an option - default them instead.
         attributes: data.attributes ?? {},
-        sku: data.sku ?? buildVariantSku(data.storeCode, data.productId),
+        sku,
         ...(data.name !== undefined && { name: data.name }),
         ...(data.barcode !== undefined && { barcode: data.barcode }),
+        ...(data.images !== undefined && { images: data.images }),
         ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
         // A variant is sellable as soon as it exists; the schema default of `false` would
         // otherwise hide every variant the moment it is created.
@@ -142,6 +166,26 @@ export class ProductVariantRepository implements IProductVariantRepository {
     if (!row) return null;
     const [price, stock] = await Promise.all([priceForVariant(row.id, new Date(), tx), stockForVariant(row.id, tx)]);
     return toVariantDto(row, price, stock);
+  }
+
+  async update(id: number, data: UpdateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
+    const updated = await tx.productVariant.update({
+      where: { id },
+      data: {
+        // Omit unset keys so a partial update never blanks a field it did not mean to.
+        // Price and stock are handled by the service (ledger + movements), not here.
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.sku !== undefined && { sku: data.sku }),
+        ...(data.barcode !== undefined && { barcode: data.barcode }),
+        ...(data.attributes !== undefined && { attributes: data.attributes }),
+        ...(data.images !== undefined && { images: data.images }),
+        ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+        updatedById: data.updatedById,
+      },
+    });
+    const [price, stock] = await Promise.all([priceForVariant(updated.id, new Date(), tx), stockForVariant(updated.id, tx)]);
+    return toVariantDto(updated, price, stock);
   }
 
   /** Active, non-deleted variants of a product, cheapest-listed first by id for stability. */

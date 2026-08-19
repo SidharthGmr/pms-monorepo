@@ -5,7 +5,7 @@ import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types
 import { ListResponseDto } from '../dtos/list-response.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
-import { CreateProductVariantModel } from '../models/product-variant.model';
+import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { IProductVariantService } from './interfaces/Iproduct-variant.service';
@@ -67,6 +67,57 @@ export class ProductVariantService implements IProductVariantService {
     // Re-read so the caller gets the price and stock just written rather than the empty
     // shell `create` returns.
     return (await this.unitOfWork.ProductVariant.findById(variant.id, tx)) ?? variant;
+  }
+
+  async update(id: number, storeCode: string, data: UpdateProductVariantModel): Promise<ProductVariantResponseDto> {
+    const existing = await this.unitOfWork.ProductVariant.findById(id);
+    if (!existing) throw new NotFoundError('Variant not found');
+    if (existing.storeCode !== storeCode) throw new ForbiddenError('Variant does not belong to your store');
+
+    return this.unitOfWork.transaction(async (tx) => {
+      // 1. Plain columns (name, sku, barcode, attributes, images, threshold, active).
+      await this.unitOfWork.ProductVariant.update(id, data, tx);
+
+      // 2. Reprice: a changed price (or a staged future date) is appended to the ledger,
+      //    never overwritten, so past orders keep the price they were sold at.
+      const priceChanged =
+        data.sellingPrice != null &&
+        (data.sellingPrice !== existing.sellingPrice ||
+          (data.costPrice ?? null) !== (existing.costPrice ?? null) ||
+          data.effectiveFrom !== undefined);
+      if (priceChanged) {
+        await this.unitOfWork.PriceHistory.create(
+          {
+            variantId: id,
+            storeCode,
+            sellingPrice: data.sellingPrice as number,
+            costPrice: data.costPrice ?? null,
+            ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
+            reason: data.reason ?? 'Price updated',
+            createdById: data.updatedById,
+          },
+          tx
+        );
+      }
+
+      // 3. Stock: book the delta needed to reach the target on-hand, keeping stock the
+      //    auditable sum of its movements rather than a mutable column.
+      if (data.stockQuantity != null && data.stockQuantity !== existing.stockQuantity) {
+        await this.unitOfWork.Product.createStockHistory(
+          {
+            productId: existing.productId,
+            variantId: id,
+            storeCode,
+            userId: data.updatedById,
+            quantity: data.stockQuantity - existing.stockQuantity,
+            reason: data.reason ?? 'Manual stock adjustment',
+          },
+          tx
+        );
+      }
+
+      return (await this.unitOfWork.ProductVariant.findById(id, tx)) as ProductVariantResponseDto;
+    });
   }
 
   async getEffectiveOn(variantId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null> {

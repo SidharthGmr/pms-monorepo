@@ -6,6 +6,13 @@ export interface ProductVariantDto {
   productId: number;
   /** Generated when the variant is recorded if not supplied; unique across the table. */
   sku?: string;
+  /** Human-friendly display name, e.g. "Large / Red". */
+  name?: string | null;
+  barcode?: string | null;
+  /** Alert when this variant's stock falls below this value. */
+  lowStockThreshold?: number | null;
+  /** Image URLs for this specific variant. */
+  images?: string[];
   /** e.g. `{ size: 'L', color: 'Red' }`. Empty for rows created by a bare price change. */
   attributes?: Record<string, string | number | boolean> | null;
   stockQuantity?: number;

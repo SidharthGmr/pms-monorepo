@@ -10,33 +10,32 @@ import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantSe
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { CheckCircle2, History, Layers, Plus, X } from 'lucide-react';
+import { CheckCircle2, History, Layers, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useProductVariantColumns } from '../variant-columns';
-import AddVariantForm from './add-variant-form';
 
 interface ProductVariantsProps {
   productId: number;
 }
 
 export default function ProductVariants({ productId }: ProductVariantsProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  // Arriving straight from "Create product" - this is step 2 of that flow, so the form
-  // opens itself rather than hiding behind a button the user has to find.
   const isNewProduct = searchParams.get('new') === '1';
 
   const [data, setData] = useState<ProductVariantDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
-  const [showAddForm, setShowAddForm] = useState(isNewProduct);
 
   const [filterParams, setFilterParams] = useState({
     page: 1,
     recordPerPage: config.recordPerPage,
   });
 
-  const columns = useProductVariantColumns();
+  // Add/edit live on their own pages (like Products), not in a dialog.
+  const openAdd = () => router.push(`/admin/products/variants/${productId}/add`);
+  const columns = useProductVariantColumns((variant) => router.push(`/admin/products/variants/${productId}/edit/${variant.id}`));
 
   const { data: productResponse } = useGetProductById(productId, productId > 0);
   const { data: variantResponse, isLoading, isError } = useGetProductVariants(productId, filterParams);
@@ -134,30 +133,14 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
                 Price History
               </Link>
             </Button>
-            <Button
-              type="button"
-              variant={showAddForm ? 'outline' : 'default'}
-              icon={showAddForm ? X : Plus}
-              iconPlacement="left"
-              onClick={() => setShowAddForm((open) => !open)}
-              className="flex-1 sm:flex-initial"
-            >
-              {showAddForm ? 'Cancel' : 'Add Variant'}
+            <Button type="button" icon={Plus} iconPlacement="left" onClick={openAdd} className="flex-1 sm:flex-initial">
+              Add Variant
             </Button>
           </div>
         </div>
       </Card>
 
-      {showAddForm && (
-        <AddVariantForm
-          productId={productId}
-          isFirstVariant={data.length === 0}
-          onDone={() => setShowAddForm(false)}
-          onCancel={() => setShowAddForm(false)}
-        />
-      )}
-
-      {!isLoading && data.length === 0 && !showAddForm ? (
+      {!isLoading && data.length === 0 ? (
         // An empty table says nothing about what to do next; this says it plainly.
         <Card>
           <div className="flex flex-col items-center gap-3 py-10 text-center">
@@ -170,7 +153,7 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
                 Add a size, colour or pack with its price and opening stock. That is what makes this product sellable.
               </p>
             </div>
-            <Button type="button" icon={Plus} iconPlacement="left" onClick={() => setShowAddForm(true)}>
+            <Button type="button" icon={Plus} iconPlacement="left" onClick={openAdd}>
               Add the first variant
             </Button>
           </div>

@@ -6,6 +6,8 @@ export interface CreateProductVariantModel {
   sku?: string;
   /** Human-friendly display name for the variant, e.g. "Large / Red". Optional. */
   name?: string;
+  /** Image URLs for this specific variant. */
+  images?: string[];
   /**
    * What makes this variant distinct, e.g. `{ size: 'L', color: 'Red' }`. Keys are
    * master-attribute codes and values are master-entry values.
@@ -24,4 +26,24 @@ export interface CreateProductVariantModel {
    * Large both stay active.
    */
   supersedePrevious?: boolean;
+}
+
+/**
+ * Body accepted by PUT /product-variants/:id. Plain columns are written directly; a changed
+ * `sellingPrice`/`costPrice` is appended to the PriceHistory ledger, and a changed
+ * `stockQuantity` (target on-hand) is booked as a stock adjustment — the API handles both.
+ */
+export interface UpdateProductVariantModel {
+  name?: string | null;
+  sku?: string;
+  barcode?: string | null;
+  attributes?: Record<string, string | number | boolean>;
+  images?: string[];
+  lowStockThreshold?: number | null;
+  isActive?: boolean;
+  sellingPrice?: number;
+  costPrice?: number | null;
+  effectiveFrom?: string | null;
+  stockQuantity?: number | null;
+  reason?: string | null;
 }

@@ -1,6 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateProductVariantModel } from '@/models/product-variant.model';
+import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -54,4 +54,24 @@ const useCreateProductVariant = () => {
     });
 };
 
-export { useGetProductVariants, useGetAllProductVariants, useCreateProductVariant };
+const useUpdateProductVariant = () => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, model }: { id: number; model: UpdateProductVariantModel }) => {
+            return unitOfService.ProductVariantService.update(id, model);
+        },
+        onSettled: (response) => {
+            if (response && response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getByProductId'] });
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getAll'] });
+                queryClient.invalidateQueries({ queryKey: ['ProductService.getAll'] });
+            }
+        },
+        onError: (error) => error,
+    });
+};
+
+export { useGetProductVariants, useGetAllProductVariants, useCreateProductVariant, useUpdateProductVariant };

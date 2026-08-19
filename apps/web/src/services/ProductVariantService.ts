@@ -5,7 +5,7 @@ import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IProductVariantService from './interfaces/IProductVariantService';
 import { ProductVariantDto, ProductVariantListItemDto } from '@/dtos/product-variant.dto';
-import { CreateProductVariantModel } from '@/models/product-variant.model';
+import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import Response from '@/dtos/Response';
@@ -24,6 +24,12 @@ export default class ProductVariantService implements IProductVariantService {
         return this.httpService
             .call()
             .post<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>('/product-variants', model);
+    }
+
+    update(id: number, model: UpdateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {
+        return this.httpService
+            .call()
+            .put<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>(`/product-variants/${id}`, model);
     }
 
     getAll(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>> {

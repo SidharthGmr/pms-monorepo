@@ -267,6 +267,7 @@ model ProductVariant {
   name       String?
   barcode    String?
   attributes Json
+  images     String[]  @default([])
   isActive   Boolean   @default(false)
   /// Stock is held per variant, so the low-stock trigger belongs here too.
   lowStockThreshold Int? @default(5)

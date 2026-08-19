@@ -5,7 +5,7 @@ import { ProductVariantController } from '../controllers/product-variant.control
 import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
 import { validate } from '../middleware/validate';
-import { CreateProductVariantValidator } from '@pms/types';
+import { CreateProductVariantValidator, UpdateProductVariantValidator } from '@pms/types';
 
 const productVariantRouter = Router();
 const productVariantController = container.get<ProductVariantController>(TYPES.ProductVariantController);
@@ -103,6 +103,53 @@ const productVariantController = container.get<ProductVariantController>(TYPES.P
  *       createdById are taken from the authenticated user's token.
  */
 productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantValidator), asyncHandler(productVariantController.create));
+
+/**
+ * @swagger
+ * /product-variants/{id}:
+ *   put:
+ *     summary: Update a variant's safe fields (name, sku, barcode, low-stock threshold, active flag)
+ *     tags: [ProductVariant]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 nullable: true
+ *               sku:
+ *                 type: string
+ *               barcode:
+ *                 type: string
+ *                 nullable: true
+ *               lowStockThreshold:
+ *                 type: integer
+ *                 nullable: true
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Product variant updated successfully
+ *       404:
+ *         description: Variant not found
+ */
+productVariantRouter.put('/:id', authenticateToken, validate(UpdateProductVariantValidator), asyncHandler(productVariantController.update));
 
 /**
  * @swagger

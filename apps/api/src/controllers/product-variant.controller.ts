@@ -4,7 +4,7 @@ import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import CustomResponse from '@pms/types/src/dto/custom-response';
 import { ListResponseDto, ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
-import { CreateProductVariantModel } from '../models/product-variant.model';
+import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 
 export class ProductVariantController {
@@ -57,6 +57,7 @@ export class ProductVariantController {
       productId: number;
       sku?: string;
       name?: string | null;
+      images?: string[];
       attributes?: Record<string, string | number | boolean>;
       stockQuantity?: number;
       sellingPrice: number;
@@ -75,6 +76,7 @@ export class ProductVariantController {
       createdById: userId,
       ...(body.sku && { sku: body.sku }),
       ...(body.name !== undefined && { name: body.name }),
+      ...(body.images !== undefined && { images: body.images }),
       // Omit rather than send `{}` so the repository's own default applies.
       ...(body.attributes && Object.keys(body.attributes).length > 0 && { attributes: body.attributes }),
       ...(body.stockQuantity !== undefined && { stockQuantity: body.stockQuantity }),
@@ -84,6 +86,51 @@ export class ProductVariantController {
 
     const variant = await this.unitOfService.ProductVariant.record(model);
     return res.status(201).json({ success: true, message: 'Product variant recorded successfully', data: variant });
+  };
+
+  update = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductVariantResponseDto>>> => {
+    const userId = req.user?.userId as string;
+    const storeCode = req.user?.storeCode; // Get from logged-in user
+    const id = parseInt(req.params['id'] as string);
+
+    if (!storeCode || !userId) {
+      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+    }
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
+
+    const body = req.body as {
+      name?: string | null;
+      sku?: string;
+      barcode?: string | null;
+      attributes?: Record<string, string | number | boolean>;
+      images?: string[];
+      lowStockThreshold?: number | null;
+      isActive?: boolean;
+      sellingPrice?: number;
+      costPrice?: number | null;
+      effectiveFrom?: string | Date;
+      stockQuantity?: number | null;
+      reason?: string | null;
+    };
+
+    const model: UpdateProductVariantModel = {
+      updatedById: userId,
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.sku !== undefined && { sku: body.sku }),
+      ...(body.barcode !== undefined && { barcode: body.barcode }),
+      ...(body.attributes !== undefined && { attributes: body.attributes }),
+      ...(body.images !== undefined && { images: body.images }),
+      ...(body.lowStockThreshold !== undefined && { lowStockThreshold: body.lowStockThreshold }),
+      ...(body.isActive !== undefined && { isActive: body.isActive }),
+      ...(body.sellingPrice !== undefined && { sellingPrice: body.sellingPrice }),
+      ...(body.costPrice !== undefined && { costPrice: body.costPrice }),
+      ...(body.effectiveFrom !== undefined && { effectiveFrom: new Date(body.effectiveFrom) }),
+      ...(body.stockQuantity !== undefined && { stockQuantity: body.stockQuantity }),
+      ...(body.reason !== undefined && { reason: body.reason }),
+    };
+
+    const variant = await this.unitOfService.ProductVariant.update(id, storeCode, model);
+    return res.status(200).json({ success: true, message: 'Product variant updated successfully', data: variant });
   };
 
   getHistory = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantResponseDto>>>> => {

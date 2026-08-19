@@ -8,22 +8,27 @@ import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { Badge } from '../../ui/badge';
 
-export const useProductVariantColumns = () =>
+export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) => void) =>
   useMemo<ColumnDef<ProductVariantDto>[]>(
     () => [
       {
         id: 'actions',
         header: 'Action',
         enableSorting: false,
-        // Prices are changed on the ledger screen, not here, so each row links to its
-        // own price history rather than offering an inline edit.
+        // Price changes go through the ledger screen; "Edit" only touches the variant's
+        // safe fields (name, sku, barcode, threshold, active).
         cell: ({ row }) => (
-          <ActionTooltip
-            variant="default"
-            icon={<History className="h-4 w-4" />}
-            tooltip="Price history for this variant"
-            href={`/admin/price-histories?productId=${row.original.productId}&variantId=${row.original.id}`}
-          />
+          <div className="flex items-center gap-1">
+            {onEdit && row.original.isActive && (
+              <ActionTooltip variant="edit" tooltip="Edit variant" onClick={() => onEdit(row.original)} />
+            )}
+            <ActionTooltip
+              variant="default"
+              icon={<History className="h-4 w-4" />}
+              tooltip="Price history for this variant"
+              href={`/admin/price-histories?productId=${row.original.productId}&variantId=${row.original.id}`}
+            />
+          </div>
         ),
       },
       {
@@ -135,5 +140,5 @@ export const useProductVariantColumns = () =>
         meta: { sortingKey: 'reason' },
       },
     ],
-    []
+    [onEdit]
   );

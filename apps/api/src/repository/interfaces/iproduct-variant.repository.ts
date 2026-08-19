@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
-import { CreateProductVariantModel } from '../../models/product-variant.model';
+import { CreateProductVariantModel, UpdateProductVariantModel } from '../../models/product-variant.model';
 import { ProductVariantFilterParams } from '../../params/product-variant.params';
 
 export interface IProductVariantRepository {
@@ -23,6 +23,12 @@ export interface IProductVariantRepository {
 
   /** One variant with its current price and stock attached. */
   findById(id: number, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null>;
+
+  /**
+   * Updates a variant's "safe" fields (name, sku, barcode, low-stock threshold, active
+   * flag). Price and attributes are intentionally not editable here.
+   */
+  update(id: number, data: UpdateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto>;
 
   /** Every sellable variant of a product - Small, Medium and Large all stay active. */
   getActive(productId: number, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto[]>;
