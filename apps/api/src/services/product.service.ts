@@ -72,6 +72,10 @@ export class ProductService implements IProductService {
           slug: data.slug,
           description: data.description || null,
           status: data.status || StatusEnum.Published,
+          // Both were accepted by the API and then dropped on the floor, so a product had to
+          // be created and then edited again before its photos stuck.
+          ...(data.images !== undefined && { images: data.images }),
+          ...(data.displayOrder != null && { displayOrder: data.displayOrder }),
         },
       });
 

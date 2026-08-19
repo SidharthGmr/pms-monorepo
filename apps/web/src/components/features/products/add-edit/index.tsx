@@ -14,16 +14,15 @@ import { useGetAllAttributes } from '@/hooks/service-hooks/useAttributeService';
 import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduct } from '@/hooks/service-hooks/useProductService';
-import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { CreateProductModel } from '@/models/product.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFields } from '@pms/types';
 import { zodResolver } from '@/lib/zod-resolver';
-import { Boxes, ImageIcon, Info, Layers } from 'lucide-react';
+import { Boxes, ImageIcon, Layers } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { Card } from '@/components/ui/card';
 
 interface ManageProductProps {
@@ -67,10 +66,12 @@ export default function ManageProduct({ id }: ManageProductProps) {
   const router = useRouter();
   const isEdit = !!id && id > 0;
 
-  const getAllCategories = useGetAllCategories();
-  const getAllBrandNames = useGetAllBrandNames();
-  const getAllAttributes = useGetAllAttributes();
-  const getAllProducts = useGetAllProducts();
+  // `showAllRecords` matters: without it these lists stop at the API's default ten records,
+  // and a category created eleventh simply cannot be picked.
+  const getAllCategories = useGetAllCategories({ showAllRecords: true });
+  const getAllBrandNames = useGetAllBrandNames({ showAllRecords: true });
+  const getAllAttributes = useGetAllAttributes({ showAllRecords: true });
+  const getAllProducts = useGetAllProducts({ showAllRecords: true });
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -81,22 +82,19 @@ export default function ManageProduct({ id }: ManageProductProps) {
     defaultValues: {
       parentId: undefined,
       categoryId: 0,
-      brandNameId: 0,
-      attributeId: 0,
+      // Brand and attribute are nullable on the product, so they start empty rather
+      // than at 0 - which would fail validation while looking like "nothing chosen".
+      brandNameId: undefined,
+      attributeId: undefined,
       name: '',
       slug: '',
-      sellingPrice: undefined,
-      costPrice: undefined,
       description: '',
       displayOrder: 0,
-      status: '',
+      status: StatusValues.Published,
     },
   });
 
-  const { handleSubmit, reset, setValue, getValues, watch } = form;
-
-  // Drives the conditional "Pricing & inventory" block below.
-  const haveCostPrice = watch('costPrice');
+  const { handleSubmit, reset, setValue, getValues } = form;
 
   const generateSlug = (name: string) =>
     name
@@ -109,14 +107,12 @@ export default function ManageProduct({ id }: ManageProductProps) {
   useEffect(() => {
     if (isEdit && productResponse?.data?.data) {
       const p = productResponse.data.data;
+      // Price and stock are deliberately absent: they belong to variants, so the form
+      // must not send them back and quietly rewrite the default variant's ledger.
       reset({
         name: p.name,
         slug: p.slug,
         description: p.description ?? '',
-        sellingPrice: p.currentPrice?.sellingPrice ?? 0,
-        costPrice: p.currentPrice?.costPrice ?? undefined,
-        stock: p.stock ?? 0,
-        lowStockThreshold: p.lowStockThreshold ?? undefined,
         parentId: p.parentId ?? undefined,
         categoryId: p.categoryId,
         brandNameId: p.brandNameId ?? undefined,
@@ -137,8 +133,21 @@ export default function ManageProduct({ id }: ManageProductProps) {
     }
 
     if (response && (response.status === 200 || response.status === 201)) {
-      toast({ variant: 'success', title: `Product ${isEdit ? 'updated' : 'created'} successfully` });
-      router.push('/admin/products');
+      if (isEdit) {
+        toast({ variant: 'success', title: 'Product updated successfully' });
+        router.push('/admin/products');
+        return;
+      }
+
+      // A product with no variant cannot be sold, so creating one hands straight over to
+      // the variant screen rather than dropping the user back on the list to find it.
+      const newId = Number((response.data as { data?: { id?: number } })?.data?.id);
+      toast({
+        variant: 'success',
+        title: 'Product created',
+        description: <span>Now add its first variant so it can be sold.</span>,
+      });
+      router.push(newId > 0 ? `/admin/products/variants/${newId}?new=1` : '/admin/products');
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -158,6 +167,21 @@ export default function ManageProduct({ id }: ManageProductProps) {
   return (
     <Form {...form}>
       <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
+        {/* Creating a product is a two-step job - it is not sellable until it has a variant -
+            so the form says so up front instead of leaving the second step to be discovered. */}
+        {!isEdit && (
+          <div className="flex items-center gap-3 text-sm">
+            <span className="flex items-center gap-2 font-medium text-foreground">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+              Product details
+            </span>
+            <Separator className="w-8" />
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <span className="grid h-6 w-6 place-items-center rounded-full border border-border text-xs font-bold">2</span>
+              Variants &amp; pricing
+            </span>
+          </div>
+        )}
         <Card className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 ">
             <FormField
@@ -279,68 +303,23 @@ export default function ManageProduct({ id }: ManageProductProps) {
             />
           </div>
         </Card>
-        {haveCostPrice && (
+        {isEdit && (
           <Card>
-            <Section icon={Boxes} title="Pricing & inventory" description="Set the selling price, cost and how many units are in stock.">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="costPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Purchase cost</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="0.00"
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(numberChange(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="sellingPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Selling price *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="0.00"
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(+e.target.value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lowStockThreshold"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Low stock alert</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder="e.g. 5"
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(numberChange(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <Section
+              icon={Boxes}
+              title="Pricing & inventory"
+              description="Price and stock are held per variant, so they are managed on the variant screens rather than here."
+            >
+              <div className="flex flex-wrap gap-2">
+                <Button asChild type="button" variant="outline" size="sm">
+                  <Link href={`/admin/products/variants/${id}`}>
+                    <Layers className="mr-2 h-4 w-4" />
+                    Variants &amp; stock
+                  </Link>
+                </Button>
+                <Button asChild type="button" variant="outline" size="sm">
+                  <Link href={`/admin/price-histories?productId=${id}`}>Price history</Link>
+                </Button>
               </div>
             </Section>
           </Card>
@@ -431,7 +410,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
             Cancel
           </Button>
           <Button type="submit" loading={isLoading}>
-            {isEdit ? 'Update' : 'Create'} Product
+            {isEdit ? 'Update Product' : 'Create & continue'}
           </Button>
         </div>
       </form>

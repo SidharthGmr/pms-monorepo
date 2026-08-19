@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useMemo, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { CurrencyInput } from '@/components/common/currency-input';
 import { SelectSearch } from '@/components/common/select-search';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
@@ -193,38 +194,14 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
                   <Label htmlFor="sellingPrice" className="text-xs text-slate-500 font-normal">
                     Selling price
                   </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">$</span>
-                    <Input
-                      id="sellingPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={sellingPrice}
-                      onChange={(e) => setSellingPrice(e.target.value ? parseFloat(e.target.value) : '')}
-                      placeholder="0.00"
-                      className="pl-6"
-                    />
-                  </div>
+                  <CurrencyInput id="sellingPrice" value={sellingPrice} onChange={setSellingPrice} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="costPrice" className="flex items-center gap-1 text-xs text-slate-500 font-normal">
                     <Wallet className="w-3 h-3" />
                     Cost price
                   </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 pointer-events-none">$</span>
-                    <Input
-                      id="costPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={costPrice}
-                      onChange={(e) => setCostPrice(e.target.value ? parseFloat(e.target.value) : '')}
-                      placeholder="0.00"
-                      className="pl-6"
-                    />
-                  </div>
+                  <CurrencyInput id="costPrice" value={costPrice} onChange={setCostPrice} />
                 </div>
               </div>
               <p className="text-xs text-slate-400">

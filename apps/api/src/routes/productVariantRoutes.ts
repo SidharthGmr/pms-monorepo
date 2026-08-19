@@ -106,6 +106,76 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
 
 /**
  * @swagger
+ * /product-variants:
+ *   get:
+ *     summary: Get every variant in the authenticated user's store (the SKU list)
+ *     tags: [ProductVariant]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Matches SKU, variant name, barcode or product name
+ *       - in: query
+ *         name: productId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [sku, name, createdAt, id]
+ *         description: Price and stock are derived, so they cannot be sorted on
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *     responses:
+ *       200:
+ *         description: Product variants fetched successfully
+ *       400:
+ *         description: Store code not found
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *     description: >
+ *       The store-wide SKU list, read across products. Each row carries the product it belongs
+ *       to, its currently effective price from the PriceHistory ledger and its on-hand stock
+ *       summed from stockHistory movements. Soft-deleted variants are never returned. Scoping
+ *       is taken from the token, so one store can never read another's SKUs.
+ */
+productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantController.getAll));
+
+/**
+ * @swagger
  * /product-variants/product/{productId}:
  *   get:
  *     summary: Get the variant-change history for a product

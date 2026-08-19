@@ -1,8 +1,22 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { CreateProductVariantModel } from '@/models/product-variant.model';
+import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+/** The store-wide SKU list. Unlike `useGetProductVariants`, needs no product. */
+const useGetAllProductVariants = (params?: ProductVariantFilterParams, enabled: boolean = true) => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    return useQuery({
+        queryKey: ['ProductVariantService.getAll', params],
+        queryFn: async () => {
+            return await unitOfService.ProductVariantService.getAll(params);
+        },
+        enabled,
+    });
+};
 
 const useGetProductVariants = (
     productId: number | string,
@@ -32,6 +46,7 @@ const useCreateProductVariant = () => {
         onSettled: (response) => {
             if (response && response.status === 201) {
                 queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getByProductId'] });
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getAll'] });
                 queryClient.invalidateQueries({ queryKey: ['ProductService.getAll'] });
             }
         },
@@ -39,4 +54,4 @@ const useCreateProductVariant = () => {
     });
 };
 
-export { useGetProductVariants, useCreateProductVariant };
+export { useGetProductVariants, useGetAllProductVariants, useCreateProductVariant };

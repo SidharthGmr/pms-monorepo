@@ -19,3 +19,22 @@ export interface ProductVariantDto {
   createdAt: Date;
   updatedAt?: Date | null;
 }
+
+/**
+ * A row of the store-wide SKU list (`GET /product-variants`). Read across products, so each
+ * row names the product it belongs to. `sellingPrice` is null when the variant has never
+ * been priced - distinct from a price of zero.
+ */
+export interface ProductVariantListItemDto extends Omit<ProductVariantDto, 'sellingPrice' | 'effectiveFrom' | 'reason'> {
+  name?: string | null;
+  barcode?: string | null;
+  sellingPrice: number | null;
+  compareAtPrice?: number | null;
+  lowStockThreshold?: number | null;
+  product: {
+    id: number;
+    name: string;
+    slug: string;
+    categoryId: number;
+  };
+}

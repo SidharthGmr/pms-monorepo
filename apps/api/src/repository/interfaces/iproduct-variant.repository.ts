@@ -1,9 +1,16 @@
 import { Prisma } from '@prisma/client';
-import { ProductVariantResponseDto } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
 import { CreateProductVariantModel } from '../../models/product-variant.model';
+import { ProductVariantFilterParams } from '../../params/product-variant.params';
 
 export interface IProductVariantRepository {
+  /**
+   * Every variant in the store, across products - the SKU list. Each row carries the product
+   * it belongs to, plus its effective price and on-hand stock.
+   */
+  findAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>>;
+
   /**
    * Creates a real variant (a size, a colour). It carries no price or stock of its own -
    * the caller books those into PriceHistory and stockHistory afterwards. Accepts an

@@ -1,17 +1,22 @@
 import { Prisma } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ProductVariantResponseDto } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
 import { CreateProductVariantModel } from '../models/product-variant.model';
+import { ProductVariantFilterParams } from '../params/product-variant.params';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { IProductVariantService } from './interfaces/Iproduct-variant.service';
 
 @injectable()
 export class ProductVariantService implements IProductVariantService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) {}
+
+  async getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>> {
+    return this.unitOfWork.ProductVariant.findAll(filters);
+  }
 
   /**
    * Creates a variant and files its price in the PriceHistory ledger, which is the only

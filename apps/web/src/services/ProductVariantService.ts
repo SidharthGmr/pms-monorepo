@@ -4,9 +4,10 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IProductVariantService from './interfaces/IProductVariantService';
-import { ProductVariantDto } from '@/dtos/product-variant.dto';
+import { ProductVariantDto, ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import { CreateProductVariantModel } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
+import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import Response from '@/dtos/Response';
 
 @injectable()
@@ -23,6 +24,15 @@ export default class ProductVariantService implements IProductVariantService {
         return this.httpService
             .call()
             .post<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>('/product-variants', model);
+    }
+
+    getAll(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>> {
+        return this.httpService
+            .call()
+            .get<ListResponseDto<ProductVariantListItemDto>, AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>>(
+                '/product-variants',
+                { params }
+            );
     }
 
     getByProductId(

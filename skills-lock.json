@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "api-design-expert": {
+      "source": "shipshitdev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/api-design-expert/SKILL.md",
+      "computedHash": "b5c77f4040e5d3c43effc58d0cc937981218ee34ebcf2a332c6644192f025e84"
+    },
+    "nodejs-express-server": {
+      "source": "aj-geddes/useful-ai-prompts",
+      "sourceType": "github",
+      "skillPath": "skills/nodejs-express-server/SKILL.md",
+      "computedHash": "8a7fe50351131f99b7bc7750bb4be6e7cbd7919b3b346c8fc7f857fb1ecad059"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",

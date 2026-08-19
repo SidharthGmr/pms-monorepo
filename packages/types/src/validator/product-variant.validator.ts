@@ -6,6 +6,9 @@ export const productVariantFields = z.object({
   /** Generated from store + product when omitted. Unique across the whole table. */
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
 
+  /** Human-friendly display name for the variant, e.g. "Large / Red". Optional. */
+  name: z.string().max(150, "Name is too long").nullable().optional(),
+
   /**
    * What makes this variant distinct, e.g. `{ "size": "L", "color": "Red" }`. Keys are
    * master-attribute codes and values are master-entry values, so the set of allowed

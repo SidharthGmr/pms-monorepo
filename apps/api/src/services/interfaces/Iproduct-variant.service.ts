@@ -1,9 +1,13 @@
 import { Prisma } from '@prisma/client';
-import { ProductVariantResponseDto } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
 import { CreateProductVariantModel } from '../../models/product-variant.model';
+import { ProductVariantFilterParams } from '../../params/product-variant.params';
 
 export interface IProductVariantService {
+  /** Store-wide SKU list, across every product. */
+  getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>>;
+
   /** Create a variant, file its opening price in the ledger and book any opening stock. */
   record(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto>;
 

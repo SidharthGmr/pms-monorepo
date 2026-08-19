@@ -30,3 +30,16 @@ export interface ProductVariantResponseDto {
   createdById: string;
   createdAt: Date;
 }
+
+/**
+ * A variant as it appears in the store-wide SKU list, where rows are read across products
+ * rather than within one - so each row has to say which product it belongs to.
+ */
+export interface ProductVariantListItemDto extends ProductVariantResponseDto {
+  product: {
+    id: number;
+    name: string;
+    slug: string;
+    categoryId: number;
+  };
+}

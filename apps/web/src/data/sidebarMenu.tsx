@@ -1,5 +1,24 @@
 import { Roles } from '@/enums/roles.enum';
-import { CreditCard, FolderTree, Heart, LayoutDashboard, List, Package, Receipt, ShoppingBag, ShoppingCart, Sliders, Star, Store, Tags, TrendingUp, Truck, User, Users } from 'lucide-react';
+import {
+  CreditCard,
+  FolderTree,
+  Heart,
+  LayoutDashboard,
+  Layers,
+  List,
+  Package,
+  Receipt,
+  ShoppingBag,
+  ShoppingCart,
+  Sliders,
+  Star,
+  Store,
+  Tags,
+  TrendingUp,
+  Truck,
+  User,
+  Users,
+} from 'lucide-react';
 
 export interface SideBarMenuDto {
   id: string;
@@ -50,8 +69,8 @@ export const SideBarMenu: SideBarMenuDto[] = [
     role: [Roles.ADMIN],
   },
   {
-    id: 'addproducts',
-    title: 'Add Products',
+    id: 'catalog-setup',
+    title: 'Catalog Setup',
     icon: User,
     url: '',
     role: [Roles.ADMIN],
@@ -59,37 +78,12 @@ export const SideBarMenu: SideBarMenuDto[] = [
     submenu: [
       {
         id: 'brand-names',
-        title: 'Brand Names',
+        title: 'Brands',
         icon: Tags,
         url: '/admin/brand-names/',
         role: [Roles.ADMIN],
         isActive: false,
       },
-      {
-        id: 'attributes',
-        title: 'Attributes',
-        icon: Sliders,
-        url: '/admin/attributes/',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
-      {
-        id: 'master-attributes',
-        title: 'Master Attributes',
-        icon: List,
-        url: '/admin/master-attributes/',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
-      {
-        id: 'master-entries',
-        title: 'Master Entries',
-        icon: Tags,
-        url: '/admin/master-entries/',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
-
       {
         id: 'categories',
         title: 'Categories',
@@ -109,10 +103,70 @@ export const SideBarMenu: SideBarMenuDto[] = [
         // ]
       },
       {
+        id: 'attributes',
+        title: 'Product Attributes',
+        icon: Sliders,
+        url: '/admin/attributes/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'master-attributes',
+        title: 'Variant Options',
+        icon: List,
+        url: '/admin/master-attributes/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'master-entries',
+        title: 'Option Values',
+        icon: Tags,
+        url: '/admin/master-entries/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+
+      {
+        id: 'suppliers',
+        title: 'Suppliers',
+        icon: Truck,
+        url: '/admin/suppliers/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+    ],
+  },
+  {
+    id: 'products-group',
+    title: 'Products',
+    icon: User,
+    url: '',
+    role: [Roles.ADMIN],
+    isActive: true,
+    submenu: [
+      {
+        id: 'Add-Product',
+        title: 'Add Product',
+        icon: Package,
+        url: '/admin/products/add/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
         id: 'products',
-        title: 'Products',
+        title: 'All Products',
         icon: Package,
         url: '/admin/products/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+
+      {
+        id: 'product-variants',
+        title: 'Variants',
+        icon: Layers,
+        url: '/admin/product-variants/',
         role: [Roles.ADMIN],
         isActive: false,
       },
@@ -126,7 +180,6 @@ export const SideBarMenu: SideBarMenuDto[] = [
       },
     ],
   },
-
   {
     id: 'orders',
     title: 'Orders',
@@ -244,14 +297,6 @@ export const SideBarMenu: SideBarMenuDto[] = [
         title: 'Purchase History',
         icon: List,
         url: '/admin/stock-purchase/history',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
-      {
-        id: 'suppliers',
-        title: 'Suppliers',
-        icon: Truck,
-        url: '/admin/suppliers/',
         role: [Roles.ADMIN],
         isActive: false,
       },

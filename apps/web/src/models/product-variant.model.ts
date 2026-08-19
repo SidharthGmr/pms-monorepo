@@ -4,6 +4,8 @@ export interface CreateProductVariantModel {
   productId: number;
   /** Unique SKU. The API generates one from store + product when omitted. */
   sku?: string;
+  /** Human-friendly display name for the variant, e.g. "Large / Red". Optional. */
+  name?: string;
   /**
    * What makes this variant distinct, e.g. `{ size: 'L', color: 'Red' }`. Keys are
    * master-attribute codes and values are master-entry values.

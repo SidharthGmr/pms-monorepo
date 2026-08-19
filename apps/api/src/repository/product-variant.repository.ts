@@ -1,13 +1,27 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductVariantResponseDto } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { CreateProductVariantModel } from '../models/product-variant.model';
+import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { buildVariantSku } from '../utils/variant-sku';
 import { EffectivePrice, priceForVariant, pricesForVariants, stockForVariant, stockForVariants } from '../utils/variant-pricing';
 import { IProductVariantRepository } from './interfaces/iproduct-variant.repository';
 
 type VariantRow = Prisma.ProductVariantGetPayload<{}>;
+
+/**
+ * Sorting is client-driven, so only real columns are honoured. Price and stock are derived
+ * (from the ledger and the movements), so they cannot be sorted in SQL - anything unknown
+ * falls back to the default rather than failing the query.
+ */
+const SORTABLE_COLUMNS = new Set(['sku', 'name', 'createdAt', 'id']);
+
+const listItemInclude = {
+  product: { select: { id: true, name: true, slug: true, categoryId: true } },
+} satisfies Prisma.ProductVariantInclude;
+
+type VariantWithProduct = Prisma.ProductVariantGetPayload<{ include: typeof listItemInclude }>;
 
 /**
  * A variant row carries no price or stock of its own any more, so the DTO is assembled from
@@ -25,6 +39,74 @@ function toVariantDto(row: VariantRow, price: EffectivePrice | null, stockQuanti
 }
 
 export class ProductVariantRepository implements IProductVariantRepository {
+  /**
+   * Every variant in the store, read across products rather than within one. Price and stock
+   * are not columns, so they are attached afterwards in two batched queries for the whole
+   * page - never one pair per row.
+   */
+  async findAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>> {
+    const page = filters?.page ?? 1;
+    const limit = filters?.recordPerPage ?? 10;
+
+    // Soft-deleted variants never appear: they are not sellable and their SKU is retired.
+    const where: Prisma.ProductVariantWhereInput = { deletedAt: null };
+
+    if (filters) {
+      // The tenant always comes from the token, never the query string.
+      if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
+      if (filters.productId !== undefined) where.productId = filters.productId;
+      if (filters.isActive !== undefined) where.isActive = filters.isActive;
+      if (filters.categoryId !== undefined) where.product = { categoryId: filters.categoryId };
+
+      if (filters.search) {
+        where.OR = [
+          { sku: { contains: filters.search, mode: 'insensitive' } },
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { barcode: { contains: filters.search, mode: 'insensitive' } },
+          { product: { name: { contains: filters.search, mode: 'insensitive' } } },
+        ];
+      }
+
+      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+        where.createdAt = {
+          ...(filters.startDate !== undefined && { gte: filters.startDate }),
+          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+        };
+      }
+    }
+
+    const column = filters?.sortBy && SORTABLE_COLUMNS.has(filters.sortBy) ? filters.sortBy : 'createdAt';
+    const direction: Prisma.SortOrder = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const showAll = filters?.showAllRecords === true;
+    const skip = showAll ? undefined : (page - 1) * limit;
+    const take = showAll ? undefined : limit;
+
+    const [rows, total] = await Promise.all([
+      prisma.productVariant.findMany({
+        where,
+        include: listItemInclude,
+        orderBy: [{ [column]: direction }, { id: 'desc' }],
+        ...(skip !== undefined && { skip }),
+        ...(take !== undefined && { take }),
+      }),
+      prisma.productVariant.count({ where }),
+    ]);
+
+    const ids = rows.map((row) => row.id);
+    const [prices, stock] = await Promise.all([pricesForVariants(ids), stockForVariants(ids)]);
+
+    const data = rows.map((row: VariantWithProduct) => {
+      const { product, ...variant } = row;
+      return {
+        ...toVariantDto(variant, prices.get(row.id) ?? null, stock.get(row.id) ?? 0),
+        product,
+      };
+    });
+
+    return { totalRecord: total, data };
+  }
+
   async create(data: CreateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
     const created = await tx.productVariant.create({
       data: {

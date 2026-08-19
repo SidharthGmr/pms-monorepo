@@ -1,4 +1,5 @@
 'use client';
+import { CurrencyInput } from '@/components/common/currency-input';
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -205,14 +206,10 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                   <FormItem>
                     <FormLabel>Selling Price *</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="1099.99"
-                        className="tabular-nums"
+                      <CurrencyInput
+                        placeholder="1,099.99"
                         value={field.value ?? ''}
-                        onChange={(e) => field.onChange(e.target.value === '' ? 0 : +e.target.value)}
+                        onChange={(value) => field.onChange(value === '' ? 0 : value)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -227,14 +224,10 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                   <FormItem>
                     <FormLabel>Cost Price</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
+                      <CurrencyInput
                         placeholder="800.00"
-                        className="tabular-nums"
                         value={field.value ?? ''}
-                        onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
+                        onChange={(value) => field.onChange(value === '' ? null : value)}
                       />
                     </FormControl>
                     <FormDescription>{previewMargin !== null ? `Margin ${formatPercent(previewMargin)}` : 'Optional.'}</FormDescription>

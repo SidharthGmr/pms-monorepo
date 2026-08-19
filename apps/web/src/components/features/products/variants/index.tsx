@@ -10,8 +10,9 @@ import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantSe
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { History, Plus, X } from 'lucide-react';
+import { CheckCircle2, History, Layers, Plus, X } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useProductVariantColumns } from '../variant-columns';
 import AddVariantForm from './add-variant-form';
@@ -21,9 +22,14 @@ interface ProductVariantsProps {
 }
 
 export default function ProductVariants({ productId }: ProductVariantsProps) {
+  const searchParams = useSearchParams();
+  // Arriving straight from "Create product" - this is step 2 of that flow, so the form
+  // opens itself rather than hiding behind a button the user has to find.
+  const isNewProduct = searchParams.get('new') === '1';
+
   const [data, setData] = useState<ProductVariantDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(isNewProduct);
 
   const [filterParams, setFilterParams] = useState({
     page: 1,
@@ -79,8 +85,39 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
     );
   }
 
+  const hasVariants = activeVariants.length > 0;
+
   return (
     <div className="space-y-4">
+      {isNewProduct && (
+        <Card size="sm" className="border-primary/40 bg-primary/5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              {hasVariants ? (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              ) : (
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                  2
+                </span>
+              )}
+              <div className="text-sm">
+                <p className="font-semibold">{hasVariants ? 'This product can now be sold' : 'Step 2 of 2 — add the first variant'}</p>
+                <p className="text-muted-foreground">
+                  {hasVariants
+                    ? 'Add more sizes or colours now, or finish and come back later.'
+                    : 'A product needs one variant with a price before it can be added to a cart or sold.'}
+                </p>
+              </div>
+            </div>
+            {hasVariants && (
+              <Button asChild variant="outline" className="shrink-0">
+                <Link href="/admin/products">Done</Link>
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
+
       <Card size="sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm">
@@ -111,13 +148,42 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
         </div>
       </Card>
 
-      {showAddForm && <AddVariantForm productId={productId} onDone={() => setShowAddForm(false)} onCancel={() => setShowAddForm(false)} />}
+      {showAddForm && (
+        <AddVariantForm
+          productId={productId}
+          isFirstVariant={data.length === 0}
+          onDone={() => setShowAddForm(false)}
+          onCancel={() => setShowAddForm(false)}
+        />
+      )}
 
-      <Card className="overflow-hidden p-0">
-        <CustomDataTable columns={columns} table={table} isLoading={isLoading} />
-      </Card>
+      {!isLoading && data.length === 0 && !showAddForm ? (
+        // An empty table says nothing about what to do next; this says it plainly.
+        <Card>
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <span className="rounded-full bg-primary/10 p-3 text-primary">
+              <Layers className="h-5 w-5" />
+            </span>
+            <div className="space-y-1">
+              <p className="font-medium">No variants yet</p>
+              <p className="mx-auto max-w-md text-sm text-muted-foreground">
+                Add a size, colour or pack with its price and opening stock. That is what makes this product sellable.
+              </p>
+            </div>
+            <Button type="button" icon={Plus} iconPlacement="left" onClick={() => setShowAddForm(true)}>
+              Add the first variant
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <>
+          <Card className="overflow-hidden p-0">
+            <CustomDataTable columns={columns} table={table} isLoading={isLoading} />
+          </Card>
 
-      <DataTablePagination table={table} totalRecord={recordCount} loading={isLoading} />
+          <DataTablePagination table={table} totalRecord={recordCount} loading={isLoading} />
+        </>
+      )}
     </div>
   );
 }
