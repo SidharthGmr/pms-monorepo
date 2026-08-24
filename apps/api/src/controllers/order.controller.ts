@@ -1,4 +1,4 @@
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
@@ -9,15 +9,21 @@ import { CreateOrderModel } from "../models/order.model";
 import { OrderFilterParams } from "../params/order.params";
 import IUnitOfService from "../services/interfaces/iunitof.service";
 
+const STAFF_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
+
 export class OrderController {
   constructor(
     private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)
   ) { }
 
+  /** Staff may read any customer's orders; a customer is pinned to their own. */
+  private isStaff = (req: Request): boolean => STAFF_ROLES.includes(req.user?.role as Role);
+
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<OrderDto>>>> => {
     const filters: OrderFilterParams = Object.fromEntries(
       Object.entries({
-        customerId: req.query['customerId'] as string | undefined,
+        // A customer may only ever list their own orders, whatever they ask for.
+        customerId: this.isStaff(req) ? (req.query['customerId'] as string | undefined) : (req.user?.userId as string | undefined),
         storeCode: req.user?.storeCode || undefined,
         storeId: req.query['storeId'] ? parseInt(req.query['storeId'] as string, 10) : undefined,
         status: req.query['status'] as OrderStatus | undefined,
@@ -30,6 +36,11 @@ export class OrderController {
 
   getByCustomerId = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<OrderDto>>>> => {
     const customerId = req.params["customerId"] as string;
+
+    if (!this.isStaff(req) && customerId !== req.user?.userId) {
+      return res.status(403).json({ success: false, message: "You can only view your own orders" });
+    }
+
     const orders = await this.unitOfService.Order.getByCustomerId(customerId);
     return res.status(200).json({ success: true, message: "Orders fetched successfully", data: { totalRecord: orders.length, data: orders } });
   };

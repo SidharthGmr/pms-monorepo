@@ -15,6 +15,8 @@ export interface ProductVariantResponseDto {
   name: string | null;
   barcode: string | null;
   attributes: JsonValue;
+  /** Variant-specific photos; the storefront falls back to the product's when empty. */
+  images: string[];
   /** Summed from the variant's stockHistory movements - not a stored column. */
   stockQuantity: number;
   /**
@@ -41,5 +43,8 @@ export interface ProductVariantListItemDto extends ProductVariantResponseDto {
     name: string;
     slug: string;
     categoryId: number;
+    /** Carried for the storefront card; the admin list ignores both. */
+    images?: string[];
+    category?: { name: string; images?: string[] } | null;
   };
 }

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto, ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
+import { ListResponseDto, ProductDetailResponseDto, ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
 import { CreateProductVariantModel } from "../models/product-variant.model";
@@ -116,14 +116,16 @@ export class ProductService implements IProductService {
   }
 
   async getAll(filters?: ProductFilterParams) {
-    return this.unitOfWork.Product.findAll(filters, filters?.page, filters?.recordPerPage);
+    // Sorting used to stop here: the repository accepted it and the service never passed it,
+    // so every list came back createdAt-desc however the client asked.
+    return this.unitOfWork.Product.findAll(filters, filters?.page, filters?.recordPerPage, filters?.sortBy, filters?.sortOrder);
   }
 
   async getLowStock(filters?: ProductFilterParams) {
     return this.unitOfWork.Product.findLowStock(filters, filters?.page, filters?.recordPerPage);
   }
 
-  async getById(id: number): Promise<ProductResponseDto | null> {
+  async getById(id: number): Promise<ProductDetailResponseDto | null> {
     const product = await this.unitOfWork.Product.findById(id);
     if (!product) throw new NotFoundError("Product not found");
     return product;

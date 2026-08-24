@@ -11,6 +11,10 @@ export default interface ICartService {
   addProducts(model: AddToCartModel): Promise<AxiosResponse<Response<CartDto>>>;
 
   /** Sets an absolute quantity for a product. 0 removes it. */
+  updateVariantQuantity(variantId: number, model: UpdateCartItemModel): Promise<AxiosResponse<Response<CartDto>>>;
+
+  removeVariant(variantId: number, userId?: string | null): Promise<AxiosResponse<Response<CartDto>>>;
+
   updateQuantity(productId: number, model: UpdateCartItemModel): Promise<AxiosResponse<Response<CartDto>>>;
 
   removeProduct(productId: number, userId?: string | null): Promise<AxiosResponse<Response<CartDto>>>;

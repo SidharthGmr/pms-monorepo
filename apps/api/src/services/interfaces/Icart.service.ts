@@ -16,6 +16,10 @@ export interface ICartService {
   /** Sets an absolute quantity for a product's line. 0 removes it. */
   updateProductQuantity(productId: number, data: UpdateCartItemModel): Promise<CartDto>;
 
+  setVariantQuantity(variantId: number, data: UpdateCartItemModel): Promise<CartDto>;
+
+  removeVariant(variantId: number, owner: CartOwner): Promise<CartDto>;
+
   removeProduct(productId: number, owner: CartOwner): Promise<CartDto>;
 
   /** Empties the cart but keeps it ACTIVE and reusable. */

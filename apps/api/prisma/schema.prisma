@@ -169,10 +169,12 @@ model store {
 }
 
 model category {
-  id           Int     @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   storeCode    String
   name         String
   description  String?
+  /// Optional tile art, same shape as `product.images` so one uploader serves both.
+  images       String[] @default([])
   parentId     Int?
   status       Status  @default(Published)
   displayOrder Int     @default(0)
@@ -486,6 +488,8 @@ model Wishlist {
 model brandName {
   id           Int        @id @default(autoincrement())
   name         String
+  /// Optional logo, same shape as `product.images` so one uploader serves both.
+  images       String[]   @default([])
   storeCode    String
   status       Status     @default(Published)
   displayOrder Int?       @default(0)

@@ -4,7 +4,7 @@ export interface ReviewFilterParams extends Omit<PageFilterParams, 'startDate' |
   status?: string | null;
   productId?: number;
   orderId?: number;
-  /** Staff only - the API pins customers to their own reviews regardless. */
+  /** Staff only - the API pins customers to their own reviews, except Published ones read via productId. */
   userId?: string;
   rating?: number;
   minRating?: number;

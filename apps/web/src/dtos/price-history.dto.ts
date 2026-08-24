@@ -25,6 +25,8 @@ export interface PriceHistoryDto {
   /** ISO string over the wire. */
   effectiveFrom: string;
   reason: string | null;
+  /** The price this row replaced, resolved by the API. Null on a variant's first price. */
+  previousPrice: number | null;
   variant?: PriceHistoryVariantDto | null;
 }
 

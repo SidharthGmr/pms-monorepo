@@ -5,6 +5,8 @@ import { Status } from "../enum/status.enum";
 export interface CategoryModel {
   name: string;
   description?: string | null;
+  /** Optional tile art. Same array shape as `product.images`. */
+  images?: string[];
   parentId?: number | null;
   status: Status;
   displayOrder?: number;

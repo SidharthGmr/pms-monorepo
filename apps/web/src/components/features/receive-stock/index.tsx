@@ -84,7 +84,7 @@ export default function ReceiveStockPage() {
       supplierName: '',
       invoiceNumber: '',
       notes: '',
-      items: [{ productId: undefined, quantity: undefined, costPrice: undefined }],
+      items: [{ productId: undefined, variantId: undefined, quantity: undefined, costPrice: undefined }],
       totalAmount: 0,
     },
   });
@@ -117,8 +117,9 @@ export default function ReceiveStockPage() {
       return acc;
     }, 0) || 0;
 
-  // An item is "ready" once it has a product, a quantity and a unit cost.
-  const readyItems = watchedItems?.filter((item) => item?.productId && Number(item?.quantity) > 0 && item?.costPrice !== undefined).length || 0;
+  // An item is "ready" once it names a variant and has a quantity and a unit cost. The
+  // product on the line is only the filter that found the variant.
+  const readyItems = watchedItems?.filter((item) => item?.variantId && Number(item?.quantity) > 0 && item?.costPrice !== undefined).length || 0;
   const hasReadyItem = readyItems > 0;
 
   const isSubmitting = createPurchase.isPending || isUploading;
@@ -151,9 +152,10 @@ export default function ReceiveStockPage() {
       let invoiceUrl = '';
       if (invoiceFile) invoiceUrl = await uploadInvoiceToCloudinary(invoiceFile);
 
-      // Map the form's `unitCost` to the API's `costPrice`/`totalPrice` contract.
+      // Stock lands on a SKU, so only the variant travels; the API derives the product
+      // from it. `unitCost` maps to the API's `costPrice`/`totalPrice` contract.
       const formattedItems = data.items.map((item) => ({
-        productId: Number(item.productId),
+        variantId: Number(item.variantId),
         quantity: Number(item.quantity),
         costPrice: Number(item.costPrice),
         totalPrice: Number(item.quantity) * Number(item.costPrice),
@@ -184,7 +186,7 @@ export default function ReceiveStockPage() {
     <div className="mx-auto max-w-7xl space-y-4 pb-12">
       <PageHeader
         title="Add Stock"
-        description="Add incoming products to your inventory and attach supplier invoices for record-keeping."
+        description="Receive incoming stock against a variant - pick the product to narrow the list, then the SKU - and attach the supplier invoice."
         variant="back"
       />
 
@@ -192,7 +194,7 @@ export default function ReceiveStockPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-5 lg:grid-cols-6">
           <div className="space-y-5 lg:col-span-4">
             <SectionCard
-              title="Products"
+              title="Variants to receive"
               icon={Package}
               showScroll={false}
               cta={{
@@ -265,10 +267,16 @@ export default function ReceiveStockPage() {
                       iconPlacement="left"
                       className="h-8 px-2 font-medium text-primary hover:bg-primary/5 hover:text-primary"
                       onClick={() =>
-                        append({ productId: undefined as any, quantity: undefined as any, costPrice: undefined as any, totalCost: undefined as any })
+                        append({
+                          productId: undefined as any,
+                          variantId: undefined as any,
+                          quantity: undefined as any,
+                          costPrice: undefined as any,
+                          totalCost: undefined as any,
+                        })
                       }
                     >
-                      Add another product
+                      Add another variant
                     </Button>
 
                     <div className="flex items-center gap-2 text-sm">
@@ -391,7 +399,7 @@ export default function ReceiveStockPage() {
                 <p className="mt-2 text-center text-xs text-slate-400">
                   {hasReadyItem
                     ? `${readyItems} item${readyItems !== 1 ? 's' : ''} ready to receive`
-                    : 'Add a product with quantity and unit cost to continue'}
+                    : 'Pick a product, then its variant, and add quantity and unit cost'}
                 </p>
 
                 <div className="mt-4 border-t border-white/10 pt-3">

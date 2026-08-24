@@ -133,6 +133,34 @@ export class ProductVariantController {
     return res.status(200).json({ success: true, message: 'Product variant updated successfully', data: variant });
   };
 
+  /**
+   * Public storefront listing - no authentication. Only active variants of Published
+   * products are ever returned, so a draft or a retired SKU can never leak.
+   */
+  getAllPublic = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantListItemDto>>>> => {
+    const filters: ProductVariantFilterParams = Object.fromEntries(
+      Object.entries({
+        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
+        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
+        search: req.query['search'] as string | undefined,
+        categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
+        storeCode: req.query['storeCode'] as string | undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortOrder: req.query['sortDirection'] || req.query['sortOrder']
+          ? ((req.query['sortDirection'] || req.query['sortOrder']) as string).toLowerCase() === 'asc'
+            ? 'asc'
+            : 'desc'
+          : undefined,
+        // Not client-supplied: a shopper only ever sees sellable variants of live products.
+        isActive: true,
+        publishedOnly: true,
+      }).filter(([, v]) => v !== undefined)
+    );
+
+    const result = await this.unitOfService.ProductVariant.getAll(filters);
+    return res.status(200).json({ success: true, message: 'Product variants fetched successfully', data: result });
+  };
+
   getHistory = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantResponseDto>>>> => {
     const storeCode = req.user?.storeCode; // Get from logged-in user
     const productId = parseInt(req.params['productId'] as string);

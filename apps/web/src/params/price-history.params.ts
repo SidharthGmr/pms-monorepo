@@ -10,6 +10,8 @@ export interface PriceHistoryFilterParams extends Omit<PageFilterParams, 'startD
   productId?: number;
   minPrice?: number;
   maxPrice?: number;
+  /** Only rows that raised or lowered the price against the same variant's previous one. */
+  changeDirection?: 'increase' | 'decrease';
   startDate?: string;
   endDate?: string;
 }

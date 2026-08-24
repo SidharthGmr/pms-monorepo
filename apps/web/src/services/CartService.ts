@@ -26,6 +26,16 @@ export default class CartService implements ICartService {
     return this.httpService.call().post<CartDto, AxiosResponse<Response<CartDto>>>('/carts', model);
   }
 
+  updateVariantQuantity(variantId: number, model: UpdateCartItemModel): Promise<AxiosResponse<Response<CartDto>>> {
+    return this.httpService.call().put<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/variants/${variantId}`, model);
+  }
+
+  removeVariant(variantId: number, userId?: string | null): Promise<AxiosResponse<Response<CartDto>>> {
+    return this.httpService
+      .call()
+      .delete<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/variants/${variantId}`, { params: userId ? { userId } : undefined });
+  }
+
   updateQuantity(productId: number, model: UpdateCartItemModel): Promise<AxiosResponse<Response<CartDto>>> {
     return this.httpService.call().put<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/items/${productId}`, model);
   }

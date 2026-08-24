@@ -30,6 +30,7 @@ export class BrandNameService implements IBrandNameService {
           name: data.name,
           storeCode: storeCode,
           status: data.status,
+          ...(data.images !== undefined && { images: data.images }),
           displayOrder: data.displayOrder || null,
         },
       });
@@ -50,6 +51,7 @@ export class BrandNameService implements IBrandNameService {
           name: data.name,
           storeCode: data.storeCode,
           status: data.status,
+          ...(data.images !== undefined && { images: data.images }),
           displayOrder: data.displayOrder || null,
           updatedAt: new Date(),
         },

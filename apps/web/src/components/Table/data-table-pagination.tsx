@@ -17,7 +17,7 @@ export function DataTablePagination<TData>({ table, totalRecord = 0, pageSize, l
     const startNumber: number = table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1;
     let endNumber: number = Number(startNumber - 1) + table.getState().pagination.pageSize;
     endNumber = endNumber > totalRecord ? totalRecord : endNumber;
-    showingText = `Showing ${startNumber} to ${endNumber} of ${totalRecord} enteries`;
+    showingText = `Showing ${startNumber} to ${endNumber} of ${totalRecord} entries`;
   }
 
   return (

@@ -10,7 +10,10 @@ export const receiveStockSchema = Yup.object().shape({
   items: Yup.array()
     .of(
       Yup.object().shape({
+        // The product only narrows the variant list - stock is always received against a
+        // specific SKU, which is what `purchaseItem.variantId` requires.
         productId: Yup.number().typeError('Product is required').required('Product is required'),
+        variantId: Yup.number().typeError('Variant is required').required('Variant is required'),
         quantity: Yup.number().typeError('Quantity is required').min(1, 'Quantity must be at least 1').required('Quantity is required'),
         costPrice: Yup.number().typeError('Unit cost is required').min(0, 'Unit cost must be >= 0').required('Unit cost is required'),
         totalCost: Yup.number().default(0),

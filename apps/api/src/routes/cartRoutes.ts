@@ -179,6 +179,10 @@ cartRouter.delete('/items/:productId', authenticateToken, asyncHandler(cartContr
  *       404:
  *         description: No active cart found
  */
+/** Variant-keyed lines: what a storefront cart actually holds. */
+cartRouter.put('/variants/:variantId', authenticateToken, asyncHandler(cartController.updateVariantQuantity));
+cartRouter.delete('/variants/:variantId', authenticateToken, asyncHandler(cartController.removeVariant));
+
 cartRouter.delete('/', authenticateToken, asyncHandler(cartController.clear));
 
 export default cartRouter;

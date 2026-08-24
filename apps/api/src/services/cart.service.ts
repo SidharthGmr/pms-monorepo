@@ -46,12 +46,55 @@ export class CartService implements ICartService {
     return this.cartRepo.getActive(owner);
   }
 
+  /**
+   * Resolves a variant the shopper picked explicitly. Unlike the product path this cannot
+   * guess wrong - but it has to prove the variant is sellable and belongs to this store,
+   * because the id arrives from the client.
+   */
+  private async resolveChosenVariant(variantId: number, storeId: number, tx: Prisma.TransactionClient): Promise<{ variantId: number; unitPrice: number }> {
+    const store = await this.unitOfWork.Store.getById(storeId);
+    const variant = await this.unitOfWork.ProductVariant.findById(variantId, tx);
+
+    if (!variant || !variant.isActive) {
+      throw new ClientError(`Variant ${variantId} is not available.`);
+    }
+    if (store && variant.storeCode !== store.code) {
+      throw new ClientError(`Variant ${variantId} belongs to a different store.`);
+    }
+    if (variant.sellingPrice == null) {
+      throw new ClientError(`Variant ${variantId} has no price yet, so it cannot be added to a cart.`);
+    }
+    return { variantId: variant.id, unitPrice: variant.sellingPrice };
+  }
+
   async addProducts(data: AddToCartModel): Promise<CartDto> {
     const owner: CartOwner = { storeId: data.storeId, userId: data.userId, sessionToken: data.sessionToken };
     this.assertOwner(owner);
 
+    // Variant-keyed adds are the storefront path: the shopper chose a specific SKU.
+    if (data.variantIds && data.variantIds.length > 0) {
+      const quantityByVariant = new Map<number, number>();
+      for (const variantId of data.variantIds) {
+        if (!Number.isInteger(variantId) || variantId <= 0) {
+          throw new ClientError(`'${variantId}' is not a valid variantId.`);
+        }
+        quantityByVariant.set(variantId, (quantityByVariant.get(variantId) ?? 0) + 1);
+      }
+
+      return this.unitOfWork.transaction(async (tx) => {
+        const cart = await this.cartRepo.getOrCreateActive(owner, data.currency ?? DEFAULT_CURRENCY, tx);
+        for (const [variantId, quantity] of quantityByVariant) {
+          const resolved = await this.resolveChosenVariant(variantId, data.storeId, tx);
+          await this.cartRepo.addItem(cart.id, resolved.variantId, quantity, resolved.unitPrice, tx);
+        }
+        const updated = await this.cartRepo.getById(cart.id, tx);
+        if (!updated) throw new NotFoundError('Cart not found after adding items');
+        return updated;
+      });
+    }
+
     if (!data.productIds || data.productIds.length === 0) {
-      throw new ClientError('Provide at least one productId to add to the cart.');
+      throw new ClientError('Provide at least one productId or variantId to add to the cart.');
     }
 
     // A repeated id means "add another one", so collapse to id -> quantity
@@ -96,6 +139,48 @@ export class CartService implements ICartService {
 
       const updated = await this.cartRepo.getById(cart.id, tx);
       if (!updated) throw new NotFoundError('Cart not found after updating quantity');
+      return updated;
+    });
+  }
+
+  /** Sets an absolute quantity for one SKU. 0 removes the line. */
+  async setVariantQuantity(variantId: number, data: UpdateCartItemModel): Promise<CartDto> {
+    const owner: CartOwner = { storeId: data.storeId, userId: data.userId, sessionToken: data.sessionToken };
+    this.assertOwner(owner);
+
+    if (!Number.isInteger(data.quantity) || data.quantity < 0) {
+      throw new ClientError('Quantity must be a whole number of 0 or more.');
+    }
+
+    return this.unitOfWork.transaction(async (tx) => {
+      const cart = await this.cartRepo.getActive(owner, tx);
+      if (!cart) throw new NotFoundError('No active cart found');
+
+      // The line must already be in this cart, otherwise a stray id would silently no-op.
+      if (!cart.items.some((item) => item.variantId === variantId)) {
+        throw new NotFoundError(`Variant ${variantId} is not in your cart.`);
+      }
+
+      await this.cartRepo.setItemQuantity(cart.id, variantId, data.quantity, tx);
+
+      const updated = await this.cartRepo.getById(cart.id, tx);
+      if (!updated) throw new NotFoundError('Cart not found after updating quantity');
+      return updated;
+    });
+  }
+
+  /** Removes one SKU's line, leaving the product's other variants alone. */
+  async removeVariant(variantId: number, owner: CartOwner): Promise<CartDto> {
+    this.assertOwner(owner);
+
+    return this.unitOfWork.transaction(async (tx) => {
+      const cart = await this.cartRepo.getActive(owner, tx);
+      if (!cart) throw new NotFoundError('No active cart found');
+
+      await this.cartRepo.removeItem(cart.id, variantId, tx);
+
+      const updated = await this.cartRepo.getById(cart.id, tx);
+      if (!updated) throw new NotFoundError('Cart not found after removing item');
       return updated;
     });
   }

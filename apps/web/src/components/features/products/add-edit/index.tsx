@@ -351,11 +351,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
                 </FormItem>
               )}
             />
-          </Section>
-        </Card>
 
-        <Card>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="status"
@@ -401,7 +397,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
                 </FormItem>
               )}
             />
-          </div>
+          </Section>
         </Card>
 
         {/* Actions */}

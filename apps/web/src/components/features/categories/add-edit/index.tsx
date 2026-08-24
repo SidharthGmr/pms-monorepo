@@ -2,6 +2,7 @@
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
@@ -34,7 +35,7 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
 
   const form = useForm<CreateCategoryModel>({
     resolver: yupResolver(CategorySchema),
-    defaultValues: { name: '', description: '', status: StatusValues.Published, parentId: undefined, displayOrder: 0 },
+    defaultValues: { name: '', description: '', images: [], status: StatusValues.Published, parentId: undefined, displayOrder: 0 },
   });
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
       form.reset({
         name: c.name,
         description: c.description ?? '',
+        images: c.images ?? [],
         parentId: c.parentId ?? undefined,
         status: c.status ?? StatusValues.Draft,
         displayOrder: c.displayOrder ?? 0,
@@ -132,6 +134,21 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="images"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category image</FormLabel>
+                  <FormControl>
+                    <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">Optional. Shown on the storefront category tile; the first image is used.</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="displayOrder"

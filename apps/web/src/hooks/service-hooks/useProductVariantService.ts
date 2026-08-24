@@ -5,6 +5,19 @@ import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+/** Public storefront listing - active variants of published products, no login needed. */
+const useGetAllPublicProductVariants = (params?: ProductVariantFilterParams, enabled: boolean = true) => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    return useQuery({
+        queryKey: ['ProductVariantService.getAllPublic', params],
+        queryFn: async () => {
+            return await unitOfService.ProductVariantService.getAllPublic(params);
+        },
+        enabled,
+    });
+};
+
 /** The store-wide SKU list. Unlike `useGetProductVariants`, needs no product. */
 const useGetAllProductVariants = (params?: ProductVariantFilterParams, enabled: boolean = true) => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -74,4 +87,10 @@ const useUpdateProductVariant = () => {
     });
 };
 
-export { useGetProductVariants, useGetAllProductVariants, useCreateProductVariant, useUpdateProductVariant };
+export {
+    useGetProductVariants,
+    useGetAllProductVariants,
+    useGetAllPublicProductVariants,
+    useCreateProductVariant,
+    useUpdateProductVariant,
+};

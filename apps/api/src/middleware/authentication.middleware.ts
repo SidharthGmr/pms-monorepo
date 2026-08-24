@@ -15,13 +15,6 @@ const unauthorized = (res: Response, message: string) => {
   res.status(401).json(response);
 };
 
-/**
- * Verifies the bearer token *and* the UserSession it was issued against.
- *
- * The signature check alone is not enough any more: a session can be revoked
- * (logout, "sign out everywhere", refresh-token reuse) while its access token is
- * still inside its 5-minute validity window, and only the DB knows that.
- */
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -45,14 +38,12 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   try {
     const decoded = verifySessionToken(token);
 
-    // A refresh token must never authenticate a normal request.
     if (decoded.type !== ACCESS_TOKEN_TYPE) {
       return unauthorized(res, "Invalid or expired token");
     }
 
     const sessionId = decoded.sid;
     if (!sessionId) {
-      // Tokens minted before sessions existed carry no `sid`.
       return unauthorized(res, "Session is no longer valid. Please login again.");
     }
 

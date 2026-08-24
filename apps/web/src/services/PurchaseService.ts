@@ -10,7 +10,8 @@ import { PurchaseDto } from '@/dtos/purchase.dto';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 
 export interface CreatePurchaseItemModel {
-  productId: number;
+  /** Stock is received against a specific SKU, so the API wants the variant, not the product. */
+  variantId: number;
   quantity: number;
   costPrice: number;
   totalPrice: number;

@@ -4,14 +4,15 @@ import { ListResponseDto } from "../dtos/list-response.dto";
 import { ReviewDto, ReviewSummaryDto } from "../dtos/review.dto";
 import { ReviewFilterParams } from "../params/review.params";
 import { IReviewRepository } from "./interfaces/ireview.repository";
+import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 
 // Review has no storeCode of its own - it is scoped through the product it is
 // written against, so every tenant filter goes through the relation.
 const reviewInclude = {
-    user: { select: { userId: true, name: true, email: true, profileImageUrl: true } },
+    user: { select: userSummarySelect },
     product: { select: { id: true, name: true, slug: true, images: true, storeCode: true } },
     ReviewReply: {
-        include: { user: { select: { userId: true, name: true, email: true, profileImageUrl: true } } },
+        include: { user: { select: userSummarySelect } },
         orderBy: { createdAt: 'asc' as const },
     },
 };
@@ -36,7 +37,7 @@ function toDto(review: ReviewWithRelations): ReviewDto {
         status: review.status,
         createdAt: review.createdAt,
         updatedAt: review.updatedAt,
-        user: review.user,
+        user: toUserSummary(review.user),
         product: review.product,
         replies: review.ReviewReply.map((reply) => ({
             id: reply.id,
@@ -45,7 +46,7 @@ function toDto(review: ReviewWithRelations): ReviewDto {
             comment: reply.comment,
             createdAt: reply.createdAt,
             updatedAt: reply.updatedAt,
-            user: reply.user,
+            user: toUserSummary(reply.user),
         })),
     };
 }

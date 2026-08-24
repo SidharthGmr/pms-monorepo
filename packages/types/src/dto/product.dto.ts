@@ -55,10 +55,19 @@ export interface ProductVariantSummaryDto {
  * fields, plus its current (active) price, for list/detail views.
  * `currentPrice` is null when the product has no active price.
  */
-export interface ProductWithPriceResponseDto extends ProductResponseDto {
+/**
+ * A single product with its related names resolved, and deliberately no price or stock:
+ * both are held per variant, so a product-level figure could only ever be an aggregate.
+ * The detail endpoint returns this; the list endpoint still carries the aggregates because
+ * catalog cards and the POS grid are built on them.
+ */
+export interface ProductDetailResponseDto extends ProductResponseDto {
   category: string;
   brandName: string | null;
   attribute: string | null;
+}
+
+export interface ProductWithPriceResponseDto extends ProductDetailResponseDto {
   currentPrice: CurrentPriceDto | null;
   // Current on-hand stock: the sum of all stockHistory quantity movements.
   stock: number;

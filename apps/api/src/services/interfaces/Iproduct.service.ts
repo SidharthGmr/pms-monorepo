@@ -1,4 +1,4 @@
-import { ListResponseDto, ProductModel, ProductResponseDto, ProductWithPriceResponseDto } from "@pms/types";
+import { ListResponseDto, ProductDetailResponseDto, ProductModel, ProductResponseDto, ProductWithPriceResponseDto } from "@pms/types";
 import { ProductFilterParams } from "../../params/product.params";
 
 export interface AddStockModel {
@@ -17,7 +17,8 @@ export interface AddStockModel {
 export interface IProductService {
   getAll(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
   getLowStock(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
-  getById(id: number): Promise<ProductResponseDto | null>;
+  /** One product with related names; price and stock live on its variants. */
+  getById(id: number): Promise<ProductDetailResponseDto | null>;
   create(data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
   update(id: number, data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
   delete(id: number): Promise<ProductResponseDto>;

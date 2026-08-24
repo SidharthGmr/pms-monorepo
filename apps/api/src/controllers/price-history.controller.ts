@@ -22,6 +22,11 @@ export class PriceHistoryController {
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
         minPrice: req.query['minPrice'] ? parseFloat(req.query['minPrice'] as string) : undefined,
         maxPrice: req.query['maxPrice'] ? parseFloat(req.query['maxPrice'] as string) : undefined,
+        // Anything other than the two known values is ignored rather than rejected.
+        changeDirection:
+          req.query['changeDirection'] === 'increase' || req.query['changeDirection'] === 'decrease'
+            ? (req.query['changeDirection'] as 'increase' | 'decrease')
+            : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
         // Never client-supplied: the tenant always comes from the token.

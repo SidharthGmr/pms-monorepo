@@ -11,6 +11,11 @@ export interface ProductVariantFilterParams extends PageFilterParams {
   categoryId?: number;
   /** Sellable variants only when true; retired ones only when false. */
   isActive?: boolean;
+  /**
+   * Restricts to variants whose parent product is Published. The public storefront sets it;
+   * the admin list leaves it off so drafts stay visible to staff.
+   */
+  publishedOnly?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }

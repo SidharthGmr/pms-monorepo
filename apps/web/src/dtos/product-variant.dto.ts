@@ -38,10 +38,14 @@ export interface ProductVariantListItemDto extends Omit<ProductVariantDto, 'sell
   sellingPrice: number | null;
   compareAtPrice?: number | null;
   lowStockThreshold?: number | null;
+  images?: string[];
   product: {
     id: number;
     name: string;
     slug: string;
     categoryId: number;
+    /** Storefront fallback when the variant has no photo of its own. */
+    images?: string[];
+    category?: { name: string; images?: string[] } | null;
   };
 }

@@ -3,6 +3,8 @@ import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
+import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { cn } from '@/lib/utils';
 import { ReceiveStockFormValues } from '@/schema/receiveStockSchema';
 import { Check, Trash2 } from 'lucide-react';
@@ -21,7 +23,7 @@ interface PurchaseItemRowProps {
  * Line items read as one table, not a stack of cards: the header band and every
  * row share this column template, so a change here moves both at once.
  */
-const GRID_COLUMNS = 'sm:grid sm:grid-cols-[1.25rem_minmax(0,1fr)_5rem_7rem_6.5rem_2rem] sm:items-start sm:gap-3';
+const GRID_COLUMNS = 'sm:grid sm:grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,1fr)_4.5rem_7rem_6.5rem_2rem] sm:items-start sm:gap-3';
 
 /** Column captions. Hidden on mobile, where every field carries its own label. */
 export function PurchaseItemsHeader() {
@@ -35,6 +37,7 @@ export function PurchaseItemsHeader() {
     >
       <span />
       <span>Product</span>
+      <span>Variant (SKU)</span>
       <span className="text-right">Qty</span>
       <span className="text-right">Unit cost</span>
       <span className="text-right">Subtotal</span>
@@ -100,6 +103,20 @@ const NumericInput = forwardRef<HTMLInputElement, NumericInputProps>(({ value, o
 });
 NumericInput.displayName = 'NumericInput';
 
+/** What tells one SKU of the same product apart, e.g. "Red / L" or the bare SKU. */
+function variantLabel(variant: ProductVariantListItemDto): string {
+  if (variant.name) return variant.name;
+  const attributes = variant.attributes;
+  if (attributes && typeof attributes === 'object') {
+    const described = Object.values(attributes)
+      .filter((value) => value !== null && value !== undefined && value !== '')
+      .map(String)
+      .join(' / ');
+    if (described) return described;
+  }
+  return variant.sku || `Variant #${variant.id}`;
+}
+
 export function PurchaseItemRow({ control, index, products, onRemove, canRemove }: PurchaseItemRowProps) {
   const { setValue } = useFormContext<ReceiveStockFormValues>();
 
@@ -110,23 +127,49 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
     }));
   }, [products]);
 
-  // Live per-line subtotal (quantity × unit cost).
+  // Live per-line subtotal (quantity x unit cost).
   const productId = useWatch({ control, name: `items.${index}.productId` });
+  const variantId = useWatch({ control, name: `items.${index}.variantId` });
   const quantity = useWatch({ control, name: `items.${index}.quantity` });
   const unitCost = useWatch({ control, name: `items.${index}.costPrice` });
   const lineTotal = Number(quantity) > 0 && Number(unitCost) >= 0 ? Number(quantity) * Number(unitCost) : 0;
 
+  // The product is only a filter: stock is received against one SKU, so the variant list is
+  // fetched for whichever product this line names. React Query keys on the productId, so two
+  // lines against the same product share a single request.
+  const { data: variantsData, isFetching: isFetchingVariants } = useGetAllProductVariants(
+    { productId: Number(productId), isActive: true, showAllRecords: true },
+    Boolean(productId)
+  );
+  const variants: ProductVariantListItemDto[] = useMemo(() => variantsData?.data?.data?.data ?? [], [variantsData]);
+
+  const variantItems = useMemo(
+    () =>
+      variants.map((variant) => ({
+        label: variant.sku ? `${variantLabel(variant)} - ${variant.sku}` : variantLabel(variant),
+        value: variant.id,
+      })),
+    [variants]
+  );
+
   const selectedProduct = useMemo(() => products.find((p: any) => String(p.id) === String(productId)), [products, productId]);
+  const selectedVariant = useMemo(() => variants.find((variant) => String(variant.id) === String(variantId)), [variants, variantId]);
+
+  // A single-variant product has nothing to choose, so choosing is skipped.
+  useEffect(() => {
+    if (!productId || variantId || variants.length !== 1) return;
+    setValue(`items.${index}.variantId`, variants[0].id, { shouldValidate: true, shouldDirty: true });
+  }, [productId, variantId, variants, index, setValue]);
 
   // A line is "ready" once it would actually add stock.
-  const isComplete = Boolean(productId) && Number(quantity) > 0 && unitCost !== undefined && unitCost !== null && Number(unitCost) >= 0;
+  const isComplete = Boolean(variantId) && Number(quantity) > 0 && unitCost !== undefined && unitCost !== null && Number(unitCost) >= 0;
 
-  const currentStock = Number(selectedProduct?.stock ?? 0);
+  const currentStock = Number(selectedVariant?.stockQuantity ?? 0);
   const incomingUnits = Number(quantity) > 0 ? Number(quantity) : 0;
 
-  // Last known purchase cost, offered as a one-click fill so recurring restocks
+  // Last known purchase cost for this SKU, offered as a one-click fill so recurring restocks
   // don't have to be typed from memory.
-  const lastCost = selectedProduct?.currentPrice?.costPrice ?? selectedProduct?.cost ?? null;
+  const lastCost = selectedVariant?.costPrice ?? null;
   const showCostHint = lastCost !== null && lastCost !== undefined && Number(lastCost) > 0 && (unitCost === undefined || unitCost === null);
 
   const inputClass = 'h-10 text-right tabular-nums';
@@ -154,7 +197,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
         )}
       </div>
 
-      {/* Product */}
+      {/* Product - narrows the variant list; nothing is received against it directly. */}
       <div className="min-w-0">
         <FormField
           control={control}
@@ -169,7 +212,11 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
                   placeholder="Select a product"
                   items={productItems}
                   containerName={`receive-stock-product-${index}`}
-                  onChange={(val) => field.onChange(val)}
+                  onChange={(val) => {
+                    field.onChange(val);
+                    // The old SKU belongs to the old product, so it cannot carry over.
+                    setValue(`items.${index}.variantId`, undefined as unknown as number, { shouldValidate: false, shouldDirty: true });
+                  }}
                   // justify-between overrides the Button's centred layout, so the product
                   // name reads from the left like a field value instead of a caption.
                   buttonClass="h-10 w-full min-w-0 justify-between truncate px-3 text-left font-normal shadow-none"
@@ -179,14 +226,55 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
             </FormItem>
           )}
         />
+      </div>
 
-        {/* Stock context for the chosen product. */}
-        {selectedProduct && (
-          <p className="mt-1.5 truncate text-xs text-slate-400">
-            In stock <span className="font-medium tabular-nums text-slate-500">{currentStock}</span>
-            {incomingUnits > 0 && <span className="font-medium text-primary"> → {currentStock + incomingUnits}</span>}
-          </p>
-        )}
+      {/* Variant - the SKU the stock actually lands on. */}
+      <div className="mt-3 min-w-0 sm:mt-0">
+        <FormField
+          control={control}
+          name={`items.${index}.variantId`}
+          render={({ field }) => (
+            <FormItem>
+              <span className="mb-1 block text-xs font-medium text-slate-500 sm:hidden">Select a variant</span>
+              <FormControl>
+                {!productId ? (
+                  // SelectSearch has no disabled state, so an inert stand-in keeps the columns
+                  // aligned and says why the field cannot be used yet.
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-slate-50 px-3 text-sm text-slate-400">
+                    Pick a product first
+                  </div>
+                ) : (
+                  <SelectSearch
+                    value={field.value}
+                    valueType="number"
+                    placeholder={isFetchingVariants && variants.length === 0 ? 'Loading variants...' : 'Select a variant'}
+                    items={variantItems}
+                    containerName={`receive-stock-variant-${index}`}
+                    onChange={(val) => field.onChange(val)}
+                    buttonClass="h-10 w-full min-w-0 justify-between truncate px-3 text-left font-normal shadow-none"
+                  />
+                )}
+              </FormControl>
+              <FormMessage />
+
+              {/* A product with no sellable SKU cannot receive stock - say so rather than
+                  leaving an empty dropdown to puzzle over. */}
+              {productId && !isFetchingVariants && variants.length === 0 && (
+                <p className="mt-1.5 text-xs text-amber-600">
+                  {selectedProduct?.name ?? 'This product'} has no active variant yet. Create one before receiving stock.
+                </p>
+              )}
+
+              {/* Stock context for the chosen SKU. */}
+              {selectedVariant && (
+                <p className="mt-1.5 truncate text-xs text-slate-400">
+                  In stock <span className="font-medium tabular-nums text-slate-500">{currentStock}</span>
+                  {incomingUnits > 0 && <span className="font-medium text-primary"> -&gt; {currentStock + incomingUnits}</span>}
+                </p>
+              )}
+            </FormItem>
+          )}
+        />
       </div>
 
       {/* Quantity */}

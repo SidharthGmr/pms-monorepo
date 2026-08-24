@@ -23,19 +23,23 @@ export class ReviewController {
     const actor = this.actor(req);
     const isStaff = STAFF_ROLES.includes(actor.role);
 
-    // A customer only ever sees their own reviews; staff may filter by any user.
+    // A customer only ever sees their own reviews - except on a product page, where
+    // everyone's Published reviews of that product are what the page is for. Staff may
+    // filter by any user and any status.
     const requestedUserId = req.query['userId'] as string | undefined;
+    const productIdRequested = req.query['productId'] !== undefined;
+    const publicProductRead = !isStaff && productIdRequested;
 
     const filters: ReviewFilterParams = Object.fromEntries(
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
         recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
         search: req.query['search'] as string | undefined,
-        status: req.query['status'] ? (req.query['status'] as Status) : undefined,
+        status: publicProductRead ? Status.Published : req.query['status'] ? (req.query['status'] as Status) : undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
         orderId: req.query['orderId'] ? parseInt(req.query['orderId'] as string) : undefined,
-        userId: isStaff ? requestedUserId : actor.userId,
+        userId: isStaff ? requestedUserId : publicProductRead ? undefined : actor.userId,
         rating: req.query['rating'] ? parseInt(req.query['rating'] as string) : undefined,
         minRating: req.query['minRating'] ? parseInt(req.query['minRating'] as string) : undefined,
         isVerified: req.query['isVerified'] !== undefined ? req.query['isVerified'] === 'true' : undefined,

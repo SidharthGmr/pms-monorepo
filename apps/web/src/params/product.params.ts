@@ -11,6 +11,9 @@ export interface ProductFilterParams extends PageFilterParams {
     categoryId?: string | null;
     status?: string | null;
     storeCode?: string | null;
+    /** Only real columns are honoured by the API; price and stock are derived, not stored. */
+    sortBy?: string;
+    sortDirection?: 'asc' | 'desc';
 }
 
 export interface ProductAttributeFilterParams extends PageFilterParams {

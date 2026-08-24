@@ -26,6 +26,8 @@ export interface ProductDto {
   currentPrice?: Pick<ProductVariantSummaryDto, 'sellingPrice' | 'costPrice'> | null;
   lowStockThreshold?: number | null;
   categoryId: number;
+  /** Resolved category name, sent by the list endpoints alongside `categoryId`. */
+  category?: string | null;
   parentId?: number | null;
   attributeId?: number | null;
   storeCode: string;

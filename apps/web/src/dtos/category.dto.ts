@@ -3,6 +3,7 @@ export interface CategoryDto {
   storeCode: string;
   name: string;
   description?: string | null;
+  images?: string[];
   parentId?: number | null;
   status: string | null;
   displayOrder: number;

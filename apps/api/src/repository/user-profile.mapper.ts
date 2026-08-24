@@ -23,6 +23,27 @@ export const profileFieldNames = [
 ] as const;
 
 /**
+ * Lean author/owner select for rows that carry a user (reviews, replies, wishlists).
+ * `profileImageUrl` lives on `UserProfile`, so it must be selected through the relation -
+ * selecting it straight off `users` is a runtime Prisma validation error that TypeScript
+ * cannot catch when the select is built as a standalone object.
+ */
+export const userSummarySelect = {
+  userId: true,
+  name: true,
+  email: true,
+  UserProfile: { select: { profileImageUrl: true } },
+} satisfies Prisma.usersSelect;
+
+export type UserSummaryRow = Prisma.usersGetPayload<{ select: typeof userSummarySelect }>;
+
+/** Flattens the summary row back to the `{ userId, name, email, profileImageUrl }` DTO shape. */
+export function toUserSummary(user: UserSummaryRow): { userId: string; name: string; email: string; profileImageUrl: string | null } {
+  const { UserProfile: profile, ...rest } = user;
+  return { ...rest, profileImageUrl: profile?.profileImageUrl ?? null };
+}
+
+/**
  * Flattens `UserProfile` back onto the user so the API response shape — and therefore
  * the web client — stays exactly as it was before the users/UserProfile split.
  */

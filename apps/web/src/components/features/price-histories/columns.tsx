@@ -19,18 +19,13 @@ interface PriceHistoryColumnOptions {
    */
   effectiveRowId?: number;
   /**
-   * Whether a row can be compared with the one below it. Only true when the table is
-   * showing newest-first by effective date, otherwise "previous price" is meaningless.
-   */
-  canCompare: boolean;
-  /**
    * Correcting and deleting a row are admin-only on the API. Staff would get a 403,
    * which HttpService turns into an /access-denied redirect - so hide the buttons.
    */
   canManage: boolean;
 }
 
-export const usePriceHistoryColumns = ({ editRecord, deleteRecord, effectiveRowId, canCompare, canManage }: PriceHistoryColumnOptions) =>
+export const usePriceHistoryColumns = ({ editRecord, deleteRecord, effectiveRowId, canManage }: PriceHistoryColumnOptions) =>
   useMemo<ColumnDef<PriceHistoryDto>[]>(
     () => [
       ...(canManage
@@ -65,19 +60,17 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, effectiveRowI
         accessorKey: 'sellingPrice',
         enableSorting: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Selling Price" />,
-        cell: ({ row, table }) => {
-          // Rows are newest-first, so the next row of the same variant is the price
-          // this one replaced.
-          const rows = table.getRowModel().rows;
-          const next = canCompare ? rows[row.index + 1]?.original : undefined;
-          const previous = next && next.variantId === row.original.variantId ? next.sellingPrice : undefined;
-          const delta = previous !== undefined && previous !== 0 ? ((row.original.sellingPrice - previous) / previous) * 100 : null;
+        cell: ({ row }) => {
+          // The API resolves what this row replaced, so the comparison holds however the
+          // table is sorted and even when the previous row sits on another page.
+          const previous = row.original.previousPrice;
+          const delta = previous !== null && previous !== undefined && previous !== 0 ? ((row.original.sellingPrice - previous) / previous) * 100 : null;
 
           return (
             <div className="flex items-center gap-2">
               <span className="font-semibold tabular-nums">{formatPrice(row.original.sellingPrice)}</span>
               {delta !== null && delta !== 0 && (
-                <Badge variant={delta > 0 ? 'green' : 'rose'} className="tabular-nums">
+                <Badge variant={delta > 0 ? 'green' : 'rose'} className="tabular-nums" title={`Was ${formatPrice(previous)}`}>
                   {delta > 0 ? '▲' : '▼'} {formatPercent(Math.abs(delta))}
                 </Badge>
               )}
@@ -151,5 +144,5 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, effectiveRowI
         ),
       },
     ],
-    [editRecord, deleteRecord, effectiveRowId, canCompare, canManage]
+    [editRecord, deleteRecord, effectiveRowId, canManage]
   );

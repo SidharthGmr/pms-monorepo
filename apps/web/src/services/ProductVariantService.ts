@@ -32,6 +32,15 @@ export default class ProductVariantService implements IProductVariantService {
             .put<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>(`/product-variants/${id}`, model);
     }
 
+    getAllPublic(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>> {
+        return this.httpService
+            .call()
+            .get<ListResponseDto<ProductVariantListItemDto>, AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>>(
+                '/product-variants/public',
+                { params }
+            );
+    }
+
     getAll(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>> {
         return this.httpService
             .call()

@@ -4,9 +4,10 @@ import { ListResponseDto } from "../dtos/list-response.dto";
 import { ReviewReplyDto } from "../dtos/review.dto";
 import { ReviewReplyFilterParams } from "../params/review.params";
 import { IReviewReplyRepository } from "./interfaces/ireview-reply.repository";
+import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 
 const replyInclude = {
-    user: { select: { userId: true, name: true, email: true, profileImageUrl: true } },
+    user: { select: userSummarySelect },
 };
 
 type ReplyWithUser = Prisma.ReviewReplyGetPayload<{ include: typeof replyInclude }>;
@@ -21,7 +22,7 @@ function toDto(reply: ReplyWithUser): ReviewReplyDto {
         comment: reply.comment,
         createdAt: reply.createdAt,
         updatedAt: reply.updatedAt,
-        user: reply.user,
+        user: toUserSummary(reply.user),
     };
 }
 

@@ -51,13 +51,18 @@ export class CartController {
   };
 
   addProducts = async (req: Request, res: Response): Promise<Response<CustomResponse<CartDto>>> => {
-    const body = req.body as { storeId?: number; userId?: string | null; productIds?: unknown; currency?: string };
+    const body = req.body as { storeId?: number; userId?: string | null; productIds?: unknown; variantIds?: unknown; currency?: string };
 
     const { storeId, error } = await this.resolveStoreId(req, body.storeId);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
 
-    if (!Array.isArray(body.productIds)) {
-      return res.status(400).json({ success: false, message: 'productIds must be an array of product ids.' });
+    // A storefront sends the SKU the shopper picked; the POS still sends products and lets
+    // the service resolve the default variant. Either is valid, but one must be present.
+    const variantIds = Array.isArray(body.variantIds) ? body.variantIds.map(Number) : undefined;
+    const productIds = Array.isArray(body.productIds) ? body.productIds.map(Number) : undefined;
+
+    if (!variantIds?.length && !productIds?.length) {
+      return res.status(400).json({ success: false, message: 'Send variantIds (preferred) or productIds as a non-empty array.' });
     }
 
     const owner = this.ownerFrom(req, storeId, body.userId);
@@ -65,7 +70,8 @@ export class CartController {
       storeId,
       userId: owner.userId,
       sessionToken: owner.sessionToken,
-      productIds: body.productIds.map(Number),
+      productIds: productIds ?? [],
+      ...(variantIds?.length && { variantIds }),
       ...(body.currency && { currency: body.currency }),
     };
 
@@ -96,6 +102,41 @@ export class CartController {
 
     const cart = await this.unitOfService.Cart.updateProductQuantity(productId, model);
     return res.status(200).json({ success: true, message: 'Cart updated successfully', data: cart });
+  };
+
+  updateVariantQuantity = async (req: Request, res: Response): Promise<Response<CustomResponse<CartDto>>> => {
+    const variantId = parseInt(req.params['variantId'] as string);
+    if (isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
+
+    const body = req.body as { storeId?: number; userId?: string | null; quantity?: number };
+
+    const { storeId, error } = await this.resolveStoreId(req, body.storeId);
+    if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
+
+    if (body.quantity === undefined) {
+      return res.status(400).json({ success: false, message: 'quantity is required.' });
+    }
+
+    const owner = this.ownerFrom(req, storeId, body.userId);
+    const cart = await this.unitOfService.Cart.setVariantQuantity(variantId, {
+      storeId,
+      userId: owner.userId,
+      sessionToken: owner.sessionToken,
+      quantity: Number(body.quantity),
+    });
+    return res.status(200).json({ success: true, message: 'Cart updated successfully', data: cart });
+  };
+
+  removeVariant = async (req: Request, res: Response): Promise<Response<CustomResponse<CartDto>>> => {
+    const variantId = parseInt(req.params['variantId'] as string);
+    if (isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
+
+    const { storeId, error } = await this.resolveStoreId(req);
+    if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
+
+    const userId = (req.query['userId'] as string) || undefined;
+    const cart = await this.unitOfService.Cart.removeVariant(variantId, this.ownerFrom(req, storeId, userId));
+    return res.status(200).json({ success: true, message: 'Item removed from cart successfully', data: cart });
   };
 
   removeProduct = async (req: Request, res: Response): Promise<Response<CustomResponse<CartDto>>> => {

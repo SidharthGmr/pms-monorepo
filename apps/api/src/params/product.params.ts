@@ -8,4 +8,7 @@ export interface ProductFilterParams extends PageFilterParams {
   storeId?: number;
   createdById?: string;
   status?: Status;
+  /** Only real columns are honoured; price and stock are derived, so they cannot be sorted. */
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

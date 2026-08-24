@@ -81,6 +81,7 @@ export class CategoryService implements ICategoryService {
           parentId: data.parentId ?? null,
           storeCode: storeCode,
           status: data.status || StatusEnum.Draft,
+          ...(data.images !== undefined && { images: data.images }),
           // NOT NULL with a 0 default - the old `|| null` would now be rejected.
           displayOrder: data.displayOrder ?? 0,
           ...metadataInput(data.metadata),
@@ -109,6 +110,7 @@ export class CategoryService implements ICategoryService {
           description: data.description || null,
           parentId: data.parentId ?? null,
           status: data.status || StatusEnum.Draft,
+          ...(data.images !== undefined && { images: data.images }),
           displayOrder: data.displayOrder ?? existing.displayOrder,
           ...metadataInput(data.metadata),
           updatedById: userId,

@@ -2,6 +2,7 @@
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
@@ -30,17 +31,18 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
   const createMutation = useCreateBrandName();
   const updateMutation = useUpdateBrandName();
   const { data: brandNameResponse, isLoading: isFetching } = useGetBrandNameById(id ?? 0, isEdit);
-  const { data: getAllCategories, isLoading: isFetchingCategories } = useGetAllCategories();
+  // Only the loading flag is used - the list itself is not rendered on this form.
+  const { isLoading: isFetchingCategories } = useGetAllCategories();
 
   const form = useForm<CreateBrandNameModel>({
     resolver: yupResolver(BrandNameSchema),
-    defaultValues: { name: '', status: StatusValues.Draft, displayOrder: 1 },
+    defaultValues: { name: '', images: [], status: StatusValues.Draft, displayOrder: 1 },
   });
 
   useEffect(() => {
     if (isEdit && brandNameResponse?.data?.data) {
       const b = brandNameResponse.data.data;
-      form.reset({ name: b.name, status: b.status, displayOrder: b.displayOrder ?? 0 });
+      form.reset({ name: b.name, images: b.images ?? [], status: b.status, displayOrder: b.displayOrder ?? 0 });
     }
   }, [isEdit, brandNameResponse, form]);
 
@@ -77,6 +79,21 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
                   <FormControl>
                     <Input placeholder="e.g. Nike, Adidas" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="images"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Brand logo</FormLabel>
+                  <FormControl>
+                    <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">Optional. The first image is used as the logo.</p>
                   <FormMessage />
                 </FormItem>
               )}

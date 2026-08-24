@@ -5,6 +5,7 @@ export const categoryValidator = z.object({
   body: z.object({
     name: z.string().min(1, "Name is required"),
     description: z.string().nullable().optional(),
+    images: z.array(z.string()).optional(),
     parentId: z.number().int().positive().nullable().optional(),
     status: z.nativeEnum(StatusEnum).optional(),
     displayOrder: z.number().int().min(0).optional(),

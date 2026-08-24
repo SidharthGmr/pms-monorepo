@@ -1,6 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductResponseDto, ProductVariantSummaryDto, ProductWithPriceResponseDto } from '@pms/types';
+import { ProductDetailResponseDto, ProductResponseDto, ProductVariantSummaryDto, ProductWithPriceResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { ProductFilterParams } from '../params/product.params';
 import { priceForVariant, pricesForVariants, stockForVariants } from '../utils/variant-pricing';
@@ -8,6 +8,13 @@ import { IProductRepository } from './interfaces/iproduct.repository';
 
 /** Applied when a variant sets no threshold of its own. Mirrors the schema default. */
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
+
+/**
+ * Sorting is client-driven, so only real columns are honoured - an unknown value falls back
+ * to the default instead of failing the query. Price and stock are derived from the ledger
+ * and the movements, so neither can be sorted in SQL.
+ */
+const SORTABLE_COLUMNS = new Set(['name', 'createdAt', 'updatedAt', 'displayOrder', 'id']);
 
 const productInclude = {
   // brandName: { select: { id: true, name: true } },
@@ -23,6 +30,8 @@ export class ProductRepository implements IProductRepository {
     sortBy = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<ListResponseDto<ProductWithPriceResponseDto>> {
+    const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
+    const direction: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
     const where: Prisma.productWhereInput = { NOT: { status: Status.Trash } };
 
     if (filters) {
@@ -64,7 +73,7 @@ export class ProductRepository implements IProductRepository {
       prisma.product.findMany({
         where,
         include: productInclude,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: [{ [column]: direction }, { id: 'desc' }],
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
       }),
@@ -255,14 +264,16 @@ export class ProductRepository implements IProductRepository {
     return { totalRecord: total, data };
   }
 
-  async findById(id: number): Promise<ProductWithPriceResponseDto | null> {
+  /**
+   * One product with its related names. No price or stock: both live on the variants, so a
+   * figure here would be an aggregate that invites the caller to edit it - which is exactly
+   * how the product form used to rewrite whichever variant happened to be first.
+   */
+  async findById(id: number): Promise<ProductDetailResponseDto | null> {
     const product = await prisma.product.findUnique({ where: { id }, include: productInclude });
     if (!product) return null;
 
-    // Same derivation as the list endpoints: price comes from the effective PriceHistory row
-    // of the product's first active variant, stock from the sum of stockHistory movements.
-    // The edit form needs both, since neither is a column on `product`.
-    const [category, brand, attribute, firstVariant, stockSum] = await Promise.all([
+    const [category, brand, attribute] = await Promise.all([
       prisma.category.findUnique({ where: { id: product.categoryId }, select: { name: true } }),
       product.brandNameId != null
         ? prisma.brandName.findUnique({ where: { id: product.brandNameId }, select: { name: true } })
@@ -270,23 +281,13 @@ export class ProductRepository implements IProductRepository {
       product.attributeId != null
         ? prisma.attribute.findUnique({ where: { id: product.attributeId }, select: { name: true } })
         : null,
-      prisma.productVariant.findFirst({
-        where: { productId: id, isActive: true, deletedAt: null },
-        orderBy: { id: 'asc' },
-        select: { id: true },
-      }),
-      prisma.stockHistory.aggregate({ where: { productId: id }, _sum: { quantity: true } }),
     ]);
-
-    const effectivePrice = firstVariant ? await priceForVariant(firstVariant.id) : null;
 
     return {
       ...product,
       category: category?.name ?? '',
       brandName: brand?.name ?? null,
       attribute: attribute?.name ?? null,
-      currentPrice: effectivePrice ? { sellingPrice: effectivePrice.sellingPrice, costPrice: effectivePrice.costPrice } : null,
-      stock: stockSum._sum.quantity ?? 0,
     };
   }
 

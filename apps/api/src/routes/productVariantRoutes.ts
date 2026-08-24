@@ -223,6 +223,56 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
 
 /**
  * @swagger
+ * /product-variants/public:
+ *   get:
+ *     summary: Public storefront SKU listing (no authentication)
+ *     tags: [ProductVariant]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Matches SKU, variant name, barcode or product name
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: storeCode
+ *         schema:
+ *           type: string
+ *         description: Optional store scoping for a single-tenant storefront
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [sku, name, createdAt, id]
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *     responses:
+ *       200:
+ *         description: Product variants fetched successfully
+ *     description: >
+ *       Every sellable SKU a shopper may see: active variants of Published products only,
+ *       each with its effective price, on-hand stock and the product it belongs to. Draft
+ *       products and retired variants are never returned, and neither filter can be
+ *       overridden from the query string.
+ */
+productVariantRouter.get('/public', asyncHandler(productVariantController.getAllPublic));
+
+/**
+ * @swagger
  * /product-variants/product/{productId}:
  *   get:
  *     summary: Get the variant-change history for a product

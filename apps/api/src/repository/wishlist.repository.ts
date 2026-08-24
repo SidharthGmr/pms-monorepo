@@ -4,12 +4,13 @@ import { ListResponseDto } from "../dtos/list-response.dto";
 import { WishlistDto } from "../dtos/wishlist.dto";
 import { WishlistFilterParams } from "../params/wishlist.params";
 import { IWishlistRepository } from "./interfaces/iwishlist.repository";
+import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 
 const wishlistInclude = {
     product: { select: { id: true, name: true, slug: true, images: true, storeCode: true, status: true } },
     // Staff listings show who saved the item, so the owner travels with the row
     // instead of forcing the client to resolve every userId separately.
-    user: { select: { userId: true, name: true, email: true, profileImageUrl: true } },
+    user: { select: userSummarySelect },
 };
 
 type WishlistWithProduct = Prisma.WishlistGetPayload<{ include: typeof wishlistInclude }>;
@@ -24,7 +25,7 @@ function toDto(entry: WishlistWithProduct): WishlistDto {
         storeCode: entry.storeCode,
         addedAt: entry.addedAt,
         product: entry.product,
-        user: entry.user,
+        user: toUserSummary(entry.user),
     };
 }
 

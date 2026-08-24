@@ -10,6 +10,11 @@ export interface PriceHistoryFilterParams extends PageFilterParams {
   productId?: number;
   minPrice?: number;
   maxPrice?: number;
+  /**
+   * Keep only rows that raised or lowered the price against the same variant's previous
+   * one. A variant's first-ever price is neither, so it is excluded by both.
+   */
+  changeDirection?: 'increase' | 'decrease';
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }

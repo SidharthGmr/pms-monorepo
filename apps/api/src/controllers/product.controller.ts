@@ -77,6 +77,12 @@ export class ProductController {
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortOrder: req.query['sortDirection'] || req.query['sortOrder']
+          ? ((req.query['sortDirection'] || req.query['sortOrder']) as string).toLowerCase() === 'asc'
+            ? 'asc'
+            : 'desc'
+          : undefined,
         createdById,
         storeCode,
       }).filter(([, v]) => v !== undefined)
@@ -107,6 +113,12 @@ export class ProductController {
         brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
         storeCode: req.query['storeCode'] as string | undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortOrder: req.query['sortDirection'] || req.query['sortOrder']
+          ? ((req.query['sortDirection'] || req.query['sortOrder']) as string).toLowerCase() === 'asc'
+            ? 'asc'
+            : 'desc'
+          : undefined,
         // Public visitors must only ever see published products.
         status: Status.Published,
       }).filter(([, v]) => v !== undefined)

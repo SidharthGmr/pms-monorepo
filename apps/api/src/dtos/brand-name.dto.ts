@@ -3,6 +3,8 @@ import { Status } from "@prisma/client";
 export interface BrandNameDto {
     id: number;
     name: string;
+    /** Optional logo. Same array shape as `product.images`, so one uploader serves both. */
+    images?: string[];
     storeCode: string
     status: Status;
     displayOrder?: number | null;
@@ -12,8 +14,9 @@ export interface BrandNameDto {
 
 export interface CreateBrandNameDto {
     name: string;
+    /** Optional logo. Same array shape as `product.images`, so one uploader serves both. */
+    images?: string[];
     storeCode: string
     status: Status;
     displayOrder?: number | null;
 }
-

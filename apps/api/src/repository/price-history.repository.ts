@@ -29,7 +29,7 @@ const SORTABLE_COLUMNS = new Set(['sellingPrice', 'costPrice', 'effectiveFrom', 
  * Prisma maps the price columns to `Decimal`, which serializes to a JSON string.
  * The API contract exposes plain numbers, so convert at the repository boundary.
  */
-function toDto(row: PriceHistoryWithVariant): PriceHistoryDto {
+function toDto(row: PriceHistoryWithVariant, previousPrice: number | null = null): PriceHistoryDto {
   return {
     id: row.id,
     variantId: row.variantId,
@@ -40,8 +40,59 @@ function toDto(row: PriceHistoryWithVariant): PriceHistoryDto {
     effectiveFrom: row.effectiveFrom,
     effectiveTo: row.effectiveTo,
     reason: row.reason,
+    previousPrice,
     variant: row.variant,
   };
+}
+
+/**
+ * The price each row replaced, for the given rows, resolved with a window function over
+ * each variant's whole ledger. Doing it in SQL is what makes the comparison survive
+ * pagination and sorting - the previous row is often not on the page at all.
+ */
+async function previousPricesFor(ids: number[], tx: Prisma.TransactionClient = prisma): Promise<Map<number, number>> {
+  const previous = new Map<number, number>();
+  if (ids.length === 0) return previous;
+
+  const rows = await tx.$queryRaw<{ id: number; previous: Prisma.Decimal | null }[]>`
+    SELECT id, previous FROM (
+      SELECT id,
+             LAG("sellingPrice") OVER (PARTITION BY "variantId" ORDER BY "effectiveFrom", id) AS previous
+      FROM "PriceHistory"
+      WHERE "deletedAt" IS NULL
+        AND "variantId" IN (SELECT "variantId" FROM "PriceHistory" WHERE id IN (${Prisma.join(ids)}))
+    ) ranked
+    WHERE id IN (${Prisma.join(ids)}) AND previous IS NOT NULL
+  `;
+
+  for (const row of rows) {
+    if (row.previous !== null) previous.set(row.id, Number(row.previous));
+  }
+  return previous;
+}
+
+/**
+ * Ids of the rows that raised (or lowered) the price against the same variant's previous
+ * one. Applied as an `id IN (...)` filter so it composes with every other filter and keeps
+ * the paginated count honest.
+ */
+async function idsByChangeDirection(
+  direction: 'increase' | 'decrease',
+  storeCode: string | undefined,
+  tx: Prisma.TransactionClient = prisma
+): Promise<number[]> {
+  const rows = await tx.$queryRaw<{ id: number }[]>`
+    SELECT id FROM (
+      SELECT id, "sellingPrice",
+             LAG("sellingPrice") OVER (PARTITION BY "variantId" ORDER BY "effectiveFrom", id) AS previous
+      FROM "PriceHistory"
+      WHERE "deletedAt" IS NULL
+        AND (${storeCode ?? null}::text IS NULL OR "storeCode" = ${storeCode ?? null})
+    ) ranked
+    WHERE previous IS NOT NULL
+      AND ${direction === 'increase' ? Prisma.sql`"sellingPrice" > previous` : Prisma.sql`"sellingPrice" < previous`}
+  `;
+  return rows.map((row) => row.id);
 }
 
 const toNumber = (value: Prisma.Decimal | null | undefined): number | null => value?.toNumber() ?? null;
@@ -90,6 +141,11 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
 
     if (Object.keys(variantWhere).length > 0) where.variant = variantWhere;
 
+    // Resolved before the page query so the total count reflects the filter too.
+    if (filters?.changeDirection) {
+      where.id = { in: await idsByChangeDirection(filters.changeDirection, filters.storeCode) };
+    }
+
     const column = filters?.sortBy && SORTABLE_COLUMNS.has(filters.sortBy) ? filters.sortBy : 'effectiveFrom';
     const direction: Prisma.SortOrder = filters?.sortOrder === 'asc' ? 'asc' : 'desc';
 
@@ -108,7 +164,8 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       prisma.priceHistory.count({ where }),
     ]);
 
-    return { totalRecord: total, data: data.map(toDto) };
+    const previous = await previousPricesFor(data.map((row) => row.id));
+    return { totalRecord: total, data: data.map((row) => toDto(row, previous.get(row.id) ?? null)) };
   }
 
   // `tx` matters when the caller is inside a transaction: a read on the global client
@@ -133,7 +190,8 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       prisma.priceHistory.count({ where }),
     ]);
 
-    return { totalRecord: total, data: data.map(toDto) };
+    const previous = await previousPricesFor(data.map((row) => row.id));
+    return { totalRecord: total, data: data.map((row) => toDto(row, previous.get(row.id) ?? null)) };
   }
 
   async getEffectiveOn(variantId: number, date: Date, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto | null> {

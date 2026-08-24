@@ -12,6 +12,12 @@ export interface AddToCartModel {
   sessionToken: string | null;
   /** Repeated ids increase the quantity, so [4, 4] adds 2 of product 4. */
   productIds: number[];
+  /**
+   * Preferred over `productIds` when the caller knows which SKU the shopper chose - a
+   * storefront always does. Sending products instead falls back to the product's first
+   * active variant, which silently picks the wrong size when there is more than one.
+   */
+  variantIds?: number[];
   currency?: string;
 }
 

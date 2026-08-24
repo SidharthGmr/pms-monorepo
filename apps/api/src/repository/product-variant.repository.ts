@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
@@ -18,7 +18,17 @@ type VariantRow = Prisma.ProductVariantGetPayload<{}>;
 const SORTABLE_COLUMNS = new Set(['sku', 'name', 'createdAt', 'id']);
 
 const listItemInclude = {
-  product: { select: { id: true, name: true, slug: true, categoryId: true } },
+  product: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      categoryId: true,
+      // The storefront renders these; the admin list simply ignores them.
+      images: true,
+      category: { select: { name: true, images: true } },
+    },
+  },
 } satisfies Prisma.ProductVariantInclude;
 
 type VariantWithProduct = Prisma.ProductVariantGetPayload<{ include: typeof listItemInclude }>;
@@ -56,7 +66,12 @@ export class ProductVariantRepository implements IProductVariantRepository {
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.productId !== undefined) where.productId = filters.productId;
       if (filters.isActive !== undefined) where.isActive = filters.isActive;
-      if (filters.categoryId !== undefined) where.product = { categoryId: filters.categoryId };
+      // Both narrow through the parent product, so they share one relation filter rather
+      // than overwriting each other.
+      const productWhere: Prisma.productWhereInput = {};
+      if (filters.categoryId !== undefined) productWhere.categoryId = filters.categoryId;
+      if (filters.publishedOnly) productWhere.status = Status.Published;
+      if (Object.keys(productWhere).length > 0) where.product = productWhere;
 
       if (filters.search) {
         where.OR = [

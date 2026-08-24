@@ -15,6 +15,9 @@ export default interface IProductVariantService {
     /** The store-wide SKU list, across every product. */
     getAll(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>>;
 
+    /** Public storefront listing: active variants of published products, no auth required. */
+    getAllPublic(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>>;
+
     /** Paginated variant history for a product, newest first. */
     getByProductId(
         productId: number | string,

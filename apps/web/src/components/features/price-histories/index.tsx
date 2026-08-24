@@ -66,7 +66,6 @@ export default function PriceHistoryList() {
     editRecord: (id) => openEditModal(id),
     deleteRecord: (id) => openDeleteModal(id),
     effectiveRowId: effectiveResponse?.data?.data?.id,
-    canCompare: (filterParams.sortBy ?? 'effectiveFrom') === 'effectiveFrom' && (filterParams.sortDirection ?? 'DESC').toUpperCase() === 'DESC',
     canManage,
   });
 
@@ -107,6 +106,9 @@ export default function PriceHistoryList() {
       search: '',
       productId: undefined,
       variantId: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      changeDirection: undefined,
       page: 1,
       recordPerPage: config.recordPerPage,
       sortBy: 'effectiveFrom',
@@ -142,6 +144,8 @@ export default function PriceHistoryList() {
           onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || '', page: 1 }))}
           onProductChange={(productId) => setFilterParams((prev) => ({ ...prev, productId, variantId: undefined, page: 1 }))}
           onVariantChange={(variantId) => setFilterParams((prev) => ({ ...prev, variantId, page: 1 }))}
+          onDateRangeChange={(startDate, endDate) => setFilterParams((prev) => ({ ...prev, startDate, endDate, page: 1 }))}
+          onDirectionChange={(changeDirection) => setFilterParams((prev) => ({ ...prev, changeDirection, page: 1 }))}
         />
         <CustomDataTable columns={columns} table={table} isLoading={listResponse.isLoading} />
         <DataTablePagination table={table} totalRecord={recordCount} loading={listResponse.isLoading} />

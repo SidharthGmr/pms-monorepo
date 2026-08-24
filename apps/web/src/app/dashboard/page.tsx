@@ -2,7 +2,7 @@
 
 import GreetingHeader from '@/components/common/greeting-header';
 import PurchasePage from '@/components/features/pos';
-import UserListingWrapper from '@/components/features/users/listing-wrapper';
+import ShopPage from '@/components/features/shop';
 import { CardDescription } from '@/components/ui/card';
 import { Roles } from '@/enums/roles.enum';
 import { useSession } from 'next-auth/react';
@@ -32,7 +32,8 @@ export default function Dashboard() {
     < div className="max-w-7xl mx-auto space-y-8" >
       <GreetingHeader />
       {role === Roles.STAFF && <PurchasePage />}
-      {role === Roles.USER && <UserListingWrapper />}
+      {/* A customer lands on the shop, not on an admin list. */}
+      {role === Roles.USER && <ShopPage />}
     </div >
   );
 }

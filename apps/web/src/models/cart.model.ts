@@ -4,7 +4,12 @@
  */
 export interface AddToCartModel {
   /** Repeated ids increase quantity, so [4, 4] adds 2 of product 4. */
-  productIds: number[];
+  productIds?: number[];
+  /**
+   * Preferred by the storefront: the shopper picked a specific SKU. Sending products
+   * instead lets the API fall back to the product's first active variant.
+   */
+  variantIds?: number[];
   /** Optional. Cart owner; the API defaults to the caller. Used by POS to build a cart for a customer. */
   userId?: string | null;
   /** Optional. Must match the store the caller is signed in to. */
