@@ -11,12 +11,14 @@ import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import StatusData from '@/data/status.data';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
+import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useEffect, useMemo, useState } from 'react';
 interface ProductListFilterProps<TData> {
   table: Table<TData>;
   onTextChange?: (q: string) => void;
   onStatusChange?: (value: string) => void;
   onCategoryTypeChange?: (selectedValues: string) => void;
+  onBrandNameChange?: (selectedValues: string) => void;
   resetForm?: () => void;
   onStartDateChanged?: (date: Date | undefined) => void;
   onEndDateChanged?: (date: Date | undefined) => void;
@@ -29,6 +31,7 @@ export default function ProductListFilter<TData>({
   onTextChange,
   onStatusChange,
   onCategoryTypeChange,
+  onBrandNameChange,
   resetForm,
   onStartDateChanged,
   onEndDateChanged,
@@ -54,8 +57,13 @@ export default function ProductListFilter<TData>({
     onEndDateChanged?.(dateRange?.to);
   }, [dateRange]);
 
-  const { data: categoriesResponse } = useGetAllCategories();
+  // `showAllRecords` matters: without it these lists stop at the API's default ten records,
+  // so a category or brand created eleventh could never be filtered on.
+  const { data: categoriesResponse } = useGetAllCategories({ showAllRecords: true });
   const categoriesInputData = useMemo(() => categoriesResponse?.data.data?.data || [], [categoriesResponse]);
+
+  const { data: brandNamesResponse } = useGetAllBrandNames({ showAllRecords: true });
+  const brandNamesInputData = useMemo(() => brandNamesResponse?.data.data?.data || [], [brandNamesResponse]);
 
   const {
     data: categoryTypes,
@@ -72,6 +80,24 @@ export default function ProductListFilter<TData>({
     }),
     onChange: (value) => {
       if (value) onCategoryTypeChange?.(value);
+    },
+  });
+
+  const {
+    data: brandNameTypes,
+    selectedValue: brandName,
+    setSelectedValue: setBrandNameType,
+    onValueChange: onBrandNameValueChange,
+    isFiltered: isBrandNameFiltered,
+    setIsFiltered: setIsBrandNameFiltered,
+  } = useFilterHook({
+    inputData: brandNamesInputData,
+    dataMapper: (e) => ({
+      label: e.name || '',
+      value: e.id?.toString() || '',
+    }),
+    onChange: (value) => {
+      if (value) onBrandNameChange?.(value);
     },
   });
 
@@ -95,6 +121,8 @@ export default function ProductListFilter<TData>({
     setSearchedText('');
     setCategoryType(0);
     setIsCategoryTypeFiltered(false);
+    setBrandNameType(0);
+    setIsBrandNameFiltered(false);
     setStatus('');
     setIsStatusFiltered(false);
     setIsFiltered(false);
@@ -105,8 +133,8 @@ export default function ProductListFilter<TData>({
 
   useEffect(() => {
     const isDateRangeFiltered = dateRange?.from || dateRange?.to ? true : false;
-    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered || isCategoryTypeFiltered);
-  }, [isStatusFiltered, searchedText, dateRange, isCategoryTypeFiltered]);
+    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered || isCategoryTypeFiltered || isBrandNameFiltered);
+  }, [isStatusFiltered, searchedText, dateRange, isCategoryTypeFiltered, isBrandNameFiltered]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
@@ -119,6 +147,7 @@ export default function ProductListFilter<TData>({
         buttonClass=""
         disableSearch={true}
       />
+      <SelectSearch value={brandName} placeholder="Filter by Brand Name" items={brandNameTypes} onChange={onBrandNameValueChange} buttonClass="" />
       {showDateRange && (
         <div className="overflo w-hidden">
           <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />

@@ -96,7 +96,7 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
           )}
 
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href={`/admin/products/${item?.id}/variants`}>Variants</Link>
+            <Link href={`/admin/products/variants/${item?.id}`}>Variants</Link>
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={() => deleteRecord(item.id)}>
             Delete

@@ -17,7 +17,7 @@ export default function ProductVariantsPage({ params }: ProductVariantsPageProps
   const { id } = params;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto  space-y-6">
       <PageHeader
         title="Product Variants"
         description="Sellable combinations of this product. Each variant's price is kept in the price history ledger."

@@ -9,6 +9,7 @@ export interface PageFilterParams {
 
 export interface ProductFilterParams extends PageFilterParams {
     categoryId?: string | null;
+    brandNameId?: string | null;
     status?: string | null;
     storeCode?: string | null;
     /** Only real columns are honoured by the API; price and stock are derived, not stored. */

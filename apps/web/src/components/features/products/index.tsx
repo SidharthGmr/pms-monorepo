@@ -34,6 +34,7 @@ export default function ProductList() {
     search: searchParams.get('search') || '',
     status: searchParams.get('status') || null,
     categoryId: searchParams.get('categoryId') || '',
+    brandNameId: searchParams.get('brandNameId') || '',
     startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
     endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
     page: +(searchParams.get('page') || 1),
@@ -130,7 +131,12 @@ export default function ProductList() {
           }}
           onCategoryTypeChange={(value) => {
             setFilterParams((oldValue) => {
-              return { ...oldValue, categoryId: value || undefined };
+              return { ...oldValue, categoryId: value || undefined, page: 1 };
+            });
+          }}
+          onBrandNameChange={(value) => {
+            setFilterParams((oldValue) => {
+              return { ...oldValue, brandNameId: value || undefined, page: 1 };
             });
           }}
           onStartDateChanged={(value) => {
