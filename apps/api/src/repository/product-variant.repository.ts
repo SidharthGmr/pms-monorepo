@@ -65,6 +65,9 @@ export class ProductVariantRepository implements IProductVariantRepository {
       // The tenant always comes from the token, never the query string.
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.productId !== undefined) where.productId = filters.productId;
+      // A list of products wins over a single one - the caller asking for a page of
+      // products cannot also mean "just this one".
+      if (filters.productIds?.length) where.productId = { in: filters.productIds };
       if (filters.isActive !== undefined) where.isActive = filters.isActive;
       // Both narrow through the parent product, so they share one relation filter rather
       // than overwriting each other.

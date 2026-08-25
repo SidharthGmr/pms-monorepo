@@ -8,10 +8,11 @@ import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
+import { useProductPricing } from '@/hooks/useProductPricing';
 import { ProductFilterParams } from '@/params/product.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
 import ConfirmBox from '../../common/confirm-box';
@@ -31,6 +32,7 @@ export default function ProductList() {
   const [filterParams, setFilterParams] = useState<ProductFilterParams>({
     search: searchParams.get('search') || '',
     status: searchParams.get('status') || null,
+    showAllRecords: true,
     categoryId: searchParams.get('categoryId') || '',
     startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
     endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
@@ -38,10 +40,16 @@ export default function ProductList() {
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
   });
 
-  const columns = useProductColumns((id) => openDeleteModal(id));
-
   const getAllProductsResponse = useGetAllProducts(filterParams);
+
   const deleteProductMutation = useDeleteProduct();
+
+  // `GET /products` is a thin list, so price and stock for the rows on screen come from the
+  // variants API - one request for the whole page.
+  const productIds = useMemo(() => data.map((product) => product.id), [data]);
+  const { pricing, isLoading: isPricingLoading } = useProductPricing(productIds);
+
+  const columns = useProductColumns((id) => openDeleteModal(id), pricing, isPricingLoading);
 
   useEffect(() => {
     if (getAllProductsResponse.isSuccess && getAllProductsResponse.data?.data?.data) {

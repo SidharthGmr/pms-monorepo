@@ -6,10 +6,6 @@ import { JsonValue } from "./product-variant.dto";
 export interface ProductResponseDto {
   id: number;
   name: string;
-  // categoryId: number;
-  // brandNameId?: number | null;
-  // attributeId?: number | null;
-  // parentId?: number | null;
   slug: string;
   description?: string | null;
   images: string[];
@@ -20,7 +16,6 @@ export interface ProductResponseDto {
   updatedById?: string | null;
   createdAt: Date;
   updatedAt: Date | null;
-  // Resolved related names — populated by list/detail endpoints (absent on raw writes).
   category?: string | null;
   brandName?: string | null;
   attribute?: string | null;
@@ -69,11 +64,6 @@ export interface ProductDetailResponseDto extends ProductResponseDto {
 
 export interface ProductWithPriceResponseDto extends ProductDetailResponseDto {
   currentPrice: CurrentPriceDto | null;
-  // Current on-hand stock: the sum of all stockHistory quantity movements.
   stock: number;
-  /**
-   * The product's active variants. Populated by the paginated list endpoint (which
-   * batches them for the whole page); absent on the low-stock and detail responses.
-   */
   variants?: ProductVariantSummaryDto[];
 }

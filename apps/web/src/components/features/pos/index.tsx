@@ -27,6 +27,7 @@ import { Roles } from '@/enums/roles.enum';
 import { useAddToCart, useClearCart, useGetActiveCart, useRemoveFromCart, useUpdateCartQuantity } from '@/hooks/service-hooks/useCartService';
 import { useCreateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
+import { useProductPricing } from '@/hooks/useProductPricing';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { useGetAllWishlists } from '@/hooks/service-hooks/useWishlistService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
@@ -200,6 +201,11 @@ export default function PurchasePage() {
   const getAllProductsResponse = useGetAllProducts(filterParams);
   const isLoading = getAllProductsResponse.isLoading;
 
+  // The catalog list is thin, so the money and the stock ceiling for the tiles on screen
+  // come from the variants API - one request per page of products.
+  const productIds = useMemo(() => products.map((product) => product.id), [products]);
+  const { pricing, isLoading: isPricingLoading } = useProductPricing(productIds);
+
   useEffect(() => {
     if (getAllProductsResponse.isSuccess && getAllProductsResponse.data?.data?.data) {
       setProducts(getAllProductsResponse.data.data.data.data ?? []);
@@ -284,9 +290,12 @@ export default function PurchasePage() {
     defaultValues: { discount: 0, tax: 0, shippingCost: 0, notes: '' },
   });
 
-  // The products API returns the current price under `currentPrice.sellingPrice`,
-  // not as a flat `price` field — resolve it safely here.
-  const getSellingPrice = (p: ProductDto): number => p.currentPrice?.sellingPrice ?? p.price ?? 0;
+  // Price is held per variant, so it comes from the variants lookup rather than the product
+  // row. Zero until it loads - `isSellable` below is what keeps such a tile out of the cart.
+  const getSellingPrice = (p: ProductDto): number => pricing.get(p.id)?.sellingPrice ?? 0;
+
+  /** A tile can only be sold once its price is known - never at a placeholder zero. */
+  const isSellable = (p: ProductDto): boolean => pricing.get(p.id)?.sellingPrice != null;
 
   // The cart lives on the server and belongs to the signed-in operator. The
   // selected customer is only attached to the order at checkout, which is how the
@@ -294,12 +303,18 @@ export default function PurchasePage() {
   const { data: cartResponse, isLoading: isCartLoading } = useGetActiveCart();
   const serverCart = cartResponse?.data?.data ?? null;
 
-  /** Stock by product for the currently loaded catalog page. */
+  /**
+   * Stock by product for the currently loaded catalog page - the sum of the product's active
+   * variants, which is the sellable figure.
+   */
   const stockByProduct = useMemo(() => {
     const map = new Map<number, number>();
-    products.forEach((p) => map.set(p.id, p.stock));
+    products.forEach((p) => {
+      const entry = pricing.get(p.id);
+      if (entry) map.set(p.id, entry.stock);
+    });
     return map;
-  }, [products]);
+  }, [products, pricing]);
 
   /**
    * Keyed by productId so the catalog can ask "how many of this are in the cart?"
@@ -349,12 +364,14 @@ export default function PurchasePage() {
     }
   };
 
-  // `product` may be a catalog ProductDto or an existing cart line; both carry the
-  // id and stock this needs.
-  const handleAddToCart = async (product: { id: number; stock: number }) => {
+  // `product` may be a catalog tile or an existing cart line. Stock is no longer on the
+  // product row, so a cart line passes its own known ceiling and a tile falls back to the
+  // variant-derived figure for the loaded page.
+  const handleAddToCart = async (product: { id: number }, availableStock?: number) => {
     const current = cart[product.id]?.cartQuantity ?? 0;
-    if (current + 1 > product.stock) {
-      toast({ variant: 'destructive', title: 'Out of stock', description: `Cannot add more than ${product.stock} items.` });
+    const stock = availableStock ?? stockByProduct.get(product.id) ?? Number.POSITIVE_INFINITY;
+    if (current + 1 > stock) {
+      toast({ variant: 'destructive', title: 'Out of stock', description: `Cannot add more than ${stock} items.` });
       return;
     }
     await runCartAction(() => addToCartMutation.mutateAsync({ productIds: [product.id] }), 201, 'Could not add to cart');
@@ -425,8 +442,13 @@ export default function PurchasePage() {
   /* ----------------------------- Sub-renderers ----------------------------- */
 
   const renderStockBadge = (product: ProductDto) => {
-    const isLowStock = product.stock <= (product.lowStockThreshold || 5);
-    if (product.stock <= 0) {
+    const entry = pricing.get(product.id);
+    // Nothing is known about the product's stock yet - a badge would only be a guess.
+    if (!entry) return null;
+
+    const stock = entry.stock;
+    const isLowStock = stock <= (entry.lowStockThreshold || 5);
+    if (stock <= 0) {
       return (
         <Badge
           variant="outline"
@@ -444,7 +466,7 @@ export default function PurchasePage() {
           className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          Low · {product.stock}
+          Low · {stock}
         </Badge>
       );
     }
@@ -454,7 +476,7 @@ export default function PurchasePage() {
         className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        {product.stock} in stock
+        {stock} in stock
       </Badge>
     );
   };
@@ -495,7 +517,10 @@ export default function PurchasePage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {products.map((product) => {
           const inCartQty = cart[product.id]?.cartQuantity || 0;
-          const soldOut = product.stock <= 0;
+          const stock = stockByProduct.get(product.id) ?? 0;
+          // Unknown price or no stock: the tile shows but cannot be added. While the variants
+          // are still loading a tile is held back rather than offered at a placeholder zero.
+          const soldOut = stock <= 0 || !isSellable(product);
 
           return (
             <Card
@@ -527,12 +552,15 @@ export default function PurchasePage() {
                   <ProductRating productId={product.id} />
                 </div>
 
-                <ProductVariantsStrip variants={product.variants} />
+                <ProductVariantsStrip variants={pricing.get(product.id)?.variants} />
 
                 <div className="mt-auto flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Price</span>
-                    <span className="text-lg font-bold text-foreground">${getSellingPrice(product).toFixed(2)}</span>
+                    {/* Never a placeholder $0.00: an unknown price reads as unknown. */}
+                    <span className="text-lg font-bold text-foreground">
+                      {isSellable(product) ? `$${getSellingPrice(product).toFixed(2)}` : isPricingLoading ? '…' : '—'}
+                    </span>
                   </div>
 
                   {inCartQty > 0 ? (
@@ -541,15 +569,15 @@ export default function PurchasePage() {
                         quantity={inCartQty}
                         onDecrease={() => handleRemoveFromCart(product.id)}
                         onIncrease={() => handleAddToCart(product)}
-                        canIncrease={inCartQty < product.stock && !isCartMutating}
+                        canIncrease={inCartQty < stock && !isCartMutating}
                       />
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-9 w-9 shrink-0 rounded-lg"
                         onClick={() => handleAddToCart(product)}
-                        disabled={inCartQty >= product.stock || isCartMutating}
-                        title={inCartQty >= product.stock ? 'No more stock available' : `Add another ${product.name} to cart`}
+                        disabled={inCartQty >= stock || isCartMutating}
+                        title={inCartQty >= stock ? 'No more stock available' : `Add another ${product.name} to cart`}
                         aria-label={`Add another ${product.name} to cart`}
                         type="button"
                       >
@@ -640,7 +668,7 @@ export default function PurchasePage() {
                     <QuantityStepper
                       quantity={item.cartQuantity}
                       onDecrease={() => handleRemoveFromCart(item.id)}
-                      onIncrease={() => handleAddToCart(item)}
+                      onIncrease={() => handleAddToCart(item, item.stock)}
                       canIncrease={item.cartQuantity < item.stock && !isCartMutating}
                     />
                     <Button

@@ -17,6 +17,16 @@ export class ProductVariantController {
       return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
     }
 
+    // `?productIds=12,15,18` - the product list asks for the whole page in one request.
+    // An array form (`?productIds=12&productIds=15`) is accepted too; junk is dropped
+    // rather than turned into a NaN that Prisma would reject.
+    const rawProductIds = req.query['productIds'];
+    const productIds = rawProductIds
+      ? (Array.isArray(rawProductIds) ? (rawProductIds as string[]) : (rawProductIds as string).split(','))
+        .map(Number)
+        .filter((n) => Number.isInteger(n))
+      : undefined;
+
     const filters: ProductVariantFilterParams = Object.fromEntries(
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
@@ -24,6 +34,7 @@ export class ProductVariantController {
         search: req.query['search'] as string | undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
+        productIds: productIds && productIds.length > 0 ? productIds : undefined,
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
         isActive: req.query['isActive'] !== undefined ? req.query['isActive'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,

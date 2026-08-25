@@ -184,6 +184,12 @@ productVariantRouter.put('/:id', authenticateToken, validate(UpdateProductVarian
  *         schema:
  *           type: integer
  *       - in: query
+ *         name: productIds
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Comma-separated product IDs, e.g. `12,15,18`. Takes precedence over productId.
+ *       - in: query
  *         name: categoryId
  *         schema:
  *           type: integer

@@ -4,6 +4,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { ProductDto } from '@/dtos/product.dto';
 import { StatusValues } from '@/enums/status-values.enum';
+import { ProductPricingMap } from '@/hooks/useProductPricing';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -12,13 +13,18 @@ import { Badge } from '../../ui/badge';
 import ProductListRowActions from './row-action';
 import { Image as ImageIcon } from 'lucide-react';
 
-export const useProductColumns = (deleteRecord: (id: number) => void) =>
+/**
+ * Price and stock are not on the product row any more - both are held per variant, so the
+ * list resolves them through `useProductPricing` and passes the map in here. `undefined`
+ * for a product means "not loaded yet", which renders as a placeholder rather than a zero.
+ */
+export const useProductColumns = (deleteRecord: (id: number) => void, pricing: ProductPricingMap, isPricingLoading = false) =>
   useMemo<ColumnDef<ProductDto>[]>(
     () => [
       {
         id: 'actions',
         header: '',
-        cell: ({ row }) => <ProductListRowActions row={row} deleteRecord={deleteRecord} />,
+        cell: ({ row }) => <ProductListRowActions row={row} deleteRecord={deleteRecord} pricing={pricing.get(row.original.id)} />,
       }, {
         id: 'name',
         accessorKey: 'name',
@@ -53,12 +59,14 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Price / Cost" />,
         cell: ({ row }) => {
-          const sellingPrice = row.original.currentPrice?.sellingPrice ?? row.original.price;
-          const costPrice = row.original.currentPrice?.costPrice ?? row.original.cost;
+          const entry = pricing.get(row.original.id);
+          if (!entry) {
+            return <span className="text-sm text-muted-foreground">{isPricingLoading ? '…' : '—'}</span>;
+          }
           return (
             <div className="space-y-0.5">
-              <span className="block font-medium">{sellingPrice != null ? `$${sellingPrice.toFixed(2)}` : '—'}</span>
-              {costPrice != null && <span className="text-xs text-muted-foreground">Cost: ${costPrice.toFixed(2)}</span>}
+              <span className="block font-medium">{entry.sellingPrice != null ? `$${entry.sellingPrice.toFixed(2)}` : '—'}</span>
+              {entry.costPrice != null && <span className="text-xs text-muted-foreground">Cost: ${entry.costPrice.toFixed(2)}</span>}
             </div>
           );
         },
@@ -71,11 +79,17 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Stock" />,
         cell: ({ row }) => {
-          const { stock, lowStockThreshold } = row.original;
-          const isLow = lowStockThreshold != null && stock <= lowStockThreshold;
+          const entry = pricing.get(row.original.id);
+          if (!entry) {
+            return <span className="text-sm text-muted-foreground">{isPricingLoading ? '…' : '—'}</span>;
+          }
+          // Sellable stock, i.e. the sum across the product's active variants. It can read
+          // lower than the old product-level figure, which also counted movements booked
+          // against no variant at all and against retired ones.
+          const isLow = entry.lowStockThreshold != null && entry.stock <= entry.lowStockThreshold;
           return (
             <div className="space-y-0.5">
-              <span className={`block font-medium ${isLow ? 'text-destructive' : ''}`}>{stock}</span>
+              <span className={`block font-medium ${isLow ? 'text-destructive' : ''}`}>{entry.stock}</span>
               {isLow && <span className="text-xs text-destructive">Low stock</span>}
             </div>
           );
@@ -122,5 +136,5 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
       },
 
     ],
-    [deleteRecord]
+    [deleteRecord, pricing, isPricingLoading]
   );

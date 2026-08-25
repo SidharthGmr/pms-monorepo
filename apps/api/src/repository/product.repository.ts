@@ -23,16 +23,22 @@ const productInclude = {
 } satisfies Prisma.productInclude;
 
 export class ProductRepository implements IProductRepository {
+
+  /**
+   * The paginated list is deliberately thin: raw `product` rows, nothing derived. Price and
+   * stock are held per variant, so the screens that need them ask `/product-variants` for
+   * the products they have on screen rather than paying for the enrichment on every list.
+   */
   async findAll(
     filters?: ProductFilterParams,
     page = 1,
     limit = 10,
     sortBy = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc'
-  ): Promise<ListResponseDto<ProductWithPriceResponseDto>> {
+  ): Promise<ListResponseDto<ProductResponseDto>> {
     const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
-    const direction: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
-    const where: Prisma.productWhereInput = { NOT: { status: Status.Trash } };
+    const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+    const where: Prisma.productWhereInput = {};
 
     if (filters) {
       page = filters.page ?? page;
@@ -41,21 +47,18 @@ export class ProductRepository implements IProductRepository {
       if (filters.search) {
         where.OR = [
           { name: { contains: filters.search, mode: 'insensitive' } },
-
+          { slug: { contains: filters.search, mode: 'insensitive' } },
+          { variants: { some: { sku: { contains: filters.search, mode: 'insensitive' }, deletedAt: null } } },
         ];
       }
 
+      // The tenant always comes from the token, never the query string - leaving this out
+      // returns every store's catalog to any authenticated caller.
+      if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.categoryId !== undefined) where.categoryId = filters.categoryId;
       if (filters.brandNameId !== undefined) where.brandNameId = filters.brandNameId;
-      if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.storeId !== undefined) where.store = { id: filters.storeId };
       if (filters.createdById !== undefined) where.createdById = filters.createdById;
-
-      if (filters.status !== undefined) {
-        where.status = filters.status;
-      } else {
-        where.NOT = { status: Status.Trash };
-      }
 
       if (filters.startDate !== undefined || filters.endDate !== undefined) {
         where.createdAt = {
@@ -65,14 +68,22 @@ export class ProductRepository implements IProductRepository {
       }
     }
 
+    // An explicit status wins outright - so `?status=Trash` can actually list the bin.
+    // Setting `status` and `NOT: { status }` together is what made the old Trash filter
+    // always return zero rows.
+    if (filters?.status !== undefined) {
+      where.status = filters.status;
+    } else {
+      where.NOT = { status: Status.Trash };
+    }
+
     const showAll = filters?.showAllRecords === true;
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
-    const [products, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: productInclude,
         orderBy: [{ [column]: direction }, { id: 'desc' }],
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
@@ -80,86 +91,50 @@ export class ProductRepository implements IProductRepository {
       prisma.product.count({ where }),
     ]);
 
-    // Collect the related ids referenced by the fetched products.
-    const productIds = products.map((product) => product.id);
-    const categoryIds = [...new Set(products.map((product) => product.categoryId))];
-    const brandNameIds = [...new Set(products.map((product) => product.brandNameId).filter((id): id is number => id != null))];
-    const attributeIds = [...new Set(products.map((product) => product.attributeId).filter((id): id is number => id != null))];
-
-    // Resolve related names + the active variants in batched queries (no `include`).
-    // Price and stock are not columns any more: price comes from each variant's effective
-    // PriceHistory row, stock from the sum of stockHistory movements.
-    const [categories, brands, attributes, stockSums, activeVariants] = await Promise.all([
-      categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true } }) : [],
-      brandNameIds.length ? prisma.brandName.findMany({ where: { id: { in: brandNameIds } }, select: { id: true, name: true } }) : [],
-      attributeIds.length ? prisma.attribute.findMany({ where: { id: { in: attributeIds } }, select: { id: true, name: true } }) : [],
-      productIds.length
-        ? prisma.stockHistory.groupBy({
-          by: ['productId'],
-          where: { productId: { in: productIds } },
-          _sum: { quantity: true },
-        })
-        : [],
-      // Active variants for the whole page in one query, so a catalog card can list
-      // "S / M / L" without a request per product.
-      productIds.length
-        ? prisma.productVariant.findMany({
-          where: { productId: { in: productIds }, isActive: true, deletedAt: null },
-          orderBy: [{ productId: 'asc' }, { id: 'asc' }],
-          select: { id: true, productId: true, sku: true, name: true, attributes: true, lowStockThreshold: true },
-        })
-        : [],
-    ]);
-
-    // One more batched pair for the page's variants, now that their ids are known.
-    const variantIds = activeVariants.map((variant) => variant.id);
-    const [variantPrices, variantStock] = await Promise.all([pricesForVariants(variantIds), stockForVariants(variantIds)]);
-
-    const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
-    const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]));
-    const attributeNames = new Map(attributes.map((attribute) => [attribute.id, attribute.name]));
-    const stockByProduct = new Map(stockSums.map((row) => [row.productId, row._sum.quantity ?? 0]));
-
-    const variantsByProduct = new Map<number, ProductVariantSummaryDto[]>();
-    for (const variant of activeVariants) {
-      const { productId, ...rest } = variant;
-      const price = variantPrices.get(variant.id) ?? null;
-      const list = variantsByProduct.get(productId) ?? [];
-      list.push({
-        ...rest,
-        stockQuantity: variantStock.get(variant.id) ?? 0,
-        sellingPrice: price?.sellingPrice ?? null,
-        costPrice: price?.costPrice ?? null,
-      });
-      variantsByProduct.set(productId, list);
-    }
-
-    // A product's headline price is its first active variant's - variants are ordered by id,
-    // so this is stable rather than whichever row the database happened to return first.
-    const currentPriceByProduct = new Map<number, { sellingPrice: number; costPrice: number | null }>();
-    for (const variant of activeVariants) {
-      if (currentPriceByProduct.has(variant.productId)) continue;
-      const price = variantPrices.get(variant.id);
-      if (price) currentPriceByProduct.set(variant.productId, { sellingPrice: price.sellingPrice, costPrice: price.costPrice });
-    }
-
-    // Attach the related names (flat) + the current price to each product.
-    // Drop the raw *Id/parentId columns from the response (resolved into names).
-    const data = products.map((product) => {
-      const { categoryId, brandNameId, attributeId, parentId, ...rest } = product;
-      return {
-        ...rest,
-        category: categoryNames.get(categoryId) ?? '',
-        brandName: brandNameId != null ? brandNames.get(brandNameId) ?? null : null,
-        attribute: attributeId != null ? attributeNames.get(attributeId) ?? null : null,
-        currentPrice: currentPriceByProduct.get(product.id) ?? null,
-        stock: stockByProduct.get(product.id) ?? 0,
-        variants: variantsByProduct.get(product.id) ?? [],
-      };
-    });
+    // `metadata` holds the verbatim create payload, which includes cost prices - and this
+    // same method backs the unauthenticated public catalog. It stays out of the list.
+    const data = rows.map(({ metadata, ...rest }) => rest);
 
     return { totalRecord: total, data };
   }
+
+
+  async findById(id: number): Promise<ProductDetailResponseDto | null> {
+    const product = await prisma.product.findUnique({ where: { id }, include: productInclude });
+    if (!product) return null;
+
+    const [category, brand, attribute] = await Promise.all([
+      prisma.category.findUnique({ where: { id: product.categoryId }, select: { name: true } }),
+      product.brandNameId != null
+        ? prisma.brandName.findUnique({ where: { id: product.brandNameId }, select: { name: true } })
+        : null,
+      product.attributeId != null
+        ? prisma.attribute.findUnique({ where: { id: product.attributeId }, select: { name: true } })
+        : null,
+    ]);
+
+    return {
+      ...product,
+      category: category?.name ?? '',
+      brandName: brand?.name ?? null,
+      attribute: attribute?.name ?? null,
+    };
+  }
+
+  async delete(id: number, userId: string): Promise<ProductResponseDto> {
+    // `updatedAt` is no longer automatic (it stays null until a product is actually edited),
+    // so every writer sets it - trashing a product is an edit.
+    return prisma.product.update({
+      where: { id },
+      data: {
+        status: Status.Trash,
+        deletedById: userId,
+        deletedAt: new Date()
+      }
+    });
+  }
+
+
 
   async findLowStock(
     filters?: ProductFilterParams,
@@ -269,31 +244,6 @@ export class ProductRepository implements IProductRepository {
    * figure here would be an aggregate that invites the caller to edit it - which is exactly
    * how the product form used to rewrite whichever variant happened to be first.
    */
-  async findById(id: number): Promise<ProductDetailResponseDto | null> {
-    const product = await prisma.product.findUnique({ where: { id }, include: productInclude });
-    if (!product) return null;
-
-    const [category, brand, attribute] = await Promise.all([
-      prisma.category.findUnique({ where: { id: product.categoryId }, select: { name: true } }),
-      product.brandNameId != null
-        ? prisma.brandName.findUnique({ where: { id: product.brandNameId }, select: { name: true } })
-        : null,
-      product.attributeId != null
-        ? prisma.attribute.findUnique({ where: { id: product.attributeId }, select: { name: true } })
-        : null,
-    ]);
-
-    return {
-      ...product,
-      category: category?.name ?? '',
-      brandName: brand?.name ?? null,
-      attribute: attribute?.name ?? null,
-    };
-  }
-
-  async delete(id: number): Promise<ProductResponseDto> {
-    return prisma.product.update({ where: { id }, data: { status: Status.Trash } });
-  }
 
   async getCurrentStock(productId: number, tx: Prisma.TransactionClient = prisma): Promise<number> {
     const result = await tx.stockHistory.aggregate({ where: { productId }, _sum: { quantity: true } });

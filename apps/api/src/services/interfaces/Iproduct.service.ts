@@ -2,27 +2,26 @@ import { ListResponseDto, ProductDetailResponseDto, ProductModel, ProductRespons
 import { ProductFilterParams } from "../../params/product.params";
 
 export interface AddStockModel {
-  /**
-   * Which variant receives the stock. Stock is held per variant - Small and Large have
-   * their own counts - so a movement has to say which one it belongs to.
-   */
   variantId: number;
   quantity: number;
   reason?: string | undefined;
-  /** Optional price change applied to the same variant, filed in the PriceHistory ledger. */
   sellingPrice?: number | undefined;
   costPrice?: number | null | undefined;
 }
 
 export interface IProductService {
-  getAll(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
-  getLowStock(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
-  /** One product with related names; price and stock live on its variants. */
-  getById(id: number): Promise<ProductDetailResponseDto | null>;
   create(data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
+  getAll(filters?: ProductFilterParams): Promise<ListResponseDto<ProductResponseDto>>;
+  getById(id: number): Promise<ProductDetailResponseDto | null>;
   update(id: number, data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
-  delete(id: number): Promise<ProductResponseDto>;
+  delete(id: number, userId: string): Promise<ProductResponseDto>;
+
+
+
+  getLowStock(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
+
+
+
   addStock(id: number, data: AddStockModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
-  /** Pass `variantId` to narrow the movements to a single variant. */
   getStockHistory(id: number, page?: number, limit?: number, variantId?: number): Promise<ListResponseDto<any>>;
 }

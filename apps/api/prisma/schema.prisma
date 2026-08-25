@@ -176,8 +176,8 @@ model category {
   /// Optional tile art, same shape as `product.images` so one uploader serves both.
   images       String[] @default([])
   parentId     Int?
-  status       Status  @default(Published)
-  displayOrder Int     @default(0)
+  status       Status   @default(Published)
+  displayOrder Int      @default(0)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -227,7 +227,10 @@ model product {
   displayOrder Int     @default(0)
 
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  /// Null until the product is first edited. `@updatedAt` would populate it at insert time,
+  /// so every new product looked already-modified - the writers set it explicitly instead
+  /// (same convention as `brandName`).
+  updatedAt DateTime?
   deletedAt DateTime?
 
   createdById String
@@ -262,20 +265,20 @@ model product {
 }
 
 model ProductVariant {
-  id         Int       @id @default(autoincrement())
-  storeCode  String
-  productId  Int
-  sku        String
-  name       String?
-  barcode    String?
-  attributes Json
-  images     String[]  @default([])
-  isActive   Boolean   @default(false)
+  id                Int       @id @default(autoincrement())
+  storeCode         String
+  productId         Int
+  sku               String
+  name              String?
+  barcode           String?
+  attributes        Json
+  images            String[]  @default([])
+  isActive          Boolean   @default(false)
   /// Stock is held per variant, so the low-stock trigger belongs here too.
-  lowStockThreshold Int? @default(5)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
+  lowStockThreshold Int?      @default(5)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
   createdById String
   updatedById String?
@@ -612,7 +615,7 @@ model order {
 }
 
 model orderItem {
-  id          Int      @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   orderId     Int
   orderNumber String
   productId   Int

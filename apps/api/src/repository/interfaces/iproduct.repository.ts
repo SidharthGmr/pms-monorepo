@@ -4,12 +4,16 @@ import { ListResponseDto } from '../../dtos/list-response.dto';
 import { ProductFilterParams } from '../../params/product.params';
 
 export interface IProductRepository {
-  findAll(filters?: ProductFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
+  findAll(filters?: ProductFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<ProductResponseDto>>;
+
+
+
+
   findLowStock(filters?: ProductFilterParams, page?: number, limit?: number): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
   /** Detail view: includes related names plus the current price and on-hand stock. */
   /** One product with related names. Price and stock are per variant, so neither is here. */
   findById(id: number): Promise<ProductDetailResponseDto | null>;
-  delete(id: number): Promise<ProductResponseDto>;
+  delete(id: number, userId: string): Promise<ProductResponseDto>;
 
   /** Current on-hand stock: the sum of all stockHistory movements for a product. */
   getCurrentStock(productId: number, tx?: Prisma.TransactionClient): Promise<number>;

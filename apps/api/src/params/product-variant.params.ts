@@ -7,6 +7,12 @@ import { PageFilterParams } from './page.params';
 export interface ProductVariantFilterParams extends PageFilterParams {
   /** Narrow to one product's variants. */
   productId?: number;
+  /**
+   * Narrow to several products at once - the product list uses it to fetch price and stock
+   * for exactly the page it has on screen, in one request instead of one per row.
+   * Takes precedence over `productId` when both are supplied.
+   */
+  productIds?: number[];
   /** Narrow to a category, resolved through the parent product. */
   categoryId?: number;
   /** Sellable variants only when true; retired ones only when false. */

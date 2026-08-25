@@ -12,21 +12,21 @@ export interface ProductVariantSummaryDto {
   costPrice: number | null;
 }
 
+/**
+ * A product row as returned by `GET /products`.
+ *
+ * Money and stock are deliberately absent: price lives in the PriceHistory ledger and stock
+ * is the sum of the stockHistory movements, both held per variant. Screens that need either
+ * resolve them from `/product-variants` via `useProductPricing`.
+ */
 export interface ProductDto {
   id: number;
   name: string;
   slug: string;
   brandNameId?: number | null;
   description?: string | null;
-  price: number;
-  cost?: number | null;
-  stock: number;
-  /** Active variants, populated by the paginated list endpoint only. */
-  variants?: ProductVariantSummaryDto[];
-  currentPrice?: Pick<ProductVariantSummaryDto, 'sellingPrice' | 'costPrice'> | null;
-  lowStockThreshold?: number | null;
   categoryId: number;
-  /** Resolved category name, sent by the list endpoints alongside `categoryId`. */
+  /** Resolved category name - the detail and low-stock endpoints send it, the list does not. */
   category?: string | null;
   parentId?: number | null;
   attributeId?: number | null;

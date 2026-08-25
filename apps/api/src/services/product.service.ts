@@ -8,6 +8,7 @@ import { CreateProductVariantModel } from "../models/product-variant.model";
 import { ProductFilterParams } from "../params/product.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { AddStockModel, IProductService } from "./interfaces/Iproduct.service";
+import { Json } from "twilio/lib/interfaces";
 
 
 
@@ -18,44 +19,22 @@ export class ProductService implements IProductService {
     @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork
   ) { }
 
-  /**
-   * Creates the product's first variant, files its opening price in the PriceHistory ledger
-   * - the only place a price is stored - and books any opening stock as that variant's first
-   * movement. Product saves own their own transaction, so this is inlined here rather than
-   * calling ProductVariantService, which would mean a service depending on a service.
-   */
-  private async recordPricedVariant(model: CreateProductVariantModel, tx: Prisma.TransactionClient) {
-    const variant = await this.unitOfWork.ProductVariant.create(model, tx);
 
-    await this.unitOfWork.PriceHistory.create(
-      {
-        variantId: variant.id,
-        storeCode: model.storeCode,
-        sellingPrice: model.sellingPrice,
-        costPrice: model.costPrice ?? null,
-        compareAtPrice: model.compareAtPrice ?? null,
-        ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom }),
-        reason: model.reason ?? null,
-        createdById: model.createdById,
-      },
-      tx
-    );
 
-    if (model.stockQuantity) {
-      await this.unitOfWork.Product.createStockHistory(
-        {
-          productId: model.productId,
-          variantId: variant.id,
-          storeCode: model.storeCode,
-          userId: model.createdById,
-          quantity: model.stockQuantity,
-          reason: 'Opening stock',
-        },
-        tx
-      );
-    }
+  async getAll(filters?: ProductFilterParams) {
+    return this.unitOfWork.Product.findAll(filters, filters?.page, filters?.recordPerPage, filters?.sortBy, filters?.sortOrder);
+  }
 
-    return variant;
+  async getById(id: number): Promise<ProductDetailResponseDto | null> {
+    const product = await this.unitOfWork.Product.findById(id);
+    if (!product) throw new NotFoundError("Product not found");
+    return product;
+  }
+
+  async delete(id: number, userId: string,): Promise<ProductResponseDto> {
+    const existing = await this.unitOfWork.Product.findById(id);
+    if (!existing) throw new NotFoundError("Product not found");
+    return this.unitOfWork.Product.delete(id, userId);
   }
 
   async create(data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
@@ -72,63 +51,13 @@ export class ProductService implements IProductService {
           slug: data.slug,
           description: data.description || null,
           status: data.status || StatusEnum.Published,
-          // Both were accepted by the API and then dropped on the floor, so a product had to
-          // be created and then edited again before its photos stuck.
+          metadata: { ...data } as any,
           ...(data.images !== undefined && { images: data.images }),
           ...(data.displayOrder != null && { displayOrder: data.displayOrder }),
         },
       });
-
-      // `sellingPrice`/`costPrice`/`stock`/`lowStockThreshold` are not columns on `product`.
-      // The price becomes the first variant's opening ledger entry and the stock becomes that
-      // variant's first movement, so the two stay reconcilable.
-      if (data.sellingPrice != null) {
-        await this.recordPricedVariant(
-          {
-            productId: productData.id,
-            storeCode,
-            sellingPrice: data.sellingPrice,
-            costPrice: data.costPrice ?? null,
-            ...(data.stock != null && { stockQuantity: data.stock }),
-            ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
-            reason: 'Initial price',
-            createdById: userId,
-          },
-          transactionClient
-        );
-      } else if (data.stock != null && data.stock !== 0) {
-        // Stock but no price: there is no variant to hang it on, so it stays a
-        // product-level movement until the product is priced.
-        await this.unitOfWork.Product.createStockHistory(
-          {
-            productId: productData.id,
-            storeCode,
-            userId,
-            quantity: data.stock,
-            reason: 'Opening stock',
-          },
-          transactionClient
-        );
-      }
-
       return productData;
     });
-  }
-
-  async getAll(filters?: ProductFilterParams) {
-    // Sorting used to stop here: the repository accepted it and the service never passed it,
-    // so every list came back createdAt-desc however the client asked.
-    return this.unitOfWork.Product.findAll(filters, filters?.page, filters?.recordPerPage, filters?.sortBy, filters?.sortOrder);
-  }
-
-  async getLowStock(filters?: ProductFilterParams) {
-    return this.unitOfWork.Product.findLowStock(filters, filters?.page, filters?.recordPerPage);
-  }
-
-  async getById(id: number): Promise<ProductDetailResponseDto | null> {
-    const product = await this.unitOfWork.Product.findById(id);
-    if (!product) throw new NotFoundError("Product not found");
-    return product;
   }
 
   async update(id: number, data: ProductModel, userId: string, storeCode: string): Promise<ProductResponseDto> {
@@ -142,7 +71,7 @@ export class ProductService implements IProductService {
         slug: data.slug,
         description: data.description || null,
         categoryId: data.categoryId,
-        status: data.status || StatusEnum.Published,
+        status: data.status,
         updatedById: userId,
         updatedAt: new Date(),
       };
@@ -233,11 +162,53 @@ export class ProductService implements IProductService {
     });
   }
 
-  async delete(id: number): Promise<ProductResponseDto> {
-    const existing = await this.unitOfWork.Product.findById(id);
-    if (!existing) throw new NotFoundError("Product not found");
-    return this.unitOfWork.Product.delete(id);
+
+
+
+  private async recordPricedVariant(model: CreateProductVariantModel, tx: Prisma.TransactionClient) {
+    const variant = await this.unitOfWork.ProductVariant.create(model, tx);
+
+    await this.unitOfWork.PriceHistory.create(
+      {
+        variantId: variant.id,
+        storeCode: model.storeCode,
+        sellingPrice: model.sellingPrice,
+        costPrice: model.costPrice ?? null,
+        compareAtPrice: model.compareAtPrice ?? null,
+        ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom }),
+        reason: model.reason ?? null,
+        createdById: model.createdById,
+      },
+      tx
+    );
+
+    if (model.stockQuantity) {
+      await this.unitOfWork.Product.createStockHistory(
+        {
+          productId: model.productId,
+          variantId: variant.id,
+          storeCode: model.storeCode,
+          userId: model.createdById,
+          quantity: model.stockQuantity,
+          reason: 'Opening stock',
+        },
+        tx
+      );
+    }
+
+    return variant;
   }
+
+
+
+
+
+  async getLowStock(filters?: ProductFilterParams) {
+    return this.unitOfWork.Product.findLowStock(filters, filters?.page, filters?.recordPerPage);
+  }
+
+
+
 
   /**
    * Books stock against one variant. Stock is held per variant - Small and Large keep their

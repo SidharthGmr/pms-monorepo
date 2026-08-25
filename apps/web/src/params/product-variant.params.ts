@@ -7,6 +7,12 @@ import { PageFilterParams } from './page.params';
 export interface ProductVariantFilterParams extends Omit<PageFilterParams, 'startDate' | 'endDate'> {
   /** Narrow to one product's variants. */
   productId?: number;
+  /**
+   * Comma-separated product ids, e.g. `'12,15,18'` - one request covers a whole page of
+   * products. A string rather than an array so the query string is unambiguous however
+   * axios and Express happen to serialise arrays. Takes precedence over `productId`.
+   */
+  productIds?: string;
   /** Narrow to a category, resolved through the parent product. */
   categoryId?: number;
   /** Sellable variants only when true; retired ones only when false. */

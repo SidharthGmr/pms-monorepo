@@ -7,6 +7,7 @@ import { TYPES } from '@/config/types';
 import { ProductDto } from '@/dtos/product.dto';
 import { useAddToCart } from '@/hooks/service-hooks/useCartService';
 import { useAddToWishlist, useIsInWishlist, useRemoveProductFromWishlist } from '@/hooks/service-hooks/useWishlistService';
+import { ProductPricing } from '@/hooks/useProductPricing';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
@@ -18,9 +19,11 @@ import StockHistoryModal from './stock-history-modal';
 interface ProductListRowActionsProps<TData> {
   row: Row<TData>;
   deleteRecord: (id: number) => void;
+  /** Resolved from the variants API by the list; undefined until it has loaded. */
+  pricing?: ProductPricing;
 }
 
-export default function ProductListRowActions<TData>({ row, deleteRecord }: ProductListRowActionsProps<TData>) {
+export default function ProductListRowActions<TData>({ row, deleteRecord, pricing }: ProductListRowActionsProps<TData>) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const item = row.original as ProductDto;
   const [isAddStockOpen, setIsAddStockOpen] = useState(false);
@@ -35,7 +38,7 @@ export default function ProductListRowActions<TData>({ row, deleteRecord }: Prod
 
   // The cart snapshots a price from the product's effective variant, so a
   // product with no price cannot be added at all.
-  const isPriced = item.currentPrice?.sellingPrice != null;
+  const isPriced = pricing?.sellingPrice != null;
 
   const handleWishlistToggle = async () => {
     try {
@@ -89,7 +92,8 @@ export default function ProductListRowActions<TData>({ row, deleteRecord }: Prod
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link href={`/admin/products/${item?.id}`}>Edit</Link>
           </DropdownMenuItem>
-          {item.currentPrice?.costPrice && (
+          {/* Stock is booked against a variant, and the modal needs a priced one to book it to. */}
+          {isPriced && (
             <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAddStockOpen(true)}>
               Add Stock
             </DropdownMenuItem>
