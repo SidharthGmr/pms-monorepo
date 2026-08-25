@@ -1,25 +1,27 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 
 export interface CreateProductVariantModel {
   productId: number;
   storeCode: string;
-  /**
-   * `attributes` and `sku` are NOT NULL in the schema but tedious to supply for a
-   * single-variant product, so the repository fills them in when omitted.
-   */
   attributes?: Prisma.InputJsonValue; // e.g. { "size": "L", "color": "Red" }
   sku?: string;
-  /** Display name for the variant, e.g. "Large / Red". */
   name?: string | null;
+  /** Presentational only - `sku` is the unique handle (`@@unique([storeCode, sku])`). */
+  slug?: string | null;
+  description?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  status?: Status;
+  isFeatured?: boolean;
   barcode?: string | null;
-  /** Image URLs for this specific variant. */
   images?: string[];
-  /** Stock sits on the variant, so its low-stock trigger does too. */
   lowStockThreshold?: number | null;
-  /** Opening stock, booked as the variant's first stockHistory movement. */
   stockQuantity?: number;
-  /** Written to the PriceHistory ledger, which is the only place a price is stored. */
-  sellingPrice: number;
+  /**
+   * Null means "not priced yet", which is distinct from a price of zero - no PriceHistory
+   * row is filed at all in that case, and the variant reads back as unpriced.
+   */
+  sellingPrice: number | null;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date;

@@ -207,36 +207,29 @@ model category {
 }
 
 model product {
-  id          Int    @id @default(autoincrement())
-  storeCode   String
-  name        String
-  parentId    Int?
-  categoryId  Int
-  brandNameId Int?
-  attributeId Int?
-  slug        String
-
+  id               Int       @id @default(autoincrement())
+  storeCode        String
+  name             String
+  parentId         Int?
+  categoryId       Int
+  brandNameId      Int?
+  attributeId      Int?
+  slug             String
   description      String?
   shortDescription String?
-  seoTitle         String?  @db.VarChar(255)
+  seoTitle         String?   @db.VarChar(255)
   seoDescription   String?
-  images           String[] @default([])
-
-  isFeatured   Boolean @default(false)
-  status       Status  @default(Draft)
-  displayOrder Int     @default(0)
-
-  createdAt DateTime  @default(now())
-  /// Null until the product is first edited. `@updatedAt` would populate it at insert time,
-  /// so every new product looked already-modified - the writers set it explicitly instead
-  /// (same convention as `brandName`).
-  updatedAt DateTime?
-  deletedAt DateTime?
-
-  createdById String
-  updatedById String?
-  deletedById String?
-  metadata    Json?
+  images           String[]  @default([])
+  isFeatured       Boolean   @default(false)
+  status           Status    @default(Draft)
+  displayOrder     Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime?
+  deletedAt        DateTime?
+  createdById      String
+  updatedById      String?
+  deletedById      String?
+  metadata         Json?
 
   children  product[]  @relation("ProductHierarchy")
   store     store      @relation(fields: [storeCode], references: [code], onDelete: Restrict)
@@ -268,22 +261,26 @@ model ProductVariant {
   id                Int       @id @default(autoincrement())
   storeCode         String
   productId         Int
-  sku               String
   name              String?
+  slug              String?
+  sku               String
   barcode           String?
   attributes        Json
+  description       String?
+  seoTitle          String?   @db.VarChar(255)
+  seoDescription    String?
   images            String[]  @default([])
   isActive          Boolean   @default(false)
-  /// Stock is held per variant, so the low-stock trigger belongs here too.
   lowStockThreshold Int?      @default(5)
+  status            Status    @default(Draft)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
-
-  createdById String
-  updatedById String?
-  deletedById String?
-  metadata    Json?
+  isFeatured        Boolean   @default(false)
+  createdById       String
+  updatedById       String?
+  deletedById       String?
+  metadata          Json?
 
   product   product @relation(fields: [storeCode, productId], references: [storeCode, id], onDelete: Restrict)
   store     store   @relation(fields: [storeCode], references: [code], onDelete: Restrict)
