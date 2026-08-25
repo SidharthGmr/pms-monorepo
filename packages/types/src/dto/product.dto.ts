@@ -1,4 +1,5 @@
 import { Status } from "../enum/status.enum";
+import { BasicDto } from "./list-response.dto";
 import { JsonValue } from "./product-variant.dto";
 
 
@@ -16,9 +17,9 @@ export interface ProductResponseDto {
   updatedById?: string | null;
   createdAt: Date;
   updatedAt: Date | null;
-  category?: string | null;
-  brandName?: string | null;
-  attribute?: string | null;
+  category?: BasicDto | null;
+  brandName?: BasicDto | null;
+  attribute?: BasicDto | null;
 }
 
 /** Trimmed current-price view: only the display-relevant amounts. */

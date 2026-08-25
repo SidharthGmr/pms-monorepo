@@ -26,7 +26,6 @@ export interface ProductDto {
   brandNameId?: number | null;
   description?: string | null;
   categoryId: number;
-  /** Resolved category name - the detail and low-stock endpoints send it, the list does not. */
   category?: string | null;
   parentId?: number | null;
   attributeId?: number | null;

@@ -41,15 +41,12 @@ export default function ProductList() {
   });
 
   const getAllProductsResponse = useGetAllProducts(filterParams);
-
   const deleteProductMutation = useDeleteProduct();
 
-  // `GET /products` is a thin list, so price and stock for the rows on screen come from the
-  // variants API - one request for the whole page.
-  const productIds = useMemo(() => data.map((product) => product.id), [data]);
-  const { pricing, isLoading: isPricingLoading } = useProductPricing(productIds);
+  // const productIds = useMemo(() => data.map((product) => product.id), [data]);
+  // const { pricing, isLoading: isPricingLoading } = useProductPricing(productIds);
 
-  const columns = useProductColumns((id) => openDeleteModal(id), pricing, isPricingLoading);
+  const columns = useProductColumns((id) => openDeleteModal(id));
 
   useEffect(() => {
     if (getAllProductsResponse.isSuccess && getAllProductsResponse.data?.data?.data) {
@@ -58,7 +55,13 @@ export default function ProductList() {
     }
   }, [getAllProductsResponse.isSuccess, getAllProductsResponse.data]);
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<ProductDto>('', 'desc', columns);
+  //const { sorting, onSortingChange } = useTanstackTableSorting<ProductDto>('', 'desc', columns);
+
+  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<ProductDto>(
+    filterParams.sortBy ?? '',
+    filterParams.sortDirection ?? '',
+    columns
+  );
 
   const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
 

@@ -18,14 +18,15 @@ import { Image as ImageIcon } from 'lucide-react';
  * list resolves them through `useProductPricing` and passes the map in here. `undefined`
  * for a product means "not loaded yet", which renders as a placeholder rather than a zero.
  */
-export const useProductColumns = (deleteRecord: (id: number) => void, pricing: ProductPricingMap, isPricingLoading = false) =>
+export const useProductColumns = (deleteRecord: (id: number) => void) =>
   useMemo<ColumnDef<ProductDto>[]>(
     () => [
       {
         id: 'actions',
         header: '',
-        cell: ({ row }) => <ProductListRowActions row={row} deleteRecord={deleteRecord} pricing={pricing.get(row.original.id)} />,
-      }, {
+        cell: ({ row }) => <ProductListRowActions row={row} deleteRecord={deleteRecord} />,
+      },
+      {
         id: 'name',
         accessorKey: 'name',
         enableSorting: false,
@@ -43,8 +44,12 @@ export const useProductColumns = (deleteRecord: (id: number) => void, pricing: P
                 )}
               </div>
               <div className="space-y-0.5 min-w-0">
-                <span className="font-medium block truncate max-w-[200px]" title={row.original.name}>{row.original.name}</span>
-                <span className="text-xs text-muted-foreground block truncate max-w-[200px]" title={row.original.slug}>{row.original.slug}</span>
+                <span className="font-medium block truncate max-w-[200px]" title={row.original.name}>
+                  {row.original.name}
+                </span>
+                <span className="text-xs text-muted-foreground block truncate max-w-[200px]" title={row.original.slug}>
+                  {row.original.slug}
+                </span>
               </div>
             </div>
           );
@@ -52,50 +57,6 @@ export const useProductColumns = (deleteRecord: (id: number) => void, pricing: P
         meta: { sortingKey: 'name' },
       },
 
-      {
-        id: 'price',
-        accessorKey: 'price',
-        enableSorting: false,
-        enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Price / Cost" />,
-        cell: ({ row }) => {
-          const entry = pricing.get(row.original.id);
-          if (!entry) {
-            return <span className="text-sm text-muted-foreground">{isPricingLoading ? '…' : '—'}</span>;
-          }
-          return (
-            <div className="space-y-0.5">
-              <span className="block font-medium">{entry.sellingPrice != null ? `$${entry.sellingPrice.toFixed(2)}` : '—'}</span>
-              {entry.costPrice != null && <span className="text-xs text-muted-foreground">Cost: ${entry.costPrice.toFixed(2)}</span>}
-            </div>
-          );
-        },
-        meta: { sortingKey: 'price' },
-      },
-      {
-        id: 'stock',
-        accessorKey: 'stock',
-        enableSorting: false,
-        enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Stock" />,
-        cell: ({ row }) => {
-          const entry = pricing.get(row.original.id);
-          if (!entry) {
-            return <span className="text-sm text-muted-foreground">{isPricingLoading ? '…' : '—'}</span>;
-          }
-          // Sellable stock, i.e. the sum across the product's active variants. It can read
-          // lower than the old product-level figure, which also counted movements booked
-          // against no variant at all and against retired ones.
-          const isLow = entry.lowStockThreshold != null && entry.stock <= entry.lowStockThreshold;
-          return (
-            <div className="space-y-0.5">
-              <span className={`block font-medium ${isLow ? 'text-destructive' : ''}`}>{entry.stock}</span>
-              {isLow && <span className="text-xs text-destructive">Low stock</span>}
-            </div>
-          );
-        },
-        meta: { sortingKey: 'stock' },
-      },
       {
         id: 'actions-mobile',
         accessorKey: 'actions',
@@ -109,7 +70,8 @@ export const useProductColumns = (deleteRecord: (id: number) => void, pricing: P
           </div>
         ),
         meta: { sortingKey: 'actions' },
-      }, {
+      },
+      {
         id: 'status',
         accessorKey: 'status',
         enableSorting: false,
@@ -134,7 +96,22 @@ export const useProductColumns = (deleteRecord: (id: number) => void, pricing: P
         },
         meta: { sortingKey: 'createdAt' },
       },
-
+      {
+        id: 'updatedAt',
+        accessorKey: 'updatedAt',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Updated At" />,
+        cell: ({ row }) => {
+          const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+          return (
+            <span className="text-sm text-muted-foreground">
+              {row.original.updatedAt ? unitOfService.DateTimeService.convertToLocalDate(row.original.updatedAt, true) : '-'}
+            </span>
+          );
+        },
+        meta: { sortingKey: 'updatedAt' },
+      },
     ],
-    [deleteRecord, pricing, isPricingLoading]
+    [deleteRecord]
   );

@@ -52,8 +52,7 @@ export class ProductRepository implements IProductRepository {
         ];
       }
 
-      // The tenant always comes from the token, never the query string - leaving this out
-      // returns every store's catalog to any authenticated caller.
+
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.categoryId !== undefined) where.categoryId = filters.categoryId;
       if (filters.brandNameId !== undefined) where.brandNameId = filters.brandNameId;
@@ -68,31 +67,25 @@ export class ProductRepository implements IProductRepository {
       }
     }
 
-    // An explicit status wins outright - so `?status=Trash` can actually list the bin.
-    // Setting `status` and `NOT: { status }` together is what made the old Trash filter
-    // always return zero rows.
+    const showAll = filters?.showAllRecords === true;
+
     if (filters?.status !== undefined) {
       where.status = filters.status;
-    } else {
+    } else if (!showAll) {
       where.NOT = { status: Status.Trash };
     }
 
-    const showAll = filters?.showAllRecords === true;
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
-    const [rows, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy: [{ [column]: direction }, { id: 'desc' }],
-        ...(skip !== undefined && { skip }),
-        ...(take !== undefined && { take }),
-      }),
-      prisma.product.count({ where }),
+    const [rows, total] = await Promise.all([prisma.product.findMany({
+      where, orderBy: [{ [column]: direction }, { id: 'desc' }],
+      ...(skip !== undefined && { skip }),
+      ...(take !== undefined && { take }),
+    }),
+    prisma.product.count({ where }),
     ]);
 
-    // `metadata` holds the verbatim create payload, which includes cost prices - and this
-    // same method backs the unauthenticated public catalog. It stays out of the list.
     const data = rows.map(({ metadata, ...rest }) => rest);
 
     return { totalRecord: total, data };

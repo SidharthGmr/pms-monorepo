@@ -19,9 +19,6 @@ export interface IProductService {
 
 
   getLowStock(filters?: ProductFilterParams): Promise<ListResponseDto<ProductWithPriceResponseDto>>;
-
-
-
   addStock(id: number, data: AddStockModel, userId: string, storeCode: string): Promise<ProductResponseDto>;
   getStockHistory(id: number, page?: number, limit?: number, variantId?: number): Promise<ListResponseDto<any>>;
 }

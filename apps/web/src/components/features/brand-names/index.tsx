@@ -41,13 +41,11 @@ export default function BrandNameList() {
     status: searchParams.get('status') || '',
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-    // `createdAt` is the actual column, and the sorting hook only reads an
-    // uppercase 'DESC' - lowercase silently flipped the list to oldest-first.
     sortBy: searchParams.get('sortBy') || 'createdAt',
     sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
-  const getAllBrandNamesResponse = useGetAllBrandNames(filterParams);
+  const getAllBrandNamesResponse = useGetAllBrandNames({ ...filterParams, showAllRecords: true });
   const deleteBrandNameMutation = useDeleteBrandName();
 
   useEffect(() => {

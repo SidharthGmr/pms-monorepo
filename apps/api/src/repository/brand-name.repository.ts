@@ -26,14 +26,16 @@ function toDto(b: BrandNameWithCategories): BrandNameDto {
 const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
 
 export class BrandNameRepository implements IBrandNameRepository {
-    async findAll(
-        filters?: BrandNameFilterParams,
-        page = 1,
-        limit = 10,
-        sortBy = 'createdAt',
-        sortOrder: 'asc' | 'desc' = 'desc'
-    ): Promise<ListResponseDto<BrandNameDto>> {
-        const where: Prisma.brandNameWhereInput = { NOT: { status: Status.Trash } };
+    async findAll(filters?: BrandNameFilterParams, page = 1, limit = 10, sortBy = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc'): Promise<ListResponseDto<BrandNameDto>> {
+
+
+
+        const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
+        const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+        const where: Prisma.brandNameWhereInput = {};
+
+
+
 
         if (filters) {
             page = filters.page ?? page;
@@ -47,11 +49,6 @@ export class BrandNameRepository implements IBrandNameRepository {
                 where.categories = { some: { id: { in: filters.categoryIds } } };
             }
 
-            if (filters.status !== undefined) {
-                where.status = filters.status;
-            } else {
-                where.NOT = { status: Status.Trash };
-            }
 
             if (filters.storeCode !== undefined) {
                 where.storeCode = filters.storeCode;
@@ -59,17 +56,19 @@ export class BrandNameRepository implements IBrandNameRepository {
         }
 
         const showAll = filters?.showAllRecords === true;
+
+        if (filters?.status !== undefined) {
+            where.status = filters.status;
+        } else if (!showAll) {
+            where.NOT = { status: Status.Trash };
+        }
         const skip = showAll ? undefined : (page - 1) * limit;
         const take = showAll ? undefined : limit;
 
         const include = { categories: { select: { id: true as const } } };
 
-        // A brand that was just added has displayOrder = null, and Postgres sorts NULLs
-        // last on ASC - so the old `displayOrder asc` default stranded every new record
-        // on the last page. Default to newest-first, and when displayOrder *is* the sort
-        // key keep the unordered rows at the end rather than letting them lead.
-        const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
-        const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+
+
         const orderBy: Prisma.brandNameOrderByWithRelationInput[] =
             column === 'displayOrder'
                 ? [{ displayOrder: { sort: direction, nulls: 'last' } }, { id: 'desc' }]
