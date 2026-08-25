@@ -19,7 +19,6 @@ import StockHistoryModal from './stock-history-modal';
 interface ProductListRowActionsProps<TData> {
   row: Row<TData>;
   deleteRecord: (id: number) => void;
-  /** Resolved from the variants API by the list; undefined until it has loaded. */
   pricing?: ProductPricing;
 }
 
@@ -42,9 +41,7 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
 
   const handleWishlistToggle = async () => {
     try {
-      const response = inWishlist
-        ? await removeFromWishlistMutation.mutateAsync(item.id)
-        : await addToWishlistMutation.mutateAsync(item.id);
+      const response = inWishlist ? await removeFromWishlistMutation.mutateAsync(item.id) : await addToWishlistMutation.mutateAsync(item.id);
 
       if (response && (response.status === 200 || response.status === 201 || response.status === 204)) {
         toast({
@@ -92,25 +89,14 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link href={`/admin/products/${item?.id}`}>Edit</Link>
           </DropdownMenuItem>
-          {/* Stock is booked against a variant, and the modal needs a priced one to book it to. */}
           {isPriced && (
             <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAddStockOpen(true)}>
               Add Stock
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsStockHistoryOpen(true)}>
-            Stock History
-          </DropdownMenuItem>
+
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link href={`/admin/products/${item?.id}/variants`}>Variants</Link>
-          </DropdownMenuItem>
-          {isPriced && (
-            <DropdownMenuItem className="cursor-pointer" disabled={addToCartMutation.isPending} onClick={handleAddToCart}>
-              {addToCartMutation.isPending ? 'Adding...' : 'Add to Cart'}
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem className="cursor-pointer" disabled={isWishlistPending} onClick={handleWishlistToggle}>
-            {isWishlistPending ? 'Saving...' : inWishlist ? 'Remove from Wishlist' : 'Save to Wishlist'}
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={() => deleteRecord(item.id)}>
             Delete
@@ -118,7 +104,7 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {isAddStockOpen && (
+      {/* {isAddStockOpen && (
         <AddStockModal
           productId={item.id}
           productName={item.name}
@@ -130,8 +116,7 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
 
       {isStockHistoryOpen && (
         <StockHistoryModal productId={item.id} productName={item.name} isOpen={isStockHistoryOpen} onClose={() => setIsStockHistoryOpen(false)} />
-      )}
-
+      )} */}
     </>
   );
 }

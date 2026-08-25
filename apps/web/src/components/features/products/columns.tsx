@@ -2,9 +2,7 @@
 import ActionTooltip from '@/components/common/tooltip-action-button';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ProductDto } from '@/dtos/product.dto';
 import { StatusValues } from '@/enums/status-values.enum';
-import { ProductPricingMap } from '@/hooks/useProductPricing';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -12,14 +10,10 @@ import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { Badge } from '../../ui/badge';
 import ProductListRowActions from './row-action';
 import { Image as ImageIcon } from 'lucide-react';
+import { ProductResponseDto } from '@pms/types';
 
-/**
- * Price and stock are not on the product row any more - both are held per variant, so the
- * list resolves them through `useProductPricing` and passes the map in here. `undefined`
- * for a product means "not loaded yet", which renders as a placeholder rather than a zero.
- */
 export const useProductColumns = (deleteRecord: (id: number) => void) =>
-  useMemo<ColumnDef<ProductDto>[]>(
+  useMemo<ColumnDef<ProductResponseDto>[]>(
     () => [
       {
         id: 'actions',
@@ -31,7 +25,7 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         accessorKey: 'name',
         enableSorting: false,
         enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Product" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left " title="Product" />,
         cell: ({ row }) => {
           const imageUrl = row.original.images && row.original.images.length > 0 ? row.original.images[0] : null;
           return (
@@ -56,6 +50,33 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         },
         meta: { sortingKey: 'name' },
       },
+      {
+        id: 'category',
+        accessorKey: 'category',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="" title="Category" />,
+        cell: ({ row }) => <Badge>{row.original.category?.name}</Badge>,
+        meta: { sortingKey: 'category' },
+      },
+      {
+        id: 'brandName',
+        accessorKey: 'brandName',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="" title="Brand" />,
+        cell: ({ row }) => <Badge>{row.original.brandName?.name}</Badge>,
+        meta: { sortingKey: 'brandName' },
+      },
+      // {
+      //   id: 'description',
+      //   accessorKey: 'description',
+      //   enableSorting: false,
+      //   enableHiding: false,
+      //   header: ({ column }) => <DataTableColumnHeader column={column} className=" max-w-4" title="Description" />,
+      //   cell: ({ row }) => <span>{row.original.description}</span>,
+      //   meta: { sortingKey: 'brandName' },
+      // },
 
       {
         id: 'actions-mobile',
@@ -65,27 +86,20 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         header: ({ column }) => <DataTableColumnHeader column={column} title="" />,
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
+            <ActionTooltip variant="view" tooltip="Varient" href={`/admin/products/${row.original.id}/variants`} />
             <ActionTooltip variant="edit" tooltip="Edit Record" href={`/admin/products/${row.original.id}`} />
             <ActionTooltip variant="delete" tooltip="Delete Record" onClick={() => deleteRecord(+row.original.id)} />
           </div>
         ),
         meta: { sortingKey: 'actions' },
       },
-      {
-        id: 'status',
-        accessorKey: 'status',
-        enableSorting: false,
-        enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'scusses' : 'orange'}>{row.original.status}</Badge>,
-        meta: { sortingKey: 'status' },
-      },
+
       {
         id: 'createdAt',
         accessorKey: 'createdAt',
         enableSorting: false,
         enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Created At" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left " title="Created At" />,
         cell: ({ row }) => {
           const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
           return (
@@ -101,7 +115,7 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         accessorKey: 'updatedAt',
         enableSorting: false,
         enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Updated At" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left " title="Updated At" />,
         cell: ({ row }) => {
           const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
           return (
@@ -111,6 +125,15 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
           );
         },
         meta: { sortingKey: 'updatedAt' },
+      },
+      {
+        id: 'status',
+        accessorKey: 'status',
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="" title="Status" />,
+        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'scusses' : 'orange'}>{row.original.status}</Badge>,
+        meta: { sortingKey: 'status' },
       },
     ],
     [deleteRecord]

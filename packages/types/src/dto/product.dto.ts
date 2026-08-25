@@ -10,16 +10,16 @@ export interface ProductResponseDto {
   slug: string;
   description?: string | null;
   images: string[];
-  storeCode: string
+  storeCode: string;
+  category?: BasicDto | null;
+  brandName?: BasicDto | null;
+  attribute?: BasicDto | null;
   status: Status;
   displayOrder?: number | null;
   createdById: string;
   updatedById?: string | null;
   createdAt: Date;
   updatedAt: Date | null;
-  category?: BasicDto | null;
-  brandName?: BasicDto | null;
-  attribute?: BasicDto | null;
 }
 
 /** Trimmed current-price view: only the display-relevant amounts. */
@@ -47,20 +47,16 @@ export interface ProductVariantSummaryDto {
 }
 
 /**
- * Product enriched with related names (category, brand, attribute) as flat
- * fields, plus its current (active) price, for list/detail views.
- * `currentPrice` is null when the product has no active price.
- */
-/**
- * A single product with its related names resolved, and deliberately no price or stock:
- * both are held per variant, so a product-level figure could only ever be an aggregate.
- * The detail endpoint returns this; the list endpoint still carries the aggregates because
- * catalog cards and the POS grid are built on them.
+ * A single product with its relations resolved, and deliberately no price or stock: both are
+ * held per variant, so a product-level figure could only ever be an aggregate.
+ *
+ * Same shape as a list row - the fields are only narrowed from optional to required, because
+ * the detail query always joins them.
  */
 export interface ProductDetailResponseDto extends ProductResponseDto {
-  category: string;
-  brandName: string | null;
-  attribute: string | null;
+  category: BasicDto;
+  brandName: BasicDto | null;
+  attribute: BasicDto | null;
 }
 
 export interface ProductWithPriceResponseDto extends ProductDetailResponseDto {

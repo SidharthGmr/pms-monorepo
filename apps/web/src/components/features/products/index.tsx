@@ -19,11 +19,12 @@ import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { useProductColumns } from './columns';
 import ProductListFilter from './filter';
+import { ProductResponseDto } from '@pms/types';
 
 export default function ProductList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
-  const [data, setData] = useState<ProductDto[]>([]);
+  const [data, setData] = useState<ProductResponseDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
   const searchParams = useSearchParams();
 
@@ -32,7 +33,6 @@ export default function ProductList() {
   const [filterParams, setFilterParams] = useState<ProductFilterParams>({
     search: searchParams.get('search') || '',
     status: searchParams.get('status') || null,
-    showAllRecords: true,
     categoryId: searchParams.get('categoryId') || '',
     startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
     endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
@@ -40,7 +40,7 @@ export default function ProductList() {
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
   });
 
-  const getAllProductsResponse = useGetAllProducts(filterParams);
+  const getAllProductsResponse = useGetAllProducts({ ...filterParams, showAllRecords: true });
   const deleteProductMutation = useDeleteProduct();
 
   // const productIds = useMemo(() => data.map((product) => product.id), [data]);
@@ -57,7 +57,7 @@ export default function ProductList() {
 
   //const { sorting, onSortingChange } = useTanstackTableSorting<ProductDto>('', 'desc', columns);
 
-  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<ProductDto>(
+  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<ProductResponseDto>(
     filterParams.sortBy ?? '',
     filterParams.sortDirection ?? '',
     columns
@@ -87,10 +87,14 @@ export default function ProductList() {
   }, [pagination]);
 
   const resetForm = () => {
-    setFilterParams({
-      search: undefined,
-      page: 1,
-      recordPerPage: config.recordPerPage,
+    setFilterParams(() => {
+      return {
+        status: searchParams.get('status') || '',
+        page: +(searchParams.get('page') || 1),
+        search: searchParams.get('search') || '',
+        recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
+        sortBy: searchParams.get('sortBy') || 'createdAt',
+      };
     });
   };
 

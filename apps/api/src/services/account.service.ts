@@ -253,9 +253,9 @@ export class AccountService implements IAccountService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt ?? null,
       status: user.status,
-      token: includeToken ? user.token ?? null : null,
-      tokenUpdated: user.tokenUpdated,
-      refreshToken: includeRefreshToken ? user.refreshToken ?? null : null,
+      // token: includeToken ? user.token ?? null : null,
+      // tokenUpdated: user.tokenUpdated,
+      // refreshToken: includeRefreshToken ? user.refreshToken ?? null : null,
       storeCode: user.storeCode || null,
     };
   }

@@ -5,7 +5,7 @@ import { ProductController } from '../controllers/product.controller';
 import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
 import { validate } from '../middleware/validate';
-import { updateProductSchema, addStockSchema, CreateProductValidator } from '@pms/types';
+import { updateProductSchema, CreateProductValidator } from '@pms/types';
 
 
 const productRouter = Router();
@@ -132,50 +132,6 @@ productRouter.get('/', authenticateToken, asyncHandler(productController.getAll)
  */
 // Public catalog — must be declared before `/:id` so it is not captured by the param route.
 productRouter.get('/public', asyncHandler(productController.getAllPublic));
-
-/**
- * @swagger
- * /products/reports/low-stock:
- *   get:
- *     summary: Get low-stock products for the authenticated user's store
- *     description: Returns products whose current stock is at or below their lowStockThreshold. Scoped to the caller's store.
- *     tags: [Product]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: clientId
- *         schema:
- *           type: string
- *         required: true
- *         description: Enter Client Id
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         required: false
- *       - in: query
- *         name: recordPerPage
- *         schema:
- *           type: integer
- *         required: false
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         required: false
- *       - in: query
- *         name: showAllRecords
- *         schema:
- *           type: boolean
- *         required: false
- *     responses:
- *       200:
- *         description: Low stock products fetched successfully
- *       400:
- *         description: Store code not found
- */
-productRouter.get('/reports/low-stock', authenticateToken, asyncHandler(productController.getLowStock));
 
 /**
  * @swagger
@@ -463,106 +419,5 @@ productRouter.put('/:id', authenticateToken, validate(updateProductSchema), asyn
  *         description: Product not found
  */
 productRouter.delete('/:id', authenticateToken, asyncHandler(productController.delete));
-
-/**
- * @swagger
- * /products/{id}/stock:
- *   patch:
- *     summary: Add stock to one variant of a product (and optionally update its price)
- *     description: >
- *       Stock is held per variant, so the movement is booked against `variantId` and that
- *       variant's cached `stockQuantity` is recomputed from its movements. The variant must
- *       belong to this product and to the caller's store. When `sellingPrice` is supplied a
- *       row is appended to that variant's PriceHistory ledger.
- *     tags: [Product]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: clientId
- *         schema:
- *           type: string
- *         required: true
- *         description: Enter Client Id
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - variantId
- *               - quantity
- *             properties:
- *               variantId:
- *                 type: integer
- *                 example: 12
- *                 description: Variant receiving the stock. Must belong to this product.
- *               quantity:
- *                 type: integer
- *                 minimum: 1
- *                 example: 10
- *               reason:
- *                 type: string
- *                 example: Restock from supplier
- *               sellingPrice:
- *                 type: number
- *                 minimum: 0
- *                 example: 199.99
- *               costPrice:
- *                 type: number
- *                 minimum: 0
- *                 nullable: true
- *                 example: 150.00
- *     responses:
- *       200:
- *         description: Stock added successfully
- *       403:
- *         description: The variant belongs to a different product or store
- *       404:
- *         description: Product or variant not found
- */
-productRouter.patch('/:id/stock', authenticateToken, validate(addStockSchema), asyncHandler(productController.addStock));
-
-/**
- * @swagger
- * /products/{id}/stock-history:
- *   get:
- *     summary: Get paginated stock movement history for a product
- *     tags: [Product]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: clientId
- *         schema:
- *           type: string
- *         required: true
- *         description: Enter Client Id
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: recordPerPage
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Stock history fetched successfully
- *       404:
- *         description: Product not found
- */
-productRouter.get('/:id/stock-history', authenticateToken, asyncHandler(productController.getStockHistory));
 
 export default productRouter;

@@ -14,20 +14,6 @@ export class ProductController {
     private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)
   ) { }
 
-  create = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
-    const userId = req.user?.userId as string;
-    const storeCode = req.user?.storeCode;
-
-    if (!storeCode || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-    const body = req.body as ProductModel;
-    const product = await this.unitOfService.Product.create(body, userId, storeCode);
-    return res.status(201).json({ success: true, message: "Product created successfully", data: product });
-  };
 
   getAll = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
     const isAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === Role.ADMIN || req.user?.role === Role.USER || req.user?.role === Role.STAFF;
@@ -66,6 +52,22 @@ export class ProductController {
     });
   };
 
+  getById = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
+    const id = parseInt(req.params["id"] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+    const product = await this.unitOfService.Product.getById(id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+    const isAdmin = req.user?.role === 'SUPER_ADMIN' || req.user?.role === 'ADMIN' || req.user?.role === 'STAFF';
+    if (!isAdmin && product.createdById !== req.user?.userId) {
+      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
+    }
+    if (req.user?.storeCode && product.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
+    }
+    return res.status(200).json({ success: true, message: "Product fetched successfully", data: product });
+  };
 
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
     const id = parseInt(req.params["id"] as string);
@@ -89,97 +91,23 @@ export class ProductController {
   };
 
 
-  /**
-   * Store-scoped low-stock report: products whose current stock is at or below their
-   * own `lowStockThreshold`. Scoping is derived from the authenticated user's store.
-   */
-  getLowStock = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductWithPriceResponseDto>>> => {
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
+    const userId = req.user?.userId as string;
     const storeCode = req.user?.storeCode;
-    if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+
+    if (!storeCode || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Store code not found. User must be associated with a store.'
+      });
     }
-    const filters: ProductFilterParams = Object.fromEntries(
-      Object.entries({
-        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
-        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
-        search: req.query['search'] as string | undefined,
-        categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
-        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
-        status: req.query['status'] ? req.query['status'] as Status : undefined,
-        showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
-        storeCode,
-      }).filter(([, v]) => v !== undefined)
-    );
-    const result = await this.unitOfService.Product.getLowStock(filters);
-    return res.status(200).json({
-      success: true,
-      message: "Low stock products fetched successfully",
-      data: { totalRecord: result.totalRecord, data: result.data },
-    });
+    const body = req.body as ProductModel;
+    const product = await this.unitOfService.Product.create(body, userId, storeCode);
+    return res.status(201).json({ success: true, message: "Product created successfully", data: product });
   };
 
 
-
-  /**
-   * Public catalog endpoint — no authentication required.
-   * Only ever returns Published products and never exposes drafts/trash.
-   * Store scoping is optional via the `storeCode` query param.
-   */
-  getAllPublic = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
-    const filters: ProductFilterParams = Object.fromEntries(
-      Object.entries({
-        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
-        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
-        search: req.query['search'] as string | undefined,
-        categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
-        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
-        storeCode: req.query['storeCode'] as string | undefined,
-        showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
-        sortBy: req.query['sortBy'] as string | undefined,
-        sortOrder: req.query['sortDirection'] || req.query['sortOrder']
-          ? ((req.query['sortDirection'] || req.query['sortOrder']) as string).toLowerCase() === 'asc'
-            ? 'asc'
-            : 'desc'
-          : undefined,
-        // Public visitors must only ever see published products.
-        status: Status.Published,
-      }).filter(([, v]) => v !== undefined)
-    );
-    const result = await this.unitOfService.Product.getAll(filters);
-    return res.status(200).json({
-      success: true,
-      message: "Products fetched successfully",
-      data: { totalRecord: result.totalRecord, data: result.data },
-    });
-  };
-
-  getById = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<CustomResponse<ProductResponseDto>>> => {
-    const id = parseInt(req.params["id"] as string);
-    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
-    const product = await this.unitOfService.Product.getById(id);
-    if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
-    }
-    const isAdmin = req.user?.role === 'SUPER_ADMIN' || req.user?.role === 'ADMIN' || req.user?.role === 'STAFF';
-    if (!isAdmin && product.createdById !== req.user?.userId) {
-      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
-    }
-    if (req.user?.storeCode && product.storeCode !== req.user.storeCode) {
-      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
-    }
-    return res.status(200).json({ success: true, message: "Product fetched successfully", data: product });
-  };
-
-  update = async (
-    req: Request,
-    res: Response
-  ): Promise<Response<CustomResponse<ProductResponseDto>>> => {
+  update = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
     const id = parseInt(req.params["id"] as string);
     const userId = req.user?.userId as string;
     const storeCode = req.user?.storeCode; // Get from logged-in user
@@ -208,58 +136,34 @@ export class ProductController {
     return res.status(200).json({ success: true, message: "Product updated successfully", data: product });
   };
 
-
-
-
-  addStock = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {
-    const id = parseInt(req.params["id"] as string);
-    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
-
-    const userId = req.user?.userId as string;
-    const storeCode = req.user?.storeCode;
-    if (!storeCode || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-
-    const existingProduct = await this.unitOfService.Product.getById(id);
-    if (!existingProduct) {
-      return res.status(404).json({ success: false, message: "Product not found" });
-    }
-    if (existingProduct.storeCode !== storeCode) {
-      return res.status(403).json({ success: false, message: "Not enough permissions to update this product" });
-    }
-
-    const { variantId, quantity, reason, sellingPrice, costPrice } = req.body as {
-      variantId: number; quantity: number; reason?: string; sellingPrice?: number; costPrice?: number | null;
-    };
-    const product = await this.unitOfService.Product.addStock(id, { variantId, quantity, reason, sellingPrice, costPrice }, userId, storeCode);
-    return res.status(200).json({ success: true, message: "Stock added successfully", data: product });
-  };
-
-  getStockHistory = async (req: Request, res: Response): Promise<Response<ListResponseDto<any>>> => {
-    const id = parseInt(req.params["id"] as string);
-    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
-
-    const existingProduct = await this.unitOfService.Product.getById(id);
-    if (!existingProduct) {
-      return res.status(404).json({ success: false, message: "Product not found" });
-    }
-    if (req.user?.storeCode && existingProduct.storeCode !== req.user.storeCode) {
-      return res.status(403).json({ success: false, message: "Not enough permissions to access this product" });
-    }
-
-    const page = req.query["page"] ? parseInt(req.query["page"] as string) : undefined;
-    const recordPerPage = req.query["recordPerPage"] ? parseInt(req.query["recordPerPage"] as string) : undefined;
-    // Optional: narrow the movements to one variant.
-    const variantId = req.query["variantId"] ? parseInt(req.query["variantId"] as string) : undefined;
-    const result = await this.unitOfService.Product.getStockHistory(id, page, recordPerPage, variantId);
+  getAllPublic = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
+    const filters: ProductFilterParams = Object.fromEntries(
+      Object.entries({
+        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
+        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
+        search: req.query['search'] as string | undefined,
+        categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
+        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
+        storeCode: req.query['storeCode'] as string | undefined,
+        showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortOrder: req.query['sortDirection'] || req.query['sortOrder']
+          ? ((req.query['sortDirection'] || req.query['sortOrder']) as string).toLowerCase() === 'asc'
+            ? 'asc'
+            : 'desc'
+          : undefined,
+        // Public visitors must only ever see published products.
+        status: Status.Published,
+      }).filter(([, v]) => v !== undefined)
+    );
+    const result = await this.unitOfService.Product.getAll(filters);
     return res.status(200).json({
       success: true,
-      message: "Stock history fetched successfully",
+      message: "Products fetched successfully",
       data: { totalRecord: result.totalRecord, data: result.data },
     });
   };
+
+
+
 }

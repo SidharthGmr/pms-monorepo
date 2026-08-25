@@ -12,7 +12,7 @@ import { IProductVariantService } from './interfaces/Iproduct-variant.service';
 
 @injectable()
 export class ProductVariantService implements IProductVariantService {
-  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) {}
+  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
 
   async getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>> {
     return this.unitOfWork.ProductVariant.findAll(filters);
@@ -50,19 +50,19 @@ export class ProductVariantService implements IProductVariantService {
 
     // Opening stock has to be booked as a movement - there is no stock column to seed, and
     // a variant whose movements do not add up to its stock would be unreconcilable.
-    if (data.stockQuantity) {
-      await this.unitOfWork.Product.createStockHistory(
-        {
-          productId: data.productId,
-          variantId: variant.id,
-          storeCode: data.storeCode,
-          userId: data.createdById,
-          quantity: data.stockQuantity,
-          reason: 'Opening stock',
-        },
-        tx
-      );
-    }
+    // if (data.stockQuantity) {
+    //   await this.unitOfWork.Product.createStockHistory(
+    //     {
+    //       productId: data.productId,
+    //       variantId: variant.id,
+    //       storeCode: data.storeCode,
+    //       userId: data.createdById,
+    //       quantity: data.stockQuantity,
+    //       reason: 'Opening stock',
+    //     },
+    //     tx
+    //   );
+    // }
 
     // Re-read so the caller gets the price and stock just written rather than the empty
     // shell `create` returns.
@@ -102,19 +102,19 @@ export class ProductVariantService implements IProductVariantService {
 
       // 3. Stock: book the delta needed to reach the target on-hand, keeping stock the
       //    auditable sum of its movements rather than a mutable column.
-      if (data.stockQuantity != null && data.stockQuantity !== existing.stockQuantity) {
-        await this.unitOfWork.Product.createStockHistory(
-          {
-            productId: existing.productId,
-            variantId: id,
-            storeCode,
-            userId: data.updatedById,
-            quantity: data.stockQuantity - existing.stockQuantity,
-            reason: data.reason ?? 'Manual stock adjustment',
-          },
-          tx
-        );
-      }
+      // if (data.stockQuantity != null && data.stockQuantity !== existing.stockQuantity) {
+      //   await this.unitOfWork.Product.createStockHistory(
+      //     {
+      //       productId: existing.productId,
+      //       variantId: id,
+      //       storeCode,
+      //       userId: data.updatedById,
+      //       quantity: data.stockQuantity - existing.stockQuantity,
+      //       reason: data.reason ?? 'Manual stock adjustment',
+      //     },
+      //     tx
+      //   );
+      // }
 
       return (await this.unitOfWork.ProductVariant.findById(id, tx)) as ProductVariantResponseDto;
     });
