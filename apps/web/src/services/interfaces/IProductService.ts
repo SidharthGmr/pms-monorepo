@@ -23,7 +23,7 @@ export default interface IProductService {
     create(model: CreateProductModel): Promise<AxiosResponse<Response<ProductDto>>>;
     getAll(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductResponseDto>>>>;
     getAllPublic(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;
-    getById(id: number | string): Promise<AxiosResponse<Response<ProductDto>>>;
+    getById(id: number | string): Promise<AxiosResponse<Response<ProductResponseDto>>>;
     update(id: number | string, model: UpdateProductModel): Promise<AxiosResponse<Response<ProductDto>>>;
     getLowStock(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;
     addStock(id: number | string, model: AddStockModel): Promise<AxiosResponse<Response<ProductDto>>>;

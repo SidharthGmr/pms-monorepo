@@ -1,6 +1,7 @@
 'use client';
 import { SelectSearch } from '@/components/common/select-search';
 import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { FormSection } from '@/components/common/form-section';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,12 +17,12 @@ import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduct } from '@/hooks/service-hooks/useProductService';
 import { CreateProductModel } from '@/models/product.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { productFields } from '@pms/types';
+import { productFields, ProductResponseDto } from '@pms/types';
 import { zodResolver } from '@/lib/zod-resolver';
 import { Boxes, ImageIcon, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card } from '@/components/ui/card';
 
@@ -32,34 +33,6 @@ interface ManageProductProps {
 // `productFields` carries price/cost/stock; the API turns them into the product's
 // initial ProductVariant and opening stock movement.
 const productFormSchema = productFields;
-
-/** A titled group of related fields, with a leading icon and helper text. */
-function Section({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-2">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-lg bg-primary/10 p-2 text-primary">
-          <Icon className="h-4 w-4" />
-        </div>
-        <div className="space-y-0.5">
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          {description && <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>}
-        </div>
-      </div>
-      <div className="min-w-0">{children}</div>
-    </section>
-  );
-}
 
 export default function ManageProduct({ id }: ManageProductProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -77,13 +50,19 @@ export default function ManageProduct({ id }: ManageProductProps) {
   const updateProduct = useUpdateProduct();
   const { data: productResponse, isLoading: isFetching } = useGetProductById(id ?? 0, isEdit);
 
+  const getAllProductsResponse = useGetProductById(id ?? 0, isEdit);
+  const [data, setData] = useState<ProductResponseDto>();
+  useEffect(() => {
+    if (getAllProductsResponse.isSuccess && getAllProductsResponse.data?.data?.data) {
+      setData(getAllProductsResponse.data.data.data);
+    }
+  }, [getAllProductsResponse.isSuccess, getAllProductsResponse.data]);
+
   const form = useForm<CreateProductModel>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       parentId: undefined,
       categoryId: 0,
-      // Brand and attribute are nullable on the product, so they start empty rather
-      // than at 0 - which would fail validation while looking like "nothing chosen".
       brandNameId: undefined,
       attributeId: undefined,
       name: '',
@@ -114,9 +93,9 @@ export default function ManageProduct({ id }: ManageProductProps) {
         slug: p.slug,
         description: p.description ?? '',
         parentId: p.parentId ?? undefined,
-        categoryId: p.categoryId,
-        brandNameId: p.brandNameId ?? undefined,
-        attributeId: p.attributeId ?? undefined,
+        categoryId: p.category?.id,
+        brandNameId: p.brandName?.id ?? undefined,
+        attributeId: p.attribute?.id ?? undefined,
         displayOrder: p.displayOrder ?? undefined,
         images: p.images ?? [],
         status: p.status,
@@ -305,7 +284,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
         </Card>
         {isEdit && (
           <Card>
-            <Section
+            <FormSection
               icon={Boxes}
               title="Pricing & inventory"
               description="Price and stock are held per variant, so they are managed on the variant screens rather than here."
@@ -321,11 +300,11 @@ export default function ManageProduct({ id }: ManageProductProps) {
                   <Link href={`/admin/price-histories?productId=${id}`}>Price history</Link>
                 </Button>
               </div>
-            </Section>
+            </FormSection>
           </Card>
         )}
         <Card>
-          <Section icon={ImageIcon} title="Media" description="Upload product photos. The first image is used as the primary thumbnail.">
+          <FormSection icon={ImageIcon} title="Media" description="Upload product photos. The first image is used as the primary thumbnail.">
             <FormField
               control={form.control}
               name="images"
@@ -397,7 +376,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
                 </FormItem>
               )}
             />
-          </Section>
+          </FormSection>
         </Card>
 
         {/* Actions */}

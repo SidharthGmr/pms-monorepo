@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Status } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum } from '@pms/types';
@@ -19,87 +19,66 @@ export class ProductVariantService implements IProductVariantService {
   }
 
 
-
-  /**
-   * Creates a variant from the public `ProductVariantModel` payload.
-   *
-   * Deliberately goes through `record` rather than writing the row here: `sellingPrice`,
-   * `costPrice`, `compareAtPrice`, `reason`, `effectiveFrom` and `stockQuantity` are not
-   * columns on `ProductVariant` - price lives in the PriceHistory ledger and stock is the sum
-   * of the stockHistory movements - so a direct `productVariant.create` both fails Prisma's
-   * argument validation and cannot return the four derived fields the DTO requires.
-   */
   async create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto> {
-    return this.record({
-      productId: data.productId,
-      storeCode,
-      createdById: userId,
-      sellingPrice: data.sellingPrice,
-      costPrice: data.costPrice ?? null,
-      compareAtPrice: data.compareAtPrice ?? null,
-      reason: data.reason ?? null,
-      status: data.status ?? StatusEnum.Draft,
-      // Omitted rather than nulled so each column keeps its own schema default, and so the
-      // repository still auto-builds a SKU and defaults `attributes` when either is absent.
-      ...(data.sku && { sku: data.sku }),
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.slug !== undefined && { slug: data.slug }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
-      ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
-      ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
-      ...(data.barcode !== undefined && { barcode: data.barcode }),
-      ...(data.images !== undefined && { images: data.images }),
-      ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
-      ...(data.attributes && Object.keys(data.attributes).length > 0 && { attributes: data.attributes }),
-      ...(data.stockQuantity != null && { stockQuantity: data.stockQuantity }),
-      ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
-    });
-  }
+    return this.unitOfWork.transaction(async (tx) => {
 
-  /**
-   * Creates a variant and files its opening price in the PriceHistory ledger, which is the
-   * only place a price is stored.
-   */
-  async record(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto> {
-    // Already inside someone else's transaction (a product save, say) - join it rather than
-    // opening a nested one.
-    if (tx) return this.createWithPrice(data, tx);
-
-    return this.unitOfWork.transaction((transactionClient) => this.createWithPrice(data, transactionClient));
-  }
-
-  private async createWithPrice(data: CreateProductVariantModel, tx: Prisma.TransactionClient): Promise<ProductVariantResponseDto> {
-    // The repository owns the row: it builds a readable SKU when none is given, defaults the
-    // NOT NULL `attributes` column, and forces `isActive` so the variant is not born hidden.
-    const variant = await this.unitOfWork.ProductVariant.create(data, tx);
-
-    // No price given means the variant is genuinely unpriced. Filing a ledger row anyway
-    // would record a zero, which reads as "costs nothing" rather than "not priced yet".
-    if (data.sellingPrice != null) {
-      await this.unitOfWork.PriceHistory.create(
+      const variant = await this.unitOfWork.ProductVariant.create(
         {
-          variantId: variant.id,
-          storeCode: data.storeCode,
+          productId: data.productId,
+          storeCode,
+          createdById: userId,
           sellingPrice: data.sellingPrice,
-          costPrice: data.costPrice ?? null,
-          compareAtPrice: data.compareAtPrice ?? null,
-          ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
-          reason: data.reason ?? null,
-          createdById: data.createdById,
+          status: (data.status ?? StatusEnum.Draft) as Status,
+          ...(data.attributes != null && { attributes: data.attributes }),
+          ...(data.sku && { sku: data.sku }),
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.slug !== undefined && { slug: data.slug }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
+          ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
+          ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
+          ...(data.barcode !== undefined && { barcode: data.barcode }),
+          ...(data.images !== undefined && { images: data.images }),
+          ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
         },
         tx
       );
-    }
 
-    // Re-read so the caller gets the price just written rather than the empty shell that
-    // `create` returns.
-    return (await this.unitOfWork.ProductVariant.findById(variant.id, tx)) ?? variant;
+      // 2. Price goes to the ledger. Null means "not priced yet", so no row is filed.
+      if (data.sellingPrice != null) {
+        await this.unitOfWork.PriceHistory.create(
+          {
+            variantId: variant.id,
+            storeCode,
+            sellingPrice: data.sellingPrice,
+            costPrice: data.costPrice ?? null,
+            compareAtPrice: data.compareAtPrice ?? null,
+            ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
+            reason: data.reason ?? null,
+            createdById: userId,
+          },
+          tx
+        );
+      }
+
+      // 3. Opening stock is booked as a movement so on-hand stays the sum of its history.
+      if (data.stockQuantity != null && data.stockQuantity !== 0) {
+        await tx.stockHistory.create({
+          data: {
+            productId: data.productId,
+            variantId: variant.id,
+            storeCode,
+            createdById: userId,
+            quantity: data.stockQuantity,
+            reason: data.reason ?? 'Opening stock',
+          },
+        });
+      }
+
+      // 4. Re-read so the DTO carries the effective price and stock just booked.
+      return (await this.unitOfWork.ProductVariant.findById(variant.id, tx)) as ProductVariantResponseDto;
+    });
   }
-
-
-
-
 
 
   async update(id: number, storeCode: string, data: UpdateProductVariantModel): Promise<ProductVariantResponseDto> {
@@ -108,11 +87,10 @@ export class ProductVariantService implements IProductVariantService {
     if (existing.storeCode !== storeCode) throw new ForbiddenError('Variant does not belong to your store');
 
     return this.unitOfWork.transaction(async (tx) => {
-      // 1. Plain columns (name, sku, barcode, attributes, images, threshold, active).
+
       await this.unitOfWork.ProductVariant.update(id, data, tx);
 
-      // 2. Reprice: a changed price (or a staged future date) is appended to the ledger,
-      //    never overwritten, so past orders keep the price they were sold at.
+
       const priceChanged =
         data.sellingPrice != null &&
         (data.sellingPrice !== existing.sellingPrice ||
@@ -135,19 +113,18 @@ export class ProductVariantService implements IProductVariantService {
 
       // 3. Stock: book the delta needed to reach the target on-hand, keeping stock the
       //    auditable sum of its movements rather than a mutable column.
-      // if (data.stockQuantity != null && data.stockQuantity !== existing.stockQuantity) {
-      //   await this.unitOfWork.Product.createStockHistory(
-      //     {
-      //       productId: existing.productId,
-      //       variantId: id,
-      //       storeCode,
-      //       userId: data.updatedById,
-      //       quantity: data.stockQuantity - existing.stockQuantity,
-      //       reason: data.reason ?? 'Manual stock adjustment',
-      //     },
-      //     tx
-      //   );
-      // }
+      if (data.stockQuantity != null && data.stockQuantity !== existing.stockQuantity) {
+        await tx.stockHistory.create({
+          data: {
+            productId: existing.productId,
+            variantId: id,
+            storeCode,
+            createdById: data.updatedById,
+            quantity: data.stockQuantity - existing.stockQuantity,
+            reason: data.reason ?? 'Manual stock adjustment',
+          },
+        });
+      }
 
       return (await this.unitOfWork.ProductVariant.findById(id, tx)) as ProductVariantResponseDto;
     });

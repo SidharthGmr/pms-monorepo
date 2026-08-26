@@ -15,22 +15,20 @@ export interface ProductVariantResponseDto {
   name: string | null;
   barcode: string | null;
   attributes: JsonValue;
-  /** Variant-specific photos; the storefront falls back to the product's when empty. */
   images: string[];
-  /** Summed from the variant's stockHistory movements - not a stored column. */
   stockQuantity: number;
-  /**
-   * Resolved from the variant's currently effective PriceHistory row, which is the only
-   * place a price is stored. Null when the variant has never been priced - distinct from a
-   * price of zero.
-   */
   sellingPrice: number | null;
   costPrice: number | null;
   compareAtPrice: number | null;
   lowStockThreshold: number | null;
+  seoTitle: string | null;
+  description: string | null;
+  seoDescription: string | null;
   isActive: boolean;
   createdById: string;
   createdAt: Date;
+
+
 }
 
 /**

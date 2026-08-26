@@ -36,10 +36,10 @@ export default class ProductService implements IProductService {
             .get<ListResponseDto<ProductDto>, AxiosResponse<Response<ListResponseDto<ProductDto>>>>('/products/public', { params });
     }
 
-    getById(id: number | string): Promise<AxiosResponse<Response<ProductDto>>> {
+    getById(id: number | string): Promise<AxiosResponse<Response<ProductResponseDto>>> {
         return this.httpService
             .call()
-            .get<ProductDto, AxiosResponse<Response<ProductDto>>>(`/products/${id}`);
+            .get<ProductResponseDto, AxiosResponse<Response<ProductResponseDto>>>(`/products/${id}`);
     }
 
     update(id: number | string, model: UpdateProductModel): Promise<AxiosResponse<Response<ProductDto>>> {
