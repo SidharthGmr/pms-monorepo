@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
+import { toVariantResponse } from '../dtos/product-variant.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
@@ -75,8 +76,11 @@ export class ProductVariantService implements IProductVariantService {
         });
       }
 
-      // 4. Re-read so the DTO carries the effective price and stock just booked.
-      return (await this.unitOfWork.ProductVariant.findById(variant.id, tx)) as ProductVariantResponseDto;
+      // 4. Re-read so the DTO carries the effective price and stock just booked, then drop the
+      //    internal-only columns so the response keeps its trimmed shape.
+      const created = await this.unitOfWork.ProductVariant.findById(variant.id, tx);
+      if (!created) throw new NotFoundError('Variant not found');
+      return toVariantResponse(created);
     });
   }
 
@@ -126,7 +130,9 @@ export class ProductVariantService implements IProductVariantService {
         });
       }
 
-      return (await this.unitOfWork.ProductVariant.findById(id, tx)) as ProductVariantResponseDto;
+      const updated = await this.unitOfWork.ProductVariant.findById(id, tx);
+      if (!updated) throw new NotFoundError('Variant not found');
+      return toVariantResponse(updated);
     });
   }
 

@@ -2,74 +2,91 @@ import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
+import { ProductVariantInternalDto } from '../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { buildVariantSku } from '../utils/variant-sku';
 import { EffectivePrice, priceForVariant, pricesForVariants, stockForVariant, stockForVariants } from '../utils/variant-pricing';
 import { IProductVariantRepository } from './interfaces/iproduct-variant.repository';
 
-type VariantRow = Prisma.ProductVariantGetPayload<{}>;
-
 const SORTABLE_COLUMNS = new Set(['sku', 'name', 'createdAt', 'id']);
 
-
-
+/**
+ * The only columns a variant response carries. Every read in this file selects exactly this,
+ * so the API shape is decided in one place. `stockQuantity`, `sellingPrice` and `costPrice`
+ * are NOT columns - they are derived from stockHistory / PriceHistory in `toVariantDto`.
+ * `storeCode` is kept because the service uses it for the store-ownership check.
+ */
 const productVarientSelect = {
   id: true,
-  productId: true,
   sku: true,
   name: true,
   barcode: true,
   attributes: true,
   images: true,
-  stockQuantity: true,
-  sellingPrice: true,
-  costPrice: true,
   lowStockThreshold: true,
   description: true,
   isActive: true,
   createdById: true,
   createdAt: true,
-} satisfies Prisma.productVarientSelect;
+} satisfies Prisma.ProductVariantSelect;
 
+type VariantRow = Prisma.ProductVariantGetPayload<{ select: typeof productVarientSelect }>;
 
+/**
+ * `findById` also feeds the store-ownership guards (cart + variant update) and the NOT NULL
+ * `stockHistory.productId` foreign key, so it reads two columns the response never carries.
+ * Callers strip them with `toVariantResponse` before returning to a client.
+ */
+const variantInternalSelect = {
+  ...productVarientSelect,
+  productId: true,
+  storeCode: true,
+} satisfies Prisma.ProductVariantSelect;
 
-const listItemInclude = {
+type VariantInternalRow = Prisma.ProductVariantGetPayload<{ select: typeof variantInternalSelect }>;
+
+/** The SKU list is read across products, so each row also names the product it belongs to. */
+const listItemSelect = {
+  ...productVarientSelect,
   product: {
     select: {
       id: true,
       name: true,
       slug: true,
-      category: { select: { id: true, name: true } },
-      brandName: { select: { id: true, name: true } },
     },
   },
-} satisfies Prisma.ProductVariantInclude;
+} satisfies Prisma.ProductVariantSelect;
 
-type VariantWithProduct = Prisma.ProductVariantGetPayload<{ include: typeof listItemInclude }>;
+type VariantWithProduct = Prisma.ProductVariantGetPayload<{ select: typeof listItemSelect }>;
 
-
-function toVariantDto(row: VariantRow, price: EffectivePrice | null, stockQuantity: number): ProductVariantResponseDto {
+/**
+ * Attaches the derived amounts to a selected row. Generic over the row so the response shape
+ * and the wider internal shape share one mapper instead of two near-identical ones.
+ */
+function decorate<T extends { id: number }>(row: T, price: EffectivePrice | null, stockQuantity: number) {
   return {
     ...row,
     sellingPrice: price?.sellingPrice ?? null,
     costPrice: price?.costPrice ?? null,
-    compareAtPrice: price?.compareAtPrice ?? null,
     stockQuantity,
   };
 }
 
+function toVariantDto(row: VariantRow, price: EffectivePrice | null, stockQuantity: number): ProductVariantResponseDto {
+  return decorate(row, price, stockQuantity);
+}
+
+function toVariantInternalDto(row: VariantInternalRow, price: EffectivePrice | null, stockQuantity: number): ProductVariantInternalDto {
+  return decorate(row, price, stockQuantity);
+}
+
 export class ProductVariantRepository implements IProductVariantRepository {
-  /**
-   * Every variant in the store, read across products rather than within one. Price and stock
-   * are not columns, so they are attached afterwards in two batched queries for the whole
-   * page - never one pair per row.
-   */
+
   async findAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>> {
     const page = filters?.page ?? 1;
     const limit = filters?.recordPerPage ?? 10;
 
-    // Soft-deleted variants never appear: they are not sellable and their SKU is retired.
     const where: Prisma.ProductVariantWhereInput = { deletedAt: null };
 
     if (filters) {
@@ -112,30 +129,26 @@ export class ProductVariantRepository implements IProductVariantRepository {
         orderBy: [{ [column]: direction }, { id: 'desc' }],
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
-        select: productVarientSelect,
+        select: listItemSelect,
       }),
       prisma.productVariant.count({ where }),
     ]);
 
+    // Price and stock for the whole page in two batched queries, not 2N.
     const ids = rows.map((row) => row.id);
-    // const [prices, stock] = await Promise.all([pricesForVariants(ids), stockForVariants(ids)]);
+    const [prices, stock] = await Promise.all([pricesForVariants(ids), stockForVariants(ids)]);
 
-    // const data = rows.map((row: VariantWithProduct) => {
-    //   const { product, ...variant } = row;
-    //   return {
-    //     ...toVariantDto(variant, prices.get(row.id) ?? null, stock.get(row.id) ?? 0),
-    //     product,
-    //   };
-    // });
+    const data = rows.map((row: VariantWithProduct) => {
+      const { product, ...variant } = row;
+      return {
+        ...toVariantDto(variant, prices.get(row.id) ?? null, stock.get(row.id) ?? 0),
+        product,
+      };
+    });
 
-    return { totalRecord: total, data: ids };
+    return { totalRecord: total, data };
   }
 
-  /**
-   * A store-unique SKU built from `base`, appending -2, -3, ... only when it collides
-   * (e.g. two attribute-less rows on the same product). The DB unique index is the final
-   * guard; this just keeps the readable form and avoids a guaranteed constraint error.
-   */
   private async uniqueSku(tx: Prisma.TransactionClient, storeCode: string, base: string): Promise<string> {
     let candidate = base;
     let n = 1;
@@ -149,7 +162,6 @@ export class ProductVariantRepository implements IProductVariantRepository {
   async create(data: CreateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
     let sku = data.sku;
     if (!sku) {
-      // Readable SKU from the product slug + the variant's attribute values, e.g. IPHONE-15-64GB-4GB.
       const product = await tx.product.findUnique({ where: { id: data.productId }, select: { slug: true, name: true } });
       const base = buildVariantSku(product?.slug || product?.name || `P${data.productId}`, data.attributes as unknown as Record<string, unknown> | undefined);
       sku = await this.uniqueSku(tx, data.storeCode, base);
@@ -159,7 +171,6 @@ export class ProductVariantRepository implements IProductVariantRepository {
       data: {
         productId: data.productId,
         storeCode: data.storeCode,
-        // Both are NOT NULL, so `null` is not an option - default them instead.
         attributes: data.attributes ?? {},
         sku,
         ...(data.name !== undefined && { name: data.name }),
@@ -172,14 +183,12 @@ export class ProductVariantRepository implements IProductVariantRepository {
         ...(data.barcode !== undefined && { barcode: data.barcode }),
         ...(data.images !== undefined && { images: data.images }),
         ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
-        // A variant is sellable as soon as it exists; the schema default of `false` would
-        // otherwise hide every variant the moment it is created.
         isActive: true,
         createdById: data.createdById,
       },
+      select: productVarientSelect,
     });
 
-    // Nothing is priced or stocked yet at this point - the caller books both afterwards.
     return toVariantDto(created, null, 0);
   }
 
@@ -191,11 +200,15 @@ export class ProductVariantRepository implements IProductVariantRepository {
     return stockForVariant(variantId, tx);
   }
 
-  async findById(id: number, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto | null> {
-    const row = await tx.productVariant.findUnique({ where: { id } });
+  /**
+   * One variant with its price and stock. Returns the internal shape - it carries `productId`
+   * and `storeCode` for the guards, so strip it with `toVariantResponse` before responding.
+   */
+  async findById(id: number, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantInternalDto | null> {
+    const row = await tx.productVariant.findUnique({ where: { id }, select: variantInternalSelect });
     if (!row) return null;
     const [price, stock] = await Promise.all([priceForVariant(row.id, new Date(), tx), stockForVariant(row.id, tx)]);
-    return toVariantDto(row, price, stock);
+    return toVariantInternalDto(row, price, stock);
   }
 
   async update(id: number, data: UpdateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
@@ -213,6 +226,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
         ...(data.isActive !== undefined && { isActive: data.isActive }),
         updatedById: data.updatedById,
       },
+      select: productVarientSelect,
     });
     const [price, stock] = await Promise.all([priceForVariant(updated.id, new Date(), tx), stockForVariant(updated.id, tx)]);
     return toVariantDto(updated, price, stock);
@@ -223,6 +237,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const rows = await tx.productVariant.findMany({
       where: { productId, isActive: true, deletedAt: null },
       orderBy: { id: 'asc' },
+      select: productVarientSelect,
     });
     return this.decorate(rows, new Date(), tx);
   }
@@ -232,7 +247,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
    * only its price moves - so "effective on" is a PriceHistory lookup.
    */
   async getEffectiveOn(variantId: number, date: Date, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto | null> {
-    const row = await tx.productVariant.findUnique({ where: { id: variantId } });
+    const row = await tx.productVariant.findUnique({ where: { id: variantId }, select: productVarientSelect });
     if (!row) return null;
     const [price, stock] = await Promise.all([priceForVariant(variantId, date, tx), stockForVariant(variantId, tx)]);
     return toVariantDto(row, price, stock);
@@ -242,7 +257,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const skip = (page - 1) * limit;
     const where = { productId, storeCode };
     const [rows, total] = await Promise.all([
-      prisma.productVariant.findMany({ where, orderBy: { id: 'desc' }, skip, take: limit }),
+      prisma.productVariant.findMany({ where, orderBy: { id: 'desc' }, skip, take: limit, select: productVarientSelect }),
       prisma.productVariant.count({ where }),
     ]);
     return { totalRecord: total, data: await this.decorate(rows, new Date()) };

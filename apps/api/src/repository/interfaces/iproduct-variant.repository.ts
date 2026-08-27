@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
+import { ProductVariantInternalDto } from '../../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../../models/product-variant.model';
 import { ProductVariantFilterParams } from '../../params/product-variant.params';
 
@@ -21,8 +22,13 @@ export interface IProductVariantRepository {
   /** On-hand stock for a variant, summed from its stockHistory movements. */
   getVariantStock(variantId: number, tx?: Prisma.TransactionClient): Promise<number>;
 
-  /** One variant with its current price and stock attached. */
-  findById(id: number, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null>;
+  /**
+   * One variant with its current price and stock attached, in the **internal** shape: it also
+   * carries `productId` and `storeCode`, which the store-ownership guards and the
+   * `stockHistory` foreign key need. Those two are not part of the API response - strip them
+   * with `toVariantResponse` (`dtos/product-variant.dto.ts`) before returning to a client.
+   */
+  findById(id: number, tx?: Prisma.TransactionClient): Promise<ProductVariantInternalDto | null>;
 
   /**
    * Updates a variant's "safe" fields (name, sku, barcode, low-stock threshold, active
