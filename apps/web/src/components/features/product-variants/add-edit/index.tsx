@@ -86,7 +86,10 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const attributeItems = useMemo(() => masterAttributes.map((attribute) => ({ label: attribute.name, value: attribute.code })), [masterAttributes]);
 
   const schemaRef = useRef(getProductVariantSchema(false, isEdit));
-  const resolver = useCallback<Resolver<VariantFormValues>>((values, context, options) => zodResolver<VariantFormValues>(schemaRef.current)(values, context, options), []);
+  const resolver = useCallback<Resolver<VariantFormValues>>(
+    (values, context, options) => zodResolver<VariantFormValues>(schemaRef.current)(values, context, options),
+    []
+  );
 
   const form = useForm<VariantFormValues>({
     resolver,
@@ -217,6 +220,27 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     <Form {...form}>
       <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
         <Card>
+          <FormField
+            control={control}
+            name="productId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product *</FormLabel>
+                <FormControl>
+                  <SelectSearch
+                    items={productItems}
+                    value={field.value ?? ''}
+                    placeholder="Select product"
+                    buttonClass="w-full"
+                    containerName="variant-product"
+                    onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormSection
             icon={Package}
             title="Product"
@@ -268,9 +292,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
           >
             <div className="space-y-4">
               <div className="space-y-2">
-                <FormLabel>
-                  Attributes {attributesOptional ? <span className="font-normal text-muted-foreground">(optional)</span> : '*'}
-                </FormLabel>
+                <FormLabel>Attributes {attributesOptional ? <span className="font-normal text-muted-foreground">(optional)</span> : '*'}</FormLabel>
                 <div className="space-y-2">
                   {fields.map((fieldRow, index) => (
                     <div key={fieldRow.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">

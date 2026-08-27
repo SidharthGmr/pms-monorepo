@@ -137,10 +137,6 @@ export class ProductController {
   };
 
   getAllPublic = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
-    // const storeCode = req.user?.storeCode;
-    // if (!storeCode) {
-    //   return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
-    // }
     const filters: ProductFilterParams = Object.fromEntries(
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
@@ -149,7 +145,6 @@ export class ProductController {
         storeId: req.query['storeId'] ? parseInt(req.query['storeId'] as string) : undefined,
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
         brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
-        //status: req.query['status'] ? req.query['status'] as Status : undefined,
         status: Status.Published,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
@@ -160,7 +155,6 @@ export class ProductController {
             ? 'asc'
             : 'desc'
           : undefined,
-        // storeCode,
       }).filter(([, v]) => v !== undefined)
     );
     const result = await this.unitOfService.Product.getAll(filters);

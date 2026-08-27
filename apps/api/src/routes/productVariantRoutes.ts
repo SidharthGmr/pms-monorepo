@@ -98,7 +98,9 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
  * /product-variants/public:
  *   get:
  *     summary: Public storefront SKU listing (no authentication)
- *     tags: [ProductVariant]
+ *     tags: [ProductVariant] 
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -118,6 +120,11 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
  *         schema:
  *           type: integer
  *       - in: query
+ *         name: productId
+ *         schema:
+ *           type: integer
+ *         description: Narrow to one product's sellable variants
+ *       - in: query
  *         name: storeCode
  *         schema:
  *           type: string
@@ -135,11 +142,6 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
  *     responses:
  *       200:
  *         description: Product variants fetched successfully
- *     description: >
- *       Every sellable SKU a shopper may see: active variants of Published products only,
- *       each with its effective price, on-hand stock and the product it belongs to. Draft
- *       products and retired variants are never returned, and neither filter can be
- *       overridden from the query string.
  */
 productVariantRouter.get('/public', asyncHandler(productVariantController.getAllPublic));
 

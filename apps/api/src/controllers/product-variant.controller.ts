@@ -17,14 +17,6 @@ export class ProductVariantController {
       return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
     }
 
-
-    //const rawProductIds = req.query['productIds'];
-    // const productIds = rawProductIds
-    //   ? (Array.isArray(rawProductIds) ? (rawProductIds as string[]) : (rawProductIds as string).split(','))
-    //     .map(Number)
-    //     .filter((n) => Number.isInteger(n))
-    //   : undefined;
-
     const filters: ProductVariantFilterParams = Object.fromEntries(
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
@@ -138,6 +130,7 @@ export class ProductVariantController {
         recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
         search: req.query['search'] as string | undefined,
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
+        productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
         storeCode: req.query['storeCode'] as string | undefined,
         sortBy: req.query['sortBy'] as string | undefined,
         sortOrder: req.query['sortDirection'] || req.query['sortOrder']
@@ -145,7 +138,6 @@ export class ProductVariantController {
             ? 'asc'
             : 'desc'
           : undefined,
-        // Not client-supplied: a shopper only ever sees sellable variants of live products.
         isActive: true,
         publishedOnly: true,
       }).filter(([, v]) => v !== undefined)

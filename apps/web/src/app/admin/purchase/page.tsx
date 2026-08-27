@@ -1,5 +1,5 @@
-import PurchasePage from '@/components/features/pos';
+import PublicVariantList from '@/components/features/public-variants';
 
 export default function Purchase() {
-  return <PurchasePage />;
+  return <PublicVariantList />;
 }

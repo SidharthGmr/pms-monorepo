@@ -260,15 +260,9 @@ export default function PurchasePage() {
    * see hearts filled for rows that are not theirs.
    */
   const { currentUser } = useGetCurrentUser();
-  const { data: wishlistResponse } = useGetAllWishlists(
-    { userId: currentUser?.usersId, showAllRecords: true },
-    !!currentUser?.usersId
-  );
+  const { data: wishlistResponse } = useGetAllWishlists({ userId: currentUser?.usersId, showAllRecords: true }, !!currentUser?.usersId);
 
-  const wishlistedProductIds = useMemo(
-    () => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.productId)),
-    [wishlistResponse]
-  );
+  const wishlistedProductIds = useMemo(() => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.productId)), [wishlistResponse]);
 
   // Customers available to sell to (users with the USER role).
   const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
