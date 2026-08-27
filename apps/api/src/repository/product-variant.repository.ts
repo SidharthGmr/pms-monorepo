@@ -10,12 +10,29 @@ import { IProductVariantRepository } from './interfaces/iproduct-variant.reposit
 
 type VariantRow = Prisma.ProductVariantGetPayload<{}>;
 
-/**
- * Sorting is client-driven, so only real columns are honoured. Price and stock are derived
- * (from the ledger and the movements), so they cannot be sorted in SQL - anything unknown
- * falls back to the default rather than failing the query.
- */
 const SORTABLE_COLUMNS = new Set(['sku', 'name', 'createdAt', 'id']);
+
+
+
+const productVarientSelect = {
+  id: true,
+  productId: true,
+  sku: true,
+  name: true,
+  barcode: true,
+  attributes: true,
+  images: true,
+  stockQuantity: true,
+  sellingPrice: true,
+  costPrice: true,
+  lowStockThreshold: true,
+  description: true,
+  isActive: true,
+  createdById: true,
+  createdAt: true,
+} satisfies Prisma.productVarientSelect;
+
+
 
 const listItemInclude = {
   product: {
@@ -23,21 +40,15 @@ const listItemInclude = {
       id: true,
       name: true,
       slug: true,
-      categoryId: true,
-      // The storefront renders these; the admin list simply ignores them.
-      images: true,
-      category: { select: { name: true, images: true } },
+      category: { select: { id: true, name: true } },
+      brandName: { select: { id: true, name: true } },
     },
   },
 } satisfies Prisma.ProductVariantInclude;
 
 type VariantWithProduct = Prisma.ProductVariantGetPayload<{ include: typeof listItemInclude }>;
 
-/**
- * A variant row carries no price or stock of its own any more, so the DTO is assembled from
- * the PriceHistory ledger and the stockHistory movements. A variant that has never been
- * priced reports nulls rather than a fabricated zero - zero is a real price.
- */
+
 function toVariantDto(row: VariantRow, price: EffectivePrice | null, stockQuantity: number): ProductVariantResponseDto {
   return {
     ...row,
@@ -62,15 +73,10 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const where: Prisma.ProductVariantWhereInput = { deletedAt: null };
 
     if (filters) {
-      // The tenant always comes from the token, never the query string.
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.productId !== undefined) where.productId = filters.productId;
-      // A list of products wins over a single one - the caller asking for a page of
-      // products cannot also mean "just this one".
       if (filters.productIds?.length) where.productId = { in: filters.productIds };
       if (filters.isActive !== undefined) where.isActive = filters.isActive;
-      // Both narrow through the parent product, so they share one relation filter rather
-      // than overwriting each other.
       const productWhere: Prisma.productWhereInput = {};
       if (filters.categoryId !== undefined) productWhere.categoryId = filters.categoryId;
       if (filters.publishedOnly) productWhere.status = Status.Published;
@@ -103,26 +109,26 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const [rows, total] = await Promise.all([
       prisma.productVariant.findMany({
         where,
-        include: listItemInclude,
         orderBy: [{ [column]: direction }, { id: 'desc' }],
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
+        select: productVarientSelect,
       }),
       prisma.productVariant.count({ where }),
     ]);
 
     const ids = rows.map((row) => row.id);
-    const [prices, stock] = await Promise.all([pricesForVariants(ids), stockForVariants(ids)]);
+    // const [prices, stock] = await Promise.all([pricesForVariants(ids), stockForVariants(ids)]);
 
-    const data = rows.map((row: VariantWithProduct) => {
-      const { product, ...variant } = row;
-      return {
-        ...toVariantDto(variant, prices.get(row.id) ?? null, stock.get(row.id) ?? 0),
-        product,
-      };
-    });
+    // const data = rows.map((row: VariantWithProduct) => {
+    //   const { product, ...variant } = row;
+    //   return {
+    //     ...toVariantDto(variant, prices.get(row.id) ?? null, stock.get(row.id) ?? 0),
+    //     product,
+    //   };
+    // });
 
-    return { totalRecord: total, data };
+    return { totalRecord: total, data: ids };
   }
 
   /**

@@ -6,6 +6,7 @@ import { JsonValue } from "./product-variant.dto";
 
 export interface ProductResponseDto {
   id: number;
+  parentId: number | null;
   name: string;
   slug: string;
   description?: string | null;

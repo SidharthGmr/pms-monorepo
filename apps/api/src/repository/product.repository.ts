@@ -12,6 +12,7 @@ const SORTABLE_COLUMNS = new Set(['name', 'createdAt', 'updatedAt', 'displayOrde
 const productSelect = {
   id: true,
   name: true,
+  parentId: true,
   slug: true,
   description: true,
   images: true,
