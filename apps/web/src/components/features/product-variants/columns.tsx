@@ -1,109 +1,124 @@
 'use client';
-import { Badge } from '@/components/ui/badge';
+import ActionTooltip from '@/components/common/tooltip-action-button';
 import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import { ColumnDef } from '@tanstack/react-table';
-import Link from 'next/link';
+import { format } from 'date-fns';
+import { History } from 'lucide-react';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
+import { Badge } from '../../ui/badge';
 
-/** Default applied when a variant sets no threshold of its own. Mirrors the schema default. */
-const DEFAULT_LOW_STOCK_THRESHOLD = 5;
-
-const formatPrice = (value: number | null | undefined) =>
-  value === null || value === undefined ? '—' : `₹${value.toFixed(2)}`;
-
-/** `{ size: 'L', color: 'Red' }` reads as "L / Red" - the way the shelf label would. */
-const describeAttributes = (attributes: ProductVariantListItemDto['attributes']): string => {
-  if (!attributes || typeof attributes !== 'object') return '';
-  return Object.values(attributes)
-    .filter((value) => value !== null && value !== undefined && value !== '')
-    .map(String)
-    .join(' / ');
-};
-
-export const useProductVariantColumns = () =>
+export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListItemDto) => void) =>
   useMemo<ColumnDef<ProductVariantListItemDto>[]>(
     () => [
       {
-        id: 'sku',
-        accessorKey: 'sku',
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="SKU" />,
-        cell: ({ row }) => <code className="font-mono text-xs">{row.original.sku || `#${row.original.id}`}</code>,
+        id: 'actions',
+        header: 'Action',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            {onEdit && <ActionTooltip variant="edit" tooltip="Edit variant" onClick={() => onEdit(row.original)} />}
+            <ActionTooltip
+              variant="default"
+              icon={<History className="h-4 w-4" />}
+              tooltip="Price history for this variant"
+              href={`/admin/price-histories?productId=${row.original?.product?.id}&variantId=${row.original.id}`}
+            />
+          </div>
+        ),
       },
       {
-        id: 'product',
+        id: 'variant',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Product / Variant" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Variant" />,
         cell: ({ row }) => {
-          const description = describeAttributes(row.original.attributes);
+          const attributes = row.original.attributes;
+          const pairs = attributes && typeof attributes === 'object' ? Object.entries(attributes) : [];
+
           return (
-            <div className="flex flex-col">
-              {/* Links to the product's own Variants screen, not to an edit page: there is
-                  currently no product-edit route (`/admin/products/[id]` was removed). */}
-              <Link href={`/admin/products/variants/${row.original.productId}`} className="font-medium hover:underline">
-                {row.original.product?.name || `Product #${row.original.productId}`}
-              </Link>
-              {description && <span className="text-xs text-muted-foreground">{description}</span>}
+            <div className="flex flex-col gap-1">
+              {pairs.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {pairs.map(([key, value]) => (
+                    <Badge key={key} variant="zinc" className="font-normal">
+                      <span className="uppercase text-muted-foreground">{key}</span>
+                      <span className="mx-1">·</span>
+                      <span className="font-medium">{String(value)}</span>
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                // Rows created by a bare price change carry no attributes.
+                <span className="text-xs text-muted-foreground">Price-only row</span>
+              )}
+              {row.original.sku && <code className="font-mono text-xs text-muted-foreground">{row.original.sku}</code>}
             </div>
           );
         },
       },
       {
-        id: 'sellingPrice',
+        id: 'stockQuantity',
+        accessorKey: 'stockQuantity',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Selling price" />,
-        cell: ({ row }) =>
-          row.original.sellingPrice === null ? (
-            // A variant with no ledger row cannot be sold at all, so say so rather than showing a zero.
-            <Badge variant="destructive">Not priced</Badge>
-          ) : (
-            <span className="tabular-nums">{formatPrice(row.original.sellingPrice)}</span>
-          ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Stock" />,
+        cell: ({ row }) => <div className="tabular-nums">{row.original.stockQuantity ?? 0}</div>,
+      },
+      {
+        id: 'effectiveFrom',
+        accessorKey: 'effectiveFrom',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Effective From" />
+        ),
+        cell: ({ row }) => <div>{row.original?.costPrice ? format(new Date(row.original.costPrice), 'PPpp') : '-'}</div>,
+        meta: { sortingKey: 'effectiveFrom' },
+      },
+      {
+        id: 'sellingPrice',
+        accessorKey: 'sellingPrice',
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Selling Price" />,
+        cell: ({ row }) => {
+          const value = row.original.sellingPrice;
+          return <div className="font-medium">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
+        },
+        meta: { sortingKey: 'sellingPrice' },
       },
       {
         id: 'costPrice',
-        enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Cost" />,
-        cell: ({ row }) => <span className="tabular-nums text-muted-foreground">{formatPrice(row.original.costPrice)}</span>,
+        accessorKey: 'costPrice',
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Cost Price" />,
+        cell: ({ row }) => {
+          const value = row.original.costPrice;
+          return <div className="text-muted-foreground">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
+        },
+        meta: { sortingKey: 'costPrice' },
       },
       {
-        id: 'stockQuantity',
+        id: 'margin',
+        accessorKey: 'margin',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Stock" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Margin" />,
         cell: ({ row }) => {
-          const stock = row.original.stockQuantity ?? 0;
-          const threshold = row.original.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD;
-          return (
-            <span className={`tabular-nums ${stock <= threshold ? 'font-semibold text-destructive' : ''}`}>
-              {stock}
-              {stock <= threshold && <span className="ml-1 text-xs font-normal">low</span>}
-            </span>
-          );
+          const { sellingPrice, costPrice } = row.original;
+          if (sellingPrice == null || costPrice == null || Number(sellingPrice) === 0) return <div>—</div>;
+          const margin = ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100;
+          return <div className={margin < 0 ? 'text-destructive' : 'text-green-600'}>{margin.toFixed(1)}%</div>;
         },
+        meta: { sortingKey: 'margin' },
       },
       {
         id: 'isActive',
         accessorKey: 'isActive',
-        enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => (
-          <Badge variant={row.original.isActive ? 'default' : 'secondary'}>{row.original.isActive ? 'Active' : 'Retired'}</Badge>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Status" />,
+        cell: ({ row }) => <Badge variant={row.original.isActive ? 'scusses' : 'orange'}>{row.original.isActive ? 'Active' : 'Superseded'}</Badge>,
+        meta: { sortingKey: 'isActive' },
       },
       {
-        id: 'links',
-        header: 'Action',
+        id: 'description',
+        accessorKey: 'description',
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex items-center gap-3 text-xs">
-            {/* There is no variant edit endpoint yet, so the ledger is the only thing
-                a row can usefully open. */}
-            <Link href={`/admin/price-histories?variantId=${row.original.id}`} className="text-primary hover:underline">
-              Price history
-            </Link>
-          </div>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Description" />,
+        cell: ({ row }) => <div>{row.original?.description || '-'}</div>,
       },
     ],
-    []
+    [onEdit]
   );

@@ -5,6 +5,9 @@ import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IProductVariantService from './interfaces/IProductVariantService';
 import { ProductVariantDto, ProductVariantListItemDto } from '@/dtos/product-variant.dto';
+// The single-variant read is typed from the shared package: the local ProductVariantListItemDto
+// above still declares columns the API no longer returns (effectiveFrom, storeCode, productId).
+import { ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
@@ -18,6 +21,12 @@ export default class ProductVariantService implements IProductVariantService {
         httpService = container.get<IHttpService>(TYPES.IHttpService)
     ) {
         this.httpService = httpService;
+    }
+
+    getById(id: number | string): Promise<AxiosResponse<Response<VariantDetailDto>>> {
+        return this.httpService
+            .call()
+            .get<VariantDetailDto, AxiosResponse<Response<VariantDetailDto>>>(`/product-variants/${id}`);
     }
 
     create(model: CreateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {

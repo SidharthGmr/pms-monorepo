@@ -47,6 +47,19 @@ const useGetProductVariants = (
     });
 };
 
+/** One variant by its own id — what the store-wide edit screen loads. */
+const useGetProductVariantById = (id: number | string, enabled: boolean = true) => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    return useQuery({
+        queryKey: ['ProductVariantService.getById', id],
+        queryFn: async () => {
+            return await unitOfService.ProductVariantService.getById(id);
+        },
+        enabled: enabled && !!id,
+    });
+};
+
 const useCreateProductVariant = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -90,6 +103,7 @@ const useUpdateProductVariant = () => {
 export {
     useGetProductVariants,
     useGetAllProductVariants,
+    useGetProductVariantById,
     useGetAllPublicProductVariants,
     useCreateProductVariant,
     useUpdateProductVariant,

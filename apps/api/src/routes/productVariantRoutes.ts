@@ -353,4 +353,38 @@ productVariantRouter.get('/product/:productId', authenticateToken, asyncHandler(
  */
 productVariantRouter.get('/product/:productId/effective', authenticateToken, asyncHandler(productVariantController.getEffective));
 
+/**
+ * @swagger
+ * /product-variants/{id}:
+ *   get:
+ *     summary: Get one variant with its parent product (the edit screen's read)
+ *     tags: [ProductVariant]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Product variant fetched successfully
+ *       400:
+ *         description: Invalid variant id or store code not found
+ *       404:
+ *         description: Variant not found
+ *     description: >
+ *       One variant with its effective price, on-hand stock and the product it belongs to.
+ *       Scoped to the caller's store from the token, so another store's variant reads as
+ *       404 rather than leaking. Registered last so it cannot shadow /public.
+ */
+productVariantRouter.get('/:id', authenticateToken, asyncHandler(productVariantController.getById));
+
 export default productVariantRouter;

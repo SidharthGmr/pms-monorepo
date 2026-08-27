@@ -7,6 +7,9 @@ import { ProductVariantFilterParams } from '../../params/product-variant.params'
 export interface IProductVariantService {
   /** Store-wide SKU list, across every product. */
   getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>>;
+
+  /** One variant with its parent product, for the edit screen. Store-scoped. */
+  getById(id: number, storeCode: string): Promise<ProductVariantListItemDto>;
   create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto>;
 
 

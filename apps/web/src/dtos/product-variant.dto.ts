@@ -9,6 +9,7 @@ export interface ProductVariantDto {
   /** Human-friendly display name, e.g. "Large / Red". */
   name?: string | null;
   barcode?: string | null;
+  description?: string | null;
   /** Alert when this variant's stock falls below this value. */
   lowStockThreshold?: number | null;
   /** Image URLs for this specific variant. */

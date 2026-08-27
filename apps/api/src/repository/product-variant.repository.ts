@@ -201,6 +201,19 @@ export class ProductVariantRepository implements IProductVariantRepository {
   }
 
   /**
+   * One variant in the response shape, for the edit screen. Store-scoped in the `where`, so a
+   * row from another store simply reads as "not found" - no separate ownership check needed.
+   * Carries its `product` so a screen reached from the cross-product SKU list can name it.
+   */
+  async findDetailById(id: number, storeCode: string, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantListItemDto | null> {
+    const row = await tx.productVariant.findFirst({ where: { id, storeCode, deletedAt: null }, select: listItemSelect });
+    if (!row) return null;
+    const { product, ...variant } = row;
+    const [price, stock] = await Promise.all([priceForVariant(id, new Date(), tx), stockForVariant(id, tx)]);
+    return { ...decorate(variant, price, stock), product };
+  }
+
+  /**
    * One variant with its price and stock. Returns the internal shape - it carries `productId`
    * and `storeCode` for the guards, so strip it with `toVariantResponse` before responding.
    */

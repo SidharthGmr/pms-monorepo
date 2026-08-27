@@ -19,6 +19,13 @@ export class ProductVariantService implements IProductVariantService {
     return this.unitOfWork.ProductVariant.findAll(filters);
   }
 
+  /** One variant for the edit screen. Store-scoped, so another store's row reads as not found. */
+  async getById(id: number, storeCode: string): Promise<ProductVariantListItemDto> {
+    const variant = await this.unitOfWork.ProductVariant.findDetailById(id, storeCode);
+    if (!variant) throw new NotFoundError('Variant not found');
+    return variant;
+  }
+
 
   async create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto> {
     return this.unitOfWork.transaction(async (tx) => {

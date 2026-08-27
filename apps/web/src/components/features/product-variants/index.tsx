@@ -8,16 +8,17 @@ import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useProductVariantColumns } from './columns';
 import ProductVariantFilter from './filter';
 
 export default function ProductVariantList() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  // A product screen can deep-link here with ?productId=
   const initialProductId = searchParams.get('productId') ? +searchParams.get('productId')! : undefined;
 
+  const columns = useProductVariantColumns((variant) => router.push(`/admin/product-variants/${variant.id}`));
   const [data, setData] = useState<ProductVariantListItemDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
 
@@ -26,22 +27,18 @@ export default function ProductVariantList() {
     productId: initialProductId,
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-    // Price and stock are derived rather than stored, so the sortable columns are the
-    // variant's own: SKU, name, created date and id.
     sortBy: searchParams.get('sortBy') || 'createdAt',
     sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
-  const listResponse = useGetAllProductVariants(filterParams);
-  const columns = useProductVariantColumns();
+  const getAllProductVariantsResponse = useGetAllProductVariants(filterParams);
 
   useEffect(() => {
-    if (listResponse.status === 'success' && listResponse.data?.data?.data) {
-      const result = listResponse.data.data.data;
-      setData(result.data ?? []);
-      setRecordCount(result.totalRecord ?? 0);
+    if (getAllProductVariantsResponse.status === 'success' && getAllProductVariantsResponse.data?.data?.data?.data) {
+      setData(getAllProductVariantsResponse.data?.data?.data?.data);
+      setRecordCount(getAllProductVariantsResponse.data.data.data?.totalRecord);
     }
-  }, [listResponse.status, listResponse.data]);
+  }, [getAllProductVariantsResponse.status, getAllProductVariantsResponse.data]);
 
   const { sorting, onSortingChange } = useTanstackTableSorting<ProductVariantListItemDto>(
     filterParams.sortBy ?? 'createdAt',
@@ -89,7 +86,7 @@ export default function ProductVariantList() {
     });
   };
 
-  if (listResponse.isError) {
+  if (getAllProductVariantsResponse.isError) {
     return <div className="py-10 text-center text-destructive">Error loading product variants</div>;
   }
 
@@ -104,8 +101,8 @@ export default function ProductVariantList() {
         onCategoryChange={(categoryId) => setFilterParams((prev) => ({ ...prev, categoryId, page: 1 }))}
         onActiveChange={(isActive) => setFilterParams((prev) => ({ ...prev, isActive, page: 1 }))}
       />
-      <CustomDataTable columns={columns} table={table} isLoading={listResponse.isLoading} />
-      <DataTablePagination table={table} totalRecord={recordCount} loading={listResponse.isLoading} />
+      <CustomDataTable columns={columns} table={table} isLoading={getAllProductVariantsResponse.isLoading} />
+      <DataTablePagination table={table} totalRecord={recordCount} loading={getAllProductVariantsResponse.isLoading} />
     </div>
   );
 }

@@ -18,6 +18,12 @@ export type VariantAttributeRow = z.infer<typeof variantAttributeRow>;
  * decided by the factory below.
  */
 const variantFormFields = z.object({
+  /**
+   * The variant is created against a product the user picks, since this screen is store-wide
+   * rather than nested under a product. Optional here and required by the factory on create;
+   * the update endpoint cannot move a variant between products, so edit ignores it.
+   */
+  productId: productVariantFields.shape.productId.optional(),
   name: updateProductVariantFields.shape.name,
   sku: productVariantFields.shape.sku,
   barcode: updateProductVariantFields.shape.barcode,
@@ -44,6 +50,9 @@ export const getProductVariantSchema = (isFirstVariant: boolean, isEdit = false)
   variantFormFields.superRefine((values, ctx) => {
     if (!isEdit && values.sellingPrice == null) {
       ctx.addIssue({ code: 'custom', path: ['sellingPrice'], message: 'Selling price is required' });
+    }
+    if (!isEdit && !values.productId) {
+      ctx.addIssue({ code: 'custom', path: ['productId'], message: 'Pick the product this variant belongs to' });
     }
     if (isEdit) return;
 

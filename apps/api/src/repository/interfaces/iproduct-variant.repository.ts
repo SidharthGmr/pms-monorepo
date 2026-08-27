@@ -23,6 +23,12 @@ export interface IProductVariantRepository {
   getVariantStock(variantId: number, tx?: Prisma.TransactionClient): Promise<number>;
 
   /**
+   * One variant in the response shape (with its parent product), scoped to the store. Returns
+   * null for a variant belonging to another store, so callers need no extra ownership check.
+   */
+  findDetailById(id: number, storeCode: string, tx?: Prisma.TransactionClient): Promise<ProductVariantListItemDto | null>;
+
+  /**
    * One variant with its current price and stock attached, in the **internal** shape: it also
    * carries `productId` and `storeCode`, which the store-ownership guards and the
    * `stockHistory` foreign key need. Those two are not part of the API response - strip them

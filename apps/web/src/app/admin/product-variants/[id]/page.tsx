@@ -1,5 +1,5 @@
 import { PageHeader } from '@/components/common/page-header';
-import ProductVariants from '@/components/features/products/variants';
+import ManageVariant from '@/components/features/product-variants/add-edit';
 import config from '@/config';
 import { Metadata } from 'next';
 
@@ -17,14 +17,9 @@ export default function ProductVariantsPage({ params }: ProductVariantsPageProps
   const { id } = params;
 
   return (
-    <div className="mx-auto  space-y-6">
-      <PageHeader
-        title="Product Variants"
-        description="Sellable combinations of this product. Each variant's price is kept in the price history ledger."
-        variant="back"
-      />
-
-      <ProductVariants productId={Number(id)} />
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader title="Edit Variant" description="Update this variant's details, images, price and stock." variant="back" />
+      <ManageVariant id={id} />
     </div>
   );
 }

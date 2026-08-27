@@ -16,25 +16,33 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
-import { useCreateProductVariant, useGetProductVariants, useUpdateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
+import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
+import {
+  useCreateProductVariant,
+  useGetProductVariantById,
+  useGetProductVariants,
+  useUpdateProductVariant,
+} from '@/hooks/service-hooks/useProductVariantService';
 import { zodResolver } from '@/lib/zod-resolver';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
-import { getProductVariantSchema, rowsToAttributes, VariantFormValues } from '@/schema/productVariantSchema';
+import { getProductVariantSchema, rowsToAttributes, VariantAttributeRow, VariantFormValues } from '@/schema/productVariantSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { Boxes, ImageIcon, Loader2, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
+import { Boxes, ImageIcon, Loader2, Package, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Resolver, useFieldArray, useForm } from 'react-hook-form';
 
 interface ManageVariantProps {
-  productId: number;
-  /** > 0 edits that variant; 0 / undefined creates a new one. */
-  variantId?: number;
+  id?: number;
+  productId?: number;
 }
 
-const emptyRow = { code: '', value: '' };
+const LIST_URL = '/admin/product-variants';
+
+const emptyRow: VariantAttributeRow = { code: '', value: '' };
 
 const defaultValues: VariantFormValues = {
+  productId: undefined,
   name: '',
   sku: undefined,
   barcode: '',
@@ -49,49 +57,62 @@ const defaultValues: VariantFormValues = {
   rows: [emptyRow],
 };
 
-/** Trimmed string, or `undefined` when blank so the key is left out of the request. */
 const trimmed = (value?: string | null) => (value?.trim() ? value.trim() : undefined);
 
-export default function ManageVariant({ productId, variantId }: ManageVariantProps) {
+const intChange = (raw: string) => (raw === '' ? undefined : parseInt(raw, 10));
+
+const toAttributeEntries = (attributes: unknown): [string, unknown][] =>
+  attributes && typeof attributes === 'object' && !Array.isArray(attributes) ? Object.entries(attributes) : [];
+
+export default function ManageVariant({ id, productId: initialProductId }: ManageVariantProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
-  const isEdit = !!variantId && variantId > 0;
-  const listUrl = `/admin/products/variants/${productId}`;
+  const isEdit = !!id && id > 0;
 
   const createVariant = useCreateProductVariant();
   const updateVariant = useUpdateProductVariant();
 
-  // The list carries every field we need (incl. images), so we resolve the variant from it
-  // rather than adding a dedicated get-by-id endpoint. It also tells us if this is the first.
-  const { data: variantsResponse, isLoading: isFetching } = useGetProductVariants(productId, { recordPerPage: 200 }, productId > 0);
-  const allVariants = useMemo(() => variantsResponse?.data?.data?.data ?? [], [variantsResponse]);
-  const variant = isEdit ? (allVariants.find((v) => v.id === variantId) ?? null) : null;
-  const isFirstVariant = !isEdit && allVariants.length === 0;
+  const { data: variantResponse, isLoading: isFetching, isError } = useGetProductVariantById(id ?? 0, isEdit);
+  const variant = variantResponse?.data?.data ?? null;
 
-  // `showAllRecords` matters: without it the list stops at the API's default ten records.
+  const { data: productsResponse } = useGetAllProducts({ showAllRecords: true });
+  const productItems = useMemo(
+    () => (productsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
+    [productsResponse]
+  );
+
   const { data: attributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
   const masterAttributes = useMemo(() => attributesResponse?.data?.data?.data ?? [], [attributesResponse]);
   const attributeItems = useMemo(() => masterAttributes.map((attribute) => ({ label: attribute.name, value: attribute.code })), [masterAttributes]);
 
-  const schema = useMemo(() => getProductVariantSchema(isFirstVariant, isEdit), [isFirstVariant, isEdit]);
+  const schemaRef = useRef(getProductVariantSchema(false, isEdit));
+  const resolver = useCallback<Resolver<VariantFormValues>>((values, context, options) => zodResolver<VariantFormValues>(schemaRef.current)(values, context, options), []);
 
   const form = useForm<VariantFormValues>({
-    resolver: zodResolver(schema),
-    defaultValues,
+    resolver,
+    defaultValues: { ...defaultValues, productId: initialProductId },
   });
   const { control, handleSubmit, reset, setValue, watch, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
 
-  // Populate the form once the variant and master options have loaded (edit only). Stored
-  // attribute keys are lower-cased master codes, so map each back to drive the pickers.
+  const rows = watch('rows');
+  const sellingPrice = watch('sellingPrice');
+  const costPrice = watch('costPrice');
+  const selectedProductId = watch('productId');
+
+  const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
+  const isFirstVariant = !isEdit && (siblingsResponse?.data?.data?.totalRecord ?? 0) === 0;
+
+  schemaRef.current = useMemo(() => getProductVariantSchema(isFirstVariant, isEdit), [isFirstVariant, isEdit]);
+
   useEffect(() => {
     if (!isEdit || !variant || masterAttributes.length === 0) return;
-    const attrs = variant.attributes && typeof variant.attributes === 'object' ? variant.attributes : {};
-    const rows = Object.entries(attrs).map(([key, value]) => {
-      const master = masterAttributes.find((m) => m.code.toLowerCase() === String(key).toLowerCase());
-      return { code: master ? master.code : String(key).toUpperCase(), value: String(value) };
+    const builtRows = toAttributeEntries(variant.attributes).map(([key, value]) => {
+      const master = masterAttributes.find((m) => m.code.toLowerCase() === key.toLowerCase());
+      return { code: master ? master.code : key.toUpperCase(), value: String(value) };
     });
     reset({
+      productId: variant.product?.id,
       name: variant.name ?? '',
       sku: variant.sku,
       barcode: variant.barcode ?? '',
@@ -103,19 +124,28 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
       costPrice: variant.costPrice ?? undefined,
       effectiveFrom: null,
       reason: '',
-      rows: rows.length ? rows : [emptyRow],
+      rows: builtRows.length ? builtRows : [emptyRow],
     });
   }, [isEdit, variant, masterAttributes, reset]);
-
-  // Watched so the margin badge and the per-row value picker react as the user types.
-  const rows = watch('rows');
-  const sellingPrice = watch('sellingPrice');
-  const costPrice = watch('costPrice');
 
   const margin =
     sellingPrice != null && costPrice != null && Number(sellingPrice) > 0
       ? ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100
       : null;
+
+  const toCreateModel = (model: VariantFormValues): CreateProductVariantModel => ({
+    productId: Number(model.productId),
+    attributes: rowsToAttributes(model.rows),
+    sellingPrice: Number(model.sellingPrice),
+    supersedePrevious: false,
+    images: model.images ?? [],
+    ...(trimmed(model.name) && { name: trimmed(model.name) }),
+    ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
+    ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
+    ...(model.costPrice != null && { costPrice: Number(model.costPrice) }),
+    ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
+    ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
+  });
 
   const toUpdateModel = (model: VariantFormValues): UpdateProductVariantModel => ({
     name: trimmed(model.name) ?? null,
@@ -124,27 +154,11 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
     images: model.images ?? [],
     lowStockThreshold: model.lowStockThreshold ?? null,
     isActive: model.isActive ?? true,
-    // Sent every time; the API only appends a price / books stock when it changed.
     ...(model.sellingPrice != null && { sellingPrice: Number(model.sellingPrice) }),
     costPrice: model.costPrice ?? null,
     ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
     ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
     ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
-    ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
-  });
-
-  const toCreateModel = (model: VariantFormValues): CreateProductVariantModel => ({
-    productId,
-    attributes: rowsToAttributes(model.rows),
-    sellingPrice: Number(model.sellingPrice),
-    // A sibling variant must not retire the product's other variants.
-    supersedePrevious: false,
-    images: model.images ?? [],
-    ...(trimmed(model.name) && { name: trimmed(model.name) }),
-    ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
-    ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
-    ...(model.costPrice != null && { costPrice: Number(model.costPrice) }),
-    ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
     ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
   });
 
@@ -157,7 +171,7 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
 
       if (response && (response.status === 200 || response.status === 201)) {
         toast({ variant: 'success', title: isEdit ? 'Variant updated successfully' : 'Variant added successfully' });
-        router.push(listUrl);
+        router.push(LIST_URL);
       } else {
         const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
         toast({ variant: 'destructive', title: isEdit ? 'Could not update variant' : 'Could not add variant', description: <span>{error}</span> });
@@ -174,12 +188,9 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
 
   const isLoading = createVariant.isPending || updateVariant.isPending;
   const rowsError = (formState.errors.rows as { message?: string } | undefined)?.message;
+  const attributesOptional = isEdit || isFirstVariant;
 
-  // Number input change → number | undefined (empty string clears the field).
-  const intChange = (raw: string) => (raw === '' ? undefined : parseInt(raw, 10));
-
-  // Editing a variant that has not loaded yet (or does not exist).
-  if (isEdit && isFetching && !variant) {
+  if (isEdit && isFetching) {
     return (
       <Card>
         <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
@@ -189,12 +200,12 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
       </Card>
     );
   }
-  if (isEdit && !isFetching && !variant) {
+  if (isEdit && (isError || !variant)) {
     return (
       <Card>
         <div className="space-y-3 py-16 text-center">
           <p className="text-sm text-muted-foreground">This variant could not be found.</p>
-          <Button type="button" variant="outline" onClick={() => router.push(listUrl)}>
+          <Button type="button" variant="outline" onClick={() => router.push(LIST_URL)}>
             Back to variants
           </Button>
         </div>
@@ -205,7 +216,46 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
   return (
     <Form {...form}>
       <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
-        {/* Identity: what this variant is and how it is told apart from its siblings. */}
+        <Card>
+          <FormSection
+            icon={Package}
+            title="Product"
+            description={
+              isEdit
+                ? 'A variant cannot be moved between products. Create a new one under the other product instead.'
+                : 'The product this variant is a sellable version of.'
+            }
+          >
+            {isEdit ? (
+              <div className="flex h-10 items-center gap-2 text-sm">
+                <span className="font-medium">{variant?.product?.name ?? '—'}</span>
+                {variant?.sku && <code className="font-mono text-xs text-muted-foreground">{variant.sku}</code>}
+              </div>
+            ) : (
+              <FormField
+                control={control}
+                name="productId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product *</FormLabel>
+                    <FormControl>
+                      <SelectSearch
+                        items={productItems}
+                        value={field.value ?? ''}
+                        placeholder="Select product"
+                        buttonClass="w-full"
+                        containerName="variant-product"
+                        onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </FormSection>
+        </Card>
+
         <Card>
           <FormSection
             icon={Tag}
@@ -218,7 +268,9 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
           >
             <div className="space-y-4">
               <div className="space-y-2">
-                <FormLabel>Attributes {isEdit || isFirstVariant ? <span className="font-normal text-muted-foreground">(optional)</span> : '*'}</FormLabel>
+                <FormLabel>
+                  Attributes {attributesOptional ? <span className="font-normal text-muted-foreground">(optional)</span> : '*'}
+                </FormLabel>
                 <div className="space-y-2">
                   {fields.map((fieldRow, index) => (
                     <div key={fieldRow.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
@@ -270,7 +322,7 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
                         variant="ghost"
                         size="icon"
                         className="text-muted-foreground hover:text-destructive"
-                        disabled={fields.length === 1 && !isFirstVariant && !isEdit}
+                        disabled={fields.length === 1 && !attributesOptional}
                         onClick={() => remove(index)}
                         title="Remove attribute"
                       >
@@ -339,7 +391,6 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
           </FormSection>
         </Card>
 
-        {/* Pricing: filed in the ledger, never overwritten. */}
         <Card>
           <FormSection
             icon={Wallet}
@@ -393,7 +444,6 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
                     <FormItem>
                       <FormLabel>{isEdit ? 'New price effective from' : 'Price effective from'}</FormLabel>
                       <FormControl>
-                        {/* "Effective from" is a single date; only the range's `from` is meaningful here. */}
                         <DateRangePicker
                           value={field.value ? { from: field.value } : undefined}
                           onSelect={(range) => field.onChange(range?.from ?? null)}
@@ -411,7 +461,6 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
           </FormSection>
         </Card>
 
-        {/* Inventory: stock is the sum of its movements; the form books one. */}
         <Card>
           <FormSection
             icon={Boxes}
@@ -430,7 +479,14 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
                   <FormItem>
                     <FormLabel>{isEdit ? 'On-hand stock' : 'Opening stock'}</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} step={1} placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(intChange(e.target.value))} />
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="0"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(intChange(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -443,7 +499,14 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
                   <FormItem>
                     <FormLabel>Low-stock threshold</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} step={1} placeholder="5" value={field.value ?? ''} onChange={(e) => field.onChange(intChange(e.target.value))} />
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        placeholder="5"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(intChange(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -453,9 +516,12 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
           </FormSection>
         </Card>
 
-        {/* Media */}
         <Card>
-          <FormSection icon={ImageIcon} title="Media" description="Photos specific to this variant. The product's own images are used when none are set.">
+          <FormSection
+            icon={ImageIcon}
+            title="Media"
+            description="Photos specific to this variant. The product's own images are used when none are set."
+          >
             <FormField
               control={control}
               name="images"
@@ -471,7 +537,6 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
           </FormSection>
         </Card>
 
-        {/* Status + audit note */}
         <Card>
           <FormSection icon={ToggleLeft} title="Status" description="Retired variants stay in history but can no longer be sold.">
             <div className="space-y-4">
@@ -509,9 +574,8 @@ export default function ManageVariant({ productId, variantId }: ManageVariantPro
           </FormSection>
         </Card>
 
-        {/* Actions */}
         <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-border bg-background/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-5">
-          <Button type="button" variant="outline" onClick={() => router.push(listUrl)} disabled={isLoading}>
+          <Button type="button" variant="outline" onClick={() => router.push(LIST_URL)} disabled={isLoading}>
             Cancel
           </Button>
           <Button type="submit" loading={isLoading}>

@@ -34,8 +34,9 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
   });
 
   // Add/edit live on their own pages (like Products), not in a dialog.
-  const openAdd = () => router.push(`/admin/products/variants/${productId}/add`);
-  const columns = useProductVariantColumns((variant) => router.push(`/admin/products/variants/${productId}/edit/${variant.id}`));
+  // Add/edit live on the store-wide variant screens; the product is carried in the query.
+  const openAdd = () => router.push(`/admin/product-variants/add?productId=${productId}`);
+  const columns = useProductVariantColumns((variant) => router.push(`/admin/product-variants/${variant.id}`));
 
   const { data: productResponse } = useGetProductById(productId, productId > 0);
   const { data: variantResponse, isLoading, isError } = useGetProductVariants(productId, filterParams);
