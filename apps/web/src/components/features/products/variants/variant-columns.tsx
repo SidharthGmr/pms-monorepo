@@ -5,8 +5,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { History } from 'lucide-react';
 import { useMemo } from 'react';
-import { DataTableColumnHeader } from '../../Table/data-table-column-header';
-import { Badge } from '../../ui/badge';
+import { DataTableColumnHeader } from '../../../Table/data-table-column-header';
+import { Badge } from '../../../ui/badge';
 
 export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) => void) =>
   useMemo<ColumnDef<ProductVariantDto>[]>(
@@ -19,9 +19,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
         // safe fields (name, sku, barcode, threshold, active).
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
-            {onEdit && row.original.isActive && (
-              <ActionTooltip variant="edit" tooltip="Edit variant" onClick={() => onEdit(row.original)} />
-            )}
+            {onEdit && row.original.isActive && <ActionTooltip variant="edit" tooltip="Edit variant" onClick={() => onEdit(row.original)} />}
             <ActionTooltip
               variant="default"
               icon={<History className="h-4 w-4" />}
@@ -34,9 +32,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
       {
         id: 'variant',
         enableSorting: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Variant" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Variant" />,
         cell: ({ row }) => {
           const attributes = row.original.attributes;
           const pairs = attributes && typeof attributes === 'object' ? Object.entries(attributes) : [];
@@ -75,17 +71,13 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
         header: ({ column }) => (
           <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Effective From" />
         ),
-        cell: ({ row }) => (
-          <div>{row.original.effectiveFrom ? format(new Date(row.original.effectiveFrom), 'PPpp') : '-'}</div>
-        ),
+        cell: ({ row }) => <div>{row.original.effectiveFrom ? format(new Date(row.original.effectiveFrom), 'PPpp') : '-'}</div>,
         meta: { sortingKey: 'effectiveFrom' },
       },
       {
         id: 'sellingPrice',
         accessorKey: 'sellingPrice',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Selling Price" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Selling Price" />,
         cell: ({ row }) => {
           const value = row.original.sellingPrice;
           return <div className="font-medium">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
@@ -95,9 +87,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
       {
         id: 'costPrice',
         accessorKey: 'costPrice',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Cost Price" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Cost Price" />,
         cell: ({ row }) => {
           const value = row.original.costPrice;
           return <div className="text-muted-foreground">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
@@ -108,9 +98,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
         id: 'margin',
         accessorKey: 'margin',
         enableSorting: false,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Margin" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Margin" />,
         cell: ({ row }) => {
           const { sellingPrice, costPrice } = row.original;
           if (sellingPrice == null || costPrice == null || Number(sellingPrice) === 0) return <div>—</div>;
@@ -122,20 +110,14 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
       {
         id: 'isActive',
         accessorKey: 'isActive',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Status" />
-        ),
-        cell: ({ row }) => (
-          <Badge variant={row.original.isActive ? 'scusses' : 'orange'}>{row.original.isActive ? 'Active' : 'Superseded'}</Badge>
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Status" />,
+        cell: ({ row }) => <Badge variant={row.original.isActive ? 'scusses' : 'orange'}>{row.original.isActive ? 'Active' : 'Superseded'}</Badge>,
         meta: { sortingKey: 'isActive' },
       },
       {
         id: 'reason',
         accessorKey: 'reason',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Reason" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Reason" />,
         cell: ({ row }) => <div>{row.original.reason || '-'}</div>,
         meta: { sortingKey: 'reason' },
       },

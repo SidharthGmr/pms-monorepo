@@ -14,7 +14,7 @@ import { CheckCircle2, History, Layers, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useProductVariantColumns } from '../variant-columns';
+import { useProductVariantColumns } from './variant-columns';
 
 interface ProductVariantsProps {
   productId: number;

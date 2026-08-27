@@ -86,7 +86,7 @@ export const useProductColumns = (deleteRecord: (id: number) => void) =>
         header: ({ column }) => <DataTableColumnHeader column={column} title="" />,
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <ActionTooltip variant="view" tooltip="Varient" href={`/admin/products/${row.original.id}/variants`} />
+            <ActionTooltip variant="view" tooltip="Varient" href={`/admin/products/variants/${row.original.id}`} />
             <ActionTooltip variant="edit" tooltip="Edit Record" href={`/admin/products/${row.original.id}`} />
             <ActionTooltip variant="delete" tooltip="Delete Record" onClick={() => deleteRecord(+row.original.id)} />
           </div>

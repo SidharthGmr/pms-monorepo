@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useGetProductVariants, useCreateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
 import { CustomDataTable } from '@/components/Table/data-table';
 import { DataTablePagination } from '@/components/Table/data-table-pagination';
-import { useProductVariantColumns } from './variant-columns';
+import { useProductVariantColumns } from './variants/variant-columns';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
@@ -147,9 +147,7 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
                 <div className="rounded-md border bg-muted/40 px-4 py-2 text-sm">
                   <span className="text-muted-foreground">Currently active: </span>
                   <span className="font-medium">${Number(active.sellingPrice).toFixed(2)}</span>
-                  {active.costPrice != null && (
-                    <span className="text-muted-foreground"> (cost ${Number(active.costPrice).toFixed(2)})</span>
-                  )}
+                  {active.costPrice != null && <span className="text-muted-foreground"> (cost ${Number(active.costPrice).toFixed(2)})</span>}
                 </div>
               ) : (
                 <span className="text-sm text-muted-foreground">No active variant for this product yet.</span>
@@ -231,12 +229,7 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
                     <Label htmlFor="variantEffectiveFrom" className="text-xs text-slate-500 font-normal">
                       Effective from
                     </Label>
-                    <Input
-                      id="variantEffectiveFrom"
-                      type="datetime-local"
-                      value={effectiveFrom}
-                      onChange={(e) => setEffectiveFrom(e.target.value)}
-                    />
+                    <Input id="variantEffectiveFrom" type="datetime-local" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
                   </div>
                 </div>
 
@@ -255,8 +248,8 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
                 </div>
 
                 <p className="text-xs text-slate-400">
-                  Adding a variant creates a new active price. The previous active variant is superseded automatically. Leave
-                  &ldquo;effective from&rdquo; blank to apply it immediately.
+                  Adding a variant creates a new active price. The previous active variant is superseded automatically. Leave &ldquo;effective
+                  from&rdquo; blank to apply it immediately.
                 </p>
 
                 <div className="flex justify-end">
