@@ -2,7 +2,7 @@ import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
-import { ProductVariantInternalDto } from '../dtos/product-variant.dto';
+import { ProductVariantInternalDto, VariantRatingDto } from '../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { buildVariantSku } from '../utils/variant-sku';
@@ -29,6 +29,8 @@ const productVarientSelect = {
   isActive: true,
   createdById: true,
   createdAt: true,
+  rating: true,
+  ratingCount: true,
 } satisfies Prisma.ProductVariantSelect;
 
 type VariantRow = Prisma.ProductVariantGetPayload<{ select: typeof productVarientSelect }>;
@@ -173,6 +175,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
         storeCode: data.storeCode,
         attributes: data.attributes ?? {},
         sku,
+        metadata: { ...data } as any,
         ...(data.name !== undefined && { name: data.name }),
         ...(data.slug !== undefined && { slug: data.slug }),
         ...(data.description !== undefined && { description: data.description }),
@@ -211,6 +214,36 @@ export class ProductVariantRepository implements IProductVariantRepository {
     const { product, ...variant } = row;
     const [price, stock] = await Promise.all([priceForVariant(id, new Date(), tx), stockForVariant(id, tx)]);
     return { ...decorate(variant, price, stock), product };
+  }
+
+  /**
+   * Files this user's star rating for the variant, then rewrites the variant's `rating`
+   * average and `ratingCount` from the rating rows. Both steps share the caller's
+   * transaction, so the denormalised columns can never drift from the votes they summarise.
+   * Rating again updates the same row - `@@unique([userId, variantId])` - rather than
+   * stacking a second vote.
+   */
+  async rate(id: number, rating: number, userId: string, storeCode: string, tx: Prisma.TransactionClient = prisma): Promise<VariantRatingDto> {
+    await tx.variantRating.upsert({
+      where: { userId_variantId: { userId, variantId: id } },
+      create: { userId, variantId: id, storeCode, rating },
+      // storeCode is deliberately not updated - a variant never changes store.
+      update: { rating },
+    });
+
+    const aggregate = await tx.variantRating.aggregate({
+      where: { variantId: id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    // One decimal place, matching how the review summary rounds its average.
+    const average = aggregate._avg.rating != null ? Math.round(aggregate._avg.rating * 10) / 10 : null;
+    const ratingCount = aggregate._count.rating;
+
+    await tx.productVariant.update({ where: { id }, data: { rating: average, ratingCount } });
+
+    return { variantId: id, userRating: rating, rating: average, ratingCount };
   }
 
   /**

@@ -1,12 +1,19 @@
 import { Prisma } from '@prisma/client';
 import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
+import { VariantRatingDto } from '../../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../../models/product-variant.model';
 import { ProductVariantFilterParams } from '../../params/product-variant.params';
 
 export interface IProductVariantService {
   /** Store-wide SKU list, across every product. */
   getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>>;
+
+  /**
+   * Rate a variant 1-5 stars as the signed-in user. Re-rating replaces that user's previous
+   * score; the variant's average and count are recomputed in the same transaction.
+   */
+  rate(id: number, rating: number, userId: string, storeCode: string): Promise<VariantRatingDto>;
 
   /** One variant with its parent product, for the edit screen. Store-scoped. */
   getById(id: number, storeCode: string): Promise<ProductVariantListItemDto>;

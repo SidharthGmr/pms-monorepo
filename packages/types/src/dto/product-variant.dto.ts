@@ -9,6 +9,8 @@ export interface ProductVariantResponseDto {
   barcode: string | null;
   attributes: JsonValue;
   images: string[];
+  rating: number | null,
+  ratingCount: number | null,
   stockQuantity: number;
   sellingPrice: number | null;
   costPrice: number | null;

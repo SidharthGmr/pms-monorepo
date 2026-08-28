@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
-import { ProductVariantInternalDto } from '../../dtos/product-variant.dto';
+import { ProductVariantInternalDto, VariantRatingDto } from '../../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../../models/product-variant.model';
 import { ProductVariantFilterParams } from '../../params/product-variant.params';
 
@@ -27,6 +27,12 @@ export interface IProductVariantRepository {
    * null for a variant belonging to another store, so callers need no extra ownership check.
    */
   findDetailById(id: number, storeCode: string, tx?: Prisma.TransactionClient): Promise<ProductVariantListItemDto | null>;
+
+  /**
+   * Records a user's star rating and recomputes the variant's average and count from the
+   * rating rows. Pass the caller's `tx` so the vote and the aggregate commit together.
+   */
+  rate(id: number, rating: number, userId: string, storeCode: string, tx?: Prisma.TransactionClient): Promise<VariantRatingDto>;
 
   /**
    * One variant with its current price and stock attached, in the **internal** shape: it also

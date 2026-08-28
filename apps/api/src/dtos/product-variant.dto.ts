@@ -16,3 +16,13 @@ export interface ProductVariantInternalDto extends ProductVariantResponseDto {
 export function toVariantResponse({ productId, storeCode, ...rest }: ProductVariantInternalDto): ProductVariantResponseDto {
   return rest;
 }
+
+/** What a variant's rating looks like after a vote: the caller's own score plus the new average. */
+export interface VariantRatingDto {
+  variantId: number;
+  /** The star rating this user just gave, 1-5. */
+  userRating: number;
+  /** The variant's average across every rating, one decimal place. */
+  rating: number | null;
+  ratingCount: number;
+}

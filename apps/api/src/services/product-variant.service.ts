@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
-import { toVariantResponse } from '../dtos/product-variant.dto';
+import { toVariantResponse, VariantRatingDto } from '../dtos/product-variant.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
@@ -17,6 +17,23 @@ export class ProductVariantService implements IProductVariantService {
 
   async getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>> {
     return this.unitOfWork.ProductVariant.findAll(filters);
+  }
+
+  /**
+   * Records the caller's star rating for a variant. The store comes from the variant, not the
+   * request, and the lookup is scoped to the caller's store so another store's variant simply
+   * reads as not found. Rating again replaces that user's previous score.
+   */
+  async rate(id: number, rating: number, userId: string, storeCode: string): Promise<VariantRatingDto> {
+    return this.unitOfWork.transaction(async (tx) => {
+      const variant = await tx.productVariant.findFirst({
+        where: { id, storeCode, deletedAt: null },
+        select: { id: true, storeCode: true },
+      });
+      if (!variant) throw new NotFoundError('Variant not found');
+
+      return this.unitOfWork.ProductVariant.rate(id, rating, userId, variant.storeCode, tx);
+    });
   }
 
   /** One variant for the edit screen. Store-scoped, so another store's row reads as not found. */

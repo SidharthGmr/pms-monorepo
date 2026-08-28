@@ -5,7 +5,7 @@ import { ProductVariantController } from '../controllers/product-variant.control
 import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
 import { validate } from '../middleware/validate';
-import { CreateProductVariantValidator, UpdateProductVariantValidator } from '@pms/types';
+import { CreateProductVariantValidator, RateProductVariantValidator, UpdateProductVariantValidator } from '@pms/types';
 
 const productVariantRouter = Router();
 const productVariantController = container.get<ProductVariantController>(TYPES.ProductVariantController);
@@ -354,6 +354,54 @@ productVariantRouter.get('/product/:productId', authenticateToken, asyncHandler(
  *         description: No variant found for the given date
  */
 productVariantRouter.get('/product/:productId/effective', authenticateToken, asyncHandler(productVariantController.getEffective));
+
+/**
+ * @swagger
+ * /product-variants/rating/{id}:
+ *   post:
+ *     summary: Rate a variant (1-5 stars)
+ *     tags: [ProductVariant]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The variant being rated
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rating
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 4
+ *                 description: Whole stars, 1 to 5
+ *     responses:
+ *       200:
+ *         description: Rating saved successfully
+ *       400:
+ *         description: Validation error, invalid variant id, or store code not found
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *       404:
+ *         description: Variant not found in this store
+ */
+productVariantRouter.post('/rating/:id', authenticateToken, validate(RateProductVariantValidator), asyncHandler(productVariantController.rate));
 
 /**
  * @swagger

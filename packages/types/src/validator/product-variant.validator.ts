@@ -39,3 +39,14 @@ export const updateProductVariantFields = z.object({
 });
 
 export const UpdateProductVariantValidator = z.object({ body: updateProductVariantFields });
+
+/**
+ * A star rating for one variant. The rater comes from the token and the store from the
+ * variant, so the body carries only the score.
+ */
+export const rateProductVariantFields = z.object({
+  // Whole stars only - the column is an Int, so 4.5 would silently truncate.
+  rating: z.number().int("rating must be a whole number").min(1, "rating must be between 1 and 5").max(5, "rating must be between 1 and 5"),
+});
+
+export const RateProductVariantValidator = z.object({ body: rateProductVariantFields });

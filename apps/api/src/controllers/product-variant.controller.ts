@@ -6,6 +6,7 @@ import CustomResponse from '@pms/types/src/dto/custom-response';
 import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
+import { VariantRatingDto } from '../dtos/product-variant.dto';
 
 export class ProductVariantController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -55,6 +56,21 @@ export class ProductVariantController {
 
     const variant = await this.unitOfService.ProductVariant.getById(id, storeCode);
     return res.status(200).json({ success: true, message: 'Product variant fetched successfully', data: variant });
+  };
+
+  rate = async (req: Request, res: Response): Promise<Response<CustomResponse<VariantRatingDto>>> => {
+    const userId = req.user?.userId as string;
+    const storeCode = req.user?.storeCode;
+    const id = parseInt(req.params['id'] as string);
+
+    if (!storeCode || !userId) {
+      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+    }
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
+
+    const { rating } = req.body as { rating: number };
+    const data = await this.unitOfService.ProductVariant.rate(id, rating, userId, storeCode);
+    return res.status(200).json({ success: true, message: 'Rating saved successfully', data });
   };
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductVariantResponseDto>>> => {
