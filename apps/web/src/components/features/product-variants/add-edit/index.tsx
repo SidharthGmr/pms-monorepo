@@ -27,6 +27,7 @@ import { zodResolver } from '@/lib/zod-resolver';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
 import { getProductVariantSchema, rowsToAttributes, VariantAttributeRow, VariantFormValues } from '@/schema/productVariantSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import VariantRating from '../variant-rating';
 import { Boxes, ImageIcon, Loader2, Package, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -251,9 +252,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
             }
           >
             {isEdit ? (
-              <div className="flex h-10 items-center gap-2 text-sm">
-                <span className="font-medium">{variant?.product?.name ?? '—'}</span>
-                {variant?.sku && <code className="font-mono text-xs text-muted-foreground">{variant.sku}</code>}
+              <div className="space-y-2">
+                <div className="flex h-10 items-center gap-2 text-sm">
+                  <span className="font-medium">{variant?.product?.name ?? '—'}</span>
+                  {variant?.sku && <code className="font-mono text-xs text-muted-foreground">{variant.sku}</code>}
+                </div>
+                {/* Rating posts immediately - it is its own endpoint, not part of this form's submit. */}
+                {variant && <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} interactive size="md" />}
               </div>
             ) : (
               <FormField

@@ -10,27 +10,18 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
 interface WishlistToggleProps {
   productId: number;
-  productName?: string;
-  /** `icon` for a bare heart, `button` for a labelled button. */
+  /** Names the product in the assistive label, so a grid of identical hearts is distinguishable. */
+  productName?: string | null;
   variant?: 'icon' | 'button';
-  /**
-   * Pre-resolved membership. Pass it when the parent already knows the answer - a grid
-   * that fetched the whole wishlist once - so a page of cards costs one request instead
-   * of one per card. Omit it and the toggle resolves its own state.
-   */
   inWishlist?: boolean;
   className?: string;
 }
 
-/**
- * Saves/unsaves a product for the signed-in user. When it owns the membership check,
- * that check is its own query so the heart is correct on first paint instead of
- * flickering.
- */
 export default function WishlistToggle({ productId, productName, variant = 'icon', inWishlist: inWishlistProp, className }: WishlistToggleProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isControlled = inWishlistProp !== undefined;
   const { data: response, isLoading } = useIsInWishlist(productId, !isControlled);
+
   const addMutation = useAddToWishlist();
   const removeMutation = useRemoveProductFromWishlist();
 
@@ -45,18 +36,17 @@ export default function WishlistToggle({ productId, productName, variant = 'icon
       toast({
         variant: 'success',
         title: inWishlist ? 'Removed from wishlist' : 'Saved to wishlist',
-        ...(productName && { description: productName }),
       });
       return;
     }
 
-    // Explicit type argument: add returns the row, remove returns void, and the union
-    // of the two leaves the generic uninferrable.
     const error = unitOfService.ErrorHandlerService.getErrorMessage<unknown>(result);
     toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
   };
 
   const label = inWishlist ? 'Remove from wishlist' : 'Save to wishlist';
+  // The visible button text stays short; only the assistive label names the product.
+  const accessibleLabel = productName ? `${label}: ${productName}` : label;
   const Icon = inWishlist ? FaHeart : FaRegHeart;
 
   if (variant === 'button') {
@@ -73,8 +63,8 @@ export default function WishlistToggle({ productId, productName, variant = 'icon
       type="button"
       variant="ghost"
       size="icon"
-      title={label}
-      aria-label={label}
+      title={accessibleLabel}
+      aria-label={accessibleLabel}
       aria-pressed={inWishlist}
       disabled={isBusy}
       onClick={toggle}

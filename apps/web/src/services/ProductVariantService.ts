@@ -8,7 +8,7 @@ import { ProductVariantDto, ProductVariantListItemDto } from '@/dtos/product-var
 // The single-variant read is typed from the shared package: the local ProductVariantListItemDto
 // above still declares columns the API no longer returns (effectiveFrom, storeCode, productId).
 import { ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
-import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
+import { CreateProductVariantModel, RateProductVariantModel, UpdateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import Response from '@/dtos/Response';
@@ -27,6 +27,12 @@ export default class ProductVariantService implements IProductVariantService {
         return this.httpService
             .call()
             .get<VariantDetailDto, AxiosResponse<Response<VariantDetailDto>>>(`/product-variants/${id}`);
+    }
+
+    rate(id: number, model: RateProductVariantModel): Promise<AxiosResponse<Response<VariantRatingDto>>> {
+        return this.httpService
+            .call()
+            .post<VariantRatingDto, AxiosResponse<Response<VariantRatingDto>>>(`/product-variants/rating/${id}`, model);
     }
 
     create(model: CreateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {

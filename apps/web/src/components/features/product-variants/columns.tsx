@@ -1,6 +1,8 @@
 'use client';
 import ActionTooltip from '@/components/common/tooltip-action-button';
 import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
+import VariantRating from './variant-rating';
+import RateVariantButton from './rate-variant-button';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { History } from 'lucide-react';
@@ -18,6 +20,16 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
             {onEdit && <ActionTooltip variant="edit" tooltip="Edit variant" onClick={() => onEdit(row.original)} />}
+            <RateVariantButton
+              variantId={row.original.id}
+              variantName={row.original.name}
+              sku={row.original.sku}
+              rating={row.original.rating}
+              ratingCount={row.original.ratingCount}
+              variant="ghost"
+              size="icon"
+              label=""
+            />
             <ActionTooltip
               variant="default"
               icon={<History className="h-4 w-4" />}
@@ -111,6 +123,14 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Status" />,
         cell: ({ row }) => <Badge variant={row.original.isActive ? 'scusses' : 'orange'}>{row.original.isActive ? 'Active' : 'Superseded'}</Badge>,
         meta: { sortingKey: 'isActive' },
+      },
+      {
+        id: 'rating',
+        accessorKey: 'rating',
+        // `rating` is a real column, but the API only allow-lists sku/name/createdAt/id.
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Rating" />,
+        cell: ({ row }) => <VariantRating variantId={row.original.id} rating={row.original.rating} ratingCount={row.original.ratingCount} />,
       },
       {
         id: 'description',

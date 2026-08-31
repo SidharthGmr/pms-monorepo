@@ -10,6 +10,9 @@ export interface ProductVariantDto {
   name?: string | null;
   barcode?: string | null;
   description?: string | null;
+  /** Average stars across this variant's ratings; null until the first one. */
+  rating?: number | null;
+  ratingCount?: number | null;
   /** Alert when this variant's stock falls below this value. */
   lowStockThreshold?: number | null;
   /** Image URLs for this specific variant. */

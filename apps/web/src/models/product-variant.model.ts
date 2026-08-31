@@ -19,6 +19,23 @@ export interface CreateProductVariantModel {
  * `sellingPrice`/`costPrice` is appended to the PriceHistory ledger, and a changed
  * `stockQuantity` (target on-hand) is booked as a stock adjustment — the API handles both.
  */
+/**
+ * Body accepted by POST /product-variants/rating/:id. The rater comes from the token and the
+ * store from the variant, so only the score travels.
+ */
+export interface RateProductVariantModel {
+  rating: number;
+}
+
+/** What the rating endpoint returns: the caller's own score plus the variant's new average. */
+export interface VariantRatingDto {
+  variantId: number;
+  userRating: number;
+  /** Average across every rating; null when the variant has never been rated. */
+  rating: number | null;
+  ratingCount: number;
+}
+
 export interface UpdateProductVariantModel {
   name?: string | null;
   sku?: string;

@@ -1,6 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
+import { CreateProductVariantModel, RateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -60,6 +60,28 @@ const useGetProductVariantById = (id: number | string, enabled: boolean = true) 
     });
 };
 
+/** Rates a variant. Re-rating replaces the caller's own score rather than adding a vote. */
+const useRateProductVariant = () => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, model }: { id: number; model: RateProductVariantModel }) => {
+            return unitOfService.ProductVariantService.rate(id, model);
+        },
+        onSettled: (response) => {
+            if (response && response.status === 200) {
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getById'] });
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getByProductId'] });
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getAll'] });
+                queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getAllPublic'] });
+            }
+        },
+        onError: (error) => error,
+    });
+};
+
 const useCreateProductVariant = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -107,4 +129,5 @@ export {
     useGetAllPublicProductVariants,
     useCreateProductVariant,
     useUpdateProductVariant,
+    useRateProductVariant,
 };
