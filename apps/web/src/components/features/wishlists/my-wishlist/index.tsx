@@ -41,7 +41,9 @@ export default function WishlistGrid() {
   } = useGetAllWishlists({ userId, page, recordPerPage: config.recordPerPage }, !!userId);
   const removeMutation = useRemoveFromWishlist();
   const addToCartMutation = useAddToCart();
-  const [addingProductId, setAddingProductId] = useState<number | null>(null);
+  // Keyed on the wishlist row, not the product: two SKUs of one product are two rows,
+  // and keying on productId would spin both buttons at once.
+  const [addingEntryId, setAddingEntryId] = useState<number | null>(null);
 
   const { showModal: showRemoveModal, openModal: openRemoveModal, closeModal: closeRemoveModal, uniqueId: removeId } = useModalShowHide();
 
@@ -61,9 +63,13 @@ export default function WishlistGrid() {
   };
 
   const handleAddToCart = async (entry: WishlistDto) => {
-    setAddingProductId(entry.productId);
+    setAddingEntryId(entry.id);
     try {
-      const result = await addToCartMutation.mutateAsync({ productIds: [entry.productId] });
+      // A variant save must add that exact SKU; only a product-level save may let the
+      // API pick the product's effective variant.
+      const result = await addToCartMutation.mutateAsync(
+        entry.variantId !== null ? { variantIds: [entry.variantId] } : { productIds: [entry.productId] }
+      );
       if (result && result.status === 201) {
         toast({ variant: 'success', title: 'Added to cart', description: entry.product?.name });
       } else {
@@ -74,7 +80,7 @@ export default function WishlistGrid() {
       const message = unitOfService.ErrorHandlerService.getErrorMessage(error);
       toast({ variant: 'destructive', title: 'Could not add to cart', description: <span>{message}</span> });
     } finally {
-      setAddingProductId(null);
+      setAddingEntryId(null);
     }
   };
 
@@ -102,7 +108,18 @@ export default function WishlistGrid() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {entries.map((entry) => {
-          const image = entry.product?.images?.[0];
+          const variant = entry.variant;
+          // The saved SKU's own photo wins - it is the thing on the list.
+          const image = variant?.images?.[0] ?? entry.product?.images?.[0];
+          const variantLabel =
+            variant &&
+            (variant.name ||
+              (variant.attributes && typeof variant.attributes === 'object'
+                ? Object.entries(variant.attributes)
+                    .map(([key, value]) => `${key}: ${String(value)}`)
+                    .join(' · ')
+                : '') ||
+              variant.sku);
           // A product pulled from the catalogue after being saved should not look buyable.
           const isAvailable = !entry.product || entry.product.status === StatusValues.Published;
 
@@ -121,6 +138,15 @@ export default function WishlistGrid() {
                   <span className="block truncate font-medium" title={entry.product?.name}>
                     {entry.product?.name || `Product #${entry.productId}`}
                   </span>
+                  {/* Absent on a product-level save, which reads as before. */}
+                  {variant && (
+                    <span className="flex items-center gap-1.5">
+                      <Badge variant="secondary" className="px-1.5 py-0 font-normal">
+                        {variantLabel}
+                      </Badge>
+                      <code className="truncate font-mono text-[11px] text-muted-foreground">{variant.sku}</code>
+                    </span>
+                  )}
                   <span className="block text-xs text-muted-foreground">
                     Saved{' '}
                     {entry.addedAt ? unitOfService.DateTimeService.convertToLocalDate(entry.addedAt as unknown as Date, false) : '—'}
@@ -133,10 +159,10 @@ export default function WishlistGrid() {
                 <Button
                   size="sm"
                   className="flex-1"
-                  disabled={!isAvailable || addingProductId === entry.productId}
+                  disabled={!isAvailable || addingEntryId === entry.id}
                   onClick={() => handleAddToCart(entry)}
                 >
-                  {addingProductId === entry.productId ? 'Adding...' : 'Add to Cart'}
+                  {addingEntryId === entry.id ? 'Adding...' : 'Add to Cart'}
                 </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/dashboard/products/${entry.productId}`}>View</Link>

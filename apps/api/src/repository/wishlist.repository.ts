@@ -8,6 +8,9 @@ import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 
 const wishlistInclude = {
     product: { select: { id: true, name: true, slug: true, images: true, storeCode: true, status: true } },
+    // Null on a product-level save; when present it is what the listing shows instead of
+    // the bare product name, so the shopper sees which size/colour they saved.
+    variant: { select: { id: true, sku: true, name: true, attributes: true, images: true, isActive: true } },
     // Staff listings show who saved the item, so the owner travels with the row
     // instead of forcing the client to resolve every userId separately.
     user: { select: userSummarySelect },
@@ -15,16 +18,18 @@ const wishlistInclude = {
 
 type WishlistWithProduct = Prisma.WishlistGetPayload<{ include: typeof wishlistInclude }>;
 
-const SORTABLE_COLUMNS = new Set(['addedAt', 'productId']);
+const SORTABLE_COLUMNS = new Set(['addedAt', 'productId', 'variantId']);
 
 function toDto(entry: WishlistWithProduct): WishlistDto {
     return {
         id: entry.id,
         userId: entry.userId,
         productId: entry.productId,
+        variantId: entry.variantId,
         storeCode: entry.storeCode,
         addedAt: entry.addedAt,
         product: entry.product,
+        variant: entry.variant,
         user: toUserSummary(entry.user),
     };
 }
@@ -41,6 +46,7 @@ export class WishlistRepository implements IWishlistRepository {
 
             if (filters.userId !== undefined) where.userId = filters.userId;
             if (filters.productId !== undefined) where.productId = filters.productId;
+            if (filters.variantId !== undefined) where.variantId = filters.variantId;
             if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
 
             if (filters.search) {
@@ -83,9 +89,23 @@ export class WishlistRepository implements IWishlistRepository {
         return entry ? toDto(entry) : null;
     }
 
-    async findByUserAndProduct(userId: string, productId: number): Promise<WishlistDto | null> {
-        const entry = await prisma.wishlist.findUnique({
-            where: { userId_productId: { userId, productId } },
+    /**
+     * With `variantId` this targets that exact save. Without it, any SKU of the product
+     * matches - every row pins a variant now, so "is this product saved?" can only mean
+     * "is one of its SKUs saved?". That is what the product-page heart asks.
+     */
+    async findByUserAndProduct(userId: string, productId: number, variantId?: number): Promise<WishlistDto | null> {
+        const entry = await prisma.wishlist.findFirst({
+            where: { userId, productId, ...(variantId !== undefined && { variantId }) },
+            include: wishlistInclude,
+        });
+        return entry ? toDto(entry) : null;
+    }
+
+    /** Backs the variant grid's heart, where the product id is not what the shopper picked. */
+    async findByUserAndVariant(userId: string, variantId: number): Promise<WishlistDto | null> {
+        const entry = await prisma.wishlist.findFirst({
+            where: { userId, variantId },
             include: wishlistInclude,
         });
         return entry ? toDto(entry) : null;

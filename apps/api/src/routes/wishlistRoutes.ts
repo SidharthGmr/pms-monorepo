@@ -50,6 +50,11 @@ const wishlistController = container.get<WishlistController>(TYPES.WishlistContr
  *         schema:
  *           type: integer
  *       - in: query
+ *         name: variantId
+ *         schema:
+ *           type: string
+ *         description: A SKU id narrows to that variant; the literal `null` returns product-level saves only
+ *       - in: query
  *         name: userId
  *         schema:
  *           type: string
@@ -103,6 +108,33 @@ wishlistRouter.get("/has/:productId", authenticateToken, asyncHandler(wishlistCo
 
 /**
  * @swagger
+ * /wishlists/has/variant/{variantId}:
+ *   get:
+ *     summary: Is this SKU in the signed-in user's wishlist?
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Wishlist status fetched successfully
+ */
+// Three segments, so it cannot be shadowed by the two-segment /has/:productId above.
+wishlistRouter.get("/has/variant/:variantId", authenticateToken, asyncHandler(wishlistController.hasVariant));
+
+/**
+ * @swagger
  * /wishlists/{id}:
  *   get:
  *     summary: Get a wishlist item by ID
@@ -135,7 +167,7 @@ wishlistRouter.get("/:id", authenticateToken, asyncHandler(wishlistController.ge
  * @swagger
  * /wishlists:
  *   post:
- *     summary: Save a product to the wishlist
+ *     summary: Save a product, or one of its SKUs, to the wishlist
  *     tags: [Wishlist]
  *     security:
  *       - bearerAuth: []
@@ -158,15 +190,20 @@ wishlistRouter.get("/:id", authenticateToken, asyncHandler(wishlistController.ge
  *               productId:
  *                 type: integer
  *                 example: 4
+ *               variantId:
+ *                 type: integer
+ *                 example: 19
  *     description: >
- *       Idempotent - saving a product that is already on the list returns the existing
- *       entry instead of failing. The owner comes from the token and the storeCode from
- *       the product, so neither can be spoofed through the body.
+ *       Idempotent per (user, product, variant) - saving something already on the list
+ *       returns the existing entry instead of failing, and two SKUs of the same product
+ *       are two separate saves. The owner comes from the token and the storeCode from the
+ *       product, so neither can be spoofed through the body; a supplied variantId must be
+ *       a SKU of that product in that store.
  *     responses:
  *       201:
  *         description: Added to wishlist
  *       404:
- *         description: Product not found in this store
+ *         description: Product not found in this store, or variant not found for this product
  */
 wishlistRouter.post("/", authenticateToken, validate(createWishlistSchema), asyncHandler(wishlistController.create));
 
@@ -198,6 +235,35 @@ wishlistRouter.post("/", authenticateToken, validate(createWishlistSchema), asyn
  *         description: Wishlist item not found
  */
 wishlistRouter.delete("/product/:productId", authenticateToken, asyncHandler(wishlistController.deleteByProduct));
+
+/**
+ * @swagger
+ * /wishlists/variant/{variantId}:
+ *   delete:
+ *     summary: Remove a saved SKU from the signed-in user's wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Removed from wishlist
+ *       404:
+ *         description: Wishlist item not found
+ */
+// Registered before /:id so "variant" is not parsed as an id.
+wishlistRouter.delete("/variant/:variantId", authenticateToken, asyncHandler(wishlistController.deleteByVariant));
 
 /**
  * @swagger

@@ -98,7 +98,13 @@ export class ProductVariantRepository implements IProductVariantRepository {
       if (filters.isActive !== undefined) where.isActive = filters.isActive;
       const productWhere: Prisma.productWhereInput = {};
       if (filters.categoryId !== undefined) productWhere.categoryId = filters.categoryId;
-      if (filters.publishedOnly) productWhere.status = Status.Published;
+      if (filters.publishedOnly) {
+        productWhere.status = Status.Published;
+        // The variant's own `deletedAt` is checked above, but its parent's was not - so a
+        // soft-deleted product's variants stayed on the public grid and were then refused by
+        // every write that does guard it (wishlist.add: "Product not found in this store").
+        productWhere.deletedAt = null;
+      }
       if (Object.keys(productWhere).length > 0) where.product = productWhere;
 
       if (filters.search) {

@@ -4,12 +4,20 @@ import { WishlistFilterParams } from "../../params/wishlist.params";
 import { ReviewActor } from "./Ireview.service";
 
 export interface IWishlistService {
+    /**
+     * A save always pins one SKU. Adding something already saved returns the existing row
+     * rather than erroring, so the button need not know the current state on first render.
+     */
+    add(productId: number, variantId: number, userId: string, storeCode: string): Promise<WishlistDto>;
+
     getAll(filters?: WishlistFilterParams): Promise<ListResponseDto<WishlistDto>>;
     getById(id: number, actor: ReviewActor): Promise<WishlistDto | null>;
-    /** Adding an item already saved returns the existing row rather than erroring. */
-    add(productId: number, userId: string, storeCode: string): Promise<WishlistDto>;
     remove(id: number, actor: ReviewActor): Promise<WishlistDto>;
-    removeByProduct(productId: number, userId: string): Promise<WishlistDto>;
+    /** Omitting `variantId` targets whichever SKU of the product is saved. */
+    removeByProduct(productId: number, userId: string, variantId?: number): Promise<WishlistDto>;
     /** Lets a product page show the filled/empty heart without fetching the list. */
-    has(productId: number, userId: string): Promise<boolean>;
+    has(productId: number, userId: string, variantId?: number): Promise<boolean>;
+    /** The variant grid knows its SKU but not the parent product id. */
+    removeByVariant(variantId: number, userId: string): Promise<WishlistDto>;
+    hasVariant(variantId: number, userId: string): Promise<boolean>;
 }

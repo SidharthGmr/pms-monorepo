@@ -16,88 +16,42 @@ const STAFF_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 export class WishlistService implements IWishlistService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
 
-  async add(productId: number, variantId: number, userId: string, storeCode: string): Promise<WishlistDto> {
+  async add(productId: number, variantId: number, userId: string, storeCode: string,): Promise<WishlistDto> {
+    const variant = variantId;
+
+
+    const existing = await this.unitOfWork.Wishlist.findByUserAndProduct(userId, productId, variant);
+
+    if (existing) return existing;
+
     return this.unitOfWork.transaction(async (transactionClient) => {
-      const product = await transactionClient.product.findFirst({
-        where: {
-          id: productId,
-          storeCode,
-          status: {
-            not: Status.Trash,
-          },
-        },
-        select: {
-          id: true,
-          storeCode: true,
-        },
+      // storeCode comes from the product, not the request, so an item can never
+      // be filed under a store it does not belong to.
+      const product = await transactionClient.product.findUnique({
+        where: { id: productId, storeCode, NOT: { status: Status.Trash }, deletedAt: null },
+        select: { id: true, storeCode: true },
       });
 
-      if (!product) {
-        throw new NotFoundError("Product not found in this store");
-      }
+      if (!product) throw new NotFoundError("Product not found in this store");
 
-      const variant = await transactionClient.productVariant.findFirst({
-        where: {
-          id: variantId, productId, storeCode, status: {
-            not: Status.Trash,
-          },
-
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!variant) {
-        throw new NotFoundError("Product variant not found in this store");
-      }
-
-      const existingWishlistItem = await transactionClient.wishlist.findFirst({
-        where: {
-          userId,
-          productId,
-          variantId,
-          storeCode,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (existingWishlistItem) {
-        const existing = await this.unitOfWork.Wishlist.findById(
-          existingWishlistItem.id,
-          transactionClient
-        );
-
-        if (!existing) {
-          throw new NotFoundError("Wishlist item not found");
-        }
-
-        return existing;
+      // A variantId from the client must actually be a SKU of this product in this store -
+      // otherwise the row would claim a pairing the catalogue does not have.
+      if (variant !== null) {
+        const ownedVariant = await transactionClient.productVariant.findFirst({
+          where: { id: variant, productId, storeCode: product.storeCode, deletedAt: null },
+          select: { id: true },
+        });
+        if (!ownedVariant) throw new NotFoundError("Variant not found for this product");
       }
 
       const entry = await transactionClient.wishlist.create({
-        data: {
-          userId,
-          productId,
-          variantId,
-          storeCode: product.storeCode,
-        },
-        select: {
-          id: true,
-        },
+        data: { userId, productId, variantId: variant, storeCode: product.storeCode },
+        select: { id: true },
       });
 
-      const created = await this.unitOfWork.Wishlist.findById(
-        entry.id,
-        transactionClient
-      );
-
-      if (!created) {
-        throw new NotFoundError("Wishlist item not found");
-      }
-
+      // Read back through the transaction client - the global one cannot see this row yet.
+      const created = await this.unitOfWork.Wishlist.findById(entry.id, transactionClient);
+      if (!created) throw new NotFoundError("Wishlist item not found");
       return created;
     });
   }
@@ -128,14 +82,14 @@ export class WishlistService implements IWishlistService {
     return this.unitOfWork.Wishlist.delete(id);
   }
 
-  async removeByProduct(productId: number, userId: string, variantId?: number): Promise<WishlistDto> {
-    const existing = await this.unitOfWork.Wishlist.findByUserAndProduct(userId, productId, variantId);
+  async removeByProduct(productId: number, userId: string, variantId?: number | null): Promise<WishlistDto> {
+    const existing = await this.unitOfWork.Wishlist.findByUserAndProduct(userId, productId, variantId ?? null);
     if (!existing) throw new NotFoundError("Wishlist item not found");
     return this.unitOfWork.Wishlist.delete(existing.id);
   }
 
-  async has(productId: number, userId: string, variantId?: number): Promise<boolean> {
-    const existing = await this.unitOfWork.Wishlist.findByUserAndProduct(userId, productId, variantId);
+  async has(productId: number, userId: string, variantId?: number | null): Promise<boolean> {
+    const existing = await this.unitOfWork.Wishlist.findByUserAndProduct(userId, productId, variantId ?? null);
     return !!existing;
   }
 

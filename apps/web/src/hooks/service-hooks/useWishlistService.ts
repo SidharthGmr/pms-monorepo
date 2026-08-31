@@ -11,6 +11,7 @@ const wishlistService = () => container.get<IWishlistService>(TYPES.IWishlistSer
 const invalidateWishlist = (queryClient: ReturnType<typeof useQueryClient>) => {
   queryClient.invalidateQueries({ queryKey: ['wishlists'] });
   queryClient.invalidateQueries({ queryKey: ['wishlist-has'] });
+  queryClient.invalidateQueries({ queryKey: ['wishlist-has-variant'] });
 };
 
 export const useGetAllWishlists = (params?: WishlistFilterParams, enabled: boolean = true) =>
@@ -27,17 +28,26 @@ export const useGetWishlistById = (id: number | string, enabled: boolean = true)
     enabled: !!id && enabled,
   });
 
-export const useIsInWishlist = (productId: number | string, enabled: boolean = true) =>
+/** Without `variantId` this reports the product-level save, not "any SKU of this product". */
+export const useIsInWishlist = (productId: number | string, enabled: boolean = true, variantId?: number) =>
   useQuery({
-    queryKey: ['wishlist-has', productId],
-    queryFn: () => wishlistService().has(productId),
+    queryKey: ['wishlist-has', productId, variantId ?? null],
+    queryFn: () => wishlistService().has(productId, variantId),
     enabled: !!productId && enabled,
+  });
+
+/** For a grid that rendered SKUs and has no parent product id to hand. */
+export const useIsVariantInWishlist = (variantId: number | string, enabled: boolean = true) =>
+  useQuery({
+    queryKey: ['wishlist-has-variant', variantId],
+    queryFn: () => wishlistService().hasVariant(variantId),
+    enabled: !!variantId && enabled,
   });
 
 export const useAddToWishlist = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (productId: number) => wishlistService().add(productId),
+    mutationFn: ({ productId, variantId }: { productId: number; variantId?: number }) => wishlistService().add(productId, variantId),
     onSettled: () => invalidateWishlist(queryClient),
   });
 };
@@ -53,7 +63,16 @@ export const useRemoveFromWishlist = () => {
 export const useRemoveProductFromWishlist = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (productId: number | string) => wishlistService().removeByProduct(productId),
+    mutationFn: ({ productId, variantId }: { productId: number | string; variantId?: number }) =>
+      wishlistService().removeByProduct(productId, variantId),
+    onSettled: () => invalidateWishlist(queryClient),
+  });
+};
+
+export const useRemoveVariantFromWishlist = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (variantId: number | string) => wishlistService().removeByVariant(variantId),
     onSettled: () => invalidateWishlist(queryClient),
   });
 };

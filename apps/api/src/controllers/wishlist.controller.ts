@@ -19,6 +19,18 @@ export class WishlistController {
     role: req.user?.role as Role,
   });
 
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) {
+      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+    }
+
+    const { productId, variantId } = req.body as CreateWishlistDto;
+    const data = await this.unitOfService.Wishlist.add(productId, variantId, this.actor(req).userId, storeCode,);
+    return res.status(201).json({ success: true, message: 'Added to wishlist', data });
+  };
+
+
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<WishlistDto>>>> => {
     const actor = this.actor(req);
     const isStaff = STAFF_ROLES.includes(actor.role);
@@ -31,6 +43,7 @@ export class WishlistController {
         search: req.query['search'] as string | undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
+        variantId: req.query['variantId'] ? parseInt(req.query['variantId'] as string) : undefined,
         // A customer is pinned to their own list; staff may inspect any user's.
         userId: isStaff ? requestedUserId : actor.userId,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
@@ -57,24 +70,33 @@ export class WishlistController {
     return res.status(200).json({ success: true, message: 'Wishlist item fetched successfully', data });
   };
 
-  has = async (req: Request, res: Response): Promise<Response<CustomResponse<{ productId: number; inWishlist: boolean }>>> => {
+  has = async (
+    req: Request,
+    res: Response
+  ): Promise<Response<CustomResponse<{ productId: number; variantId: number | null; inWishlist: boolean }>>> => {
     const productId = parseInt(req.params['productId'] as string);
     if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid productId' });
 
-    const inWishlist = await this.unitOfService.Wishlist.has(productId, this.actor(req).userId);
-    return res.status(200).json({ success: true, message: 'Wishlist status fetched successfully', data: { productId, inWishlist } });
+    // Without a variantId this answers "is any SKU of this product saved?" - which is all a
+    // product page can ask, since it has no single SKU to name.
+    const variantId = req.query['variantId'] ? parseInt(req.query['variantId'] as string) : undefined;
+    if (variantId !== undefined && isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variantId' });
+
+    const inWishlist = await this.unitOfService.Wishlist.has(productId, this.actor(req).userId, variantId);
+    return res
+      .status(200)
+      .json({ success: true, message: 'Wishlist status fetched successfully', data: { productId, variantId: variantId ?? null, inWishlist } });
   };
 
-  create = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
-    const storeCode = req.user?.storeCode;
-    if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
-    }
+  /** The variant grid knows the SKU it rendered but not the parent product id. */
+  hasVariant = async (req: Request, res: Response): Promise<Response<CustomResponse<{ variantId: number; inWishlist: boolean }>>> => {
+    const variantId = parseInt(req.params['variantId'] as string);
+    if (isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variantId' });
 
-    const { productId } = req.body as CreateWishlistDto;
-    const data = await this.unitOfService.Wishlist.add(productId, this.actor(req).userId, storeCode);
-    return res.status(201).json({ success: true, message: 'Added to wishlist', data });
+    const inWishlist = await this.unitOfService.Wishlist.hasVariant(variantId, this.actor(req).userId);
+    return res.status(200).json({ success: true, message: 'Wishlist status fetched successfully', data: { variantId, inWishlist } });
   };
+
 
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
     const id = parseInt(req.params['id'] as string);
@@ -88,7 +110,19 @@ export class WishlistController {
     const productId = parseInt(req.params['productId'] as string);
     if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid productId' });
 
-    const data = await this.unitOfService.Wishlist.removeByProduct(productId, this.actor(req).userId);
+    // Mirrors `has`: no variantId removes whichever SKU of the product is saved.
+    const variantId = req.query['variantId'] ? parseInt(req.query['variantId'] as string) : undefined;
+    if (variantId !== undefined && isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variantId' });
+
+    const data = await this.unitOfService.Wishlist.removeByProduct(productId, this.actor(req).userId, variantId);
+    return res.status(204).json({ success: true, message: 'Removed from wishlist', data });
+  };
+
+  deleteByVariant = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
+    const variantId = parseInt(req.params['variantId'] as string);
+    if (isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variantId' });
+
+    const data = await this.unitOfService.Wishlist.removeByVariant(variantId, this.actor(req).userId);
     return res.status(204).json({ success: true, message: 'Removed from wishlist', data });
   };
 }

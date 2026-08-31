@@ -71,6 +71,10 @@ export class ProductService implements IProductService {
         description: data.description || null,
         categoryId: data.categoryId,
         status: data.status,
+        // Re-publishing a trashed product must clear the soft-delete markers, or the row is
+        // left Published *and* deletedAt-set - a state every `deletedAt: null` guard rejects
+        // (which is how a live product started failing "Product not found in this store").
+        ...(data.status !== StatusEnum.Trash && { deletedAt: null, deletedById: null }),
         updatedById: userId,
         updatedAt: new Date(),
       };

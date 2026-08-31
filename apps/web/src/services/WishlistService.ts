@@ -2,7 +2,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import Response from '@/dtos/Response';
-import { WishlistDto, WishlistHasDto } from '@/dtos/wishlist.dto';
+import { WishlistDto, WishlistHasDto, WishlistVariantHasDto } from '@/dtos/wishlist.dto';
 import { CreateWishlistModel } from '@/models/wishlist.model';
 import { WishlistFilterParams } from '@/params/wishlist.params';
 import { AxiosResponse } from 'axios';
@@ -18,8 +18,10 @@ export default class WishlistService implements IWishlistService {
     this.httpService = httpService;
   }
 
-  add(productId: number): Promise<AxiosResponse<Response<WishlistDto>>> {
-    const model: CreateWishlistModel = { productId };
+  add(productId: number, variantId?: number): Promise<AxiosResponse<Response<WishlistDto>>> {
+    // Conditional spread: sending `variantId: undefined` would serialise as a missing key
+    // anyway, but this keeps the body identical to the product-level case.
+    const model: CreateWishlistModel = { productId, ...(variantId !== undefined && { variantId }) };
     return this.httpService.call().post<WishlistDto, AxiosResponse<Response<WishlistDto>>>('/wishlists', model);
   }
 
@@ -33,15 +35,29 @@ export default class WishlistService implements IWishlistService {
     return this.httpService.call().get<WishlistDto, AxiosResponse<Response<WishlistDto>>>(`/wishlists/${id}`);
   }
 
-  has(productId: number | string): Promise<AxiosResponse<Response<WishlistHasDto>>> {
-    return this.httpService.call().get<WishlistHasDto, AxiosResponse<Response<WishlistHasDto>>>(`/wishlists/has/${productId}`);
+  has(productId: number | string, variantId?: number): Promise<AxiosResponse<Response<WishlistHasDto>>> {
+    return this.httpService.call().get<WishlistHasDto, AxiosResponse<Response<WishlistHasDto>>>(`/wishlists/has/${productId}`, {
+      ...(variantId !== undefined && { params: { variantId } }),
+    });
+  }
+
+  hasVariant(variantId: number | string): Promise<AxiosResponse<Response<WishlistVariantHasDto>>> {
+    return this.httpService
+      .call()
+      .get<WishlistVariantHasDto, AxiosResponse<Response<WishlistVariantHasDto>>>(`/wishlists/has/variant/${variantId}`);
   }
 
   remove(id: number | string): Promise<AxiosResponse<Response<void>>> {
     return this.httpService.call().delete<void, AxiosResponse<Response<void>>>(`/wishlists/${id}`);
   }
 
-  removeByProduct(productId: number | string): Promise<AxiosResponse<Response<void>>> {
-    return this.httpService.call().delete<void, AxiosResponse<Response<void>>>(`/wishlists/product/${productId}`);
+  removeByProduct(productId: number | string, variantId?: number): Promise<AxiosResponse<Response<void>>> {
+    return this.httpService.call().delete<void, AxiosResponse<Response<void>>>(`/wishlists/product/${productId}`, {
+      ...(variantId !== undefined && { params: { variantId } }),
+    });
+  }
+
+  removeByVariant(variantId: number | string): Promise<AxiosResponse<Response<void>>> {
+    return this.httpService.call().delete<void, AxiosResponse<Response<void>>>(`/wishlists/variant/${variantId}`);
   }
 }

@@ -36,7 +36,19 @@ export const useWishlistColumns = ({ removeRecord }: WishlistColumnOptions) =>
         enableSorting: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Product" />,
         cell: ({ row }) => {
-          const image = row.original.product?.images?.[0];
+          const variant = row.original.variant;
+          // The variant's own photo wins - it is the thing that was saved.
+          const image = variant?.images?.[0] ?? row.original.product?.images?.[0];
+          // What distinguishes this SKU: its name, else its attribute combination.
+          const variantLabel =
+            variant &&
+            (variant.name ||
+              (variant.attributes && typeof variant.attributes === 'object'
+                ? Object.entries(variant.attributes)
+                    .map(([key, value]) => `${key}: ${String(value)}`)
+                    .join(' · ')
+                : '') ||
+              variant.sku);
           return (
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted">
@@ -55,8 +67,18 @@ export const useWishlistColumns = ({ removeRecord }: WishlistColumnOptions) =>
                 >
                   {row.original.product?.name || `Product #${row.original.productId}`}
                 </Link>
-                {row.original.product?.slug && (
-                  <span className="block max-w-[220px] truncate text-xs text-muted-foreground">{row.original.product.slug}</span>
+                {/* A product-level save has no variant, and shows the slug as before. */}
+                {variant ? (
+                  <span className="flex max-w-[220px] items-center gap-1.5 truncate text-xs">
+                    <Badge variant="secondary" className="px-1.5 py-0 font-normal">
+                      {variantLabel}
+                    </Badge>
+                    <code className="truncate font-mono text-[11px] text-muted-foreground">{variant.sku}</code>
+                  </span>
+                ) : (
+                  row.original.product?.slug && (
+                    <span className="block max-w-[220px] truncate text-xs text-muted-foreground">{row.original.product.slug}</span>
+                  )
                 )}
               </div>
             </div>

@@ -72,28 +72,35 @@ export default function VariantCard({ variant }: VariantCardProps) {
   // list, so an admin asking without a userId would get every user's saves back.
   const { data: wishlistResponse } = useGetAllWishlists({ userId, showAllRecords: true }, !!userId);
 
-  const wishlistedProductIds = useMemo(() => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.productId)), [wishlistResponse]);
+  // Matched on variantId, not productId: this grid shows one card per SKU, so saving the
+  // "L" must fill only the L card. Product-level saves have a null variantId and are
+  // deliberately not matched here - they belong to the product pages.
+  const wishlistedVariantIds = useMemo(
+    () => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.variantId).filter((id): id is number => id !== null)),
+    [wishlistResponse]
+  );
 
-  // A wishlist entry is keyed by PRODUCT, so the heart needs the parent product's id -
-  // passing `variant.id` made every save 404 with "Product not found in this store".
+  // A wishlist row still carries the parent product (the FK and the store scope come from
+  // it), so the heart needs both ids - the variant alone cannot be filed.
   const productId = variant.product?.id;
 
   return (
     <Card className="group flex flex-col overflow-hidden rounded-xl p-0 shadow-sm transition-shadow hover:shadow-md">
       {/* <div className="absolute left-3 top-3">{badge}</div> */}
       {/* Above the sold-out scrim so the heart stays usable on an unavailable product. */}
+      {productId}/{variant?.id}
       {productId !== undefined && (
         <div className="absolute right-2 top-2 z-10">
           <WishlistToggle
             productId={productId}
+            variantId={variant.id}
             productName={title}
-            inWishlist={wishlistedProductIds.has(productId)}
+            inWishlist={wishlistedVariantIds.has(variant.id)}
             className="rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
           />
         </div>
       )}
       {/* {soldOut && <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />} */}
-
       <div className="relative aspect-square overflow-hidden bg-muted/30">
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -113,7 +120,6 @@ export default function VariantCard({ variant }: VariantCardProps) {
           </span>
         )}
       </div>
-
       <div className="flex flex-1 flex-col gap-0.5 p-3">
         {variant.product?.category?.name && (
           <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{variant.product.category.name}</span>

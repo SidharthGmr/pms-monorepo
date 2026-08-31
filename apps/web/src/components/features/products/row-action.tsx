@@ -41,7 +41,10 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
 
   const handleWishlistToggle = async () => {
     try {
-      const response = inWishlist ? await removeFromWishlistMutation.mutateAsync(item.id) : await addToWishlistMutation.mutateAsync(item.id);
+      // Product-level save: this row is a product, not a SKU, so no variantId is pinned.
+      const response = inWishlist
+        ? await removeFromWishlistMutation.mutateAsync({ productId: item.id })
+        : await addToWishlistMutation.mutateAsync({ productId: item.id });
 
       if (response && (response.status === 200 || response.status === 201 || response.status === 204)) {
         toast({

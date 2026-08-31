@@ -10,6 +10,12 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
 interface WishlistToggleProps {
   productId: number;
+  /**
+   * Pins the save to one SKU of the product. Omit it on a product grid or product page,
+   * where there is no single variant to pin - that saves the product itself, and is what
+   * every caller did before variants were savable.
+   */
+  variantId?: number;
   /** Names the product in the assistive label, so a grid of identical hearts is distinguishable. */
   productName?: string | null;
   variant?: 'icon' | 'button';
@@ -17,10 +23,17 @@ interface WishlistToggleProps {
   className?: string;
 }
 
-export default function WishlistToggle({ productId, productName, variant = 'icon', inWishlist: inWishlistProp, className }: WishlistToggleProps) {
+export default function WishlistToggle({
+  productId,
+  variantId,
+  productName,
+  variant = 'icon',
+  inWishlist: inWishlistProp,
+  className,
+}: WishlistToggleProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isControlled = inWishlistProp !== undefined;
-  const { data: response, isLoading } = useIsInWishlist(productId, !isControlled);
+  const { data: response, isLoading } = useIsInWishlist(productId, !isControlled, variantId);
 
   const addMutation = useAddToWishlist();
   const removeMutation = useRemoveProductFromWishlist();
@@ -30,7 +43,10 @@ export default function WishlistToggle({ productId, productName, variant = 'icon
   const isBusy = (!isControlled && isLoading) || isPending;
 
   const toggle = async () => {
-    const result = inWishlist ? await removeMutation.mutateAsync(productId) : await addMutation.mutateAsync(productId);
+    // The same (productId, variantId) pair on both sides, so the toggle removes exactly
+    // what it saved rather than some other SKU of the product.
+    const target = { productId, ...(variantId !== undefined && { variantId }) };
+    const result = inWishlist ? await removeMutation.mutateAsync(target) : await addMutation.mutateAsync(target);
 
     if (result && (result.status === 200 || result.status === 201 || result.status === 204)) {
       toast({
