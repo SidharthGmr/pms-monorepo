@@ -11,14 +11,28 @@ export const productVariantFields = z.object({
   offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
   costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
   effectiveFrom: z.coerce.date().optional(),
+  effectiveTo: z.coerce.date().nullable().optional(),
   reason: z.string().nullable().optional(),
-  isOffer: z.boolean().optional(),
+  isOffer: z.boolean(),
   supersedePrevious: z.boolean().optional(),
 });
 
+/**
+ * A period that ends at or before it starts matches nothing in `effectiveOn`, so the price
+ * would be invisible the moment it is filed. Declared here rather than on the field objects
+ * so those stay plain `z.object`s - the web form reads `.shape.x` off them.
+ */
+const periodIsOrdered = (values: { effectiveFrom?: Date | undefined; effectiveTo?: Date | null | undefined }, ctx: z.RefinementCtx) => {
+  if (values.effectiveTo == null) return;
+  const from = values.effectiveFrom ?? new Date();
+  if (values.effectiveTo <= from) {
+    ctx.addIssue({ code: "custom", path: ["effectiveTo"], message: "The end date must be after the start date." });
+  }
+};
+
 // Express `validate(schema)` middleware parses `{ body, query, params }`.
 // storeCode and createdById are taken from the authenticated user, not the body.
-export const CreateProductVariantValidator = z.object({ body: productVariantFields });
+export const CreateProductVariantValidator = z.object({ body: productVariantFields.superRefine(periodIsOrdered) });
 
 /**
  * Full edit of a variant. Plain columns are written directly; a changed price is appended
@@ -38,11 +52,13 @@ export const updateProductVariantFields = z.object({
   offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
   costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
   effectiveFrom: z.coerce.date().optional(),
+  /** Ends the repriced period. See the create field - it can leave a variant unpriced. */
+  effectiveTo: z.coerce.date().nullable().optional(),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").nullable().optional(),
   reason: z.string().nullable().optional(),
 });
 
-export const UpdateProductVariantValidator = z.object({ body: updateProductVariantFields });
+export const UpdateProductVariantValidator = z.object({ body: updateProductVariantFields.superRefine(periodIsOrdered) });
 
 /**
  * A star rating for one variant. The rater comes from the token and the store from the

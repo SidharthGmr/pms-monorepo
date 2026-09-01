@@ -147,14 +147,13 @@ function VariantCard({ variant, compact = false }: { variant: ProductVariantList
   const description = describeVariant(variant);
   const image = imageFor(variant);
 
-  // Only a real compare-at price earns a discount badge. The figure is stored per price row,
-  // so when it is absent there is genuinely nothing to strike through - and inventing one
-  // would be a fake discount on a live storefront.
-  const wasPrice = variant.compareAtPrice ?? null;
-  const discount =
-    !unpriced && wasPrice && wasPrice > (variant.sellingPrice as number)
-      ? Math.round(((wasPrice - (variant.sellingPrice as number)) / wasPrice) * 100)
-      : null;
+  // The discount comes from the live offer, not `compareAtPrice` - that column is never
+  // selected into the response, so the old badge could never have fired. Same rule as
+  // `payablePrice` on the API: the amount only counts while the flag is on.
+  const onOffer = variant.isOffer === true && variant.offerPrice != null && variant.sellingPrice != null;
+  const wasPrice = onOffer ? (variant.sellingPrice as number) : null;
+  const payable = onOffer ? (variant.offerPrice as number) : variant.sellingPrice;
+  const discount = onOffer && wasPrice ? Math.round(((wasPrice - (variant.offerPrice as number)) / wasPrice) * 100) : null;
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden rounded-xl border-border bg-card p-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
@@ -188,9 +187,6 @@ function VariantCard({ variant, compact = false }: { variant: ProductVariantList
       </div>
 
       <div className="flex flex-1 flex-col gap-0.5 p-3">
-        {variant.product?.category?.name && (
-          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{variant.product.category.name}</span>
-        )}
         <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
           {variant.product?.name ?? variant.sku}
         </h3>

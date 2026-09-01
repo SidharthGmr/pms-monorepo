@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
-import { ProductVariantDto, ProductVariantListItemDto } from '@/dtos/product-variant.dto';
-import { ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
+import { ProductVariantDto } from '@/dtos/product-variant.dto';
+import { ProductVariantListItemDto, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
 import { CreateProductVariantModel, RateProductVariantModel, UpdateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';

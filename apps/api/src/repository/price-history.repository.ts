@@ -262,6 +262,9 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
         costPrice: data.costPrice ?? null,
         compareAtPrice: data.compareAtPrice ?? null,
         effectiveFrom,
+        // Usually null: the next price to arrive closes this row via the updateMany above.
+        // An explicit value time-boxes it, and the variant is unpriced once it passes.
+        effectiveTo: data.effectiveTo ?? null,
         reason: data.reason ?? null,
         createdById: data.createdById,
       },
@@ -278,6 +281,7 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
         ...(data.offerPrice !== undefined && { offerPrice: data.offerPrice }),
         ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
         ...(data.compareAtPrice !== undefined && { compareAtPrice: data.compareAtPrice }),
+        ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo }),
         ...(data.effectiveFrom !== undefined && { effectiveFrom: data.effectiveFrom }),
         ...(data.reason !== undefined && { reason: data.reason || null }),
         ...(data.updatedById !== undefined && { updatedById: data.updatedById }),

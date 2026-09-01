@@ -2,7 +2,6 @@
 import { CustomDataTable } from '@/components/Table/data-table';
 import { DataTablePagination } from '@/components/Table/data-table-pagination';
 import config from '@/config';
-import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
@@ -12,6 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useProductVariantColumns } from './columns';
 import ProductVariantFilter from './filter';
+import { ProductVariantListItemDto } from '@pms/types';
 
 export default function ProductVariantList() {
   const router = useRouter();

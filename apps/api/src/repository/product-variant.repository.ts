@@ -1,6 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { ProductVariantInternalDto, VariantRatingDto } from '../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
@@ -30,7 +30,9 @@ const productVarientSelect = {
   /** The promotion switch. Paired with the ledger's `offerPrice` to decide what is charged. */
   isOffer: true,
   createdById: true,
+  updatedById: true,
   createdAt: true,
+  updatedAt: true,
   rating: true,
   ratingCount: true,
 } satisfies Prisma.ProductVariantSelect;
@@ -58,6 +60,11 @@ const listItemSelect = {
       id: true,
       name: true,
       slug: true,
+      categoryId: true,
+      /** Fallback image for a variant with no photo of its own. */
+      images: true,
+      /** Storefront cards label the card with its category. */
+      category: { select: { name: true, images: true } },
     },
   },
 } satisfies Prisma.ProductVariantSelect;
@@ -76,6 +83,10 @@ function decorate<T extends { id: number }>(row: T, price: EffectivePrice | null
     // offer against the struck-through original. `payablePrice` decides which one is charged.
     offerPrice: price?.offerPrice ?? null,
     costPrice: price?.costPrice ?? null,
+    // The price period comes from the same ledger row as the amounts, so an unpriced variant
+    // reports null for all of them together rather than a date with no price behind it.
+    effectiveFrom: price?.effectiveFrom ?? null,
+    effectiveTo: price?.effectiveTo ?? null,
     stockQuantity,
   };
 }
@@ -172,7 +183,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
     return candidate;
   }
 
-  async create(data: CreateProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
+  async create(data: ProductVariantModel, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto> {
     let sku = data.sku;
     if (!sku) {
       const product = await tx.product.findUnique({ where: { id: data.productId }, select: { slug: true, name: true } });
@@ -198,6 +209,9 @@ export class ProductVariantRepository implements IProductVariantRepository {
         ...(data.images !== undefined && { images: data.images }),
         ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
         isActive: true,
+        // Conditional like the rest: an explicit `undefined` is rejected under
+        // `exactOptionalPropertyTypes`, and omitting it lets the column default to false.
+        ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
         createdById: data.createdById,
       },
       select: productVarientSelect,
@@ -281,6 +295,8 @@ export class ProductVariantRepository implements IProductVariantRepository {
         ...(data.images !== undefined && { images: data.images }),
         ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
+        // A plain column like the rest - the offer *amount* is the service's job (ledger).
+        ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
         updatedById: data.updatedById,
       },
       select: productVarientSelect,

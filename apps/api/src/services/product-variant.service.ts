@@ -6,7 +6,7 @@ import { ListResponseDto } from '../dtos/list-response.dto';
 import { toVariantResponse, VariantRatingDto } from '../dtos/product-variant.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
-import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
+import { UpdateProductVariantModel } from '../models/product-variant.model';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { IProductVariantService } from './interfaces/Iproduct-variant.service';
@@ -14,6 +14,75 @@ import { IProductVariantService } from './interfaces/Iproduct-variant.service';
 @injectable()
 export class ProductVariantService implements IProductVariantService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
+
+
+  async create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto> {
+    return this.unitOfWork.transaction(async (tx) => {
+
+      const variant = await this.unitOfWork.ProductVariant.create(
+        {
+          productId: data.productId,
+          storeCode,
+          createdById: userId,
+          sellingPrice: data.sellingPrice,
+          status: (data.status ?? StatusEnum.Draft) as Status,
+          ...(data.attributes != null && { attributes: data.attributes }),
+          ...(data.sku && { sku: data.sku }),
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.slug !== undefined && { slug: data.slug }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
+          ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
+          ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
+          ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
+          ...(data.barcode !== undefined && { barcode: data.barcode }),
+          ...(data.images !== undefined && { images: data.images }),
+          ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
+        },
+        tx
+      );
+
+      if (data.sellingPrice != null) {
+        await this.unitOfWork.PriceHistory.create(
+          {
+            variantId: variant.id,
+            storeCode,
+            costPrice: data.costPrice ?? null,
+            sellingPrice: data.sellingPrice,
+            // Filed whether or not the offer is live: an amount with `isOffer` off is a staged
+            // promotion, and `payablePrice` is the one place that decides what is charged.
+            offerPrice: data.offerPrice ?? null,
+            compareAtPrice: data.compareAtPrice ?? null,
+            ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
+            ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo }),
+            reason: data.reason ?? null,
+            createdById: userId,
+          },
+          tx
+        );
+      }
+
+      if (data.stockQuantity != null && data.stockQuantity !== 0) {
+        await tx.stockHistory.create({
+          data: {
+            productId: data.productId,
+            variantId: variant.id,
+            storeCode,
+            createdById: userId,
+            quantity: data.stockQuantity,
+            reason: data.reason ?? 'Opening stock',
+          },
+        });
+      }
+
+
+      const created = await this.unitOfWork.ProductVariant.findById(variant.id, tx);
+      if (!created) throw new NotFoundError('Variant not found');
+      return toVariantResponse(created);
+    });
+  }
+
+
 
   async getAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>> {
     return this.unitOfWork.ProductVariant.findAll(filters);
@@ -44,71 +113,6 @@ export class ProductVariantService implements IProductVariantService {
   }
 
 
-  async create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto> {
-    return this.unitOfWork.transaction(async (tx) => {
-
-      const variant = await this.unitOfWork.ProductVariant.create(
-        {
-          productId: data.productId,
-          storeCode,
-          createdById: userId,
-          sellingPrice: data.sellingPrice,
-          status: (data.status ?? StatusEnum.Draft) as Status,
-          ...(data.attributes != null && { attributes: data.attributes }),
-          ...(data.sku && { sku: data.sku }),
-          ...(data.name !== undefined && { name: data.name }),
-          ...(data.slug !== undefined && { slug: data.slug }),
-          ...(data.description !== undefined && { description: data.description }),
-          ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
-          ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
-          ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
-          ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
-          ...(data.barcode !== undefined && { barcode: data.barcode }),
-          ...(data.images !== undefined && { images: data.images }),
-          ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
-        },
-        tx
-      );
-
-      // 2. Price goes to the ledger. Null means "not priced yet", so no row is filed.
-      if (data.sellingPrice != null) {
-        await this.unitOfWork.PriceHistory.create(
-          {
-            variantId: variant.id,
-            storeCode,
-            sellingPrice: data.sellingPrice,
-            offerPrice: data.offerPrice ?? null,
-            costPrice: data.costPrice ?? null,
-            compareAtPrice: data.compareAtPrice ?? null,
-            ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
-            reason: data.reason ?? null,
-            createdById: userId,
-          },
-          tx
-        );
-      }
-
-      // 3. Opening stock is booked as a movement so on-hand stays the sum of its history.
-      if (data.stockQuantity != null && data.stockQuantity !== 0) {
-        await tx.stockHistory.create({
-          data: {
-            productId: data.productId,
-            variantId: variant.id,
-            storeCode,
-            createdById: userId,
-            quantity: data.stockQuantity,
-            reason: data.reason ?? 'Opening stock',
-          },
-        });
-      }
-
-      // 4. Re-read so the DTO carries the effective price and stock just booked, then drop the
-      //    internal-only columns so the response keeps its trimmed shape.
-      const created = await this.unitOfWork.ProductVariant.findById(variant.id, tx);
-      if (!created) throw new NotFoundError('Variant not found');
-      return toVariantResponse(created);
-    });
-  }
 
 
   async update(id: number, storeCode: string, data: UpdateProductVariantModel): Promise<ProductVariantResponseDto> {
@@ -129,6 +133,7 @@ export class ProductVariantService implements IProductVariantService {
         (data.sellingPrice !== existing.sellingPrice ||
           (data.costPrice ?? null) !== (existing.costPrice ?? null) ||
           (data.offerPrice !== undefined && (data.offerPrice ?? null) !== (existing.offerPrice ?? null)) ||
+          (data.effectiveTo !== undefined && (data.effectiveTo ?? null)?.getTime() !== (existing.effectiveTo ?? null)?.getTime()) ||
           data.effectiveFrom !== undefined);
       if (priceChanged) {
         await this.unitOfWork.PriceHistory.create(
@@ -140,6 +145,7 @@ export class ProductVariantService implements IProductVariantService {
             offerPrice: data.offerPrice !== undefined ? data.offerPrice : existing.offerPrice,
             costPrice: data.costPrice ?? null,
             ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
+            ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo }),
             reason: data.reason ?? 'Price updated',
             createdById: data.updatedById,
           },

@@ -1,6 +1,5 @@
 'use client';
 import ActionTooltip from '@/components/common/tooltip-action-button';
-import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import VariantRating from './variant-rating';
 import RateVariantButton from './rate-variant-button';
 import { ColumnDef } from '@tanstack/react-table';
@@ -9,6 +8,7 @@ import { History } from 'lucide-react';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { Badge } from '../../ui/badge';
+import { ProductVariantListItemDto } from '@pms/types';
 
 export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListItemDto) => void) =>
   useMemo<ColumnDef<ProductVariantListItemDto>[]>(
@@ -103,6 +103,16 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
           return <div className="text-muted-foreground">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
         },
         meta: { sortingKey: 'costPrice' },
+      },
+      {
+        id: 'offerPrice',
+        accessorKey: 'offerPrice',
+        header: ({ column }) => <DataTableColumnHeader column={column} className="text-left text-xs font-semibold uppercase" title="Offer Price" />,
+        cell: ({ row }) => {
+          const value = row.original.offerPrice;
+          return <div className="text-muted-foreground">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
+        },
+        meta: { sortingKey: 'offerPrice' },
       },
       {
         id: 'margin',

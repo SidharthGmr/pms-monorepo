@@ -202,16 +202,39 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *               sellingPrice:
  *                 type: number
  *                 example: 1099.99
- *                 description: Selling price (required). Filed in the PriceHistory ledger; the variant's own columns cache it.
+ *                 description: List price (required). Filed in the PriceHistory ledger, which is the only place a price lives.
  *               costPrice:
  *                 type: number
  *                 nullable: true
  *                 example: 800.00
  *                 description: Cost price (optional)
+ *               offerPrice:
+ *                 type: number
+ *                 nullable: true
+ *                 example: 400.00
+ *                 description: >
+ *                   Promotional amount for this price period (optional). Filed on the same ledger
+ *                   row as sellingPrice, but only charged while isOffer is true - so an offerPrice
+ *                   sent with isOffer false stages a promotion without applying it.
+ *               isOffer:
+ *                 type: boolean
+ *                 example: false
+ *                 description: >
+ *                   Turns the promotion on. A column on the variant, not the ledger. With it on and
+ *                   an offerPrice set, carts and orders are billed the offerPrice; otherwise the
+ *                   sellingPrice. Defaults to false.
  *               effectiveFrom:
  *                 type: string
  *                 format: date-time
  *                 description: When this variant becomes effective (defaults to now)
+ *               effectiveTo:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *                 description: >
+ *                   Ends this price period. Normally omitted - the next price closes the row
+ *                   automatically. Set it to time-box a price: once it passes the variant has NO
+ *                   effective price and reads as unpriced until another row takes over.
  *               reason:
  *                 type: string
  *                 nullable: true
@@ -226,8 +249,8 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *         description: Unauthorized - Invalid or missing token
  *     description: >
  *       Records a variant and files its price in the PriceHistory ledger, which is the source of
- *       truth for what the variant costs; the variant's own price columns are a cache of the
- *       effective ledger row. By default the previously active variant is deactivated (a price
+ *       truth for what the variant costs - price is not a column on the variant, it is resolved
+ *       from the effective ledger row on every read. By default the previously active variant is deactivated (a price
  *       change) - pass supersedePrevious=false to add a sibling variant instead. storeCode and
  *       createdById are taken from the authenticated user's token.
  */
@@ -267,14 +290,69 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
  *               barcode:
  *                 type: string
  *                 nullable: true
+ *               attributes:
+ *                 type: object
+ *                 additionalProperties:
+ *                   oneOf:
+ *                     - type: string
+ *                     - type: number
+ *                     - type: boolean
+ *                 example: { "size": "L", "color": "Red" }
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               lowStockThreshold:
  *                 type: integer
  *                 nullable: true
  *               isActive:
  *                 type: boolean
+ *               isOffer:
+ *                 type: boolean
+ *                 description: >
+ *                   Turns the promotion on or off. A plain column, so toggling it does NOT file a
+ *                   new ledger row - price history is left untouched.
+ *               sellingPrice:
+ *                 type: number
+ *                 description: Reprice. Appended to the PriceHistory ledger when it differs from the effective row.
+ *               offerPrice:
+ *                 type: number
+ *                 nullable: true
+ *                 description: >
+ *                   Part of the same reprice - a changed offer amount files a new ledger row too.
+ *                   Omit it to carry the current offer amount forward unchanged.
+ *               costPrice:
+ *                 type: number
+ *                 nullable: true
+ *               effectiveFrom:
+ *                 type: string
+ *                 format: date-time
+ *                 description: When the repriced row takes effect (defaults to now).
+ *               effectiveTo:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *                 description: >
+ *                   Ends this price period. Normally omitted - the next price closes the row
+ *                   automatically. Set it to time-box a price: once it passes the variant has NO
+ *                   effective price and reads as unpriced until another row takes over.
+ *               stockQuantity:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Target on-hand figure; the delta needed to reach it is booked as a stock movement.
+ *               reason:
+ *                 type: string
+ *                 nullable: true
+ *     description: >
+ *       Plain columns (name, sku, barcode, attributes, images, threshold, isActive, isOffer) are
+ *       written directly. Price and stock are not columns: a changed sellingPrice/offerPrice/costPrice
+ *       is appended to the PriceHistory ledger, and a changed stockQuantity is booked as a stock
+ *       adjustment - so neither history is ever overwritten.
  *     responses:
  *       200:
  *         description: Product variant updated successfully
+ *       403:
+ *         description: Variant does not belong to your store
  *       404:
  *         description: Variant not found
  */

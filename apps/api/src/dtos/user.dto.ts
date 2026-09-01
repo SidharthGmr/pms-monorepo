@@ -72,4 +72,3 @@ export interface OtpDto {
   emailVerificationExpires?: Date | null;
 }
 
-// export interface UpdateUserDto extends Partial<CreateUserDto> {}

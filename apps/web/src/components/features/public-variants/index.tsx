@@ -7,12 +7,16 @@ import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProduct
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import { ChevronLeft, ChevronRight, Package, PackageX } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PublicVariantFilter, { DEFAULT_SORT } from './filter';
 import VariantCard, { VariantCardSkeleton } from './variant-card';
+import { ProductVariantListItemDto } from '@pms/types';
 
 export default function PublicVariantList() {
   const searchParams = useSearchParams();
+
+  const [data, setData] = useState<ProductVariantListItemDto[]>([]);
+  const [recordCount, setRecordCount] = useState<number>(0);
 
   const [filterParams, setFilterParams] = useState<ProductVariantFilterParams>({
     search: searchParams.get('search') || '',
@@ -24,13 +28,22 @@ export default function PublicVariantList() {
     sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
-  const getAllPublicVariantsResponse = useGetAllPublicProductVariants(filterParams);
-  const variants = getAllPublicVariantsResponse.data?.data?.data?.data ?? [];
-  const totalRecord = getAllPublicVariantsResponse.data?.data?.data?.totalRecord ?? 0;
+  //const getAllPublicVariantsResponse = useGetAllPublicProductVariants(filterParams);
+
+  const getAllProductVariantsResponse = useGetAllPublicProductVariants({ ...filterParams }, true);
+
+  useEffect(() => {
+    if (getAllProductVariantsResponse.status === 'success' && getAllProductVariantsResponse.data?.data?.data?.data) {
+      setData(getAllProductVariantsResponse.data?.data?.data?.data);
+      setRecordCount(getAllProductVariantsResponse.data?.data?.data?.totalRecord);
+    }
+  }, [getAllProductVariantsResponse.status, getAllProductVariantsResponse.data]);
+
+  const totalRecord = recordCount;
 
   const page = filterParams.page ?? 1;
   const pageSize = filterParams.recordPerPage || config.recordPerPage;
-  const pageCount = Math.max(1, Math.ceil(totalRecord / pageSize));
+  const pageCount = Math.max(1, Math.ceil(recordCount / pageSize));
   const hasFilters = !!filterParams.search || filterParams.categoryId !== undefined || filterParams.productId !== undefined;
 
   const resetForm = () => {
@@ -45,7 +58,7 @@ export default function PublicVariantList() {
     });
   };
 
-  if (getAllPublicVariantsResponse.isLoading) {
+  if (getAllProductVariantsResponse.isLoading) {
     return (
       <>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -57,13 +70,13 @@ export default function PublicVariantList() {
     );
   }
 
-  if (getAllPublicVariantsResponse.isError) {
+  if (getAllProductVariantsResponse.isError) {
     return (
       <Card>
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <PackageX className="h-8 w-8 text-destructive/70" />
           <p className="text-sm text-muted-foreground">Could not load variants right now.</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => getAllPublicVariantsResponse.refetch()}>
+          <Button type="button" variant="outline" size="sm" onClick={() => getAllProductVariantsResponse.refetch()}>
             Try again
           </Button>
         </div>
@@ -89,15 +102,15 @@ export default function PublicVariantList() {
       />
 
       <div className="text-sm text-muted-foreground">
-        {getAllPublicVariantsResponse.isLoading
+        {getAllProductVariantsResponse.isLoading
           ? 'Loading…'
           : totalRecord === 0
             ? 'No variants'
             : `${totalRecord} variant${totalRecord === 1 ? '' : 's'}`}
-        {getAllPublicVariantsResponse.isFetching && !getAllPublicVariantsResponse.isLoading && <span className="ml-2 text-xs">(updating…)</span>}
+        {getAllProductVariantsResponse.isFetching && !getAllProductVariantsResponse.isLoading && <span className="ml-2 text-xs">(updating…)</span>}
       </div>
 
-      {variants.length === 0 ? (
+      {data.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <span className="rounded-full bg-primary/10 p-3 text-primary">
@@ -114,7 +127,7 @@ export default function PublicVariantList() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {variants.map((variant) => (
+            {data.map((variant) => (
               <VariantCard key={variant.id} variant={variant} />
             ))}
           </div>
@@ -125,7 +138,7 @@ export default function PublicVariantList() {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={page <= 1 || getAllPublicVariantsResponse.isFetching}
+                disabled={page <= 1 || getAllProductVariantsResponse.isFetching}
                 onClick={() => setFilterParams((prev) => ({ ...prev, page: page - 1 }))}
               >
                 <ChevronLeft className="mr-1 h-4 w-4" />
@@ -138,7 +151,7 @@ export default function PublicVariantList() {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={page >= pageCount || getAllPublicVariantsResponse.isFetching}
+                disabled={page >= pageCount || getAllProductVariantsResponse.isFetching}
                 onClick={() => setFilterParams((prev) => ({ ...prev, page: page + 1 }))}
               >
                 Next

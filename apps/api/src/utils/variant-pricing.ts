@@ -8,6 +8,9 @@ import prisma from '../config/prisma';
  */
 
 export interface EffectivePrice {
+  /** The period this price is in force for, straight off the ledger row it came from. */
+  effectiveFrom: Date;
+  effectiveTo: Date | null;
   sellingPrice: number;
   /** The promotional amount on this ledger row. Only charged while the variant's `isOffer` is on. */
   offerPrice: number | null;
@@ -34,12 +37,16 @@ export function effectiveOn(date: Date): Prisma.PriceHistoryWhereInput {
 export const EFFECTIVE_ORDER: Prisma.PriceHistoryOrderByWithRelationInput[] = [{ effectiveFrom: 'desc' }, { id: 'desc' }];
 
 export function toEffectivePrice(row: {
+  effectiveFrom: Date;
+  effectiveTo: Date | null;
   sellingPrice: Prisma.Decimal;
   offerPrice: Prisma.Decimal | null;
   costPrice: Prisma.Decimal | null;
   compareAtPrice: Prisma.Decimal | null;
 }): EffectivePrice {
   return {
+    effectiveFrom: row.effectiveFrom,
+    effectiveTo: row.effectiveTo,
     sellingPrice: row.sellingPrice.toNumber(),
     offerPrice: toNumber(row.offerPrice),
     costPrice: toNumber(row.costPrice),

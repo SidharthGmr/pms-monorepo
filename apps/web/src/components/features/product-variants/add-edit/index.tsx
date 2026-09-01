@@ -53,7 +53,10 @@ const defaultValues: VariantFormValues = {
   stockQuantity: undefined,
   sellingPrice: undefined,
   costPrice: undefined,
+  offerPrice: undefined,
+  isOffer: false,
   effectiveFrom: null,
+  effectiveTo: null,
   reason: '',
   rows: [emptyRow],
 };
@@ -102,6 +105,12 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const rows = watch('rows');
   const sellingPrice = watch('sellingPrice');
   const costPrice = watch('costPrice');
+  const offerPrice = watch('offerPrice');
+  const isOffer = watch('isOffer');
+  const savingsPercent =
+    offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0
+      ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100)
+      : 0;
   const selectedProductId = watch('productId');
 
   const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
@@ -126,7 +135,10 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
       stockQuantity: variant.stockQuantity ?? undefined,
       sellingPrice: variant.sellingPrice ?? undefined,
       costPrice: variant.costPrice ?? undefined,
+      offerPrice: variant.offerPrice ?? undefined,
+      isOffer: variant.isOffer ?? false,
       effectiveFrom: null,
+      effectiveTo: variant.effectiveTo ? new Date(variant.effectiveTo) : null,
       reason: '',
       rows: builtRows.length ? builtRows : [emptyRow],
     });
@@ -147,7 +159,10 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
     ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
     ...(model.costPrice != null && { costPrice: Number(model.costPrice) }),
+    ...(model.offerPrice != null && { offerPrice: Number(model.offerPrice) }),
+    ...(model.isOffer !== undefined && { isOffer: model.isOffer }),
     ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
+    ...(model.effectiveTo && { effectiveTo: model.effectiveTo.toISOString() }),
     ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
   });
 
@@ -159,8 +174,14 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     lowStockThreshold: model.lowStockThreshold ?? null,
     isActive: model.isActive ?? true,
     ...(model.sellingPrice != null && { sellingPrice: Number(model.sellingPrice) }),
+    // Sent unconditionally: the field being cleared has to reach the API as null, or the
+    // reprice would carry the old offer forward and the promotion could never be removed.
+    offerPrice: model.offerPrice != null ? Number(model.offerPrice) : null,
+    isOffer: model.isOffer ?? false,
     costPrice: model.costPrice ?? null,
     ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
+    // Sent unconditionally so clearing the field reaches the API as null and reopens the period.
+    effectiveTo: model.effectiveTo ? model.effectiveTo.toISOString() : null,
     ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
     ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
     ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
@@ -466,6 +487,53 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                 />
                 <FormField
                   control={control}
+                  name="offerPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Offer price</FormLabel>
+                      <FormControl>
+                        <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
+                      </FormControl>
+                      {/* Says plainly which price will be charged, so the switch is never ambiguous. */}
+                      <p className="text-[11px] text-muted-foreground">
+                        {isOffer && offerPrice != null
+                          ? 'Customers are charged this while the offer is on.'
+                          : offerPrice != null
+                            ? 'Staged - turn the offer on to charge it.'
+                            : 'Leave empty for no offer.'}
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name="isOffer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Offer active</FormLabel>
+                      <FormControl>
+                        <div className="flex h-10 items-center gap-2.5">
+                          <Switch checked={field.value ?? false} onCheckedChange={field.onChange} aria-label="Offer active" />
+                          <span className="text-sm text-muted-foreground">
+                            {field.value ? (
+                              savingsPercent > 0 ? (
+                                <span className="font-medium text-emerald-600 dark:text-emerald-500">{savingsPercent}% off</span>
+                              ) : (
+                                'On'
+                              )
+                            ) : (
+                              'Off'
+                            )}
+                          </span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
                   name="effectiveFrom"
                   render={({ field }) => (
                     <FormItem>
@@ -479,6 +547,32 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                           buttonClass="w-full"
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name="effectiveTo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price effective to</FormLabel>
+                      <FormControl>
+                        <DateRangePicker
+                          value={field.value ? { from: field.value } : undefined}
+                          onSelect={(range) => field.onChange(range?.from ?? null)}
+                          numberOfMonthsToShow={1}
+                          placeholder="No end date"
+                          buttonClass="w-full"
+                        />
+                      </FormControl>
+                      {/* This end date makes the variant unpriced, not merely un-discounted -
+                          worth saying outright, since it is the opposite of what most expect. */}
+                      <p className="text-[11px] text-muted-foreground">
+                        {field.value
+                          ? 'After this date the variant has no price and cannot be bought.'
+                          : 'Leave empty to keep this price until the next one replaces it.'}
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

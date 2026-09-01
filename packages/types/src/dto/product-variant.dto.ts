@@ -12,18 +12,19 @@ export interface ProductVariantResponseDto {
   rating: number | null,
   ratingCount: number | null,
   stockQuantity: number;
-  /** The list price. Still sent while an offer runs, so a client can strike it through. */
   sellingPrice: number | null;
-  /** The promotional amount on the effective ledger row; null when none is set. */
   offerPrice: number | null;
   costPrice: number | null;
   lowStockThreshold: number | null;
   description: string | null;
   isActive: boolean;
-  /** Whether the offer is live. Charged price is `isOffer && offerPrice != null ? offerPrice : sellingPrice`. */
   isOffer: boolean;
   createdById: string;
+  updatedById?: string | null;
   createdAt: Date;
+  updatedAt: Date | null;
+  effectiveFrom: Date | null;
+  effectiveTo: Date | null;
 }
 
 export interface ProductVariantListItemDto extends ProductVariantResponseDto {
@@ -31,5 +32,10 @@ export interface ProductVariantListItemDto extends ProductVariantResponseDto {
     id: number;
     name: string;
     slug: string;
+    categoryId: number;
+    /** Fallback when the variant has no photo of its own. */
+    images: string[];
+    /** Storefront cards label the card with this. */
+    category?: { name: string; images: string[] } | null;
   };
 }

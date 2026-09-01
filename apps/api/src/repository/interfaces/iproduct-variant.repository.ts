@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../../dtos/list-response.dto';
 import { ProductVariantInternalDto, VariantRatingDto } from '../../dtos/product-variant.dto';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '../../models/product-variant.model';
@@ -17,7 +17,7 @@ export interface IProductVariantRepository {
    * the caller books those into PriceHistory and stockHistory afterwards. Accepts an
    * optional transaction client so it can run inside the product create/update transaction.
    */
-  create(data: CreateProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto>;
+  create(data: ProductVariantModel, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto>;
 
   /** On-hand stock for a variant, summed from its stockHistory movements. */
   getVariantStock(variantId: number, tx?: Prisma.TransactionClient): Promise<number>;

@@ -1,6 +1,6 @@
 // Mirrors the API's PriceHistory rows (`/price-histories/...`).
 // Append-only ledger: each row is the price that took effect at `effectiveFrom`.
-// The variant's own sellingPrice/costPrice is just a cache of the effective row.
+// The ledger is the only place a price lives - the variant has no price column to cache it.
 
 export interface PriceHistoryProductDto {
   id: number;

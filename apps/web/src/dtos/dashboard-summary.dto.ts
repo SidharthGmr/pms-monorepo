@@ -63,21 +63,6 @@ export interface DistributionDto {
   percentage: number;
 }
 
-// export interface DashboardSummaryDto {
-//   products: {
-//     total: number;
-//     recent: DashboardProductDto[];
-//   };
-//   attributes: {
-//     total: number;
-//     recent: DashboardAttributeDto[];
-//   };
-//   todaySale: number;
-//   totalMonthSale: number;
-//   totalStock: number;
-//   productDistribution?: DistributionDto[];
-// }
-
 
 export interface DashboardSummaryDto {
   products: Products[]

@@ -5,7 +5,8 @@ export interface ProductVariantModel {
   storeCode: string;
   attributes?: any | null;
   sku?: string | null;
-  name: string;
+  /** Optional: the schema has `name String?`, and a variant is identified by its attributes. */
+  name?: string | null;
   slug?: string | null;
   description?: string | null;
   seoTitle?: string | null;
@@ -18,12 +19,13 @@ export interface ProductVariantModel {
   stockQuantity?: number | null;
   costPrice?: number | null;
   sellingPrice: number | null;
-  /** Promotional amount for this price period; only charged while `isOffer` is on. */
   offerPrice?: number | null;
   compareAtPrice?: number | null;
+  /** Defaults to now in the ledger. Optional because the variant row itself holds no price. */
   effectiveFrom?: Date;
+  effectiveTo?: Date | null;
   reason?: string | null;
-  /** Turns the promotion on. Without an `offerPrice` it has no effect on what is charged. */
+  /** Optional like every other column with a DB default (`Boolean @default(false)`). */
   isOffer?: boolean;
   createdById: string;
 }

@@ -35,7 +35,8 @@ function aggregate(variants: ProductVariantListItemDto[]): ProductPricingMap {
   const ordered = [...variants].sort((a, b) => a.id - b.id);
 
   for (const variant of ordered) {
-    const productId = variant.productId;
+    // The list row carries its parent nested; there is no top-level productId on it.
+    const productId = variant.product.id;
     const existing = map.get(productId);
 
     // Only priced variants are listed: the chips show a price range, and an unpriced row
@@ -46,7 +47,8 @@ function aggregate(variants: ProductVariantListItemDto[]): ProductPricingMap {
           {
             id: variant.id,
             sku: variant.sku ?? '',
-            attributes: variant.attributes ?? null,
+            // The shared DTO types this as JsonValue; the chips only ever render scalars.
+            attributes: (variant.attributes as Record<string, string | number | boolean> | null) ?? null,
             stockQuantity: variant.stockQuantity ?? 0,
             sellingPrice: variant.sellingPrice,
             costPrice: variant.costPrice ?? null,

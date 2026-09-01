@@ -3,10 +3,9 @@ import { Prisma, Status } from '@prisma/client';
 export interface CreateProductVariantModel {
   productId: number;
   storeCode: string;
-  attributes?: Prisma.InputJsonValue; // e.g. { "size": "L", "color": "Red" }
+  attributes?: Prisma.InputJsonValue;
   sku?: string;
   name?: string | null;
-  /** Presentational only - `sku` is the unique handle (`@@unique([storeCode, sku])`). */
   slug?: string | null;
   description?: string | null;
   seoTitle?: string | null;
@@ -17,18 +16,12 @@ export interface CreateProductVariantModel {
   images?: string[];
   lowStockThreshold?: number | null;
   stockQuantity?: number;
-  /**
-   * Null means "not priced yet", which is distinct from a price of zero - no PriceHistory
-   * row is filed at all in that case, and the variant reads back as unpriced.
-   */
   sellingPrice: number | null;
-  /** Promotional amount for this price period; only charged while `isOffer` is on. */
   offerPrice?: number | null;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date;
   reason?: string | null;
-  /** Turns the promotion on. Without an `offerPrice` it has no effect on what is charged. */
   isOffer?: boolean;
   createdById: string;
 }
@@ -56,6 +49,8 @@ export interface UpdateProductVariantModel {
   offerPrice?: number | null;
   costPrice?: number | null;
   effectiveFrom?: Date;
+  /** Ends the repriced period; null leaves it open-ended as usual. */
+  effectiveTo?: Date | null;
   /** Target on-hand stock; a delta movement is booked to reach it. */
   stockQuantity?: number | null;
   reason?: string | null;

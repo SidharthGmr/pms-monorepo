@@ -75,7 +75,14 @@ export class OrderService implements IOrderService {
           // The ledger holds the amounts, the variant holds the switch - so the order line is
           // priced from both, matching what the cart charged and the card advertised.
           const unitPrice = payablePrice(
-            { sellingPrice: priceRow.sellingPrice, offerPrice: priceRow.offerPrice, costPrice: priceRow.costPrice, compareAtPrice: priceRow.compareAtPrice },
+            {
+              effectiveFrom: priceRow.effectiveFrom,
+              effectiveTo: priceRow.effectiveTo,
+              sellingPrice: priceRow.sellingPrice,
+              offerPrice: priceRow.offerPrice,
+              costPrice: priceRow.costPrice,
+              compareAtPrice: priceRow.compareAtPrice,
+            },
             variant.isOffer
           ) as number;
           const totalPrice = unitPrice * item.quantity;

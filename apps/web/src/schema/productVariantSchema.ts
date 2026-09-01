@@ -33,7 +33,10 @@ const variantFormFields = z.object({
   stockQuantity: updateProductVariantFields.shape.stockQuantity,
   sellingPrice: updateProductVariantFields.shape.sellingPrice,
   costPrice: productVariantFields.shape.costPrice,
+  offerPrice: productVariantFields.shape.offerPrice,
+  isOffer: updateProductVariantFields.shape.isOffer,
   effectiveFrom: z.date().nullable().optional(),
+  effectiveTo: z.date().nullable().optional(),
   reason: productVariantFields.shape.reason,
   rows: z.array(variantAttributeRow).default([]),
 });
@@ -54,6 +57,22 @@ export const getProductVariantSchema = (isFirstVariant: boolean, isEdit = false)
     if (!isEdit && !values.productId) {
       ctx.addIssue({ code: 'custom', path: ['productId'], message: 'Pick the product this variant belongs to' });
     }
+
+    // Offer rules apply on create and edit alike - the API tolerates both of these and
+    // quietly charges the selling price, which reads as "the promotion silently did nothing".
+    if (values.isOffer && values.offerPrice == null) {
+      ctx.addIssue({ code: 'custom', path: ['offerPrice'], message: 'Set an offer price, or turn the offer off.' });
+    }
+    if (values.offerPrice != null && values.sellingPrice != null && Number(values.offerPrice) >= Number(values.sellingPrice)) {
+      ctx.addIssue({ code: 'custom', path: ['offerPrice'], message: 'The offer price must be lower than the selling price.' });
+    }
+
+    // Mirrors the API rule: a period ending at or before it starts matches nothing, so the
+    // price would be invisible the moment it is saved.
+    if (values.effectiveTo != null && values.effectiveTo <= (values.effectiveFrom ?? new Date())) {
+      ctx.addIssue({ code: 'custom', path: ['effectiveTo'], message: 'The end date must be after the start date.' });
+    }
+
     if (isEdit) return;
 
     const rows = values.rows ?? [];

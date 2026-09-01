@@ -9,7 +9,13 @@ export interface CreateProductVariantModel {
   stockQuantity?: number;
   sellingPrice: number;
   costPrice?: number | null;
+  /** Promotional amount for this price period; only charged while `isOffer` is on. */
+  offerPrice?: number | null;
+  /** Turns the promotion on. Without an `offerPrice` the API falls back to `sellingPrice`. */
+  isOffer?: boolean;
   effectiveFrom?: Date | string;
+  /** Ends this price period. Once it passes the variant has no effective price. */
+  effectiveTo?: Date | string | null;
   reason?: string | null;
   supersedePrevious?: boolean;
 }
@@ -44,9 +50,14 @@ export interface UpdateProductVariantModel {
   images?: string[];
   lowStockThreshold?: number | null;
   isActive?: boolean;
+  /** A plain column - toggling it does not file a new price row. */
+  isOffer?: boolean;
   sellingPrice?: number;
+  /** Part of the same reprice as `sellingPrice`; omit to carry the current offer forward. */
+  offerPrice?: number | null;
   costPrice?: number | null;
   effectiveFrom?: string | null;
+  effectiveTo?: string | null;
   stockQuantity?: number | null;
   reason?: string | null;
 }

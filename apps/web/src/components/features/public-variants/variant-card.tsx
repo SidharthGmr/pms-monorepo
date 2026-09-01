@@ -8,13 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import { useAddToCart } from '@/hooks/service-hooks/useCartService';
 import { useGetAllWishlists } from '@/hooks/service-hooks/useWishlistService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { ProductVariantListItemDto } from '@pms/types';
 import { ImageOff, ShoppingCart } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -24,7 +24,7 @@ const attributesOf = (variant: ProductVariantListItemDto): { key: string; value:
   return Object.entries(attributes).map(([key, value]) => ({ key, value: String(value) }));
 };
 
-const imageFor = (variant: ProductVariantListItemDto): string | undefined => variant.images?.[0] ?? variant.product?.images?.[0];
+const imageFor = (variant: ProductVariantListItemDto): string | undefined => variant.images?.[0] ?? variant.product?.name?.[0];
 
 interface VariantCardProps {
   variant: ProductVariantListItemDto;
