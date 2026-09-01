@@ -13,11 +13,11 @@ import VariantCard, { VariantCardSkeleton } from './variant-card';
 
 export default function PublicVariantList() {
   const searchParams = useSearchParams();
-  const initialCategoryId = searchParams.get('categoryId') ? +searchParams.get('categoryId')! : undefined;
 
   const [filterParams, setFilterParams] = useState<ProductVariantFilterParams>({
     search: searchParams.get('search') || '',
-    categoryId: initialCategoryId,
+    categoryId: searchParams.get('categoryId') ? +searchParams.get('categoryId')! : undefined,
+    productId: searchParams.get('productId') ? +searchParams.get('productId')! : undefined,
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     sortBy: searchParams.get('sortBy') || 'createdAt',
@@ -31,18 +31,31 @@ export default function PublicVariantList() {
   const page = filterParams.page ?? 1;
   const pageSize = filterParams.recordPerPage || config.recordPerPage;
   const pageCount = Math.max(1, Math.ceil(totalRecord / pageSize));
-  const hasFilters = !!filterParams.search || filterParams.categoryId !== undefined;
+  const hasFilters = !!filterParams.search || filterParams.categoryId !== undefined || filterParams.productId !== undefined;
 
   const resetForm = () => {
     setFilterParams({
       search: '',
       categoryId: undefined,
+      productId: undefined,
       page: 1,
       recordPerPage: config.recordPerPage,
       sortBy: 'createdAt',
       sortDirection: 'DESC',
     });
   };
+
+  if (getAllPublicVariantsResponse.isLoading) {
+    return (
+      <>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: pageSize }, (_, i) => (
+            <VariantCardSkeleton key={i} />
+          ))}
+        </div>
+      </>
+    );
+  }
 
   if (getAllPublicVariantsResponse.isError) {
     return (
@@ -62,11 +75,13 @@ export default function PublicVariantList() {
     <div className="space-y-4">
       <PublicVariantFilter
         initialSearch={filterParams.search}
-        initialCategoryId={initialCategoryId}
+        initialCategoryId={filterParams.categoryId}
+        initialProductId={filterParams.productId}
         initialSort={filterParams.sortBy && filterParams.sortDirection ? `${filterParams.sortBy}:${filterParams.sortDirection}` : DEFAULT_SORT}
         resetForm={resetForm}
         onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || '', page: 1 }))}
         onCategoryChange={(categoryId) => setFilterParams((prev) => ({ ...prev, categoryId, page: 1 }))}
+        onProductChange={(productId) => setFilterParams((prev) => ({ ...prev, productId, page: 1 }))}
         onSortChange={(sort) => {
           const [sortBy, sortDirection] = sort.split(':');
           setFilterParams((prev) => ({ ...prev, sortBy, sortDirection, page: 1 }));
@@ -82,13 +97,7 @@ export default function PublicVariantList() {
         {getAllPublicVariantsResponse.isFetching && !getAllPublicVariantsResponse.isLoading && <span className="ml-2 text-xs">(updating…)</span>}
       </div>
 
-      {getAllPublicVariantsResponse.isLoading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: pageSize }, (_, i) => (
-            <VariantCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : variants.length === 0 ? (
+      {variants.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <span className="rounded-full bg-primary/10 p-3 text-primary">
@@ -97,14 +106,14 @@ export default function PublicVariantList() {
             <div className="space-y-1">
               <p className="font-medium">{hasFilters ? 'Nothing matches those filters' : 'No variants available yet'}</p>
               <p className="text-sm text-muted-foreground">
-                {hasFilters ? 'Try a different search or category.' : 'Check back soon — new products are on their way.'}
+                {hasFilters ? 'Try a different search, product or category.' : 'Check back soon — new products are on their way.'}
               </p>
             </div>
           </div>
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {variants.map((variant) => (
               <VariantCard key={variant.id} variant={variant} />
             ))}

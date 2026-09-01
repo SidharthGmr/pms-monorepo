@@ -69,11 +69,11 @@ export default function VariantRating({ variantId, rating, ratingCount, interact
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <StarRating value={shown} size={size} onChange={rateVariant.isPending ? undefined : submit} />
-      {rateVariant.isPending ? (
+      {/* {rateVariant.isPending ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
       ) : (
         <span className="text-[11px] font-medium tabular-nums text-muted-foreground">{myRating ? `Your rating · ${label}` : label}</span>
-      )}
+      )} */}
     </div>
   );
 }

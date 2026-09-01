@@ -34,6 +34,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
+import PublicVariantList from '../features/public-variants';
 
 /* -------------------------------------------------------------------------- */
 /*  Presentation copy. There is no CMS behind the API yet, so the promo tiles,  */
@@ -64,15 +65,31 @@ const PROMO_TILES = [
 ];
 
 const TESTIMONIALS = [
-  { quote: 'Reliable product, consistently delivers. Ordering was simple and it arrived ahead of the estimate.', name: 'Stefanie Rashford', role: 'Founder' },
+  {
+    quote: 'Reliable product, consistently delivers. Ordering was simple and it arrived ahead of the estimate.',
+    name: 'Stefanie Rashford',
+    role: 'Founder',
+  },
   { quote: 'Excellent product, A+ customer service. The team answered every question before I bought.', name: 'Augusta Wind', role: 'Web Designer' },
   { quote: 'Impressive quality, durable and reliable. Exactly what was described on the listing.', name: 'Reema Ghurde', role: 'Manager' },
 ];
 
 const BLOG_POSTS = [
-  { date: 'July 3, 2026', title: 'The most innovative things happening with online retail', excerpt: 'How storefronts are changing as inventory, pricing and fulfilment move closer together.' },
-  { date: 'July 3, 2026', title: 'Seven answers to the most frequently asked questions', excerpt: 'The questions shoppers ask most often before placing a first order, answered plainly.' },
-  { date: 'July 3, 2026', title: 'Meet the people behind the products you buy', excerpt: 'A look at the suppliers and makers who keep the shelves stocked week after week.' },
+  {
+    date: 'July 3, 2026',
+    title: 'The most innovative things happening with online retail',
+    excerpt: 'How storefronts are changing as inventory, pricing and fulfilment move closer together.',
+  },
+  {
+    date: 'July 3, 2026',
+    title: 'Seven answers to the most frequently asked questions',
+    excerpt: 'The questions shoppers ask most often before placing a first order, answered plainly.',
+  },
+  {
+    date: 'July 3, 2026',
+    title: 'Meet the people behind the products you buy',
+    excerpt: 'A look at the suppliers and makers who keep the shelves stocked week after week.',
+  },
 ];
 
 const BRANDS = ['EVM', 'HUAWEI', 'CONNECT', 'HACKETT', 'RIYAN', 'VERCELLI'];
@@ -445,273 +462,11 @@ export default function EKarobarHome() {
           ))}
         </div>
       </section>
-
-      {/* ----------------------------- Shop by category -------------------------- */}
-      {categories.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-          <SectionHeading title="Shop by category" href="#all-products" cta="Browse all" />
-          <div className="flex flex-wrap gap-4">
-            {categories.map((item, index) => (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => {
-                  setCategory(item.name);
-                  document.getElementById('all-products')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="group flex w-28 flex-col items-center gap-2"
-              >
-                <span
-                  className={`flex h-24 w-28 items-center justify-center overflow-hidden rounded-xl transition-transform group-hover:-translate-y-1 ${
-                    item.image ? 'bg-muted/40' : CATEGORY_TONES[index % CATEGORY_TONES.length]
-                  }`}
-                >
-                  {item.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <Package className="h-8 w-8 text-slate-700/60" />
-                  )}
-                </span>
-                <span className="line-clamp-1 text-xs font-semibold">{item.name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ----------------------------- Popular products -------------------------- */}
-      <section id="popular" className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-        <SectionHeading title="Popular products" href="#all-products" />
-        {isLoading ? (
-          <CardSkeletons />
-        ) : popular.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">Nothing published yet.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {popular.map((variant) => (
-              <VariantCard key={`popular-${variant.id}`} variant={variant} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ------------------------------- Banner pair ----------------------------- */}
-      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="flex items-center justify-between gap-4 overflow-hidden rounded-2xl bg-muted/50 p-6">
-            <div>
-              <h3 className="max-w-[16rem] text-lg font-bold leading-tight">Fresh stock lands every week</h3>
-              <p className="mt-1 max-w-[18rem] text-sm text-muted-foreground">New SKUs are published the moment they are priced.</p>
-              <a href="#new-arrivals" className="mt-4 inline-block">
-                <Button className="rounded-full font-semibold">Shop now</Button>
-              </a>
-            </div>
-            <Truck className="hidden h-24 w-24 shrink-0 text-muted-foreground/25 sm:block" />
-          </div>
-          <div className="flex items-center justify-between gap-4 overflow-hidden rounded-2xl bg-primary/10 p-6">
-            <div>
-              <h3 className="max-w-[16rem] text-lg font-bold leading-tight">Every price, fully traceable</h3>
-              <p className="mt-1 max-w-[18rem] text-sm text-muted-foreground">You see the price in force right now, not a stale cache.</p>
-              <a href="#all-products" className="mt-4 inline-block">
-                <Button variant="outline" className="rounded-full bg-background font-semibold">
-                  Browse catalogue
-                </Button>
-              </a>
-            </div>
-            <ShieldCheck className="hidden h-24 w-24 shrink-0 text-primary/25 sm:block" />
-          </div>
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="">
+          <PublicVariantList />
         </div>
       </section>
-
-      {/* ------------------------------ Latest products -------------------------- */}
-      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-        <SectionHeading title="Latest products" href="#all-products" />
-        {isLoading ? (
-          <CardSkeletons />
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {latest.map((variant) => (
-              <VariantCard key={`latest-${variant.id}`} variant={variant} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* --------------------------------- Trending ------------------------------ */}
-      {categories.length > 0 && (
-        <section className="bg-muted/40 py-10">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-              <h2 className="mr-2 text-xl font-bold tracking-tight sm:text-2xl">Trending products</h2>
-              <button
-                type="button"
-                onClick={() => setTrendingTab(undefined)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                  trendingTab === undefined ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                All
-              </button>
-              {categories.map(({ name }) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setTrendingTab(name)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                    trendingTab === name ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {trending.slice(0, 8).map((variant) => (
-                <VariantCard key={`trending-${variant.id}`} variant={variant} compact />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ------------------------------- New arrivals ---------------------------- */}
-      <section id="new-arrivals" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
-          <div className="flex flex-col justify-center rounded-2xl bg-rose-600 p-6 text-white">
-            <h2 className="text-2xl font-extrabold leading-tight">New arrival</h2>
-            <p className="mt-2 text-sm text-white/85">The most recently added SKUs in the store, newest first.</p>
-            <a href="#all-products" className="mt-5 inline-flex items-center gap-1 text-sm font-bold underline-offset-4 hover:underline">
-              See everything
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-            {newArrivals.map((variant) => (
-              <VariantCard key={`new-${variant.id}`} variant={variant} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------- All products ---------------------------- */}
-      <section id="all-products" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              Our catalogue
-            </span>
-            <div className="flex items-baseline gap-2.5">
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">All products</h2>
-              {!isLoading && !isError && (
-                <span className="text-sm font-medium text-muted-foreground">
-                  {recordCount} {recordCount === 1 ? 'item' : 'items'}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <div className="relative w-full sm:w-64">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                className="h-11 rounded-xl bg-background pl-10"
-              />
-            </div>
-            <select
-              aria-label="Sort products"
-              value={sortKey}
-              onChange={(event) => setSortKey(event.target.value)}
-              className="h-11 rounded-xl border border-border bg-background px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {categories.length > 1 && (
-          <div className="mb-6 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setCategory(undefined)}
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-                category === undefined ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground'
-              }`}
-            >
-              All
-            </button>
-            {categories.map(({ name }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setCategory(name)}
-                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-                  category === name ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground'
-                }`}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {isLoading ? (
-          <CardSkeletons count={10} />
-        ) : isError ? (
-          <div className="rounded-2xl border border-dashed border-border py-20 text-center">
-            <p className="text-sm font-semibold">Couldn&apos;t load products</p>
-            <p className="mt-1 text-xs text-muted-foreground">Something went wrong. Please try again in a moment.</p>
-          </div>
-        ) : visible.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border py-20 text-center">
-            <p className="text-sm font-semibold">No products found</p>
-            <p className="mt-1 text-xs text-muted-foreground">Try a different search term.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {visible.map((variant) => (
-              <VariantCard key={variant.id} variant={variant} />
-            ))}
-          </div>
-        )}
-
-        {!isLoading && !isError && recordCount > 0 && !category && (
-          <div className="mt-10 flex flex-col items-center gap-4 border-t border-border pt-6 sm:flex-row sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing <span className="font-semibold text-foreground">{firstOnPage}</span>–
-              <span className="font-semibold text-foreground">{lastOnPage}</span> of{' '}
-              <span className="font-semibold text-foreground">{recordCount}</span> products
-            </p>
-            {pageCount > 1 && (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" className="h-10 rounded-xl px-4" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
-                  Previous
-                </Button>
-                <span className="px-2 text-sm text-muted-foreground">
-                  Page {page} of {pageCount}
-                </span>
-                <Button
-                  variant="outline"
-                  className="h-10 rounded-xl px-4"
-                  disabled={page >= pageCount}
-                  onClick={() => setPage((current) => current + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
       {/* ------------------------------- Testimonials ---------------------------- */}
       <section className="bg-muted/40 py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

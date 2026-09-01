@@ -1,33 +1,30 @@
 'use client';
+import WishlistToggle from '@/components/common/wishlist-toggle';
+import RateVariantButton from '@/components/features/product-variants/rate-variant-button';
+import VariantRating from '@/components/features/product-variants/variant-rating';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { useAddToCart } from '@/hooks/service-hooks/useCartService';
-import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
-import { formatPrice } from '@/lib/format-price';
-import VariantRating from '@/components/features/product-variants/variant-rating';
-import RateVariantButton from '@/components/features/product-variants/rate-variant-button';
-import { Package, ShoppingCart } from 'lucide-react';
-import WishlistToggle from '@/components/common/wishlist-toggle';
-import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { useAddToCart } from '@/hooks/service-hooks/useCartService';
 import { useGetAllWishlists } from '@/hooks/service-hooks/useWishlistService';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { formatPrice } from '@/lib/format-price';
+import { cn } from '@/lib/utils';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { ImageOff, ShoppingCart } from 'lucide-react';
 import { useMemo } from 'react';
 
-/** The variant's own name, else its attribute combination, e.g. "size: L · color: Red". */
-const describeVariant = (variant: ProductVariantListItemDto): string => {
-  if (variant.name) return variant.name;
+const attributesOf = (variant: ProductVariantListItemDto): { key: string; value: string }[] => {
   const attributes = variant.attributes;
-  if (!attributes || typeof attributes !== 'object') return '';
-  return Object.entries(attributes)
-    .map(([key, value]) => `${key}: ${String(value)}`)
-    .join(' · ');
+  if (!attributes || typeof attributes !== 'object') return [];
+  return Object.entries(attributes).map(([key, value]) => ({ key, value: String(value) }));
 };
 
-/** The variant's own photo, falling back to the product's. */
 const imageFor = (variant: ProductVariantListItemDto): string | undefined => variant.images?.[0] ?? variant.product?.images?.[0];
 
 interface VariantCardProps {
@@ -41,28 +38,11 @@ export default function VariantCard({ variant }: VariantCardProps) {
   const stock = variant.stockQuantity ?? 0;
   const soldOut = stock <= 0;
   const unpriced = variant.sellingPrice == null;
-  const lowStock = !soldOut && !unpriced && stock <= (variant.lowStockThreshold || 5);
-  const description = describeVariant(variant);
+  const lowStock = !soldOut && stock <= (variant.lowStockThreshold || 5);
+  const attributes = attributesOf(variant);
   const image = imageFor(variant);
   const title = variant.product?.name ?? variant.sku ?? 'Product';
-
-  const handleAdd = async () => {
-    try {
-      // Variant-keyed: the shopper picked this exact SKU, so the API must not fall back
-      // to the product's first active variant.
-      const result = await addToCart.mutateAsync({ variantIds: [variant.id] });
-
-      if (result && (result.status === 200 || result.status === 201)) {
-        toast({ variant: 'success', title: 'Added to cart', description: <span>{title} is in your cart.</span> });
-      } else {
-        const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
-        toast({ variant: 'destructive', title: 'Could not add to cart', description: <span>{error}</span> });
-      }
-    } catch (error: any) {
-      const message = unitOfService.ErrorHandlerService.getErrorMessage(error);
-      toast({ variant: 'destructive', title: 'Could not add to cart', description: <span>{message || 'Unknown error occurred'}</span> });
-    }
-  };
+  const subtitle = attributes.length === 0 ? variant.name : null;
 
   const { currentUser } = useGetCurrentUser();
   const userId = (currentUser as { userId?: string } | undefined)?.userId;
@@ -73,80 +53,120 @@ export default function VariantCard({ variant }: VariantCardProps) {
     [wishlistResponse]
   );
 
+  const handleAdd = async () => {
+    const result = await addToCart.mutateAsync({ variantIds: [variant.id] });
+    if (result && (result.status === 200 || result.status === 201)) {
+      toast({ variant: 'success', title: 'Added to cart', description: <span>{title} is in your cart.</span> });
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Could not add to cart', description: <span>{error}</span> });
+    }
+  };
+
   return (
-    <Card className="group flex flex-col overflow-hidden rounded-xl p-0 shadow-sm transition-shadow hover:shadow-md">
-      {/* <div className="absolute left-3 top-3">{badge}</div> */}
-      {/* Above the sold-out scrim so the heart stays usable on an unavailable product. */}
-      <div className="absolute right-2 top-2 z-10">
-        <WishlistToggle
-          variantId={variant.id}
-          productName={title}
-          // inWishlist={wishlistedVariantIds.has(variant.id)}
-          className="rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
-        />
-      </div>
-      {/* {soldOut && <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />} */}
-      <div className="relative aspect-square overflow-hidden bg-muted/30">
+    <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 !p-0 shadow-none transition-all duration-300 hover:border-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
+      <div className="relative h-40 overflow-hidden bg-muted/40">
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
-            alt={`${title}${description ? ` - ${description}` : ''}`}
-            className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
+            alt={title}
+            loading="lazy"
+            className={cn(
+              'h-full w-full object-contain   p-4 transition-transform duration-500 ease-out group-hover:scale-105',
+              soldOut && 'opacity-35 grayscale'
+            )}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-9 w-9 text-muted-foreground/30" />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-muted-foreground/25">
+            <ImageOff className="h-7 w-7" />
+            <span className="text-[10px] font-medium uppercase tracking-wide">No image</span>
           </div>
         )}
+
         {soldOut && (
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-foreground/85 px-2 py-0.5 text-[10px] font-bold uppercase text-background">
+          <Badge variant="zinc" className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm">
             Sold out
-          </span>
+          </Badge>
         )}
+
+        <div className="absolute right-2 top-2 z-10">
+          <WishlistToggle
+            variantId={variant.id}
+            productName={title}
+            inWishlist={wishlistedVariantIds.has(variant.id)}
+            className="rounded-full bg-background/70 shadow-sm backdrop-blur transition-colors hover:bg-background"
+          />
+        </div>
       </div>
-      <div className="flex flex-1 flex-col gap-0.5 p-3">
-        {variant.product?.category?.name && (
-          <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{variant.product.category.name}</span>
+
+      <div className="flex flex-1 flex-col p-3.5">
+        {/* {(variant.product?.category?.name || variant.sku) && (
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {variant.product?.category?.name && <span className="truncate">{variant.product.category.name}</span>}
+            {variant.product?.category?.name && variant.sku && <span className="text-muted-foreground/40">·</span>}
+            {variant.sku && <span className="truncate font-mono normal-case tracking-normal text-muted-foreground/70">{variant.sku}</span>}
+          </div>
+        )} */}
+
+        <CardTitle className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight" title={title}>
+          {title}
+        </CardTitle>
+
+        {/* Values only - "size:"/"color:" doubles the width of every chip on a narrow card,
+            and the key is still there on hover for anyone who needs it. */}
+        {attributes.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {attributes.map(({ key, value }) => (
+              <span
+                key={key}
+                title={`${key}: ${value}`}
+                className="rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] font-medium capitalize leading-4 text-foreground/80"
+              >
+                {value}
+              </span>
+            ))}
+          </div>
         )}
-        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug">{title}</h3>
-        <p className="line-clamp-1 min-h-[1rem] text-[11px] text-muted-foreground">{description}</p>
+        {subtitle && <CardDescription className="mt-2 line-clamp-1 text-muted-foreground">{subtitle}</CardDescription>}
 
-        {/* Read-only here: the storefront grid is public, and rating needs a signed-in user. */}
-        <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} className="mt-1" />
-        {variant.sku && <code className="font-mono text-[10px] text-muted-foreground/80">{variant.sku}</code>}
+        <div className="mt-2.5 flex items-center justify-between gap-1">
+          <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} />
 
-        <div className="mt-auto flex items-baseline gap-2 pt-2">
-          {unpriced ? (
-            <span className="text-sm font-semibold text-muted-foreground">Coming soon</span>
-          ) : (
-            <span className="text-base font-bold tracking-tight">{formatPrice(variant.sellingPrice as number)}</span>
-          )}
-          {lowStock && <span className="text-[11px] font-semibold text-amber-600">Only {stock} left</span>}
+          {/* <RateVariantButton
+            variantId={variant.id}
+            variantName={variant.name ?? title}
+            sku={variant.sku}
+            rating={variant.rating}
+            ratingCount={variant.ratingCount}
+            variant="ghost"
+            className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+          /> */}
         </div>
 
-        {/* Two CTAs share the row: buying is primary, rating is the secondary action. */}
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        {/* Pinned to the bottom so price and the CTA line up across a row of uneven cards. */}
+        <div className="mt-auto pt-3">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            {unpriced ? (
+              <span className="text-sm font-medium text-muted-foreground">Coming soon</span>
+            ) : (
+              <span className="text-[19px] font-bold leading-none tracking-tight">{formatPrice(variant.sellingPrice as number)}</span>
+            )}
+            {!soldOut && lowStock && <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-500">Only {stock} left</span>}
+            {!soldOut && !lowStock && <span className="text-[11px] font-medium text-muted-foreground">{stock} in stock</span>}
+          </div>
+
           <Button
             type="button"
             size="sm"
-            className="w-full"
+            className="h-9 w-full rounded-lg"
             icon={ShoppingCart}
             iconPlacement="left"
             loading={addToCart.isPending}
             disabled={soldOut || unpriced || addToCart.isPending}
             onClick={handleAdd}
           >
-            {soldOut ? 'Sold out' : 'Add'}
+            {soldOut ? 'Sold out' : unpriced ? 'Unavailable' : 'Add to cart'}
           </Button>
-          <RateVariantButton
-            variantId={variant.id}
-            variantName={variant.name ?? description}
-            sku={variant.sku}
-            rating={variant.rating}
-            ratingCount={variant.ratingCount}
-            className="w-full"
-          />
         </div>
       </div>
     </Card>
@@ -155,13 +175,24 @@ export default function VariantCard({ variant }: VariantCardProps) {
 
 export function VariantCardSkeleton() {
   return (
-    <Card className="flex flex-col overflow-hidden rounded-xl p-0 shadow-sm">
+    <Card className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 p-0 shadow-none">
       <Skeleton className="aspect-square w-full rounded-none" />
-      <div className="space-y-2 p-3">
-        <Skeleton className="h-2.5 w-16" />
-        <Skeleton className="h-3.5 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <Skeleton className="mt-2 h-5 w-20" />
+      <div className="flex flex-1 flex-col p-3.5">
+        <Skeleton className="mb-1 h-2.5 w-24" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="mt-1.5 h-4 w-1/2" />
+        <div className="mt-2 flex gap-1">
+          <Skeleton className="h-4 w-10 rounded-full" />
+          <Skeleton className="h-4 w-12 rounded-full" />
+        </div>
+        <Skeleton className="mt-2.5 h-4 w-28" />
+        <div className="mt-auto pt-3">
+          <div className="mb-2 flex items-baseline justify-between">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-3 w-14" />
+          </div>
+          <Skeleton className="h-9 w-full rounded-lg" />
+        </div>
       </div>
     </Card>
   );
