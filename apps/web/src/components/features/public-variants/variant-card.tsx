@@ -65,41 +65,26 @@ export default function VariantCard({ variant }: VariantCardProps) {
   };
 
   const { currentUser } = useGetCurrentUser();
-  // `session.user` is the login payload, which carries both `userId` (the column) and the
-  // `usersId` alias UserDto declares. `userId` is the one the API filters on.
   const userId = (currentUser as { userId?: string } | undefined)?.userId;
-  // Scoped to this user on purpose: the API only pins a *non-staff* caller to their own
-  // list, so an admin asking without a userId would get every user's saves back.
   const { data: wishlistResponse } = useGetAllWishlists({ userId, showAllRecords: true }, !!userId);
 
-  // Matched on variantId, not productId: this grid shows one card per SKU, so saving the
-  // "L" must fill only the L card. Product-level saves have a null variantId and are
-  // deliberately not matched here - they belong to the product pages.
   const wishlistedVariantIds = useMemo(
     () => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.variantId).filter((id): id is number => id !== null)),
     [wishlistResponse]
   );
 
-  // A wishlist row still carries the parent product (the FK and the store scope come from
-  // it), so the heart needs both ids - the variant alone cannot be filed.
-  const productId = variant.product?.id;
-
   return (
     <Card className="group flex flex-col overflow-hidden rounded-xl p-0 shadow-sm transition-shadow hover:shadow-md">
       {/* <div className="absolute left-3 top-3">{badge}</div> */}
       {/* Above the sold-out scrim so the heart stays usable on an unavailable product. */}
-      {productId}/{variant?.id}
-      {productId !== undefined && (
-        <div className="absolute right-2 top-2 z-10">
-          <WishlistToggle
-            productId={productId}
-            variantId={variant.id}
-            productName={title}
-            inWishlist={wishlistedVariantIds.has(variant.id)}
-            className="rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
-          />
-        </div>
-      )}
+      <div className="absolute right-2 top-2 z-10">
+        <WishlistToggle
+          variantId={variant.id}
+          productName={title}
+          // inWishlist={wishlistedVariantIds.has(variant.id)}
+          className="rounded-full bg-background/90 shadow-sm backdrop-blur hover:bg-background"
+        />
+      </div>
       {/* {soldOut && <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />} */}
       <div className="relative aspect-square overflow-hidden bg-muted/30">
         {image ? (

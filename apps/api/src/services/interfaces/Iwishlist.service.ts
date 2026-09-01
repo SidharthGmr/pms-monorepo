@@ -5,10 +5,11 @@ import { ReviewActor } from "./Ireview.service";
 
 export interface IWishlistService {
     /**
-     * A save always pins one SKU. Adding something already saved returns the existing row
-     * rather than erroring, so the button need not know the current state on first render.
+     * A save is keyed by SKU alone - the product and store are derived from the variant.
+     * Adding something already saved returns the existing row rather than erroring, so the
+     * heart need not know the current state on first render.
      */
-    add(productId: number, variantId: number, userId: string, storeCode: string): Promise<WishlistDto>;
+    add(variantId: number, userId: string, storeCode: string): Promise<WishlistDto>;
 
     getAll(filters?: WishlistFilterParams): Promise<ListResponseDto<WishlistDto>>;
     getById(id: number, actor: ReviewActor): Promise<WishlistDto | null>;

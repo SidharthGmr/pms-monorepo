@@ -25,8 +25,8 @@ export class WishlistController {
       return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
     }
 
-    const { productId, variantId } = req.body as CreateWishlistDto;
-    const data = await this.unitOfService.Wishlist.add(productId, variantId, this.actor(req).userId, storeCode,);
+    const { variantId } = req.body as CreateWishlistDto;
+    const data = await this.unitOfService.Wishlist.add(variantId, this.actor(req).userId, storeCode);
     return res.status(201).json({ success: true, message: 'Added to wishlist', data });
   };
 

@@ -185,25 +185,23 @@ wishlistRouter.get("/:id", authenticateToken, asyncHandler(wishlistController.ge
  *           schema:
  *             type: object
  *             required:
- *               - productId
+ *               - variantId
  *             properties:
- *               productId:
- *                 type: integer
- *                 example: 4
  *               variantId:
  *                 type: integer
+ *                 description: The SKU to save. The product it belongs to is resolved server-side.
  *                 example: 19
  *     description: >
- *       Idempotent per (user, product, variant) - saving something already on the list
- *       returns the existing entry instead of failing, and two SKUs of the same product
- *       are two separate saves. The owner comes from the token and the storeCode from the
- *       product, so neither can be spoofed through the body; a supplied variantId must be
- *       a SKU of that product in that store.
+ *       Idempotent per (user, variant) - saving a SKU already on the list returns the existing
+ *       entry instead of failing, and two SKUs of the same product are two separate saves.
+ *       The body carries the variant only: the owner comes from the token, and the productId
+ *       and storeCode are read off the variant, so none of the three can be spoofed. The SKU
+ *       and its parent product must both be live in the caller's store.
  *     responses:
  *       201:
  *         description: Added to wishlist
  *       404:
- *         description: Product not found in this store, or variant not found for this product
+ *         description: Product variant not found in this store
  */
 wishlistRouter.post("/", authenticateToken, validate(createWishlistSchema), asyncHandler(wishlistController.create));
 

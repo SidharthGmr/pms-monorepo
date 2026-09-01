@@ -1,7 +1,7 @@
 'use client';
 
 import GreetingHeader from '@/components/common/greeting-header';
-import PurchasePage from '@/components/features/pos';
+import PublicVariantList from '@/components/features/public-variants';
 import ShopPage from '@/components/features/shop';
 import { CardDescription } from '@/components/ui/card';
 import { Roles } from '@/enums/roles.enum';
@@ -28,12 +28,11 @@ export default function Dashboard() {
   const role = (session?.user as any)?.role;
 
   return (
-
-    < div className="max-w-7xl mx-auto space-y-8" >
+    <div className="max-w-7xl mx-auto space-y-8">
       <GreetingHeader />
-      {role === Roles.STAFF && <PurchasePage />}
+      {role === Roles.STAFF && <PublicVariantList />}
       {/* A customer lands on the shop, not on an admin list. */}
       {role === Roles.USER && <ShopPage />}
-    </div >
+    </div>
   );
 }

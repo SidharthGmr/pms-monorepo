@@ -42,10 +42,9 @@ export interface WishlistDto {
 }
 
 /**
- * The owner comes from the token and the store from the product, so the body only names what
- * was saved: the SKU, plus the product it belongs to.
+ * The body names the SKU and nothing else: the owner comes from the token, and the product
+ * and store are read off the variant.
  */
 export interface CreateWishlistDto {
-    productId: number;
     variantId: number;
 }

@@ -18,10 +18,8 @@ export default class WishlistService implements IWishlistService {
     this.httpService = httpService;
   }
 
-  add(productId: number, variantId?: number): Promise<AxiosResponse<Response<WishlistDto>>> {
-    // Conditional spread: sending `variantId: undefined` would serialise as a missing key
-    // anyway, but this keeps the body identical to the product-level case.
-    const model: CreateWishlistModel = { productId, ...(variantId !== undefined && { variantId }) };
+  add(variantId: number): Promise<AxiosResponse<Response<WishlistDto>>> {
+    const model: CreateWishlistModel = { variantId };
     return this.httpService.call().post<WishlistDto, AxiosResponse<Response<WishlistDto>>>('/wishlists', model);
   }
 
@@ -41,7 +39,7 @@ export default class WishlistService implements IWishlistService {
     });
   }
 
-  hasVariant(variantId: number | string): Promise<AxiosResponse<Response<WishlistVariantHasDto>>> {
+  hasVariant(variantId: number): Promise<AxiosResponse<Response<WishlistVariantHasDto>>> {
     return this.httpService
       .call()
       .get<WishlistVariantHasDto, AxiosResponse<Response<WishlistVariantHasDto>>>(`/wishlists/has/variant/${variantId}`);
@@ -57,7 +55,7 @@ export default class WishlistService implements IWishlistService {
     });
   }
 
-  removeByVariant(variantId: number | string): Promise<AxiosResponse<Response<void>>> {
-    return this.httpService.call().delete<void, AxiosResponse<Response<void>>>(`/wishlists/variant/${variantId}`);
+  removeByVariant(variantId: number | string): Promise<AxiosResponse<Response<WishlistVariantHasDto>>> {
+    return this.httpService.call().delete<WishlistVariantHasDto, AxiosResponse<Response<WishlistVariantHasDto>>>(`/wishlists/variant/${variantId}`);
   }
 }

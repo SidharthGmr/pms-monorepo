@@ -16,35 +16,27 @@ const STAFF_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 export class WishlistService implements IWishlistService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
 
-  async add(productId: number, variantId: number, userId: string, storeCode: string): Promise<WishlistDto> {
+  /**
+   * A save names only the SKU. The product and the store are read off the variant rather
+   * than taken from the request, so a row can never claim a (product, variant) pairing the
+   * catalogue does not have, nor be filed under a store the SKU does not belong to.
+   */
+  async add(variantId: number, userId: string, storeCode: string): Promise<WishlistDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
-      const product = await transactionClient.product.findFirst({
-        where: {
-          id: productId,
-          storeCode,
-          status: {
-            not: Status.Trash,
-          },
-        },
-        select: {
-          id: true,
-          storeCode: true,
-        },
-      });
-
-      if (!product) {
-        throw new NotFoundError("Product not found in this store");
-      }
-
+      // One query for both halves: the SKU must be live, and so must its parent product -
+      // a variant of a trashed or soft-deleted product is not savable.
       const variant = await transactionClient.productVariant.findFirst({
         where: {
-          id: variantId, productId, storeCode, status: {
-            not: Status.Trash,
-          },
-
+          id: variantId,
+          storeCode,
+          deletedAt: null,
+          status: { not: Status.Trash },
+          product: { deletedAt: null, status: { not: Status.Trash } },
         },
         select: {
           id: true,
+          productId: true,
+          storeCode: true,
         },
       });
 
@@ -52,16 +44,11 @@ export class WishlistService implements IWishlistService {
         throw new NotFoundError("Product variant not found in this store");
       }
 
+      // Saving the same SKU twice is a no-op, not an error - the heart that calls this
+      // cannot know the current state on first render. Read through the transaction client.
       const existingWishlistItem = await transactionClient.wishlist.findFirst({
-        where: {
-          userId,
-          productId,
-          variantId,
-          storeCode,
-        },
-        select: {
-          id: true,
-        },
+        where: { userId, variantId },
+        select: { id: true },
       });
 
       if (existingWishlistItem) {
@@ -80,9 +67,9 @@ export class WishlistService implements IWishlistService {
       const entry = await transactionClient.wishlist.create({
         data: {
           userId,
-          productId,
+          productId: variant.productId,
           variantId,
-          storeCode: product.storeCode,
+          storeCode: variant.storeCode,
         },
         select: {
           id: true,

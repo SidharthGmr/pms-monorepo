@@ -1,8 +1,7 @@
 /**
- * The owner comes from the token and the store from the product, so only what was saved
- * travels. `variantId` pins one SKU; omit it to save the product itself.
+ * Body of POST /wishlists. The SKU is all that travels: the owner comes from the token, and
+ * the product and store are read off the variant server-side.
  */
 export interface CreateWishlistModel {
-  productId: number;
-  variantId?: number;
+  variantId: number;
 }
