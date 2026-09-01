@@ -12,11 +12,16 @@ export interface ProductVariantResponseDto {
   rating: number | null,
   ratingCount: number | null,
   stockQuantity: number;
+  /** The list price. Still sent while an offer runs, so a client can strike it through. */
   sellingPrice: number | null;
+  /** The promotional amount on the effective ledger row; null when none is set. */
+  offerPrice: number | null;
   costPrice: number | null;
   lowStockThreshold: number | null;
   description: string | null;
   isActive: boolean;
+  /** Whether the offer is live. Charged price is `isOffer && offerPrice != null ? offerPrice : sellingPrice`. */
+  isOffer: boolean;
   createdById: string;
   createdAt: Date;
 }

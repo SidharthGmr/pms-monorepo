@@ -27,6 +27,8 @@ export interface PriceHistoryDto {
   storeCode: string;
   /** Prisma exposes these as `Decimal`; the API contract is plain numbers. */
   sellingPrice: number;
+  /** The promotional amount for this period; charged only while the variant's `isOffer` is on. */
+  offerPrice: number | null;
   costPrice: number | null;
   compareAtPrice: number | null;
   effectiveFrom: Date;

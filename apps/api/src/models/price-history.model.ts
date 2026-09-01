@@ -3,6 +3,8 @@ export interface CreatePriceHistoryModel {
   /** Tenancy is stored on the row now, so a price query does not have to join the variant. */
   storeCode: string;
   sellingPrice: number;
+  /** Promotional amount for this period. Charged only while the variant's `isOffer` is on. */
+  offerPrice?: number | null;
   costPrice?: number | null;
   /** Strike-through / MRP shown next to the selling price. */
   compareAtPrice?: number | null;
@@ -18,6 +20,7 @@ export interface CreatePriceHistoryModel {
  */
 export interface UpdatePriceHistoryModel {
   sellingPrice?: number;
+  offerPrice?: number | null;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date;

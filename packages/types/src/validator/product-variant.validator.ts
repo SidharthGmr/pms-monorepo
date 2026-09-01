@@ -8,9 +8,11 @@ export const productVariantFields = z.object({
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").optional(),
   sellingPrice: z.number().nonnegative("Selling price must be a non-negative number"),
+  offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
   costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
   effectiveFrom: z.coerce.date().optional(),
   reason: z.string().nullable().optional(),
+  isOffer: z.boolean().optional(),
   supersedePrevious: z.boolean().optional(),
 });
 
@@ -31,7 +33,9 @@ export const updateProductVariantFields = z.object({
   images: z.array(z.string()).optional(),
   lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
   isActive: z.boolean().optional(),
+  isOffer: z.boolean().optional(),
   sellingPrice: z.number().nonnegative("Selling price must be a non-negative number").optional(),
+  offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
   costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
   effectiveFrom: z.coerce.date().optional(),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").nullable().optional(),

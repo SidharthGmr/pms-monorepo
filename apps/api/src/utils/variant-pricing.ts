@@ -9,6 +9,8 @@ import prisma from '../config/prisma';
 
 export interface EffectivePrice {
   sellingPrice: number;
+  /** The promotional amount on this ledger row. Only charged while the variant's `isOffer` is on. */
+  offerPrice: number | null;
   costPrice: number | null;
   compareAtPrice: number | null;
 }
@@ -33,14 +35,35 @@ export const EFFECTIVE_ORDER: Prisma.PriceHistoryOrderByWithRelationInput[] = [{
 
 export function toEffectivePrice(row: {
   sellingPrice: Prisma.Decimal;
+  offerPrice: Prisma.Decimal | null;
   costPrice: Prisma.Decimal | null;
   compareAtPrice: Prisma.Decimal | null;
 }): EffectivePrice {
   return {
     sellingPrice: row.sellingPrice.toNumber(),
+    offerPrice: toNumber(row.offerPrice),
     costPrice: toNumber(row.costPrice),
     compareAtPrice: toNumber(row.compareAtPrice),
   };
+}
+
+/**
+ * What the customer actually pays. The offer amount lives on the ledger row but the switch
+ * lives on the variant, so neither alone decides it: an offer price with the flag off is a
+ * staged promotion, and the flag with no offer price falls back to the selling price.
+ *
+ * Every money path - cart line, order line - must price through this rather than reading
+ * `sellingPrice` directly, or the cart total will disagree with the card.
+ */
+export function payablePrice(price: EffectivePrice | null, isOffer: boolean): number | null {
+  if (!price) return null;
+  return isOffer && price.offerPrice != null ? price.offerPrice : price.sellingPrice;
+}
+
+/** The same rule applied to an already-decorated variant, which carries all three fields. */
+export function payableForVariant(variant: { sellingPrice: number | null; offerPrice: number | null; isOffer: boolean }): number | null {
+  if (variant.sellingPrice == null) return null;
+  return variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice;
 }
 
 /** The price in force for one variant on a date, or null if it has never been priced. */

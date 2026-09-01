@@ -9,6 +9,7 @@ import { CreateOrderModel } from "../models/order.model";
 import { OrderFilterParams } from "../params/order.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
+import { payablePrice } from "../utils/variant-pricing";
 import { IOrderService } from "./interfaces/Iorder.service";
 import { OrderStatus } from "@prisma/client";
 
@@ -71,7 +72,12 @@ export class OrderService implements IOrderService {
           if (!priceRow) {
             throw new ClientError(`No price found for ${label}. Please set a price before selling it.`);
           }
-          const unitPrice = priceRow.sellingPrice;
+          // The ledger holds the amounts, the variant holds the switch - so the order line is
+          // priced from both, matching what the cart charged and the card advertised.
+          const unitPrice = payablePrice(
+            { sellingPrice: priceRow.sellingPrice, offerPrice: priceRow.offerPrice, costPrice: priceRow.costPrice, compareAtPrice: priceRow.compareAtPrice },
+            variant.isOffer
+          ) as number;
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 

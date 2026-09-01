@@ -1,6 +1,5 @@
 'use client';
 import WishlistToggle from '@/components/common/wishlist-toggle';
-import RateVariantButton from '@/components/features/product-variants/rate-variant-button';
 import VariantRating from '@/components/features/product-variants/variant-rating';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,12 @@ export default function VariantCard({ variant }: VariantCardProps) {
   const soldOut = stock <= 0;
   const unpriced = variant.sellingPrice == null;
   const lowStock = !soldOut && stock <= (variant.lowStockThreshold || 5);
+
+  // Mirrors the API's `payablePrice`: the offer amount only counts while the flag is on, so a
+  // staged offerPrice with isOffer off still shows - and charges - the list price.
+  const onOffer = variant.isOffer === true && variant.offerPrice != null && variant.sellingPrice != null;
+  const payable = onOffer ? (variant.offerPrice as number) : variant.sellingPrice;
+  const discountPercent = onOffer ? Math.round((1 - (variant.offerPrice as number) / (variant.sellingPrice as number)) * 100) : 0;
   const attributes = attributesOf(variant);
   const image = imageFor(variant);
   const title = variant.product?.name ?? variant.sku ?? 'Product';
@@ -67,6 +72,7 @@ export default function VariantCard({ variant }: VariantCardProps) {
     <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 !p-0 shadow-none transition-all duration-300 hover:border-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
       <div className="relative h-40 overflow-hidden bg-muted/40">
         {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
             alt={title}
@@ -83,10 +89,16 @@ export default function VariantCard({ variant }: VariantCardProps) {
           </div>
         )}
 
-        {soldOut && (
+        {soldOut ? (
           <Badge variant="zinc" className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm">
             Sold out
           </Badge>
+        ) : (
+          onOffer && (
+            <Badge variant="rose" className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm">
+              {discountPercent > 0 ? `${discountPercent}% off` : 'Offer'}
+            </Badge>
+          )
         )}
 
         <div className="absolute right-2 top-2 z-10">
@@ -129,18 +141,8 @@ export default function VariantCard({ variant }: VariantCardProps) {
         )}
         {subtitle && <CardDescription className="mt-2 line-clamp-1 text-muted-foreground">{subtitle}</CardDescription>}
 
-        <div className="mt-2.5 flex items-center justify-between gap-1">
+        <div className="mt-2.5">
           <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} />
-
-          {/* <RateVariantButton
-            variantId={variant.id}
-            variantName={variant.name ?? title}
-            sku={variant.sku}
-            rating={variant.rating}
-            ratingCount={variant.ratingCount}
-            variant="ghost"
-            className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
-          /> */}
         </div>
 
         {/* Pinned to the bottom so price and the CTA line up across a row of uneven cards. */}
@@ -149,7 +151,15 @@ export default function VariantCard({ variant }: VariantCardProps) {
             {unpriced ? (
               <span className="text-sm font-medium text-muted-foreground">Coming soon</span>
             ) : (
-              <span className="text-[19px] font-bold leading-none tracking-tight">{formatPrice(variant.sellingPrice as number)}</span>
+              <span className="flex items-baseline gap-1.5">
+                <span className="text-[19px] font-bold leading-none tracking-tight">{formatPrice(payable as number)}</span>
+                {/* The list price stays visible while an offer runs, so the saving is legible. */}
+                {onOffer && (
+                  <span className="text-[11px] font-medium leading-none text-muted-foreground line-through">
+                    {formatPrice(variant.sellingPrice as number)}
+                  </span>
+                )}
+              </span>
             )}
             {!soldOut && lowStock && <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-500">Only {stock} left</span>}
             {!soldOut && !lowStock && <span className="text-[11px] font-medium text-muted-foreground">{stock} in stock</span>}

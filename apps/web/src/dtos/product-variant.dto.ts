@@ -22,6 +22,10 @@ export interface ProductVariantDto {
   stockQuantity?: number;
   storeCode: string;
   sellingPrice: number;
+  /** Promotional amount on the effective ledger row; null when none is set. */
+  offerPrice?: number | null;
+  /** Whether the offer is live. What you pay is `isOffer && offerPrice != null ? offerPrice : sellingPrice`. */
+  isOffer?: boolean;
   costPrice: number | null;
   effectiveFrom: Date;
   isActive: boolean;

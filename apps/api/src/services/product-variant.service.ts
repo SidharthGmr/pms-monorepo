@@ -62,6 +62,7 @@ export class ProductVariantService implements IProductVariantService {
           ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
           ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
           ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
+          ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
           ...(data.barcode !== undefined && { barcode: data.barcode }),
           ...(data.images !== undefined && { images: data.images }),
           ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
@@ -76,6 +77,7 @@ export class ProductVariantService implements IProductVariantService {
             variantId: variant.id,
             storeCode,
             sellingPrice: data.sellingPrice,
+            offerPrice: data.offerPrice ?? null,
             costPrice: data.costPrice ?? null,
             compareAtPrice: data.compareAtPrice ?? null,
             ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
@@ -119,10 +121,14 @@ export class ProductVariantService implements IProductVariantService {
       await this.unitOfWork.ProductVariant.update(id, data, tx);
 
 
+      // The offer amount lives on the ledger, so changing it files a new period exactly as a
+      // changed selling price does. `isOffer` is a plain column and is handled by the update
+      // above - flipping the switch alone must not rewrite price history.
       const priceChanged =
         data.sellingPrice != null &&
         (data.sellingPrice !== existing.sellingPrice ||
           (data.costPrice ?? null) !== (existing.costPrice ?? null) ||
+          (data.offerPrice !== undefined && (data.offerPrice ?? null) !== (existing.offerPrice ?? null)) ||
           data.effectiveFrom !== undefined);
       if (priceChanged) {
         await this.unitOfWork.PriceHistory.create(
@@ -130,6 +136,8 @@ export class ProductVariantService implements IProductVariantService {
             variantId: id,
             storeCode,
             sellingPrice: data.sellingPrice as number,
+            // Undefined means "leave the offer as it stands", so carry the current amount over.
+            offerPrice: data.offerPrice !== undefined ? data.offerPrice : existing.offerPrice,
             costPrice: data.costPrice ?? null,
             ...(data.effectiveFrom && { effectiveFrom: data.effectiveFrom }),
             reason: data.reason ?? 'Price updated',

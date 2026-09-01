@@ -18,9 +18,13 @@ export interface ProductVariantModel {
   stockQuantity?: number | null;
   costPrice?: number | null;
   sellingPrice: number | null;
+  /** Promotional amount for this price period; only charged while `isOffer` is on. */
+  offerPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date;
   reason?: string | null;
+  /** Turns the promotion on. Without an `offerPrice` it has no effect on what is charged. */
+  isOffer?: boolean;
   createdById: string;
 }
 

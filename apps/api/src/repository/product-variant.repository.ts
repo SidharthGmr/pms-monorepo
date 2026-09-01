@@ -27,6 +27,8 @@ const productVarientSelect = {
   lowStockThreshold: true,
   description: true,
   isActive: true,
+  /** The promotion switch. Paired with the ledger's `offerPrice` to decide what is charged. */
+  isOffer: true,
   createdById: true,
   createdAt: true,
   rating: true,
@@ -70,6 +72,9 @@ function decorate<T extends { id: number }>(row: T, price: EffectivePrice | null
   return {
     ...row,
     sellingPrice: price?.sellingPrice ?? null,
+    // Carried alongside the selling price rather than replacing it, so a client can show the
+    // offer against the struck-through original. `payablePrice` decides which one is charged.
+    offerPrice: price?.offerPrice ?? null,
     costPrice: price?.costPrice ?? null,
     stockQuantity,
   };

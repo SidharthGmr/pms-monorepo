@@ -22,10 +22,14 @@ export interface CreateProductVariantModel {
    * row is filed at all in that case, and the variant reads back as unpriced.
    */
   sellingPrice: number | null;
+  /** Promotional amount for this price period; only charged while `isOffer` is on. */
+  offerPrice?: number | null;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date;
   reason?: string | null;
+  /** Turns the promotion on. Without an `offerPrice` it has no effect on what is charged. */
+  isOffer?: boolean;
   createdById: string;
 }
 
@@ -44,8 +48,12 @@ export interface UpdateProductVariantModel {
   images?: string[];
   lowStockThreshold?: number | null;
   isActive?: boolean;
+  /** Turns the promotion on or off. A plain column - it does not append a ledger row. */
+  isOffer?: boolean;
   /** Reprice: appended to the ledger when it differs from the current effective price. */
   sellingPrice?: number | null;
+  /** Part of the same reprice - a changed offer amount files a new ledger row too. */
+  offerPrice?: number | null;
   costPrice?: number | null;
   effectiveFrom?: Date;
   /** Target on-hand stock; a delta movement is booked to reach it. */

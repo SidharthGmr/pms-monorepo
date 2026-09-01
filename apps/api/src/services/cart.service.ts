@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import { CartDto } from '../dtos/cart.dto';
 import ClientError from '../exceptions/client-error';
+import { payableForVariant } from '../utils/variant-pricing';
 import NotFoundError from '../exceptions/not-found-error';
 import { AddToCartModel, UpdateCartItemModel } from '../models/cart.model';
 import { CartOwner, ICartRepository } from '../repository/interfaces/icart.repository';
@@ -35,10 +36,13 @@ export class CartService implements ICartService {
     if (!variant) {
       throw new ClientError(`Product ${productId} has no active variant yet, so it cannot be added to a cart.`);
     }
-    if (variant.sellingPrice == null) {
+    // Priced through the offer rule, so a running promotion is what the line costs - reading
+    // `sellingPrice` here would bill the list price while the card advertises the offer.
+    const unitPrice = payableForVariant(variant);
+    if (unitPrice == null) {
       throw new ClientError(`Product ${productId} has no price yet, so it cannot be added to a cart.`);
     }
-    return { variantId: variant.id, unitPrice: variant.sellingPrice };
+    return { variantId: variant.id, unitPrice };
   }
 
   async getActive(owner: CartOwner): Promise<CartDto | null> {
@@ -61,10 +65,11 @@ export class CartService implements ICartService {
     if (store && variant.storeCode !== store.code) {
       throw new ClientError(`Variant ${variantId} belongs to a different store.`);
     }
-    if (variant.sellingPrice == null) {
+    const unitPrice = payableForVariant(variant);
+    if (unitPrice == null) {
       throw new ClientError(`Variant ${variantId} has no price yet, so it cannot be added to a cart.`);
     }
-    return { variantId: variant.id, unitPrice: variant.sellingPrice };
+    return { variantId: variant.id, unitPrice };
   }
 
   async addProducts(data: AddToCartModel): Promise<CartDto> {
