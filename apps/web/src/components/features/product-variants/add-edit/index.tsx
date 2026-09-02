@@ -42,6 +42,8 @@ const LIST_URL = '/admin/product-variants';
 
 const emptyRow: VariantAttributeRow = { code: '', value: '' };
 
+const money = (amount: number) => `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const trimmed = (value?: string | null) => (value?.trim() ? value.trim() : undefined);
 
 const intChange = (raw: string) => (raw === '' ? undefined : parseInt(raw, 10));
@@ -106,8 +108,11 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const costPrice = watch('costPrice');
   const offerPrice = watch('offerPrice');
   const isOffer = watch('isOffer');
+  const effectiveTo = watch('effectiveTo');
   const savingsPercent =
     offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0 ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
+  // Mirrors payablePrice() on the API: the offer amount only counts while the switch is on.
+  const payable = isOffer && offerPrice != null ? Number(offerPrice) : sellingPrice != null ? Number(sellingPrice) : null;
   useEffect(() => {
     if (!isEdit || !variant || masterAttributes.length === 0) return;
     const builtRows = toAttributeEntries(variant.attributes).map(([key, value]) => {
@@ -151,10 +156,14 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
     ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
     ...(model.costPrice != null && { costPrice: Number(model.costPrice) }),
-    ...(model.offerPrice != null && { offerPrice: Number(model.offerPrice) }),
-    ...(model.isOffer !== undefined && { isOffer: model.isOffer }),
-    ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
-    ...(model.effectiveTo && { effectiveTo: model.effectiveTo.toISOString() }),
+    isOffer: model.isOffer ?? false,
+    // Only a live offer carries an amount and a window. With the switch off the API is told
+    // explicitly that there is none, rather than being left to carry a stale one forward.
+    offerPrice: model.isOffer && model.offerPrice != null ? Number(model.offerPrice) : null,
+    effectiveTo: model.isOffer && model.effectiveTo ? model.effectiveTo.toISOString() : null,
+    // Omitted rather than nulled: the create validator coerces this with z.coerce.date(), which
+    // rejects null, and an absent value correctly defaults to now.
+    ...(model.isOffer && model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
     ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
   });
 
@@ -167,14 +176,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     lowStockThreshold: model.lowStockThreshold ?? null,
     isActive: model.isActive ?? true,
     ...(model.sellingPrice != null && { sellingPrice: Number(model.sellingPrice) }),
-    // Sent unconditionally: the field being cleared has to reach the API as null, or the
-    // reprice would carry the old offer forward and the promotion could never be removed.
-    offerPrice: model.offerPrice != null ? Number(model.offerPrice) : null,
     isOffer: model.isOffer ?? false,
+    // Sent unconditionally, and null whenever the offer is off: the API carries the current
+    // offer forward when the field is absent, so the promotion could otherwise never be removed.
+    offerPrice: model.isOffer && model.offerPrice != null ? Number(model.offerPrice) : null,
     costPrice: model.costPrice ?? null,
-    ...(model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
-    // Sent unconditionally so clearing the field reaches the API as null and reopens the period.
-    effectiveTo: model.effectiveTo ? model.effectiveTo.toISOString() : null,
+    effectiveTo: model.isOffer && model.effectiveTo ? model.effectiveTo.toISOString() : null,
+    ...(model.isOffer && model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
     ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
     ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
     ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
@@ -235,27 +243,6 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     <Form {...form}>
       <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
         <Card>
-          <FormField
-            control={control}
-            name="productId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Product *</FormLabel>
-                <FormControl>
-                  <SelectSearch
-                    items={productItems}
-                    value={field.value ?? ''}
-                    placeholder="Select product"
-                    buttonClass="w-full"
-                    containerName="variant-product"
-                    onChange={(value) => field.onChange(value ? Number(value) : undefined)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           <FormSection
             icon={Package}
             title="Product"
@@ -463,20 +450,8 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
             title="Pricing"
             description="The price is filed in the Price History ledger. Changing it later appends a new entry rather than overwriting the old one."
           >
-            <div className="space-y-3">
-              {margin !== null && (
-                <div className="flex justify-end">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      margin >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                    }`}
-                  >
-                    <TrendingUp className="h-3 w-3" />
-                    {margin.toFixed(1)}% margin
-                  </span>
-                </div>
-              )}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
                   control={control}
                   name="sellingPrice"
@@ -503,98 +478,130 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={control}
-                  name="offerPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Offer price</FormLabel>
-                      <FormControl>
-                        <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
-                      </FormControl>
-                      {/* Says plainly which price will be charged, so the switch is never ambiguous. */}
-                      <p className="text-[11px] text-muted-foreground">
-                        {isOffer && offerPrice != null
-                          ? 'Customers are charged this while the offer is on.'
-                          : offerPrice != null
-                            ? 'Staged - turn the offer on to charge it.'
-                            : 'Leave empty for no offer.'}
-                      </p>
-                      <FormMessage />
-                    </FormItem>
+              </div>
+
+              {(margin !== null || payable != null) && (
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs">
+                  {payable != null && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">Customer pays</span>
+                      <span className="font-semibold text-foreground">{money(payable)}</span>
+                      {isOffer && offerPrice != null && savingsPercent > 0 && (
+                        <span className="font-medium text-emerald-600 dark:text-emerald-500">{savingsPercent}% off</span>
+                      )}
+                    </span>
                   )}
-                />
+                  {margin !== null && (
+                    <span className="flex items-center gap-1.5">
+                      <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Margin</span>
+                      <span className={margin >= 0 ? 'font-semibold text-emerald-600 dark:text-emerald-500' : 'font-semibold text-red-600'}>
+                        {margin.toFixed(1)}%
+                      </span>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="rounded-lg border border-border">
                 <FormField
                   control={control}
                   name="isOffer"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Offer active</FormLabel>
+                    <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel className="flex items-center gap-2">
+                          <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                          Run an offer
+                        </FormLabel>
+                        <p className="text-[11px] text-muted-foreground">
+                          {field.value
+                            ? 'Customers are charged the offer price for the window below.'
+                            : 'Off, so customers are charged the selling price.'}
+                        </p>
+                      </div>
                       <FormControl>
-                        <div className="flex h-10 items-center gap-2.5">
-                          <Switch checked={field.value ?? false} onCheckedChange={field.onChange} aria-label="Offer active" />
-                          <span className="text-sm text-muted-foreground">
-                            {field.value ? (
-                              savingsPercent > 0 ? (
-                                <span className="font-medium text-emerald-600 dark:text-emerald-500">{savingsPercent}% off</span>
-                              ) : (
-                                'On'
-                              )
-                            ) : (
-                              'Off'
-                            )}
-                          </span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="effectiveFrom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{isEdit ? 'New price effective from' : 'Price effective from'}</FormLabel>
-                      <FormControl>
-                        <DateRangePicker
-                          value={field.value ? { from: field.value } : undefined}
-                          onSelect={(range) => field.onChange(range?.from ?? null)}
-                          numberOfMonthsToShow={1}
-                          placeholder="Apply now"
-                          buttonClass="w-full"
+                        <Switch
+                          checked={field.value ?? false}
+                          aria-label="Run an offer"
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            // Switching off clears the amount and the window, so nothing stale
+                            // is left hidden behind the toggle.
+                            if (!checked) {
+                              setValue('offerPrice', undefined);
+                              setValue('effectiveFrom', null);
+                              setValue('effectiveTo', null);
+                            }
+                          }}
                         />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={control}
-                  name="effectiveTo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price effective to</FormLabel>
-                      <FormControl>
-                        <DateRangePicker
-                          value={field.value ? { from: field.value } : undefined}
-                          onSelect={(range) => field.onChange(range?.from ?? null)}
-                          numberOfMonthsToShow={1}
-                          placeholder="No end date"
-                          buttonClass="w-full"
-                        />
-                      </FormControl>
-                      {/* This end date makes the variant unpriced, not merely un-discounted -
-                          worth saying outright, since it is the opposite of what most expect. */}
-                      <p className="text-[11px] text-muted-foreground">
-                        {field.value
-                          ? 'After this date the variant has no price and cannot be bought.'
-                          : 'Leave empty to keep this price until the next one replaces it.'}
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                {isOffer && (
+                  <div className="grid grid-cols-1 gap-4 border-t border-border p-3 sm:grid-cols-3">
+                    <FormField
+                      control={control}
+                      name="offerPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Offer price *</FormLabel>
+                          <FormControl>
+                            <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="effectiveFrom"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Starts</FormLabel>
+                          <FormControl>
+                            <DateRangePicker
+                              value={field.value ? { from: field.value } : undefined}
+                              onSelect={(range) => field.onChange(range?.from ?? null)}
+                              numberOfMonthsToShow={1}
+                              placeholder="Immediately"
+                              buttonClass="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name="effectiveTo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ends</FormLabel>
+                          <FormControl>
+                            <DateRangePicker
+                              value={field.value ? { from: field.value } : undefined}
+                              onSelect={(range) => field.onChange(range?.from ?? null)}
+                              numberOfMonthsToShow={1}
+                              placeholder="No end date"
+                              buttonClass="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {/* The end date closes the price period itself, not just the discount, so the
+                        variant reads as unpriced once it passes. */}
+                    <p className="text-[11px] text-muted-foreground sm:col-span-3">
+                      {effectiveTo
+                        ? 'After the end date the variant has no price at all and cannot be bought until a new price is filed.'
+                        : 'Leave the end date empty to keep this price until the next one replaces it.'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </FormSection>

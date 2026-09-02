@@ -3,8 +3,7 @@ import ActionTooltip from '@/components/common/tooltip-action-button';
 import VariantRating from './variant-rating';
 import RateVariantButton from './rate-variant-button';
 import { ColumnDef } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { History } from 'lucide-react';
+import { AlertTriangle, History } from 'lucide-react';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { Badge } from '../../ui/badge';
@@ -13,8 +12,15 @@ import { container } from '@/config/ioc';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { TYPES } from '@/config/types';
 
-export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListItemDto) => void) =>
-  useMemo<ColumnDef<ProductVariantListItemDto>[]>(
+/** Matches CurrencyInput's locale and prefix, so the table and the form agree. */
+const money = (amount: number) => `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const asDate = (value: Date | string | null | undefined) => (value ? new Date(value) : null);
+
+export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListItemDto) => void) => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  return useMemo<ColumnDef<ProductVariantListItemDto>[]>(
     () => [
       {
         id: 'actions',
@@ -23,7 +29,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
             {onEdit && <ActionTooltip variant="edit" tooltip="Edit variant" onClick={() => onEdit(row.original)} />}
-            <RateVariantButton
+            {/* <RateVariantButton
               variantId={row.original.id}
               variantName={row.original.name}
               sku={row.original.sku}
@@ -32,7 +38,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
               variant="ghost"
               size="icon"
               label=""
-            />
+            /> */}
             <ActionTooltip
               variant="default"
               icon={<History className="h-4 w-4" />}
@@ -43,16 +49,20 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         ),
       },
       {
-        id: 'variant',
-        enableSorting: false,
+        // `name` is the API's sort key, and the only sortable columns are sku/name/createdAt/id.
+        id: 'name',
+        accessorKey: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Variant" />,
+        meta: { sortingKey: 'name' },
         cell: ({ row }) => {
-          const attributes = row.original.attributes;
+          const { name, sku, attributes, product } = row.original;
           const pairs = attributes && typeof attributes === 'object' ? Object.entries(attributes) : [];
 
           return (
-            <div className="flex flex-col gap-1">
-              {pairs.length > 0 ? (
+            <div className="flex min-w-[180px] max-w-[280px] flex-col gap-1">
+              <span className="font-medium leading-tight">{name}</span>
+              {product?.name && <span className="text-xs text-muted-foreground">{product.name}</span>}
+              {/* {pairs.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {pairs.map(([key, value]) => (
                     <Badge key={key} variant="zinc" className="font-normal">
@@ -62,12 +72,66 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
                     </Badge>
                   ))}
                 </div>
-              ) : (
-                // Rows created by a bare price change carry no attributes.
-                <span className="text-xs text-muted-foreground">Price-only row</span>
-              )}
-              {row.original.sku && <code className="font-mono text-xs text-muted-foreground">{row.original.sku}</code>}
+              )} */}
+              {sku && <code className="font-mono text-xs text-muted-foreground">{sku}</code>}
             </div>
+          );
+        },
+      },
+      {
+        id: 'costPrice',
+        accessorKey: 'costPrice',
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Cost" />,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums text-muted-foreground">
+            {row.original.costPrice != null ? money(Number(row.original.costPrice)) : '—'}
+          </span>
+        ),
+      },
+      {
+        // One column for what is actually charged. `offerPrice` on its own said nothing about
+        // whether the offer was live, so the table could not be read against the storefront.
+        id: 'price',
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Price" />,
+        cell: ({ row }) => {
+          const { sellingPrice, offerPrice, isOffer } = row.original;
+          if (sellingPrice == null) return <span className="text-muted-foreground">—</span>;
+
+          const live = isOffer && offerPrice != null;
+          const savings = live ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
+
+          return (
+            <div className="flex flex-col gap-0.5 whitespace-nowrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold tabular-nums">{money(live ? Number(offerPrice) : Number(sellingPrice))}</span>
+                {live && <span className="text-xs tabular-nums text-muted-foreground line-through">{money(Number(sellingPrice))}</span>}
+              </div>
+              {live && savings > 0 && (
+                <Badge variant="emerald" className="w-fit font-normal">
+                  {savings}% off
+                </Badge>
+              )}
+              {!isOffer && offerPrice != null && <span className="text-[11px] text-muted-foreground">Offer {money(Number(offerPrice))} staged</span>}
+            </div>
+          );
+        },
+      },
+
+      {
+        id: 'margin',
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Margin" />,
+        cell: ({ row }) => {
+          const { sellingPrice, costPrice } = row.original;
+          if (sellingPrice == null || costPrice == null || Number(sellingPrice) === 0) return <span className="text-muted-foreground">—</span>;
+
+          const margin = ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100;
+          return (
+            <Badge variant={margin < 0 ? 'rose' : 'emerald'} className="font-normal tabular-nums">
+              {margin.toFixed(1)}%
+            </Badge>
           );
         },
       },
@@ -76,101 +140,80 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         accessorKey: 'stockQuantity',
         enableSorting: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Stock" />,
-        cell: ({ row }) => <div className="tabular-nums">{row.original.stockQuantity ?? 0}</div>,
-      },
-      {
-        id: 'effectiveFrom',
-        accessorKey: 'effectiveFrom',
-        enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="" title="Effective From" />,
         cell: ({ row }) => {
-          const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+          const stock = row.original.stockQuantity ?? 0;
+          const threshold = row.original.lowStockThreshold;
+          const low = threshold != null && stock <= threshold;
+
           return (
-            <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-              {row.original.effectiveFrom ? unitOfService.DateTimeService.convertToLocalDate(row.original.effectiveFrom, true) : '—'}
-            </span>
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className={low ? 'font-semibold tabular-nums text-orange-600' : 'tabular-nums'}>{stock}</span>
+              {low && (
+                <Badge variant="orange" className="gap-1 font-normal">
+                  <AlertTriangle className="h-3 w-3" />
+                  {stock === 0 ? 'Out' : 'Low'}
+                </Badge>
+              )}
+            </div>
           );
         },
       },
       {
-        id: 'effectiveTo',
-        accessorKey: 'effectiveTo',
+        // The two date columns read as one fact - the period this price covers - and an end date
+        // that has passed leaves the variant with no price at all, which is worth flagging.
+        id: 'priceWindow',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="" title="Effective To" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Price Window" />,
         cell: ({ row }) => {
-          const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+          const from = asDate(row.original.effectiveFrom);
+          const to = asDate(row.original.effectiveTo);
+          if (!from && !to) return <span className="text-muted-foreground">—</span>;
+
+          const expired = to != null && to.getTime() < Date.now();
+
           return (
-            <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-              {row.original.effectiveTo ? unitOfService.DateTimeService.convertToLocalDate(row.original.effectiveTo, true) : '—'}
-            </span>
+            <div className="flex flex-col gap-0.5 whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+              <span>
+                {from ? unitOfService.DateTimeService.convertToLocalDate(from, true) : '—'}
+                <span className="mx-1">→</span>
+                {to ? unitOfService.DateTimeService.convertToLocalDate(to, true) : 'open'}
+              </span>
+              {expired && (
+                <Badge variant="rose" className="w-fit font-normal">
+                  Expired — unpriced
+                </Badge>
+              )}
+            </div>
           );
         },
-      },
-      {
-        id: 'sellingPrice',
-        accessorKey: 'sellingPrice',
-        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Selling Price" />,
-        cell: ({ row }) => {
-          const value = row.original.sellingPrice;
-          return <div className="font-medium">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
-        },
-        meta: { sortingKey: 'sellingPrice' },
-      },
-      {
-        id: 'costPrice',
-        accessorKey: 'costPrice',
-        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Cost Price" />,
-        cell: ({ row }) => {
-          const value = row.original.costPrice;
-          return <div className="text-muted-foreground">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
-        },
-        meta: { sortingKey: 'costPrice' },
-      },
-      {
-        id: 'offerPrice',
-        accessorKey: 'offerPrice',
-        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Offer Price" />,
-        cell: ({ row }) => {
-          const value = row.original.offerPrice;
-          return <div className="text-muted-foreground">{value != null ? `$${Number(value).toFixed(2)}` : '—'}</div>;
-        },
-        meta: { sortingKey: 'offerPrice' },
-      },
-      {
-        id: 'margin',
-        accessorKey: 'margin',
-        enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Margin" />,
-        cell: ({ row }) => {
-          const { sellingPrice, costPrice } = row.original;
-          if (sellingPrice == null || costPrice == null || Number(sellingPrice) === 0) return <div>—</div>;
-          const margin = ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100;
-          return <div className={margin < 0 ? 'text-destructive' : 'text-green-600'}>{margin.toFixed(1)}%</div>;
-        },
-        meta: { sortingKey: 'margin' },
       },
       {
         id: 'isActive',
         accessorKey: 'isActive',
-        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.isActive ? 'scusses' : 'orange'}>{row.original.isActive ? 'Active' : 'Superseded'}</Badge>,
-        meta: { sortingKey: 'isActive' },
-      },
-      {
-        id: 'rating',
-        accessorKey: 'rating',
-        // `rating` is a real column, but the API only allow-lists sku/name/createdAt/id.
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Rating" />,
-        cell: ({ row }) => <VariantRating variantId={row.original.id} rating={row.original.rating} ratingCount={row.original.ratingCount} />,
+        header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Status" />,
+        cell: ({ row }) => <Badge variant={row.original.isActive ? 'scusses' : 'zinc'}>{row.original.isActive ? 'Active' : 'Inactive'}</Badge>,
       },
+      // {
+      //   id: 'rating',
+      //   accessorKey: 'rating',
+      //   // `rating` is a real column, but the API only allow-lists sku/name/createdAt/id.
+      //   enableSorting: false,
+      //   header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Rating" />,
+      //   cell: ({ row }) => <VariantRating variantId={row.original.id} rating={row.original.rating} ratingCount={row.original.ratingCount} />,
+      // },
       {
         id: 'description',
         accessorKey: 'description',
         enableSorting: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Description" />,
-        cell: ({ row }) => <div>{row.original?.description || '-'}</div>,
+        cell: ({ row }) => (
+          <p className="line-clamp-2 max-w-[240px] text-xs text-muted-foreground" title={row.original.description ?? undefined}>
+            {row.original.description || '—'}
+          </p>
+        ),
       },
     ],
-    [onEdit]
+    [onEdit, unitOfService]
   );
+};
