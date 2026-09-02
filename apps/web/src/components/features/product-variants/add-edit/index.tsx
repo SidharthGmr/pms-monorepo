@@ -30,8 +30,8 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import VariantRating from '../variant-rating';
 import { Boxes, ImageIcon, Loader2, Package, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Resolver, useFieldArray, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
 
 interface ManageVariantProps {
   id?: number;
@@ -41,26 +41,6 @@ interface ManageVariantProps {
 const LIST_URL = '/admin/product-variants';
 
 const emptyRow: VariantAttributeRow = { code: '', value: '' };
-
-const defaultValues: VariantFormValues = {
-  productId: undefined,
-  name: '',
-  description: '',
-  sku: undefined,
-  barcode: '',
-  images: [],
-  lowStockThreshold: undefined,
-  isActive: true,
-  stockQuantity: undefined,
-  sellingPrice: undefined,
-  costPrice: undefined,
-  offerPrice: undefined,
-  isOffer: false,
-  effectiveFrom: null,
-  effectiveTo: null,
-  reason: '',
-  rows: [emptyRow],
-};
 
 const trimmed = (value?: string | null) => (value?.trim() ? value.trim() : undefined);
 
@@ -81,6 +61,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const variant = variantResponse?.data?.data ?? null;
 
   const { data: productsResponse } = useGetAllProducts({ showAllRecords: true });
+
   const productItems = useMemo(
     () => (productsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
     [productsResponse]
@@ -90,16 +71,33 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const masterAttributes = useMemo(() => attributesResponse?.data?.data?.data ?? [], [attributesResponse]);
   const attributeItems = useMemo(() => masterAttributes.map((attribute) => ({ label: attribute.name, value: attribute.code })), [masterAttributes]);
 
-  const schemaRef = useRef(getProductVariantSchema(false, isEdit));
-  const resolver = useCallback<Resolver<VariantFormValues>>(
-    (values, context, options) => zodResolver<VariantFormValues>(schemaRef.current)(values, context, options),
-    []
-  );
+  const [selectedProductId, setSelectedProductId] = useState<number | undefined>(initialProductId);
+  const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
+  const isFirstVariant = !isEdit && (siblingsResponse?.data?.data?.totalRecord ?? 0) === 0;
 
   const form = useForm<VariantFormValues>({
-    resolver,
-    defaultValues: { ...defaultValues, productId: initialProductId },
+    resolver: zodResolver(getProductVariantSchema(isFirstVariant, isEdit)),
+    defaultValues: {
+      productId: initialProductId,
+      name: '',
+      description: '',
+      sku: undefined,
+      barcode: '',
+      images: [],
+      lowStockThreshold: undefined,
+      isActive: true,
+      stockQuantity: undefined,
+      sellingPrice: undefined,
+      costPrice: undefined,
+      offerPrice: undefined,
+      isOffer: false,
+      effectiveFrom: null,
+      effectiveTo: null,
+      reason: '',
+      rows: [emptyRow],
+    },
   });
+
   const { control, handleSubmit, reset, setValue, watch, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
 
@@ -110,19 +108,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const isOffer = watch('isOffer');
   const savingsPercent =
     offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0 ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
-  const selectedProductId = watch('productId');
-
-  const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
-  const isFirstVariant = !isEdit && (siblingsResponse?.data?.data?.totalRecord ?? 0) === 0;
-
-  schemaRef.current = useMemo(() => getProductVariantSchema(isFirstVariant, isEdit), [isFirstVariant, isEdit]);
-
   useEffect(() => {
     if (!isEdit || !variant || masterAttributes.length === 0) return;
     const builtRows = toAttributeEntries(variant.attributes).map(([key, value]) => {
       const master = masterAttributes.find((m) => m.code.toLowerCase() === key.toLowerCase());
       return { code: master ? master.code : key.toUpperCase(), value: String(value) };
     });
+    setSelectedProductId(variant.product?.id);
     reset({
       productId: variant.product?.id,
       name: variant.name ?? '',
@@ -153,7 +145,6 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     productId: Number(model.productId),
     attributes: rowsToAttributes(model.rows),
     sellingPrice: Number(model.sellingPrice),
-    supersedePrevious: false,
     images: model.images ?? [],
     name: trimmed(model.name) as string,
     description: trimmed(model.description) as string,
@@ -213,7 +204,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     }
   };
 
-  const isLoading = createVariant.isPending || updateVariant.isPending;
+  const isLoading = createVariant.isPending || updateVariant.isPending || isFetching;
   const rowsError = (formState.errors.rows as { message?: string } | undefined)?.message;
   const attributesOptional = isEdit || isFirstVariant;
 
@@ -297,7 +288,11 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                         placeholder="Select product"
                         buttonClass="w-full"
                         containerName="variant-product"
-                        onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                        onChange={(value) => {
+                          const picked = value ? Number(value) : undefined;
+                          field.onChange(picked);
+                          setSelectedProductId(picked);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

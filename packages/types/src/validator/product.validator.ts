@@ -4,8 +4,6 @@ export const productFields = z.object({
   name: z.string().min(1, "Product name is required"),
   parentId: z.number().int().positive("Parent ID is required").nullable().optional(),
   categoryId: z.number().positive("Category is required"),
-  // Both are nullable columns on `product`, and the service coerces empty to null - so the
-  // validator must not insist on them, or a perfectly valid product is rejected.
   brandNameId: z.number().int().positive("Select a brand or leave it empty").nullable().optional(),
   attributeId: z.number().int().positive("Select an attribute or leave it empty").nullable().optional(),
   slug: z.string().min(1, "Slug is required"),

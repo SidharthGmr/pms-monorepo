@@ -1,37 +1,32 @@
-// Body accepted by POST /product-variants. `storeCode` and `createdById` are
-// taken from the authenticated user's token, so they are not sent.
-export interface CreateProductVariantModel {
-  productId: number;
-  sku?: string;
-  /** Required: the column is NOT NULL and the slug is derived from it server-side. */
-  name: string;
-  /** Required: the column is NOT NULL. */
-  description: string;
-  images?: string[];
-  attributes?: Record<string, string | number | boolean>;
-  stockQuantity?: number;
-  sellingPrice: number;
-  costPrice?: number | null;
-  /** Promotional amount for this price period; only charged while `isOffer` is on. */
-  offerPrice?: number | null;
-  /** Turns the promotion on. Without an `offerPrice` the API falls back to `sellingPrice`. */
-  isOffer?: boolean;
-  effectiveFrom?: Date | string;
-  /** Ends this price period. Once it passes the variant has no effective price. */
-  effectiveTo?: Date | string | null;
-  reason?: string | null;
-  supersedePrevious?: boolean;
-}
+import { ProductVariantModel, UpdateProductVariantModel as SharedUpdateProductVariantModel } from '@pms/types';
 
 /**
- * Body accepted by PUT /product-variants/:id. Plain columns are written directly; a changed
- * `sellingPrice`/`costPrice` is appended to the PriceHistory ledger, and a changed
- * `stockQuantity` (target on-hand) is booked as a stock adjustment — the API handles both.
+ * Body accepted by POST /product-variants. Derived from the shared model so the field set has
+ * one definition, with three adjustments the wire format needs:
+ *  - `storeCode` / `createdById` come from the token, so the browser never sends them,
+ *  - `status`, `isActive`, `attributes` and `images` are defaulted by the API when omitted,
+ *  - dates travel as ISO strings.
  */
+export type CreateProductVariantModel = Omit<
+  ProductVariantModel,
+  'storeCode' | 'createdById' | 'status' | 'isActive' | 'attributes' | 'images' | 'effectiveFrom' | 'effectiveTo'
+> &
+  Partial<Pick<ProductVariantModel, 'status' | 'isActive' | 'attributes' | 'images'>> & {
+    effectiveFrom?: Date | string;
+    effectiveTo?: Date | string | null;
+  };
+
 /**
- * Body accepted by POST /product-variants/rating/:id. The rater comes from the token and the
- * store from the variant, so only the score travels.
+ * Body accepted by PUT /product-variants/:id. Every field is optional - a partial edit never
+ * blanks what it did not send. A changed `sellingPrice`/`offerPrice`/`costPrice` is appended to
+ * the PriceHistory ledger and a changed `stockQuantity` is booked as a stock adjustment.
  */
+export type UpdateProductVariantModel = Omit<SharedUpdateProductVariantModel, 'updatedById' | 'effectiveFrom' | 'effectiveTo'> & {
+  effectiveFrom?: Date | string;
+  effectiveTo?: Date | string | null;
+};
+
+/** Body accepted by POST /product-variants/rating/:id - only the score travels. */
 export interface RateProductVariantModel {
   rating: number;
 }
@@ -40,28 +35,6 @@ export interface RateProductVariantModel {
 export interface VariantRatingDto {
   variantId: number;
   userRating: number;
-  /** Average across every rating; null when the variant has never been rated. */
   rating: number | null;
   ratingCount: number;
-}
-
-export interface UpdateProductVariantModel {
-  name?: string;
-  description?: string;
-  sku?: string;
-  barcode?: string | null;
-  attributes?: Record<string, string | number | boolean>;
-  images?: string[];
-  lowStockThreshold?: number | null;
-  isActive?: boolean;
-  /** A plain column - toggling it does not file a new price row. */
-  isOffer?: boolean;
-  sellingPrice?: number;
-  /** Part of the same reprice as `sellingPrice`; omit to carry the current offer forward. */
-  offerPrice?: number | null;
-  costPrice?: number | null;
-  effectiveFrom?: string | null;
-  effectiveTo?: string | null;
-  stockQuantity?: number | null;
-  reason?: string | null;
 }
