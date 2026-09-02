@@ -269,7 +269,7 @@ model ProductVariant {
   sku               String
   barcode           String?
   attributes        Json
-  description       String?
+  description       String
   seoTitle          String?   @db.VarChar(255)
   seoDescription    String?
   images            String[]  @default([])

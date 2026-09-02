@@ -41,3 +41,18 @@ export async function resolveVariantSku(
   }
   return candidate;
 }
+
+export async function resolveVariantSlug(
+  tx: Prisma.TransactionClient,
+  input: { storeCode: string; name: string; slug?: string | null | undefined }
+): Promise<string> {
+  const base = (input.slug || slugify(input.name) || 'variant').toLowerCase();
+
+  let candidate = base;
+  let n = 1;
+  while (await tx.productVariant.findFirst({ where: { storeCode: input.storeCode, slug: candidate }, select: { id: true } })) {
+    n += 1;
+    candidate = `${base}-${n}`;
+  }
+  return candidate;
+}

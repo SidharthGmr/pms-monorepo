@@ -29,6 +29,8 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
   const [recordCount, setRecordCount] = useState<number>(0);
   const [showAddForm, setShowAddForm] = useState(false);
 
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [sellingPrice, setSellingPrice] = useState<number | ''>('');
   const [costPrice, setCostPrice] = useState<number | ''>('');
   const [effectiveFrom, setEffectiveFrom] = useState<string>('');
@@ -86,6 +88,8 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
       : null;
 
   const resetForm = () => {
+    setName('');
+    setDescription('');
     setSellingPrice('');
     setCostPrice('');
     setEffectiveFrom('');
@@ -94,6 +98,14 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
 
   const handleAddVariant = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      toast({ title: 'Error', description: 'Variant name is required', variant: 'destructive' });
+      return;
+    }
+    if (!description.trim()) {
+      toast({ title: 'Error', description: 'Description is required', variant: 'destructive' });
+      return;
+    }
     if (sellingPrice === '' || Number(sellingPrice) < 0) {
       toast({ title: 'Error', description: 'Selling price is required and must be zero or greater', variant: 'destructive' });
       return;
@@ -106,6 +118,8 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
     try {
       await createVariant({
         productId,
+        name: name.trim(),
+        description: description.trim(),
         sellingPrice: Number(sellingPrice),
         ...(costPrice !== '' && { costPrice: Number(costPrice) }),
         ...(effectiveFrom && { effectiveFrom: new Date(effectiveFrom).toISOString() }),
@@ -181,6 +195,31 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
                       {margin.toFixed(1)}% margin
                     </span>
                   )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="variantName" className="text-xs text-slate-500 font-normal">
+                    Variant name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="variantName"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={productName}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="variantDescription" className="text-xs text-slate-500 font-normal">
+                    Description <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    id="variantDescription"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={2}
+                    placeholder="What makes this variant distinct."
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

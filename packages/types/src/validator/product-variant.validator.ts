@@ -1,10 +1,21 @@
 import { z } from "zod";
+import { StatusEnum } from "../enum/status.enum";
+
+
+
 
 export const productVariantFields = z.object({
   productId: z.number().int().positive("Product ID is required"),
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
-  name: z.string().max(150, "Name is too long").nullable().optional(),
+  name: z.string().min(1, "Name is required").max(150, "Name is too long"),
+  description: z.string().min(1, "Description is required"),
+  barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
   images: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  status: z.nativeEnum(StatusEnum).optional(),
+  lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
+  compareAtPrice: z.number().nonnegative("Compare-at price must be a non-negative number").nullable().optional(),
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").optional(),
   sellingPrice: z.number().nonnegative("Selling price must be a non-negative number"),
@@ -13,7 +24,7 @@ export const productVariantFields = z.object({
   effectiveFrom: z.coerce.date().optional(),
   effectiveTo: z.coerce.date().nullable().optional(),
   reason: z.string().nullable().optional(),
-  isOffer: z.boolean(),
+  isOffer: z.boolean().optional(),
   supersedePrevious: z.boolean().optional(),
 });
 
@@ -34,7 +45,8 @@ export const CreateProductVariantValidator = z.object({ body: productVariantFiel
  * (the service handles both), so history is never overwritten.
  */
 export const updateProductVariantFields = z.object({
-  name: z.string().max(150, "Name is too long").nullable().optional(),
+  name: z.string().min(1, "Name cannot be empty").max(150, "Name is too long").optional(),
+  description: z.string().min(1, "Description cannot be empty").optional(),
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
   barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),

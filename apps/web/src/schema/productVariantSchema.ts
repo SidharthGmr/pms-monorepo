@@ -25,6 +25,7 @@ const variantFormFields = z.object({
    */
   productId: productVariantFields.shape.productId.optional(),
   name: updateProductVariantFields.shape.name,
+  description: updateProductVariantFields.shape.description,
   sku: productVariantFields.shape.sku,
   barcode: updateProductVariantFields.shape.barcode,
   images: productVariantFields.shape.images,
@@ -51,6 +52,14 @@ export type VariantFormValues = z.infer<typeof variantFormFields>;
  */
 export const getProductVariantSchema = (isFirstVariant: boolean, isEdit = false) =>
   variantFormFields.superRefine((values, ctx) => {
+    // Required on create and on edit: the column is NOT NULL, and the API derives the
+    // variant's URL slug from it.
+    if (!values.name || !values.name.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['name'], message: 'Variant name is required' });
+    }
+    if (!values.description || !values.description.trim()) {
+      ctx.addIssue({ code: 'custom', path: ['description'], message: 'Description is required' });
+    }
     if (!isEdit && values.sellingPrice == null) {
       ctx.addIssue({ code: 'custom', path: ['sellingPrice'], message: 'Selling price is required' });
     }

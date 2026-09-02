@@ -45,6 +45,7 @@ const emptyRow: VariantAttributeRow = { code: '', value: '' };
 const defaultValues: VariantFormValues = {
   productId: undefined,
   name: '',
+  description: '',
   sku: undefined,
   barcode: '',
   images: [],
@@ -108,9 +109,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   const offerPrice = watch('offerPrice');
   const isOffer = watch('isOffer');
   const savingsPercent =
-    offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0
-      ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100)
-      : 0;
+    offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0 ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
   const selectedProductId = watch('productId');
 
   const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
@@ -127,6 +126,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     reset({
       productId: variant.product?.id,
       name: variant.name ?? '',
+      description: variant.description ?? '',
       sku: variant.sku,
       barcode: variant.barcode ?? '',
       images: variant.images ?? [],
@@ -155,7 +155,8 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     sellingPrice: Number(model.sellingPrice),
     supersedePrevious: false,
     images: model.images ?? [],
-    ...(trimmed(model.name) && { name: trimmed(model.name) }),
+    name: trimmed(model.name) as string,
+    description: trimmed(model.description) as string,
     ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
     ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
     ...(model.costPrice != null && { costPrice: Number(model.costPrice) }),
@@ -167,7 +168,8 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
   });
 
   const toUpdateModel = (model: VariantFormValues): UpdateProductVariantModel => ({
-    name: trimmed(model.name) ?? null,
+    ...(trimmed(model.name) && { name: trimmed(model.name) as string }),
+    ...(trimmed(model.description) && { description: trimmed(model.description) as string }),
     barcode: trimmed(model.barcode) ?? null,
     attributes: rowsToAttributes(model.rows),
     images: model.images ?? [],
@@ -391,10 +393,31 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Variant name <span className="font-normal text-muted-foreground">(optional)</span>
+                      Variant name <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder='e.g. 64GB / 4GB / 4.5" — defaults to the attribute combination' {...field} value={field.value ?? ''} />
+                      <Input placeholder='e.g. 64GB / 4GB / 4.5"' {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Description <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="What makes this variant distinct - fabric, capacity, finish."
+                        rows={3}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

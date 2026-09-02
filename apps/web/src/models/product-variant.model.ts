@@ -3,7 +3,10 @@
 export interface CreateProductVariantModel {
   productId: number;
   sku?: string;
-  name?: string;
+  /** Required: the column is NOT NULL and the slug is derived from it server-side. */
+  name: string;
+  /** Required: the column is NOT NULL. */
+  description: string;
   images?: string[];
   attributes?: Record<string, string | number | boolean>;
   stockQuantity?: number;
@@ -43,7 +46,8 @@ export interface VariantRatingDto {
 }
 
 export interface UpdateProductVariantModel {
-  name?: string | null;
+  name?: string;
+  description?: string;
   sku?: string;
   barcode?: string | null;
   attributes?: Record<string, string | number | boolean>;

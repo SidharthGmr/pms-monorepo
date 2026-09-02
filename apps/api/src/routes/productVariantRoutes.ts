@@ -169,16 +169,57 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *             type: object
  *             required:
  *               - productId
+ *               - name
+ *               - description
  *               - sellingPrice
  *             properties:
  *               productId:
  *                 type: integer
  *                 example: 5
  *                 description: Product to record a variant for (required)
+ *               name:
+ *                 type: string
+ *                 maxLength: 150
+ *                 example: "Red / Large"
+ *                 description: >
+ *                   Display name for this variant (required). The URL slug is derived from it
+ *                   server-side and made unique within the store; slug is not accepted in the body.
+ *               description:
+ *                 type: string
+ *                 example: "Cotton crew-neck tee in red, large."
+ *                 description: Variant description (required).
  *               sku:
  *                 type: string
  *                 example: "TSHIRT-001-RED-L"
  *                 description: Unique SKU. Generated from store + product when omitted.
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Variant photos. Defaults to an empty list.
+ *               isActive:
+ *                 type: boolean
+ *                 example: true
+ *                 description: Whether the variant is sellable. Defaults to true.
+ *               status:
+ *                 type: string
+ *                 enum: [Draft, Published, Trash]
+ *                 description: Defaults to Draft.
+ *               barcode:
+ *                 type: string
+ *                 nullable: true
+ *                 maxLength: 100
+ *               isFeatured:
+ *                 type: boolean
+ *                 description: Defaults to false.
+ *               lowStockThreshold:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: Defaults to 5 when omitted or null.
+ *               compareAtPrice:
+ *                 type: number
+ *                 nullable: true
+ *                 description: Struck-through reference price, filed on the same ledger row.
  *               attributes:
  *                 type: object
  *                 additionalProperties:
@@ -186,8 +227,7 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                     - type: string
  *                     - type: number
  *                     - type: boolean
- *                 example: { "size": "L", "color": "Red" }
- *                 description: What makes this variant distinct. Keys are master-attribute codes, values are master-entry values.
+ *                 example: { "size": "L", "color": "Red" } 
  *               stockQuantity:
  *                 type: integer
  *                 example: 25
@@ -220,9 +260,9 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                 type: boolean
  *                 example: false
  *                 description: >
- *                   Turns the promotion on. A column on the variant, not the ledger. With it on and
- *                   an offerPrice set, carts and orders are billed the offerPrice; otherwise the
- *                   sellingPrice. Defaults to false.
+ *                   Turns the promotion on (optional). A column on the variant, not the ledger. With
+ *                   it on and an offerPrice set, carts and orders are billed the offerPrice;
+ *                   otherwise the sellingPrice. Defaults to false.
  *               effectiveFrom:
  *                 type: string
  *                 format: date-time
@@ -247,12 +287,6 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *         description: Validation error or store code not found
  *       401:
  *         description: Unauthorized - Invalid or missing token
- *     description: >
- *       Records a variant and files its price in the PriceHistory ledger, which is the source of
- *       truth for what the variant costs - price is not a column on the variant, it is resolved
- *       from the effective ledger row on every read. By default the previously active variant is deactivated (a price
- *       change) - pass supersedePrevious=false to add a sibling variant instead. storeCode and
- *       createdById are taken from the authenticated user's token.
  */
 productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantValidator), asyncHandler(productVariantController.create));
 
@@ -284,7 +318,11 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
  *             properties:
  *               name:
  *                 type: string
- *                 nullable: true
+ *                 maxLength: 150
+ *                 description: Display name. Cannot be cleared - the column is NOT NULL.
+ *               description:
+ *                 type: string
+ *                 description: Cannot be cleared - the column is NOT NULL.
  *               sku:
  *                 type: string
  *               barcode:

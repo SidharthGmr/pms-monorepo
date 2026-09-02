@@ -8,7 +8,7 @@ import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
-import { resolveVariantSku } from '../utils/variant-sku';
+import { resolveVariantSku, resolveVariantSlug } from '../utils/variant-sku';
 import { IProductVariantService } from './interfaces/Iproduct-variant.service';
 
 @injectable()
@@ -25,24 +25,27 @@ export class ProductVariantService implements IProductVariantService {
         attributes: data.attributes,
       });
 
+      const slug = await resolveVariantSlug(transactionClient, { storeCode, name: data.name, slug: data.slug });
+
       const variant = await transactionClient.productVariant.create({
         data: {
           productId: data.productId,
           storeCode,
           createdById: userId,
           sku,
-          attributes: data.attributes ?? {},
-          isActive: data.isActive ?? true,
-          ...(data.name !== undefined && { name: data.name }),
-          ...(data.slug !== undefined && { slug: data.slug }),
-          ...(data.description !== undefined && { description: data.description }),
+          slug,
+          name: data.name,
+          description: data.description,
+          attributes: data.attributes as Prisma.InputJsonValue,
+          images: data.images,
+          isActive: data.isActive,
+          status: data.status as Status,
+          metadata: data as any,
           ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
           ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
-          ...(data.status !== undefined && { status: data.status as Status }),
           ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
           ...(data.barcode !== undefined && { barcode: data.barcode }),
-          ...(data.images !== undefined && { images: data.images }),
-          ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
+          ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
           ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
         },
         select: { id: true },
@@ -59,7 +62,7 @@ export class ProductVariantService implements IProductVariantService {
             sellingPrice: data.sellingPrice,
             offerPrice: data.offerPrice ?? null,
             compareAtPrice: data.compareAtPrice ?? null,
-            ...(data.effectiveFrom != null && { effectiveFrom: new Date(data.effectiveFrom) }),
+            effectiveFrom: new Date(data.effectiveFrom),
             ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo == null ? null : new Date(data.effectiveTo) }),
             reason: data.reason ?? null,
             createdById: userId,
@@ -125,9 +128,14 @@ export class ProductVariantService implements IProductVariantService {
           ...(data.name !== undefined && { name: data.name }),
           ...(data.sku !== undefined && { sku: data.sku }),
           ...(data.barcode !== undefined && { barcode: data.barcode }),
-          ...(data.attributes !== undefined && { attributes: data.attributes }),
+          ...(data.attributes !== undefined && { attributes: data.attributes as Prisma.InputJsonValue }),
           ...(data.images !== undefined && { images: data.images }),
-          ...(data.lowStockThreshold !== undefined && { lowStockThreshold: data.lowStockThreshold }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
+          ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
+          ...(data.status !== undefined && { status: data.status as Status }),
+          ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
+          ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
           ...(data.isActive !== undefined && { isActive: data.isActive }),
           ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
           updatedById: data.updatedById,

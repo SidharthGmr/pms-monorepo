@@ -3,11 +3,13 @@ import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import CustomResponse from '@pms/types/src/dto/custom-response';
+import { Status } from '@prisma/client';
 import {
   ListResponseDto,
   ProductVariantListItemDto,
   ProductVariantModel,
   ProductVariantResponseDto,
+  StatusEnum,
   UpdateProductVariantModel,
 } from '@pms/types';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
@@ -85,8 +87,55 @@ export class ProductVariantController {
         message: 'Store code not found. User must be associated with a store.'
       });
     }
-    const body = req.body as ProductVariantModel;
-    const product = await this.unitOfService.ProductVariant.create(body, userId, storeCode);
+    const body = req.body as {
+      productId: number;
+      name: string;
+      description: string;
+      sku?: string;
+      barcode?: string | null;
+      attributes?: Record<string, string | number | boolean>;
+      images?: string[];
+      isActive?: boolean;
+      isOffer?: boolean;
+      status?: Status;
+      isFeatured?: boolean;
+      lowStockThreshold?: number | null;
+      stockQuantity?: number;
+      sellingPrice: number;
+      offerPrice?: number | null;
+      costPrice?: number | null;
+      compareAtPrice?: number | null;
+      effectiveFrom?: string | Date;
+      effectiveTo?: string | Date | null;
+      reason?: string | null;
+    };
+
+    const model: ProductVariantModel = {
+      productId: body.productId,
+      storeCode,
+      createdById: userId,
+      name: body.name,
+      description: body.description,
+      attributes: body.attributes ?? {},
+      images: body.images ?? [],
+      isActive: body.isActive ?? true,
+      status: body.status ?? StatusEnum.Draft,
+      effectiveFrom: body.effectiveFrom !== undefined ? new Date(body.effectiveFrom) : new Date(),
+      sellingPrice: body.sellingPrice,
+      ...(body.sku !== undefined && { sku: body.sku }),
+      ...(body.barcode !== undefined && { barcode: body.barcode }),
+      ...(body.isOffer !== undefined && { isOffer: body.isOffer }),
+      ...(body.isFeatured !== undefined && { isFeatured: body.isFeatured }),
+      ...(body.lowStockThreshold !== undefined && { lowStockThreshold: body.lowStockThreshold }),
+      ...(body.stockQuantity !== undefined && { stockQuantity: body.stockQuantity }),
+      ...(body.offerPrice !== undefined && { offerPrice: body.offerPrice }),
+      ...(body.costPrice !== undefined && { costPrice: body.costPrice }),
+      ...(body.compareAtPrice !== undefined && { compareAtPrice: body.compareAtPrice }),
+      ...(body.effectiveTo !== undefined && { effectiveTo: body.effectiveTo === null ? null : new Date(body.effectiveTo) }),
+      ...(body.reason !== undefined && { reason: body.reason }),
+    };
+
+    const product = await this.unitOfService.ProductVariant.create(model, userId, storeCode);
     return res.status(201).json({ success: true, message: "Product created successfully", data: product });
   };
 
@@ -101,7 +150,8 @@ export class ProductVariantController {
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
 
     const body = req.body as {
-      name?: string | null;
+      name?: string;
+      description?: string;
       sku?: string;
       barcode?: string | null;
       attributes?: Record<string, string | number | boolean>;
@@ -109,6 +159,8 @@ export class ProductVariantController {
       lowStockThreshold?: number | null;
       isActive?: boolean;
       isOffer?: boolean;
+      status?: Status;
+      isFeatured?: boolean;
       sellingPrice?: number;
       offerPrice?: number | null;
       costPrice?: number | null;
@@ -121,6 +173,7 @@ export class ProductVariantController {
     const model: UpdateProductVariantModel = {
       updatedById: userId,
       ...(body.name !== undefined && { name: body.name }),
+      ...(body.description !== undefined && { description: body.description }),
       ...(body.sku !== undefined && { sku: body.sku }),
       ...(body.barcode !== undefined && { barcode: body.barcode }),
       ...(body.attributes !== undefined && { attributes: body.attributes }),
@@ -128,6 +181,8 @@ export class ProductVariantController {
       ...(body.lowStockThreshold !== undefined && { lowStockThreshold: body.lowStockThreshold }),
       ...(body.isActive !== undefined && { isActive: body.isActive }),
       ...(body.isOffer !== undefined && { isOffer: body.isOffer }),
+      ...(body.status !== undefined && { status: body.status }),
+      ...(body.isFeatured !== undefined && { isFeatured: body.isFeatured }),
       ...(body.sellingPrice !== undefined && { sellingPrice: body.sellingPrice }),
       ...(body.offerPrice !== undefined && { offerPrice: body.offerPrice }),
       ...(body.costPrice !== undefined && { costPrice: body.costPrice }),
