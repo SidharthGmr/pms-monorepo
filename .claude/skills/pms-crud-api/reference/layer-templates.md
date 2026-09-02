@@ -29,9 +29,16 @@ export interface CreateCouponDto {
 }
 ```
 
-`CreateCouponDto` doubles as the update payload in this codebase (see
-`IBrandNameService.update`). Add a separate `UpdateCouponDto` only when update
-genuinely accepts a different set of fields.
+**One model for create and update.** `CreateCouponDto` is the payload for both (see
+`IBrandNameService.update`) — so a new field is added once and both paths accept it.
+Add a separate update model only when update genuinely accepts a different set of
+fields, and derive it instead of retyping the shared half:
+
+```ts
+export interface UpdateCouponDto extends Omit<CreateCouponDto, 'createdById'> {
+  updatedById: string;
+}
+```
 
 ---
 
@@ -100,9 +107,11 @@ export interface ICouponRepository {
 }
 ```
 
-Reads + soft delete live on the repository; creates/updates are done inside the
-service's `transaction()` callback (that's the existing pattern — the tx client is
-scoped to the transaction, so it can't be handed to a repository method).
+**No `create` or `update` on the repository interface** — note the three methods above.
+Reads + soft delete live here; every create/update is written with the transaction client
+inside the service's `transaction()` callback. A `tx` client is scoped to its transaction
+and can't be handed to a repository method that closes over the module-level `prisma`, so
+a repository write would run outside the transaction and survive a rollback.
 
 ---
 
@@ -207,6 +216,10 @@ export interface ICouponService {
 }
 ```
 
+`create` and `update` take the **same** `CreateCouponDto` — that is the convention, not an
+oversight. `storeCode` is a separate argument on `create` because it comes from `req.user`,
+never the body, and update must not be able to move a row to another store.
+
 ---
 
 ## 7. `src/services/coupon.service.ts`
@@ -272,6 +285,12 @@ export class CouponService implements ICouponService {
   }
 }
 ```
+
+Both writes go through `tx.coupon.*`; there is deliberately no
+`this.unitOfWork.Coupon.create(...)` / `.update(...)` to call. Only the reads
+(`findById`) and the soft delete come off the repository — so when create later grows a
+second write (a history row, a stock movement, a join-table insert) it joins the same
+`tx` and rolls back as one unit, with no partial row left behind.
 
 `import type IUnitOfWork` is the convention here (it's a type-only import in a file
 that uses `emitDecoratorMetadata`). `transaction()` already widens Prisma's timeouts

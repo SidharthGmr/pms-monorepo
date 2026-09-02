@@ -7,6 +7,7 @@ import CustomResponse from '../dtos/custom-response';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { BrandNameFilterParams } from '../params/brand-name.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
+import { CreateBrandModel } from '@pms/types';
 
 export class BrandNameController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -47,7 +48,7 @@ export class BrandNameController {
   };
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<BrandNameDto>>> => {
-    const body = req.body as CreateBrandNameDto;
+    const body = req.body as CreateBrandModel;
     const storeCode = req.user?.storeCode; // Get from logged-in user
 
     if (!storeCode) {
@@ -63,7 +64,7 @@ export class BrandNameController {
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<BrandNameDto>>> => {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
-    const body = req.body as CreateBrandNameDto;
+    const body = req.body as CreateBrandModel;
     const data = await this.unitOfService.BrandName.update(id, body);
     return res.status(200).json({ success: true, message: 'Brand name updated successfully', data });
   };

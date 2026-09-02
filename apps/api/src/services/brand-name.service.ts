@@ -6,6 +6,7 @@ import NotFoundError from "../exceptions/not-found-error";
 import { BrandNameFilterParams } from "../params/brand-name.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IBrandNameService } from "./interfaces/Ibrand-name.service";
+import { CreateBrandModel } from "@pms/types";
 
 @injectable()
 export class BrandNameService implements IBrandNameService {
@@ -23,7 +24,7 @@ export class BrandNameService implements IBrandNameService {
     return brandName;
   }
 
-  async create(data: CreateBrandNameDto, storeCode: string): Promise<BrandNameDto> {
+  async create(data: CreateBrandModel, storeCode: string): Promise<BrandNameDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
       const storeData = await transactionClient.brandName.create({
         data: {
@@ -38,7 +39,7 @@ export class BrandNameService implements IBrandNameService {
     });
   }
 
-  async update(id: number, data: CreateBrandNameDto): Promise<BrandNameDto> {
+  async update(id: number, data: CreateBrandModel): Promise<BrandNameDto> {
     const existing = await this.unitOfWork.BrandName.findById(id);
     if (!existing) throw new NotFoundError("BrandName not found");
 

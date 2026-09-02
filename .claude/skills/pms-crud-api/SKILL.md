@@ -2,7 +2,7 @@
 name: pms-crud-api
 description: Build a new CRUD REST API endpoint set in apps/api (Node.js + TypeScript + Express 5 + Prisma + InversifyJS) following this repo's layered routes → controller → UnitOfService → service → UnitOfWork → repository → Prisma structure. Use whenever the user wants to "create an API", "add CRUD endpoints", "add a new module/entity/resource" (e.g. coupons, warehouses, taxes), "scaffold list/get/create/update/delete", wire a controller/service/repository, or extend an existing entity with new endpoints in apps/api. Also use when reviewing whether an API addition follows the project structure.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   tags: "api, crud, express, typescript, prisma, inversify"
 ---
 
@@ -19,9 +19,9 @@ common failure mode.
 routes/xRoutes.ts          Express router: URL, middleware order, Swagger JSDoc, validate(schema)
   → controllers/x.controller.ts   HTTP only: parse req.query/params, build FilterParams, shape CustomResponse
     → IUnitOfService.X            controllers NEVER import a service class directly
-      → services/x.service.ts     business rules, existence checks, throw NotFoundError, unitOfWork.transaction()
-        → IUnitOfWork.X           services NEVER import prisma directly (writes go through transaction())
-          → repository/x.repository.ts   the only place `prisma.x.*` is called; maps rows → DTO
+      → services/x.service.ts     business rules, existence checks, throw NotFoundError; every write is tx.x.create/update inside unitOfWork.transaction()
+        → IUnitOfWork.X           reads only; services NEVER import prisma directly
+          → repository/x.repository.ts   reads + soft delete; the only place `prisma.x.*` is called; maps rows → DTO
 ```
 
 Hard rules that fall out of this:
@@ -29,6 +29,19 @@ Hard rules that fall out of this:
 - A controller that touches `prisma` or `unitOfWork` is wrong.
 - A service that imports `config/prisma` is wrong — use `this.unitOfWork.transaction(tx => …)`
   for writes and `this.unitOfWork.X.*` for reads.
+- **Create and update use the transaction client, never a repository method.** Write them as
+  `this.unitOfWork.transaction(async (tx) => tx.x.create({ data: { … } }))` and
+  `… tx.x.update({ where: { id }, data: { … } })`. The repository interface gets **no**
+  `create` / `update`: a `tx` client is scoped to its transaction and can't be handed to a
+  repository method that closes over the module-level `prisma`, so a repository write runs
+  outside the transaction and won't roll back when a later step in the same operation fails.
+  This is why an entity with a price/stock ledger (`product-variant`) writes the row *and*
+  its history rows on the same `tx`.
+- **One model serves create and update.** `CreateXDto` is the payload for both — one type,
+  one validator shape, one place to add a field. Don't mirror it into an `UpdateXDto` that
+  drifts a field at a time. Add a separate update model only when update genuinely accepts a
+  different set of fields, and then derive it rather than retyping it:
+  `interface UpdateXDto extends Omit<CreateXDto, 'createdById'> { updatedById: string }`.
 - A repository that throws HTTP-shaped errors is wrong — it returns `null`, the service
   turns that into `NotFoundError`.
 - Nothing returns a raw Prisma row to the client: reads return `Dto` / `ListResponseDto<Dto>`.

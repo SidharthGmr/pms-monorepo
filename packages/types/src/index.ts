@@ -24,6 +24,7 @@ export * from "./model/purchase.model"
 export * from "./model/category.model"
 export * from "./model/profile.model";
 export * from "./model/productVarient.model";
+export * from "./model/brand-name.model";
 
 
 
