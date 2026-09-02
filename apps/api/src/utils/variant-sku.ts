@@ -1,14 +1,5 @@
-/**
- * `ProductVariant.sku` is `@unique` (per store) and NOT NULL, but a SKU is rarely typed -
- * variants are often created as a side effect of a price change. This builds a readable,
- * deterministic SKU from the product and the variant's attribute values, e.g.
- *   product "iphone-15" + { storage: "64Gb", ram: "4GB" }  ->  "IPHONE-15-64GB-4GB"
- *
- * The result is a *base*; the repository appends a numeric suffix when it would collide
- * (e.g. two attribute-less rows on the same product), so callers get a unique value.
- */
+import { Prisma } from '@prisma/client';
 
-/** Upper-case, keep only A-Z0-9, collapse everything else to single hyphens. */
 function slugify(value: string): string {
   return value
     .toUpperCase()
@@ -30,6 +21,23 @@ export function buildVariantSku(base: string, attributes?: Record<string, unknow
     }
   }
 
-  // A product with no slug and no attributes still needs something non-empty.
   return parts.join('-') || 'VARIANT';
+}
+
+export async function resolveVariantSku(
+  tx: Prisma.TransactionClient,
+  input: { storeCode: string; productId: number; sku?: string | null | undefined; attributes?: unknown }
+): Promise<string> {
+  if (input.sku) return input.sku;
+
+  const product = await tx.product.findUnique({ where: { id: input.productId }, select: { slug: true, name: true } });
+  const base = buildVariantSku(product?.slug || product?.name || `P${input.productId}`, input.attributes as Record<string, unknown> | undefined);
+
+  let candidate = base;
+  let n = 1;
+  while (await tx.productVariant.findFirst({ where: { storeCode: input.storeCode, sku: candidate }, select: { id: true } })) {
+    n += 1;
+    candidate = `${base}-${n}`;
+  }
+  return candidate;
 }

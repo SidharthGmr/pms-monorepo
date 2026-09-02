@@ -2,7 +2,7 @@
 name: pms-crud-api
 description: Build a new CRUD REST API endpoint set in apps/api (Node.js + TypeScript + Express 5 + Prisma + InversifyJS) following this repo's layered routes → controller → UnitOfService → service → UnitOfWork → repository → Prisma structure. Use whenever the user wants to "create an API", "add CRUD endpoints", "add a new module/entity/resource" (e.g. coupons, warehouses, taxes), "scaffold list/get/create/update/delete", wire a controller/service/repository, or extend an existing entity with new endpoints in apps/api. Also use when reviewing whether an API addition follows the project structure.
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   tags: "api, crud, express, typescript, prisma, inversify"
 ---
 
@@ -115,6 +115,24 @@ keys whose `Symbol.for("…")` string drops the leading `I`
 - **Client-id gate**: every non-Swagger route requires a `clientId` header matching
   `CLIENT_ID`; set `SITE_MODE=local` when calling from scripts/curl during dev.
 - Prettier here: `singleQuote: true`, `semi: true`, `printWidth: 150`, 2-space indent.
+
+## Comments
+
+**Write no comments.** The layers are uniform, so a reader who knows one resource knows them
+all — a comment restating what the next line does is noise to scroll past, and it goes stale
+the moment the line changes.
+
+Comment only where the logic is genuinely complex, meaning a reader who understands the code
+would still make a wrong change without it:
+
+- a non-obvious invariant (a write that must stay inside a specific transaction, an ordering
+  two call sites depend on),
+- a workaround whose reason is invisible (a library quirk, a Prisma/PgBouncer constraint),
+- a raw SQL query or a window function.
+
+Not comment-worthy: what a function is called, what a DTO field maps to, "// create the user",
+section banners (`// 1. validate`), restating a conditional, or JSDoc that repeats the
+signature. Delete commented-out code rather than leaving it — git has it.
 
 ## Shared types
 

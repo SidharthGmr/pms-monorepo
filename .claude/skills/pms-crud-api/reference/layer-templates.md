@@ -1,5 +1,8 @@
 # Layer templates
 
+Comments in these templates are kept to the two cases the rule in `SKILL.md` allows — the
+sort allow-list and the transaction-scoping note. Copy the code, not the prose around it.
+
 Example entity: **`Coupon`** (kebab `coupon`, route `/coupons`, Prisma model `coupon`).
 Replace `Coupon` / `coupon` / `coupons` throughout. Assumes the Prisma model has
 `id`, `name`, `storeCode`, `status`, `displayOrder?`, `createdAt`, `updatedAt`.
@@ -125,8 +128,7 @@ import { ListResponseDto } from '../dtos/list-response.dto';
 import { CouponFilterParams } from '../params/coupon.params';
 import { ICouponRepository } from './interfaces/icoupon.repository';
 
-// Sorting is client-driven, so only real columns are honoured — anything else falls
-// back to the default instead of failing the query.
+// An arbitrary sortBy reaching Prisma's orderBy is a runtime error, so it is allow-listed.
 const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
 
 export class CouponRepository implements ICouponRepository {
@@ -158,8 +160,6 @@ export class CouponRepository implements ICouponRepository {
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
-    // Newest-first by default; when displayOrder is the sort key keep unordered rows
-    // (displayOrder = null) at the end instead of letting them lead.
     const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
     const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
     const orderBy: Prisma.couponOrderByWithRelationInput[] =

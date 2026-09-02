@@ -17,11 +17,7 @@ export const productVariantFields = z.object({
   supersedePrevious: z.boolean().optional(),
 });
 
-/**
- * A period that ends at or before it starts matches nothing in `effectiveOn`, so the price
- * would be invisible the moment it is filed. Declared here rather than on the field objects
- * so those stay plain `z.object`s - the web form reads `.shape.x` off them.
- */
+
 const periodIsOrdered = (values: { effectiveFrom?: Date | undefined; effectiveTo?: Date | null | undefined }, ctx: z.RefinementCtx) => {
   if (values.effectiveTo == null) return;
   const from = values.effectiveFrom ?? new Date();
@@ -30,8 +26,6 @@ const periodIsOrdered = (values: { effectiveFrom?: Date | undefined; effectiveTo
   }
 };
 
-// Express `validate(schema)` middleware parses `{ body, query, params }`.
-// storeCode and createdById are taken from the authenticated user, not the body.
 export const CreateProductVariantValidator = z.object({ body: productVariantFields.superRefine(periodIsOrdered) });
 
 /**

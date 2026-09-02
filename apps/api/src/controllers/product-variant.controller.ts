@@ -3,14 +3,18 @@ import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import CustomResponse from '@pms/types/src/dto/custom-response';
-import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
-import { CreateProductVariantModel, UpdateProductVariantModel } from '../models/product-variant.model';
+import {
+  ListResponseDto,
+  ProductVariantListItemDto,
+  ProductVariantModel,
+  ProductVariantResponseDto,
+  UpdateProductVariantModel,
+} from '@pms/types';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { VariantRatingDto } from '../dtos/product-variant.dto';
 
 export class ProductVariantController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
-
 
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantListItemDto>>>> => {
     const storeCode = req.user?.storeCode;
@@ -25,7 +29,6 @@ export class ProductVariantController {
         search: req.query['search'] as string | undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
-        // productIds: productIds && productIds.length > 0 ? productIds : undefined,
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
         isActive: req.query['isActive'] !== undefined ? req.query['isActive'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
@@ -43,7 +46,6 @@ export class ProductVariantController {
     const result = await this.unitOfService.ProductVariant.getAll(filters);
     return res.status(200).json({ success: true, message: 'Product variants fetched successfully', data: result });
   };
-
 
   getById = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductVariantListItemDto>>> => {
     const storeCode = req.user?.storeCode;
@@ -88,11 +90,9 @@ export class ProductVariantController {
     return res.status(201).json({ success: true, message: "Product created successfully", data: product });
   };
 
-
-
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductVariantResponseDto>>> => {
     const userId = req.user?.userId as string;
-    const storeCode = req.user?.storeCode; // Get from logged-in user
+    const storeCode = req.user?.storeCode;
     const id = parseInt(req.params['id'] as string);
 
     if (!storeCode || !userId) {
@@ -108,9 +108,12 @@ export class ProductVariantController {
       images?: string[];
       lowStockThreshold?: number | null;
       isActive?: boolean;
+      isOffer?: boolean;
       sellingPrice?: number;
+      offerPrice?: number | null;
       costPrice?: number | null;
       effectiveFrom?: string | Date;
+      effectiveTo?: string | Date | null;
       stockQuantity?: number | null;
       reason?: string | null;
     };
@@ -124,9 +127,12 @@ export class ProductVariantController {
       ...(body.images !== undefined && { images: body.images }),
       ...(body.lowStockThreshold !== undefined && { lowStockThreshold: body.lowStockThreshold }),
       ...(body.isActive !== undefined && { isActive: body.isActive }),
+      ...(body.isOffer !== undefined && { isOffer: body.isOffer }),
       ...(body.sellingPrice !== undefined && { sellingPrice: body.sellingPrice }),
+      ...(body.offerPrice !== undefined && { offerPrice: body.offerPrice }),
       ...(body.costPrice !== undefined && { costPrice: body.costPrice }),
       ...(body.effectiveFrom !== undefined && { effectiveFrom: new Date(body.effectiveFrom) }),
+      ...(body.effectiveTo !== undefined && { effectiveTo: body.effectiveTo === null ? null : new Date(body.effectiveTo) }),
       ...(body.stockQuantity !== undefined && { stockQuantity: body.stockQuantity }),
       ...(body.reason !== undefined && { reason: body.reason }),
     };
@@ -135,10 +141,6 @@ export class ProductVariantController {
     return res.status(200).json({ success: true, message: 'Product variant updated successfully', data: variant });
   };
 
-  /**
-   * Public storefront listing - no authentication. Only active variants of Published
-   * products are ever returned, so a draft or a retired SKU can never leak.
-   */
   getAllPublic = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantListItemDto>>>> => {
     const filters: ProductVariantFilterParams = Object.fromEntries(
       Object.entries({
@@ -164,7 +166,7 @@ export class ProductVariantController {
   };
 
   getHistory = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantResponseDto>>>> => {
-    const storeCode = req.user?.storeCode; // Get from logged-in user
+    const storeCode = req.user?.storeCode;
     const productId = parseInt(req.params['productId'] as string);
 
     if (!storeCode) {
@@ -183,7 +185,7 @@ export class ProductVariantController {
   };
 
   getEffective = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductVariantResponseDto>>> => {
-    const storeCode = req.user?.storeCode; // Get from logged-in user
+    const storeCode = req.user?.storeCode;
     const productId = parseInt(req.params['productId'] as string);
 
     if (!storeCode) {

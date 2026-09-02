@@ -264,8 +264,8 @@ model ProductVariant {
   id                Int       @id @default(autoincrement())
   storeCode         String
   productId         Int
-  name              String?
-  slug              String?
+  name              String
+  slug              String
   sku               String
   barcode           String?
   attributes        Json
@@ -275,7 +275,7 @@ model ProductVariant {
   images            String[]  @default([])
   isActive          Boolean   @default(false)
   isOffer           Boolean   @default(false)
-  lowStockThreshold Int?      @default(5)
+  lowStockThreshold Int       @default(5)
   status            Status    @default(Draft)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
