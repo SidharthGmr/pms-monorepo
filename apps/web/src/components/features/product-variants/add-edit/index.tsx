@@ -15,7 +15,7 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
-import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
+import { useGetAllMasterAttributes, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import {
   useCreateProductVariant,
@@ -25,13 +25,13 @@ import {
 } from '@/hooks/service-hooks/useProductVariantService';
 import { zodResolver } from '@/lib/zod-resolver';
 import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
-import { getProductVariantSchema, rowsToAttributes, VariantAttributeRow, VariantFormValues } from '@/schema/productVariantSchema';
+import { attributesToRows, emptyAttributeRow, getProductVariantSchema, rowsToAttributes, VariantFormValues } from '@/schema/productVariantSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import VariantRating from '../variant-rating';
-import { Boxes, ImageIcon, Loader2, Package, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
+import { Boxes, ChevronsUpDown, ImageIcon, Loader2, Package, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { FieldError, Resolver, useFieldArray, useForm } from 'react-hook-form';
+import VariantRating from '../variant-rating';
 
 interface ManageVariantProps {
   id?: number;
@@ -40,49 +40,65 @@ interface ManageVariantProps {
 
 const LIST_URL = '/admin/product-variants';
 
-const emptyRow: VariantAttributeRow = { code: '', value: '' };
-
 const money = (amount: number) => `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const trimmed = (value?: string | null) => (value?.trim() ? value.trim() : undefined);
 
 const intChange = (raw: string) => (raw === '' ? undefined : parseInt(raw, 10));
 
-const toAttributeEntries = (attributes: unknown): [string, unknown][] =>
-  attributes && typeof attributes === 'object' && !Array.isArray(attributes) ? Object.entries(attributes) : [];
-
 export default function ManageVariant({ id, productId: initialProductId }: ManageVariantProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
 
-  const createVariant = useCreateProductVariant();
-  const updateVariant = useUpdateProductVariant();
+  const createVariantmutate = useCreateProductVariant();
+  const updateVariantmutate = useUpdateProductVariant();
 
   const { data: variantResponse, isLoading: isFetching, isError } = useGetProductVariantById(id ?? 0, isEdit);
   const variant = variantResponse?.data?.data ?? null;
 
-  const { data: productsResponse } = useGetAllProducts({ showAllRecords: true });
+  const { data: getAllproductsResponse } = useGetAllProducts({ showAllRecords: true });
 
   const productItems = useMemo(
-    () => (productsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
-    [productsResponse]
+    () => (getAllproductsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
+    [getAllproductsResponse]
   );
 
-  const { data: attributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
-  const masterAttributes = useMemo(() => attributesResponse?.data?.data?.data ?? [], [attributesResponse]);
-  const attributeItems = useMemo(() => masterAttributes.map((attribute) => ({ label: attribute.name, value: attribute.code })), [masterAttributes]);
+  const { data: getAllattributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
+  const masterAttributes = useMemo(() => getAllattributesResponse?.data?.data?.data ?? [], [getAllattributesResponse]);
+
+  // Only the edit screen needs the whole value set: it is what turns a legacy `{ size: 'L' }`
+  // record back into ids. Creating a variant reads values per attribute via MasterEntrySelect.
+  const { data: entriesResponse, isSuccess: entriesLoaded } = useGetAllMasterEntries(
+    { showAllRecords: true, status: StatusValues.Published },
+    isEdit
+  );
+  const masterEntries = useMemo(() => entriesResponse?.data?.data?.data ?? [], [entriesResponse]);
 
   const [selectedProductId, setSelectedProductId] = useState<number | undefined>(initialProductId);
   const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
   const isFirstVariant = !isEdit && (siblingsResponse?.data?.data?.totalRecord ?? 0) === 0;
 
+  // `isFirstVariant` is only known once the siblings query answers, so the schema is built per
+  // validation run from a ref. A resolver captured at mount would keep demanding an attribute
+  // from a product's only variant.
+  const attributeRules = useRef({ isFirstVariant, isEdit });
+  attributeRules.current = { isFirstVariant, isEdit };
+
+  const resolver: Resolver<VariantFormValues> = (values, context, options) =>
+    zodResolver<VariantFormValues>(getProductVariantSchema(attributeRules.current.isFirstVariant, attributeRules.current.isEdit))(
+      values,
+      context,
+      options
+    );
+
   const form = useForm<VariantFormValues>({
-    resolver: zodResolver(getProductVariantSchema(isFirstVariant, isEdit)),
+    resolver,
     defaultValues: {
       productId: initialProductId,
       name: '',
       description: '',
+      attributes: [{ ...emptyAttributeRow }],
       sku: undefined,
       barcode: '',
       images: [],
@@ -93,37 +109,55 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
       costPrice: undefined,
       offerPrice: undefined,
       isOffer: false,
-      effectiveFrom: null,
+      effectiveFrom: undefined,
       effectiveTo: null,
       reason: '',
-      rows: [emptyRow],
     },
   });
 
   const { control, handleSubmit, reset, setValue, watch, formState } = form;
-  const { fields, append, remove } = useFieldArray({ control, name: 'rows' });
 
-  const rows = watch('rows');
+  const {
+    fields: attributeFields,
+    append: appendAttribute,
+    remove: removeAttribute,
+  } = useFieldArray({ control, name: 'attributes', keyName: 'key' });
+
+  const attributes = watch('attributes') ?? [];
   const sellingPrice = watch('sellingPrice');
   const costPrice = watch('costPrice');
   const offerPrice = watch('offerPrice');
   const isOffer = watch('isOffer');
   const effectiveTo = watch('effectiveTo');
+
   const savingsPercent =
     offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0 ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
   // Mirrors payablePrice() on the API: the offer amount only counts while the switch is on.
   const payable = isOffer && offerPrice != null ? Number(offerPrice) : sellingPrice != null ? Number(sellingPrice) : null;
+
+  const margin =
+    sellingPrice != null && costPrice != null && Number(sellingPrice) > 0
+      ? ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100
+      : null;
+
+  // Hydrated once per variant: the master-data queries refetch on focus, and re-running the
+  // reset would throw away whatever the user had typed since.
+  const hydratedId = useRef<number | null>(null);
+
   useEffect(() => {
-    if (!isEdit || !variant || masterAttributes.length === 0) return;
-    const builtRows = toAttributeEntries(variant.attributes).map(([key, value]) => {
-      const master = masterAttributes.find((m) => m.code.toLowerCase() === key.toLowerCase());
-      return { code: master ? master.code : key.toUpperCase(), value: String(value) };
-    });
+    if (!isEdit || !variant || hydratedId.current === variant.id) return;
+    // A legacy record cannot be mapped before the master data lands; an id array can.
+    const needsMasterData = !!variant.attributes && typeof variant.attributes === 'object' && !Array.isArray(variant.attributes);
+    if (needsMasterData && !(masterAttributes.length > 0 && entriesLoaded)) return;
+
+    hydratedId.current = variant.id;
+    const rows = attributesToRows(variant.attributes, masterAttributes, masterEntries);
     setSelectedProductId(variant.product?.id);
     reset({
       productId: variant.product?.id,
       name: variant.name ?? '',
       description: variant.description ?? '',
+      attributes: rows.length > 0 ? rows : [{ ...emptyAttributeRow }],
       sku: variant.sku,
       barcode: variant.barcode ?? '',
       images: variant.images ?? [],
@@ -134,87 +168,66 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
       costPrice: variant.costPrice ?? undefined,
       offerPrice: variant.offerPrice ?? undefined,
       isOffer: variant.isOffer ?? false,
+      // A reprice starts now; the stored start date belongs to the period being replaced.
       effectiveFrom: null,
       effectiveTo: variant.effectiveTo ? new Date(variant.effectiveTo) : null,
       reason: '',
-      rows: builtRows.length ? builtRows : [emptyRow],
     });
-  }, [isEdit, variant, masterAttributes, reset]);
+  }, [isEdit, variant, masterAttributes, masterEntries, entriesLoaded, reset]);
 
-  const margin =
-    sellingPrice != null && costPrice != null && Number(sellingPrice) > 0
-      ? ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100
-      : null;
+  const submitData = async (values: VariantFormValues) => {
+    console.log('values', values);
+    const attributeRows = rowsToAttributes(values.attributes);
+    // On edit, an empty array is only sent when the user actually cleared the rows - a legacy
+    // pair that could not be resolved must not silently wipe what the variant already has.
+    const sendAttributes = !isEdit || attributeRows.length > 0 || !!formState.dirtyFields.attributes;
 
-  const toCreateModel = (model: VariantFormValues): CreateProductVariantModel => ({
-    productId: Number(model.productId),
-    attributes: rowsToAttributes(model.rows),
-    sellingPrice: Number(model.sellingPrice),
-    images: model.images ?? [],
-    name: trimmed(model.name) as string,
-    description: trimmed(model.description) as string,
-    ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
-    ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
-    ...(model.costPrice != null && { costPrice: Number(model.costPrice) }),
-    isOffer: model.isOffer ?? false,
-    // Only a live offer carries an amount and a window. With the switch off the API is told
-    // explicitly that there is none, rather than being left to carry a stale one forward.
-    offerPrice: model.isOffer && model.offerPrice != null ? Number(model.offerPrice) : null,
-    effectiveTo: model.isOffer && model.effectiveTo ? model.effectiveTo.toISOString() : null,
-    // Omitted rather than nulled: the create validator coerces this with z.coerce.date(), which
-    // rejects null, and an absent value correctly defaults to now.
-    ...(model.isOffer && model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
-    ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
-  });
+    const shared = {
+      name: values.name?.trim() ?? '',
+      description: values.description?.trim() ?? '',
+      images: values.images ?? [],
+      isActive: values.isActive ?? true,
+      isOffer: values.isOffer ?? false,
+      sku: trimmed(values.sku),
+      barcode: trimmed(values.barcode) ?? null,
+      lowStockThreshold: values.lowStockThreshold ?? null,
+      stockQuantity: values.stockQuantity ?? undefined,
+      sellingPrice: values.sellingPrice ?? undefined,
+      costPrice: values.costPrice ?? null,
+      // Switching the offer off clears the amount rather than leaving a stale one on the row.
+      offerPrice: values.isOffer ? (values.offerPrice ?? null) : null,
+      // Only sent when the user picked a date: on update, any `effectiveFrom` at all counts as
+      // a reprice and files a new PriceHistory row even when the amounts did not change.
+      ...(values.effectiveFrom ? { effectiveFrom: values.effectiveFrom } : {}),
+      effectiveTo: values.effectiveTo ?? null,
+      reason: trimmed(values.reason) ?? null,
+      ...(sendAttributes ? { attributes: attributeRows } : {}),
+    };
 
-  const toUpdateModel = (model: VariantFormValues): UpdateProductVariantModel => ({
-    ...(trimmed(model.name) && { name: trimmed(model.name) as string }),
-    ...(trimmed(model.description) && { description: trimmed(model.description) as string }),
-    barcode: trimmed(model.barcode) ?? null,
-    attributes: rowsToAttributes(model.rows),
-    images: model.images ?? [],
-    lowStockThreshold: model.lowStockThreshold ?? null,
-    isActive: model.isActive ?? true,
-    ...(model.sellingPrice != null && { sellingPrice: Number(model.sellingPrice) }),
-    isOffer: model.isOffer ?? false,
-    // Sent unconditionally, and null whenever the offer is off: the API carries the current
-    // offer forward when the field is absent, so the promotion could otherwise never be removed.
-    offerPrice: model.isOffer && model.offerPrice != null ? Number(model.offerPrice) : null,
-    costPrice: model.costPrice ?? null,
-    effectiveTo: model.isOffer && model.effectiveTo ? model.effectiveTo.toISOString() : null,
-    ...(model.isOffer && model.effectiveFrom && { effectiveFrom: model.effectiveFrom.toISOString() }),
-    ...(model.stockQuantity != null && { stockQuantity: Number(model.stockQuantity) }),
-    ...(trimmed(model.sku) && { sku: trimmed(model.sku) }),
-    ...(trimmed(model.reason) && { reason: trimmed(model.reason) }),
-  });
+    const response = isEdit
+      ? await updateVariantmutate.mutateAsync({ id: id!, model: shared as UpdateProductVariantModel })
+      : await createVariantmutate.mutateAsync({
+          ...shared,
+          productId: Number(values.productId),
+          // Always dated on create: the service opens the first price period with
+          // `new Date(data.effectiveFrom)`, which an omitted value turns into an Invalid Date.
+          effectiveFrom: values.effectiveFrom ?? new Date(),
+        } as CreateProductVariantModel);
 
-  const submitData = async (model: VariantFormValues) => {
-    try {
-      const response =
-        isEdit && variant
-          ? await updateVariant.mutateAsync({ id: variant.id, model: toUpdateModel(model) })
-          : await createVariant.mutateAsync(toCreateModel(model));
-
-      if (response && (response.status === 200 || response.status === 201)) {
-        toast({ variant: 'success', title: isEdit ? 'Variant updated successfully' : 'Variant added successfully' });
-        router.push(LIST_URL);
-      } else {
-        const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-        toast({ variant: 'destructive', title: isEdit ? 'Could not update variant' : 'Could not add variant', description: <span>{error}</span> });
-      }
-    } catch (error: any) {
-      const message = unitOfService.ErrorHandlerService.getErrorMessage(error);
-      toast({
-        variant: 'destructive',
-        title: isEdit ? 'Could not update variant' : 'Could not add variant',
-        description: <span>{message || 'Unknown error occurred'}</span>,
-      });
+    if (response && (response.status === 200 || response.status === 201)) {
+      toast({ variant: 'success', title: `Variant ${isEdit ? 'updated' : 'created'} successfully` });
+      router.push(LIST_URL);
+      return;
     }
+
+    const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
+    toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
   };
 
-  const isLoading = createVariant.isPending || updateVariant.isPending || isFetching;
-  const rowsError = (formState.errors.rows as { message?: string } | undefined)?.message;
+  const isLoading = createVariantmutate.isPending || updateVariantmutate.isPending || isFetching;
   const attributesOptional = isEdit || isFirstVariant;
+  // The array-level rule (at least one pair) hangs off the array itself, not off a dropdown.
+  const attributesError = formState.errors.attributes as unknown as FieldError | undefined;
 
   if (isEdit && isFetching) {
     return (
@@ -272,6 +285,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                       <SelectSearch
                         items={productItems}
                         value={field.value ?? ''}
+                        valueType="number"
                         placeholder="Select product"
                         buttonClass="w-full"
                         containerName="variant-product"
@@ -290,156 +304,173 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
           </FormSection>
         </Card>
 
+        <FormField
+          control={control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Variant name <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder='e.g. 64GB / 4GB / 4.5"' {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Description <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Textarea placeholder="What makes this variant distinct - fabric, capacity, finish." rows={3} {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="sku"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>SKU</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Auto-generated if left blank"
+                  className="font-mono"
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="barcode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Barcode</FormLabel>
+              <FormControl>
+                <Input placeholder="Barcode" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Card>
           <FormSection
             icon={Tag}
-            title="Variant"
+            title="Attributes"
             description={
-              isFirstVariant
-                ? 'Attributes are only needed if the product comes in variations (size, colour, pack).'
-                : 'Pick the attributes that make this variant different from the others, such as Size = L.'
+              attributesOptional
+                ? 'What tells this variant apart from its siblings, e.g. Size = L. Optional for a product that is sold in only one version.'
+                : 'What tells this variant apart from its siblings, e.g. Size = L. Values come from Master Entries.'
             }
           >
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <FormLabel>Attributes {attributesOptional ? <span className="font-normal text-muted-foreground">(optional)</span> : '*'}</FormLabel>
-                <div className="space-y-2">
-                  {fields.map((fieldRow, index) => (
-                    <div key={fieldRow.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                      <FormField
-                        control={control}
-                        name={`rows.${index}.code`}
-                        render={({ field }) => (
-                          <FormItem className="space-y-0">
-                            <FormControl>
-                              <SelectSearch
-                                items={attributeItems}
-                                value={field.value}
-                                valueType="string"
-                                placeholder="Attribute"
-                                buttonClass="w-full"
-                                containerName={`variant-attribute-${fieldRow.id}`}
-                                onChange={(value) => {
-                                  field.onChange(value ? String(value) : '');
-                                  setValue(`rows.${index}.value`, '');
-                                }}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      {rows?.[index]?.code ? (
-                        <FormField
-                          control={control}
-                          name={`rows.${index}.value`}
-                          render={({ field }) => (
-                            <FormItem className="space-y-0">
-                              <FormControl>
-                                <MasterEntrySelect
-                                  attributeCode={rows[index].code}
-                                  value={field.value}
-                                  onChange={(value) => field.onChange(value ? String(value) : '')}
-                                  buttonClass="w-full"
-                                  showColorSwatch
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      ) : (
-                        <Input disabled placeholder="Pick an attribute first" />
+            <div className="space-y-3">
+              {attributeFields.length === 0 && (
+                <p className="text-sm text-muted-foreground">No attributes — this variant is the product’s only version.</p>
+              )}
+
+              {attributeFields.map((row, index) => {
+                // An attribute already used by another row is off the list, so two rows cannot
+                // both claim "Size" and collapse into one entry on save.
+                const takenElsewhere = attributes.filter((_, i) => i !== index).map((item) => Number(item?.attributeid));
+                const currentId = Number(attributes[index]?.attributeid);
+                const availableAttributes = masterAttributes.filter(
+                  (attribute) => !takenElsewhere.includes(attribute.id) || attribute.id === currentId
+                );
+                const attributeCode = masterAttributes.find((attribute) => attribute.id === currentId)?.code;
+
+                return (
+                  <div key={row.key} className="grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-[1fr_1fr_auto]">
+                    <FormField
+                      control={control}
+                      name={`attributes.${index}.attributeid`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Attribute</FormLabel>
+                          <FormControl>
+                            <SelectSearch
+                              items={availableAttributes.map((attribute) => ({ label: attribute.name, value: attribute.id }))}
+                              value={field.value ?? ''}
+                              valueType="number"
+                              placeholder="Select attribute"
+                              buttonClass="w-full"
+                              containerName={`variant-attribute-${index}`}
+                              onChange={(value) => {
+                                field.onChange(value ? Number(value) : null);
+                                // The old value belongs to the old attribute's value set.
+                                setValue(`attributes.${index}.attributeValueId`, null, { shouldDirty: true });
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        disabled={fields.length === 1 && !attributesOptional}
-                        onClick={() => remove(index)}
-                        title="Remove attribute"
-                      >
-                        <Trash2 className="h-4 w-4" />
+                    />
+
+                    <FormField
+                      control={control}
+                      name={`attributes.${index}.attributeValueId`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Value</FormLabel>
+                          <FormControl>
+                            {attributeCode ? (
+                              <MasterEntrySelect
+                                attributeCode={attributeCode}
+                                bindTo="id"
+                                showColorSwatch
+                                value={field.value ?? ''}
+                                onChange={(value) => field.onChange(value ? Number(value) : null)}
+                                buttonClass="w-full"
+                              />
+                            ) : (
+                              <Button type="button" variant="outline" size="sm" disabled className="h-11 w-full justify-between font-normal">
+                                Pick an attribute first
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            )}
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex items-end">
+                      <Button type="button" variant="ghost" size="icon" aria-label="Remove attribute" onClick={() => removeAttribute(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
-                  ))}
-                </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => append(emptyRow)} icon={Plus} iconPlacement="left">
-                  Add attribute
-                </Button>
-                {rowsError && <p className="text-sm font-medium text-destructive">{rowsError}</p>}
-              </div>
+                  </div>
+                );
+              })}
 
-              <FormField
-                control={control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Variant name <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder='e.g. 64GB / 4GB / 4.5"' {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {attributesError?.message && <p className="text-sm font-medium text-destructive">{attributesError.message}</p>}
 
-              <FormField
-                control={control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Description <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="What makes this variant distinct - fabric, capacity, finish."
-                        rows={3}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Auto-generated if left blank"
-                          className="font-mono"
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="barcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Barcode</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Barcode" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={attributeFields.length >= masterAttributes.length}
+                onClick={() => appendAttribute({ ...emptyAttributeRow })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add attribute
+              </Button>
             </div>
           </FormSection>
         </Card>

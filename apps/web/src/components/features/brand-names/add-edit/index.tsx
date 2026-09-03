@@ -10,13 +10,12 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useCreateBrandName, useGetBrandNameById, useUpdateBrandName } from '@/hooks/service-hooks/useBrandNameService';
-import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { CreateBrandNameModel } from '@/models/brand-name.model';
-import BrandNameSchema from '@/schema/brandNameSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { BrandNameValidator } from '@pms/types';
 
 interface ManageBrandNameProps {
   id?: number;
@@ -30,21 +29,29 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
 
   const createMutation = useCreateBrandName();
   const updateMutation = useUpdateBrandName();
-  const { data: brandNameResponse, isLoading: isFetching } = useGetBrandNameById(id ?? 0, isEdit);
-  // Only the loading flag is used - the list itself is not rendered on this form.
-  const { isLoading: isFetchingCategories } = useGetAllCategories();
+  const { data: getbrandNameResponse, isLoading: isFetching } = useGetBrandNameById(id ?? 0, isEdit);
 
   const form = useForm<CreateBrandNameModel>({
-    resolver: yupResolver(BrandNameSchema),
-    defaultValues: { name: '', images: [], status: StatusValues.Draft, displayOrder: 1 },
+    resolver: zodResolver(BrandNameValidator),
+    defaultValues: {
+      name: '',
+      images: [],
+      status: StatusValues.Draft,
+      displayOrder: 0,
+    },
   });
 
   useEffect(() => {
-    if (isEdit && brandNameResponse?.data?.data) {
-      const b = brandNameResponse.data.data;
-      form.reset({ name: b.name, images: b.images ?? [], status: b.status, displayOrder: b.displayOrder ?? 0 });
+    if (isEdit && getbrandNameResponse?.data?.data) {
+      const x = getbrandNameResponse?.data?.data;
+      form.reset({
+        name: x.name,
+        images: x.images ?? [],
+        status: x.status,
+        displayOrder: x.displayOrder ?? 0,
+      });
     }
-  }, [isEdit, brandNameResponse, form]);
+  }, [isEdit, getbrandNameResponse, form]);
 
   const submitData = async (model: CreateBrandNameModel) => {
     const response = isEdit ? await updateMutation.mutateAsync({ id: id!, model }) : await createMutation.mutateAsync(model);
@@ -58,7 +65,7 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
     }
   };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending || isFetching || isFetchingCategories;
+  const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose(false)}>
@@ -69,7 +76,6 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
 
         <Form {...form}>
           <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-4">
-
             <FormField
               control={form.control}
               name="name"

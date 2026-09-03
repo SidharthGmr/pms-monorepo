@@ -1,15 +1,16 @@
-import { productVariantFields, updateProductVariantFields } from '@pms/types';
+import { MasterAttributeDto, MasterEntryDto } from '@/dtos/master-entry.dto';
+import { productVariantFields, updateProductVariantFields, variantAttributeFields } from '@pms/types';
 import { z } from 'zod';
 
 const variantAttributeRow = z.object({
-  code: z.string().default(''),
-  value: z.string().default(''),
+  attributeid: z.number().int().positive().nullable().default(null),
+  attributeValueId: z.number().int().positive().nullable().default(null),
 });
 
 export type VariantAttributeRow = z.infer<typeof variantAttributeRow>;
 
-// Field rules come from the shared API validators, so the form cannot accept what the API
-// rejects. `rows` is the form's own composition of the attributes JSON.
+export const emptyAttributeRow: VariantAttributeRow = { attributeid: null, attributeValueId: null };
+
 const variantFormFields = z.object({
   productId: productVariantFields.shape.productId.optional(),
   name: updateProductVariantFields.shape.name,
@@ -27,7 +28,7 @@ const variantFormFields = z.object({
   effectiveFrom: z.date().nullable().optional(),
   effectiveTo: z.date().nullable().optional(),
   reason: productVariantFields.shape.reason,
-  rows: z.array(variantAttributeRow).default([]),
+  attributes: z.array(variantAttributeRow).default([]),
 });
 
 export type VariantFormValues = z.infer<typeof variantFormFields>;
@@ -66,19 +67,34 @@ export const getProductVariantSchema = (isFirstVariant: boolean, isEdit = false)
       ctx.addIssue({ code: 'custom', path: ['effectiveTo'], message: 'The end date must be after the start date.' });
     }
 
-    if (isEdit) return;
+    const rows = values.attributes ?? [];
 
-    const rows = values.rows ?? [];
-    if (rows.some((row) => (row.code && !row.value) || (!row.code && row.value))) {
-      ctx.addIssue({ code: 'custom', path: ['rows'], message: 'Each row needs both an attribute and a value.' });
-    }
-    if (!isFirstVariant && !rows.some((row) => row.code && row.value)) {
-      ctx.addIssue({ code: 'custom', path: ['rows'], message: 'Pick at least one attribute, such as Size = L.' });
-    }
-    // Two rows sharing a key would silently collapse into one JSON entry.
-    const codes = rows.filter((row) => row.code && row.value).map((row) => row.code);
-    if (new Set(codes).size !== codes.length) {
-      ctx.addIssue({ code: 'custom', path: ['rows'], message: 'Each attribute can only appear once per variant.' });
+    // A half-picked row is flagged on the dropdown that still needs an answer, not on the
+    // array, so the message lands next to the field that has to change.
+    rows.forEach((row, index) => {
+      if (row.attributeid && !row.attributeValueId) {
+        ctx.addIssue({ code: 'custom', path: ['attributes', index, 'attributeValueId'], message: 'Pick a value for this attribute.' });
+      }
+      if (!row.attributeid && row.attributeValueId) {
+        ctx.addIssue({ code: 'custom', path: ['attributes', index, 'attributeid'], message: 'Pick the attribute this value belongs to.' });
+      }
+    });
+
+    // Two rows sharing an attribute would silently collapse into one entry.
+    const seen = new Set<number>();
+    rows.forEach((row, index) => {
+      if (!row.attributeid) return;
+      if (seen.has(row.attributeid)) {
+        ctx.addIssue({ code: 'custom', path: ['attributes', index, 'attributeid'], message: 'Each attribute can only appear once per variant.' });
+      }
+      seen.add(row.attributeid);
+    });
+
+    // Editing keeps whatever the variant already has - only a brand-new sibling has to be
+    // told apart from the variants already under its product.
+    if (isEdit || isFirstVariant) return;
+    if (!rows.some((row) => row.attributeid && row.attributeValueId)) {
+      ctx.addIssue({ code: 'custom', path: ['attributes'], message: 'Pick at least one attribute, such as Size = L.' });
     }
   });
 
@@ -87,11 +103,47 @@ const ProductVariantSchema = getProductVariantSchema(false, false);
 
 export default ProductVariantSchema;
 
-/** Folds the composed rows into the `{ code: value }` JSON the API stores. */
-export const rowsToAttributes = (rows: VariantAttributeRow[]): Record<string, string> =>
+/** Folds the edited rows into the id pairs the API stores, dropping anything half-picked. */
+export const rowsToAttributes = (rows: VariantAttributeRow[] = []): z.infer<typeof variantAttributeFields>[] =>
   rows
-    .filter((row) => row.code && row.value)
-    .reduce<Record<string, string>>((acc, row) => {
-      acc[row.code.toLowerCase()] = row.value;
-      return acc;
-    }, {});
+    .filter((row): row is { attributeid: number; attributeValueId: number } => !!row.attributeid && !!row.attributeValueId)
+    .map((row) => ({ attributeid: row.attributeid, attributeValueId: row.attributeValueId }));
+
+/**
+ * Reads a stored attributes JSON back into form rows.
+ *
+ * Rows written since the id migration already are `{ attributeid, attributeValueId }` pairs
+ * and pass straight through. Rows written before it hold the old `{ "size": "L" }` record, so
+ * each key is matched against the master attribute codes and each value against that
+ * attribute's entries (by `value`, then by `name`) to recover the ids. A pair that cannot be
+ * resolved comes back blank rather than being dropped, so the gap is visible in the form and
+ * has to be re-picked before saving.
+ */
+export const attributesToRows = (
+  attributes: unknown,
+  masterAttributes: MasterAttributeDto[] = [],
+  masterEntries: MasterEntryDto[] = []
+): VariantAttributeRow[] => {
+  if (!attributes || typeof attributes !== 'object') return [];
+
+  if (Array.isArray(attributes)) {
+    return attributes
+      .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+      .map((row) => ({
+        attributeid: Number(row.attributeid) > 0 ? Number(row.attributeid) : null,
+        attributeValueId: Number(row.attributeValueId) > 0 ? Number(row.attributeValueId) : null,
+      }));
+  }
+
+  return Object.entries(attributes as Record<string, unknown>).map(([code, value]) => {
+    const attribute = masterAttributes.find((item) => item.code.toLowerCase() === code.toLowerCase());
+    if (!attribute) return { ...emptyAttributeRow };
+
+    const text = String(value).trim().toLowerCase();
+    const entry = masterEntries.find(
+      (item) => item.attributeId === attribute.id && (item.value.trim().toLowerCase() === text || item.name.trim().toLowerCase() === text)
+    );
+
+    return { attributeid: attribute.id, attributeValueId: entry?.id ?? null };
+  });
+};

@@ -36,11 +36,11 @@ export class ProductVariantService implements IProductVariantService {
           slug,
           name: data.name,
           description: data.description,
-          attributes: data.attributes as Prisma.InputJsonValue,
-          images: data.images,
-          isActive: data.isActive,
+          attributes: (data.attributes ?? []) as any,
+          images: data.images ?? [],
+          isActive: data.isActive ?? true,
           status: data.status as Status,
-          metadata: data as any,
+          metadata: { ...data } as any,
           ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
           ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
           ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
@@ -52,8 +52,6 @@ export class ProductVariantService implements IProductVariantService {
       });
 
       if (data.sellingPrice != null) {
-        // Delegated, not inlined: filing a price also closes the previous open period, and that
-        // ledger rule must stay in one place.
         await this.unitOfWork.PriceHistory.create(
           {
             variantId: variant.id,
@@ -62,7 +60,7 @@ export class ProductVariantService implements IProductVariantService {
             sellingPrice: data.sellingPrice,
             offerPrice: data.offerPrice ?? null,
             compareAtPrice: data.compareAtPrice ?? null,
-            effectiveFrom: new Date(data.effectiveFrom),
+            effectiveFrom: data.effectiveFrom ? new Date(data.effectiveFrom) : new Date(),
             ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo == null ? null : new Date(data.effectiveTo) }),
             reason: data.reason ?? null,
             createdById: userId,
@@ -112,7 +110,7 @@ export class ProductVariantService implements IProductVariantService {
     return variant;
   }
 
-  async update(id: number, storeCode: string, data: UpdateProductVariantModel): Promise<ProductVariantResponseDto> {
+  async update(data: UpdateProductVariantModel, id: number, storeCode: string,): Promise<ProductVariantResponseDto> {
     const existing = await this.unitOfWork.ProductVariant.findById(id);
     if (!existing) throw new NotFoundError('Variant not found');
     if (existing.storeCode !== storeCode) throw new ForbiddenError('Variant does not belong to your store');
@@ -128,7 +126,7 @@ export class ProductVariantService implements IProductVariantService {
           ...(data.name !== undefined && { name: data.name }),
           ...(data.sku !== undefined && { sku: data.sku }),
           ...(data.barcode !== undefined && { barcode: data.barcode }),
-          ...(data.attributes !== undefined && { attributes: data.attributes as Prisma.InputJsonValue }),
+          ...(data.attributes !== undefined && { attributes: data.attributes as any }),
           ...(data.images !== undefined && { images: data.images }),
           ...(data.description !== undefined && { description: data.description }),
           ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),

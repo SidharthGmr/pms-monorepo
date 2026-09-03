@@ -26,11 +26,10 @@ export * from "./model/profile.model";
 export * from "./model/productVarient.model";
 export * from "./model/brand-name.model";
 
-
-
 //Validators
 export * from "./validator/product.validator";
 export * from "./validator/purchase.validator";
 export * from "./validator/category.validator";
 export * from "./validator/product-variant.validator";
 export * from "./validator/profile.validator";
+export * from "./validator/brand.validator";

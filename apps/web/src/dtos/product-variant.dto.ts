@@ -18,8 +18,13 @@ export interface ProductVariantDto {
   lowStockThreshold?: number | null;
   /** Image URLs for this specific variant. */
   images?: string[];
-  /** e.g. `{ size: 'L', color: 'Red' }`. Empty for rows created by a bare price change. */
-  attributes?: Record<string, string | number | boolean> | null;
+  /**
+   * The variant's defining attributes as master-data id pairs, e.g. `[{ attributeid: 3,
+   * attributeValueId: 12 }]` for Size = L. Empty for rows created by a bare price change.
+   * The record form is what rows written before the id migration still hold - read it with
+   * `attributesToRows` (`@/schema/productVariantSchema`) rather than assuming either shape.
+   */
+  attributes?: ProductVariantAttributeDto[] | Record<string, string | number | boolean> | null;
   stockQuantity?: number;
   storeCode: string;
   sellingPrice: number;
@@ -34,6 +39,12 @@ export interface ProductVariantDto {
   createdById: string;
   createdAt: Date;
   updatedAt?: Date | null;
+}
+
+/** One `{ attribute, value }` pair on a variant, both sides being master-data ids. */
+export interface ProductVariantAttributeDto {
+  attributeid: number;
+  attributeValueId: number;
 }
 
 /**

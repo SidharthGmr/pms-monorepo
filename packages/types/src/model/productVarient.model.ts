@@ -7,7 +7,7 @@ export interface ProductVariantModel {
   slug?: string;
   sku?: string;
   barcode?: string | null;
-  attributes: Record<string, unknown>;
+  attributes?: (attributesModelRow | undefined)[];
   description: string;
   seoTitle?: string | null;
   seoDescription?: string | null;
@@ -26,6 +26,12 @@ export interface ProductVariantModel {
   effectiveTo?: Date | null;
   reason?: string | null;
   createdById: string;
+  updatedById?: string | null;
+}
+
+export interface attributesModelRow {
+  attributeid: number | null;
+  attributeValueId: number | null;
 }
 
 export interface UpdateProductVariantModel extends Partial<Omit<ProductVariantModel, "createdById" | "productId" | "storeCode">> {

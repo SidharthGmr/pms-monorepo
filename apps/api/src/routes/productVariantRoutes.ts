@@ -221,13 +221,24 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                 nullable: true
  *                 description: Struck-through reference price, filed on the same ledger row.
  *               attributes:
- *                 type: object
- *                 additionalProperties:
- *                   oneOf:
- *                     - type: string
- *                     - type: number
- *                     - type: boolean
- *                 example: { "size": "L", "color": "Red" } 
+ *                 type: array
+ *                 description: >
+ *                   What tells this variant apart from its siblings. Both halves are master-data
+ *                   ids: `attributeid` is a MasterAttribute (e.g. SIZE) and `attributeValueId` a
+ *                   MasterEntry under it (e.g. L). Defaults to an empty list for a product sold in
+ *                   only one version. Unless a `sku` is supplied, the entry values are what the
+ *                   generated SKU is suffixed with.
+ *                 items:
+ *                   type: object
+ *                   required: [attributeid, attributeValueId]
+ *                   properties:
+ *                     attributeid:
+ *                       type: integer
+ *                       description: MasterAttribute id.
+ *                     attributeValueId:
+ *                       type: integer
+ *                       description: MasterEntry id belonging to that attribute.
+ *                 example: [{ "attributeid": 1, "attributeValueId": 2 }]
  *               stockQuantity:
  *                 type: integer
  *                 example: 25
@@ -329,13 +340,23 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
  *                 type: string
  *                 nullable: true
  *               attributes:
- *                 type: object
- *                 additionalProperties:
- *                   oneOf:
- *                     - type: string
- *                     - type: number
- *                     - type: boolean
- *                 example: { "size": "L", "color": "Red" }
+ *                 type: array
+ *                 description: >
+ *                   What tells this variant apart from its siblings. Both halves are master-data
+ *                   ids: `attributeid` is a MasterAttribute (e.g. SIZE) and `attributeValueId` a
+ *                   MasterEntry under it (e.g. L). Sending this replaces the whole list, so an
+ *                   empty array clears the variant's attributes; omit it to leave them untouched.
+ *                 items:
+ *                   type: object
+ *                   required: [attributeid, attributeValueId]
+ *                   properties:
+ *                     attributeid:
+ *                       type: integer
+ *                       description: MasterAttribute id.
+ *                     attributeValueId:
+ *                       type: integer
+ *                       description: MasterEntry id belonging to that attribute.
+ *                 example: [{ "attributeid": 1, "attributeValueId": 2 }]
  *               images:
  *                 type: array
  *                 items:
