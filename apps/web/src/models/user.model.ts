@@ -16,7 +16,7 @@ export interface UpdateUserModel {
   email?: string;
   phone?: string;
   profileImageUrl?: string;
-  dateOfBirth?: Date | undefined;
+  dateOfBirth?: Date;
   address?: string;
   city?: string;
   state?: string;

@@ -11,11 +11,12 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import { BsEnvelope, BsPhone } from 'react-icons/bs';
-import { DataTableColumnHeader } from '../../Table/data-table-column-header';
-import ECardListRowActions from './row-action';
+
 import UserTableDetail from '@/components/common/table-user-details';
 import { IoIosCheckmark, IoMdCloseCircle } from 'react-icons/io';
 import ActionTooltip from '@/components/common/tooltip-action-button';
+import ECardListRowActions from '../row-action';
+import { DataTableColumnHeader } from '@/components/Table/data-table-column-header';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -70,21 +71,22 @@ function ContactLine({ icon, value, emptyLabel, verified, verifiedLabel }: Conta
   );
 }
 
-export const useUserColumns = (editRecord?: (id: string) => void, deleteRecord?: (id: string) => void) =>
+export const useUserColumns = (editRecord?: (id: string) => void, editStaffRecord?: (id: string) => void, deleteRecord?: (id: string) => void) =>
   useMemo<ColumnDef<UserDto>[]>(
     () => [
-      {
-        id: 'actions',
-        cell: ({ row }) => {
-          return (
-            <ECardListRowActions
-              row={row}
-              editRecord={editRecord ? () => editRecord(row.original?.usersId) : () => {}}
-              deleteRecord={deleteRecord ? () => deleteRecord(row.original?.usersId) : () => {}}
-            />
-          );
-        },
-      },
+      // {
+      //   id: 'actions',
+      //   cell: ({ row }) => {
+      //     return (
+      //       <ECardListRowActions
+      //         row={row}
+      //         editRecord={editRecord ? () => editRecord(row.original?.usersId) : () => {}}
+      //         editStaffRecord={editRecord ? () => editRecord(row.original?.usersId) : () => {}}
+      //         deleteRecord={deleteRecord ? () => deleteRecord(row.original?.usersId) : () => {}}
+      //       />
+      //     );
+      //   },
+      // },
       {
         id: 'user',
         accessorKey: 'user',

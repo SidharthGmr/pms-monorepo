@@ -16,11 +16,13 @@ import { useUserColumns } from './columns';
 import EditUserProfile from './edit-profile';
 import UserListListFilter from './filter';
 import { UserListParams } from '@pms/types';
+import ManageStaff from './staff';
 
 export default function GetAllUserss({ role }: { role?: string }) {
   const [data, setData] = useState<UserDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
   const searchParams = useSearchParams();
+
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
   const columns = useUserColumns((id: string) => openEditModal(id));
 
@@ -151,6 +153,19 @@ export default function GetAllUserss({ role }: { role?: string }) {
               };
             });
           }}
+          initialRole={searchParams.get('role') || role || ''}
+          onRoleChange={
+            role
+              ? undefined
+              : (value) => {
+                  setFilterParams((oldValue) => {
+                    return {
+                      ...oldValue,
+                      role: value || undefined,
+                    };
+                  });
+                }
+          }
         />
 
         <div className="overflow-hidden rounded-xl border border-border/60">

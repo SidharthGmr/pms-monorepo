@@ -7,19 +7,20 @@ import { useGetAllStaff, useDeleteStaff } from '@/hooks/service-hooks/useStaffSe
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { CustomDataTable } from '../../Table/data-table';
-import { DataTablePagination } from '../../Table/data-table-pagination';
-import RecentPostSkeleton from '../../skelton/recent-post';
-import ConfirmBox from '../../common/confirm-box';
-import { toast } from '../../ui/use-toast';
+
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
-import { useStaffColumns } from './columns';
-import StaffListFilter from './filter';
+
 import ManageStaff from './add-edit';
 import config from '@/config';
+import { toast } from '@/components/ui/use-toast';
+import StaffListFilter from './filter';
+import ConfirmBox from '@/components/common/confirm-box';
+import { CustomDataTable } from '@/components/Table/data-table';
+import { DataTablePagination } from '@/components/Table/data-table-pagination';
+import { useStaffSalaryColumns } from '../../staff-salaries/columns';
 
 export default function StaffList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -42,7 +43,7 @@ export default function StaffList() {
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
   });
 
-  const columns = useStaffColumns(
+  const columns = useStaffSalaryColumns(
     (id) => openEditModal(id),
     (id) => openDeleteModal(id)
   );

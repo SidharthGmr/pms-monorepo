@@ -5,11 +5,11 @@ import { Table } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDebounce } from 'use-debounce';
-import { SelectSearch } from '../../common/select-search';
 import useFilterHook from '@/hooks/use-filter-hook';
 import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { useEffect, useState } from 'react';
+import { SelectSearch } from '@/components/common/select-search';
 
 interface StaffListFilterProps<TData> {
   table: Table<TData>;

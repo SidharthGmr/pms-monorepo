@@ -3,9 +3,12 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from 'use-debounce';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Roles } from '@/enums/roles.enum';
 import useFilterHook from '@/hooks/use-filter-hook';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { Search } from 'lucide-react';
 import { SelectSearch } from '../../common/select-search';
@@ -18,10 +21,38 @@ const StatusData = [
   { label: 'Pending', value: 'pending' },
 ];
 
+const RoleData = [
+  { label: 'Super Admin', value: Roles.SUPER_ADMIN },
+  { label: 'Admin', value: Roles.ADMIN },
+  { label: 'Staff', value: Roles.STAFF },
+  { label: 'Customer', value: Roles.USER },
+];
+
+// These would typically come from your database or API
+const departmentsData = [
+  { label: 'Sales', value: 'Sales' },
+  { label: 'Marketing', value: 'Marketing' },
+  { label: 'IT', value: 'IT' },
+  { label: 'HR', value: 'HR' },
+  { label: 'Finance', value: 'Finance' },
+  { label: 'Operations', value: 'Operations' },
+];
+
+const positionsData = [
+  { label: 'Manager', value: 'Manager' },
+  { label: 'Assistant Manager', value: 'Assistant Manager' },
+  { label: 'Supervisor', value: 'Supervisor' },
+  { label: 'Associate', value: 'Associate' },
+  { label: 'Cashier', value: 'Cashier' },
+  { label: 'Sales Representative', value: 'Sales Representative' },
+];
+
 interface ECardListFilterProps<TData> {
   table: Table<TData>;
   onTextChange?: (q: string) => void;
   onStatusChange?: (selectedValues: string) => void;
+  onRoleChange?: (selectedValues: string) => void;
+  initialRole?: string;
   onStartDateChanged?: (date: Date | undefined) => void;
   onEndDateChanged?: (date: Date | undefined) => void;
   resetForm?: () => void;
@@ -31,11 +62,18 @@ export default function UserListListFilter<TData>({
   table,
   onTextChange,
   onStatusChange,
+  onRoleChange,
+  initialRole,
   onStartDateChanged,
   onEndDateChanged,
   resetForm,
 }: ECardListFilterProps<TData>) {
   const [isFiltered, setIsFiltered] = useState(false);
+
+  // Only a super admin gets the Super Admin option - same check as `active-status-toggle`.
+  const { currentUser } = useGetCurrentUser();
+  const isSuperAdmin = currentUser?.role === Roles.SUPER_ADMIN;
+  const roleOptions = useMemo(() => RoleData.filter((option) => isSuperAdmin || option.value !== Roles.SUPER_ADMIN), [isSuperAdmin]);
 
   const {
     data: statusDatas,
@@ -51,6 +89,23 @@ export default function UserListListFilter<TData>({
       value: el.value.toString(),
     }),
     onChange: onStatusChange,
+  });
+
+  const {
+    data: roleDatas,
+    selectedValue: roleValue,
+    setSelectedValue: setRoleValue,
+    onValueChange: onRoleValueChange,
+    isFiltered: isRoleFiltered,
+    setIsFiltered: setIsRoleFiltered,
+  } = useFilterHook({
+    inputData: roleOptions,
+    dataMapper: (el) => ({
+      label: el.label,
+      value: el.value.toString(),
+    }),
+    onChange: onRoleChange,
+    initialValue: initialRole ?? '',
   });
 
   const [searchedText, setSearchedText] = useState('');
@@ -75,8 +130,10 @@ export default function UserListListFilter<TData>({
   const resetFilter = () => {
     setIsFiltered(false);
     setIsStatusFiltered(false);
+    setIsRoleFiltered(false);
     setSearchedText('');
     setStatus('');
+    setRoleValue(initialRole ?? '');
     setDateRange(undefined);
     table.setPageIndex(0);
     resetForm?.();
@@ -84,11 +141,11 @@ export default function UserListListFilter<TData>({
 
   useEffect(() => {
     const isDateRangeFiltered = !!dateRange?.from || !!dateRange?.to;
-    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered);
-  }, [isStatusFiltered, searchedText, dateRange]);
+    setIsFiltered(isStatusFiltered || isRoleFiltered || !!searchedText || isDateRangeFiltered);
+  }, [isStatusFiltered, isRoleFiltered, searchedText, dateRange]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+    <div className={cn('grid grid-cols-1 gap-2', onRoleChange ? 'md:grid-cols-5' : 'md:grid-cols-4')}>
       <Input
         placeholder="Search by name..."
         value={searchedText}
@@ -103,6 +160,17 @@ export default function UserListListFilter<TData>({
         buttonClass="bg-background"
         disableSearch={true}
       />
+      {onRoleChange && (
+        <SelectSearch
+          value={roleValue}
+          placeholder="Filter by role"
+          items={roleDatas}
+          onChange={onRoleValueChange}
+          buttonClass="bg-background"
+          disableSearch={true}
+        />
+      )}
+
       <div className="w-full overflow-hidden lg:w-auto">
         <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
       </div>
