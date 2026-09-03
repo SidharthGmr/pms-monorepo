@@ -22,7 +22,7 @@ export interface ProductVariantModel {
   sellingPrice?: number | null;
   offerPrice?: number | null;
   compareAtPrice?: number | null;
-  effectiveFrom: Date;
+  effectiveFrom?: Date;
   effectiveTo?: Date | null;
   reason?: string | null;
   createdById: string;
@@ -34,6 +34,3 @@ export interface attributesModelRow {
   attributeValueId: number | null;
 }
 
-export interface UpdateProductVariantModel extends Partial<Omit<ProductVariantModel, "createdById" | "productId" | "storeCode">> {
-  updatedById: string;
-}

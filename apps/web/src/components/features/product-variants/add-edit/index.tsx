@@ -3,7 +3,6 @@ import { ProductImageUploader } from '@/components/common/admin-media/product-im
 import { CurrencyInput } from '@/components/common/currency-input';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { FormSection } from '@/components/common/form-section';
-import MasterEntrySelect from '@/components/common/master-entry-select';
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,21 +16,16 @@ import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useGetAllMasterAttributes, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
-import {
-  useCreateProductVariant,
-  useGetProductVariantById,
-  useGetProductVariants,
-  useUpdateProductVariant,
-} from '@/hooks/service-hooks/useProductVariantService';
+import { useCreateProductVariant, useGetProductVariantById, useUpdateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
 import { zodResolver } from '@/lib/zod-resolver';
-import { CreateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
-import { attributesToRows, emptyAttributeRow, getProductVariantSchema, rowsToAttributes, VariantFormValues } from '@/schema/productVariantSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { Boxes, ChevronsUpDown, ImageIcon, Loader2, Package, Plus, Tag, ToggleLeft, Trash2, TrendingUp, Wallet } from 'lucide-react';
+import { ProductVariantModel, productVariantValidator } from '@pms/types';
+import { Boxes, ImageIcon, Loader2, Package, Tag, ToggleLeft, TrendingUp, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { FieldError, Resolver, useFieldArray, useForm } from 'react-hook-form';
+import { useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import VariantRating from '../variant-rating';
+import AttributeRows, { toAttributeRows } from './attribute-rows';
 
 interface ManageVariantProps {
   id?: number;
@@ -42,63 +36,36 @@ const LIST_URL = '/admin/product-variants';
 
 const money = (amount: number) => `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const trimmed = (value?: string | null) => (value?.trim() ? value.trim() : undefined);
-
-const intChange = (raw: string) => (raw === '' ? undefined : parseInt(raw, 10));
-
-export default function ManageVariant({ id, productId: initialProductId }: ManageVariantProps) {
+export default function ManageVariant({ id, productId }: ManageVariantProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
 
-  const createVariantmutate = useCreateProductVariant();
-  const updateVariantmutate = useUpdateProductVariant();
+  const createMutation = useCreateProductVariant();
+  const updateMutation = useUpdateProductVariant();
 
-  const { data: variantResponse, isLoading: isFetching, isError } = useGetProductVariantById(id ?? 0, isEdit);
-  const variant = variantResponse?.data?.data ?? null;
+  const { data: getVariantResponse, isLoading: isFetching, isError } = useGetProductVariantById(id ?? 0, isEdit);
+  const variant = getVariantResponse?.data?.data;
 
-  const { data: getAllproductsResponse } = useGetAllProducts({ showAllRecords: true });
-
+  const { data: getProductsResponse } = useGetAllProducts({ showAllRecords: true });
   const productItems = useMemo(
-    () => (getAllproductsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
-    [getAllproductsResponse]
+    () => (getProductsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
+    [getProductsResponse]
   );
 
-  const { data: getAllattributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
-  const masterAttributes = useMemo(() => getAllattributesResponse?.data?.data?.data ?? [], [getAllattributesResponse]);
+  const { data: getAttributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
+  const masterAttributes = useMemo(() => getAttributesResponse?.data?.data?.data ?? [], [getAttributesResponse]);
 
-  // Only the edit screen needs the whole value set: it is what turns a legacy `{ size: 'L' }`
-  // record back into ids. Creating a variant reads values per attribute via MasterEntrySelect.
-  const { data: entriesResponse, isSuccess: entriesLoaded } = useGetAllMasterEntries(
-    { showAllRecords: true, status: StatusValues.Published },
-    isEdit
-  );
-  const masterEntries = useMemo(() => entriesResponse?.data?.data?.data ?? [], [entriesResponse]);
+  const { data: getEntriesResponse } = useGetAllMasterEntries({ showAllRecords: true, status: StatusValues.Published }, isEdit);
+  const masterEntries = useMemo(() => getEntriesResponse?.data?.data?.data ?? [], [getEntriesResponse]);
 
-  const [selectedProductId, setSelectedProductId] = useState<number | undefined>(initialProductId);
-  const { data: siblingsResponse } = useGetProductVariants(selectedProductId ?? 0, { recordPerPage: 1 }, !isEdit && !!selectedProductId);
-  const isFirstVariant = !isEdit && (siblingsResponse?.data?.data?.totalRecord ?? 0) === 0;
-
-  // `isFirstVariant` is only known once the siblings query answers, so the schema is built per
-  // validation run from a ref. A resolver captured at mount would keep demanding an attribute
-  // from a product's only variant.
-  const attributeRules = useRef({ isFirstVariant, isEdit });
-  attributeRules.current = { isFirstVariant, isEdit };
-
-  const resolver: Resolver<VariantFormValues> = (values, context, options) =>
-    zodResolver<VariantFormValues>(getProductVariantSchema(attributeRules.current.isFirstVariant, attributeRules.current.isEdit))(
-      values,
-      context,
-      options
-    );
-
-  const form = useForm<VariantFormValues>({
-    resolver,
+  const form = useForm<ProductVariantModel>({
+    resolver: zodResolver(productVariantValidator),
     defaultValues: {
-      productId: initialProductId,
+      productId,
       name: '',
       description: '',
-      attributes: [{ ...emptyAttributeRow }],
+      attributes: [],
       sku: undefined,
       barcode: '',
       images: [],
@@ -115,49 +82,26 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
     },
   });
 
-  const { control, handleSubmit, reset, setValue, watch, formState } = form;
+  const isOffer = form.watch('isOffer');
+  const sellingPrice = form.watch('sellingPrice');
+  const costPrice = form.watch('costPrice');
+  const offerPrice = form.watch('offerPrice');
+  const effectiveTo = form.watch('effectiveTo');
 
-  const {
-    fields: attributeFields,
-    append: appendAttribute,
-    remove: removeAttribute,
-  } = useFieldArray({ control, name: 'attributes', keyName: 'key' });
-
-  const attributes = watch('attributes') ?? [];
-  const sellingPrice = watch('sellingPrice');
-  const costPrice = watch('costPrice');
-  const offerPrice = watch('offerPrice');
-  const isOffer = watch('isOffer');
-  const effectiveTo = watch('effectiveTo');
-
-  const savingsPercent =
-    offerPrice != null && sellingPrice != null && Number(sellingPrice) > 0 ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
   // Mirrors payablePrice() on the API: the offer amount only counts while the switch is on.
-  const payable = isOffer && offerPrice != null ? Number(offerPrice) : sellingPrice != null ? Number(sellingPrice) : null;
-
-  const margin =
-    sellingPrice != null && costPrice != null && Number(sellingPrice) > 0
-      ? ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100
-      : null;
-
-  // Hydrated once per variant: the master-data queries refetch on focus, and re-running the
-  // reset would throw away whatever the user had typed since.
-  const hydratedId = useRef<number | null>(null);
+  const payable = isOffer && offerPrice != null ? offerPrice : (sellingPrice ?? null);
+  const savings = offerPrice != null && sellingPrice ? Math.round((1 - offerPrice / sellingPrice) * 100) : 0;
+  const margin = costPrice != null && sellingPrice ? ((sellingPrice - costPrice) / sellingPrice) * 100 : null;
 
   useEffect(() => {
-    if (!isEdit || !variant || hydratedId.current === variant.id) return;
-    // A legacy record cannot be mapped before the master data lands; an id array can.
-    const needsMasterData = !!variant.attributes && typeof variant.attributes === 'object' && !Array.isArray(variant.attributes);
-    if (needsMasterData && !(masterAttributes.length > 0 && entriesLoaded)) return;
+    // `isDirty` stops a background refetch of the master data from overwriting typed-in edits.
+    if (!isEdit || !variant || form.formState.isDirty) return;
 
-    hydratedId.current = variant.id;
-    const rows = attributesToRows(variant.attributes, masterAttributes, masterEntries);
-    setSelectedProductId(variant.product?.id);
-    reset({
+    form.reset({
       productId: variant.product?.id,
       name: variant.name ?? '',
       description: variant.description ?? '',
-      attributes: rows.length > 0 ? rows : [{ ...emptyAttributeRow }],
+      attributes: toAttributeRows(variant.attributes, masterAttributes, masterEntries),
       sku: variant.sku,
       barcode: variant.barcode ?? '',
       images: variant.images ?? [],
@@ -168,66 +112,27 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
       costPrice: variant.costPrice ?? undefined,
       offerPrice: variant.offerPrice ?? undefined,
       isOffer: variant.isOffer ?? false,
-      // A reprice starts now; the stored start date belongs to the period being replaced.
-      effectiveFrom: null,
+      effectiveFrom: undefined,
       effectiveTo: variant.effectiveTo ? new Date(variant.effectiveTo) : null,
       reason: '',
     });
-  }, [isEdit, variant, masterAttributes, masterEntries, entriesLoaded, reset]);
+  }, [isEdit, variant, masterAttributes, masterEntries, form]);
 
-  const submitData = async (values: VariantFormValues) => {
-    console.log('values', values);
-    const attributeRows = rowsToAttributes(values.attributes);
-    // On edit, an empty array is only sent when the user actually cleared the rows - a legacy
-    // pair that could not be resolved must not silently wipe what the variant already has.
-    const sendAttributes = !isEdit || attributeRows.length > 0 || !!formState.dirtyFields.attributes;
-
-    const shared = {
-      name: values.name?.trim() ?? '',
-      description: values.description?.trim() ?? '',
-      images: values.images ?? [],
-      isActive: values.isActive ?? true,
-      isOffer: values.isOffer ?? false,
-      sku: trimmed(values.sku),
-      barcode: trimmed(values.barcode) ?? null,
-      lowStockThreshold: values.lowStockThreshold ?? null,
-      stockQuantity: values.stockQuantity ?? undefined,
-      sellingPrice: values.sellingPrice ?? undefined,
-      costPrice: values.costPrice ?? null,
-      // Switching the offer off clears the amount rather than leaving a stale one on the row.
-      offerPrice: values.isOffer ? (values.offerPrice ?? null) : null,
-      // Only sent when the user picked a date: on update, any `effectiveFrom` at all counts as
-      // a reprice and files a new PriceHistory row even when the amounts did not change.
-      ...(values.effectiveFrom ? { effectiveFrom: values.effectiveFrom } : {}),
-      effectiveTo: values.effectiveTo ?? null,
-      reason: trimmed(values.reason) ?? null,
-      ...(sendAttributes ? { attributes: attributeRows } : {}),
-    };
-
+  const submitData = async (model: ProductVariantModel) => {
     const response = isEdit
-      ? await updateVariantmutate.mutateAsync({ id: id!, model: shared as UpdateProductVariantModel })
-      : await createVariantmutate.mutateAsync({
-          ...shared,
-          productId: Number(values.productId),
-          // Always dated on create: the service opens the first price period with
-          // `new Date(data.effectiveFrom)`, which an omitted value turns into an Invalid Date.
-          effectiveFrom: values.effectiveFrom ?? new Date(),
-        } as CreateProductVariantModel);
+      ? await updateMutation.mutateAsync({ id: id!, model: model as ProductVariantModel })
+      : await createMutation.mutateAsync(model as ProductVariantModel);
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: `Variant ${isEdit ? 'updated' : 'created'} successfully` });
       router.push(LIST_URL);
-      return;
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
     }
-
-    const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-    toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
   };
 
-  const isLoading = createVariantmutate.isPending || updateVariantmutate.isPending || isFetching;
-  const attributesOptional = isEdit || isFirstVariant;
-  // The array-level rule (at least one pair) hangs off the array itself, not off a dropdown.
-  const attributesError = formState.errors.attributes as unknown as FieldError | undefined;
+  const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
 
   if (isEdit && isFetching) {
     return (
@@ -239,6 +144,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
       </Card>
     );
   }
+
   if (isEdit && (isError || !variant)) {
     return (
       <Card>
@@ -254,7 +160,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
 
   return (
     <Form {...form}>
-      <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
+      <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-4">
         <Card>
           <FormSection
             icon={Package}
@@ -276,11 +182,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
               </div>
             ) : (
               <FormField
-                control={control}
+                control={form.control}
                 name="productId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Product *</FormLabel>
+                    <FormLabel>
+                      Product <span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
                       <SelectSearch
                         items={productItems}
@@ -289,11 +197,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                         placeholder="Select product"
                         buttonClass="w-full"
                         containerName="variant-product"
-                        onChange={(value) => {
-                          const picked = value ? Number(value) : undefined;
-                          field.onChange(picked);
-                          setSelectedProductId(picked);
-                        }}
+                        onChange={(value) => field.onChange(value ? Number(value) : undefined)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -304,174 +208,92 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
           </FormSection>
         </Card>
 
-        <FormField
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Variant name <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input placeholder='e.g. 64GB / 4GB / 4.5"' {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <Card>
+          <FormSection icon={Tag} title="Details" description="How this variant is named and identified.">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Variant name <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder='e.g. 64GB / 4GB / 4.5"' {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <FormField
-          control={control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Description <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Textarea placeholder="What makes this variant distinct - fabric, capacity, finish." rows={3} {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Description <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="What makes this variant distinct - fabric, capacity, finish."
+                        rows={3}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <FormField
-          control={control}
-          name="sku"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>SKU</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Auto-generated if left blank"
-                  className="font-mono"
-                  {...field}
-                  value={field.value ?? ''}
-                  onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Auto-generated if left blank"
+                          className="font-mono"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={control}
-          name="barcode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Barcode</FormLabel>
-              <FormControl>
-                <Input placeholder="Barcode" {...field} value={field.value ?? ''} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+                <FormField
+                  control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Barcode</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Barcode" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </FormSection>
+        </Card>
 
         <Card>
           <FormSection
             icon={Tag}
             title="Attributes"
-            description={
-              attributesOptional
-                ? 'What tells this variant apart from its siblings, e.g. Size = L. Optional for a product that is sold in only one version.'
-                : 'What tells this variant apart from its siblings, e.g. Size = L. Values come from Master Entries.'
-            }
+            description="What tells this variant apart from its siblings, e.g. Size = L. Values come from Master Entries."
           >
-            <div className="space-y-3">
-              {attributeFields.length === 0 && (
-                <p className="text-sm text-muted-foreground">No attributes — this variant is the product’s only version.</p>
-              )}
-
-              {attributeFields.map((row, index) => {
-                // An attribute already used by another row is off the list, so two rows cannot
-                // both claim "Size" and collapse into one entry on save.
-                const takenElsewhere = attributes.filter((_, i) => i !== index).map((item) => Number(item?.attributeid));
-                const currentId = Number(attributes[index]?.attributeid);
-                const availableAttributes = masterAttributes.filter(
-                  (attribute) => !takenElsewhere.includes(attribute.id) || attribute.id === currentId
-                );
-                const attributeCode = masterAttributes.find((attribute) => attribute.id === currentId)?.code;
-
-                return (
-                  <div key={row.key} className="grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-[1fr_1fr_auto]">
-                    <FormField
-                      control={control}
-                      name={`attributes.${index}.attributeid`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Attribute</FormLabel>
-                          <FormControl>
-                            <SelectSearch
-                              items={availableAttributes.map((attribute) => ({ label: attribute.name, value: attribute.id }))}
-                              value={field.value ?? ''}
-                              valueType="number"
-                              placeholder="Select attribute"
-                              buttonClass="w-full"
-                              containerName={`variant-attribute-${index}`}
-                              onChange={(value) => {
-                                field.onChange(value ? Number(value) : null);
-                                // The old value belongs to the old attribute's value set.
-                                setValue(`attributes.${index}.attributeValueId`, null, { shouldDirty: true });
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={control}
-                      name={`attributes.${index}.attributeValueId`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Value</FormLabel>
-                          <FormControl>
-                            {attributeCode ? (
-                              <MasterEntrySelect
-                                attributeCode={attributeCode}
-                                bindTo="id"
-                                showColorSwatch
-                                value={field.value ?? ''}
-                                onChange={(value) => field.onChange(value ? Number(value) : null)}
-                                buttonClass="w-full"
-                              />
-                            ) : (
-                              <Button type="button" variant="outline" size="sm" disabled className="h-11 w-full justify-between font-normal">
-                                Pick an attribute first
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex items-end">
-                      <Button type="button" variant="ghost" size="icon" aria-label="Remove attribute" onClick={() => removeAttribute(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {attributesError?.message && <p className="text-sm font-medium text-destructive">{attributesError.message}</p>}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={attributeFields.length >= masterAttributes.length}
-                onClick={() => appendAttribute({ ...emptyAttributeRow })}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add attribute
-              </Button>
-            </div>
+            <AttributeRows masterAttributes={masterAttributes} />
           </FormSection>
         </Card>
 
@@ -484,11 +306,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
-                  control={control}
+                  control={form.control}
                   name="sellingPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Selling price {isEdit ? '' : '*'}</FormLabel>
+                      <FormLabel>
+                        Selling price <span className="text-destructive">*</span>
+                      </FormLabel>
                       <FormControl>
                         <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
                       </FormControl>
@@ -496,8 +320,9 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                     </FormItem>
                   )}
                 />
+
                 <FormField
-                  control={control}
+                  control={form.control}
                   name="costPrice"
                   render={({ field }) => (
                     <FormItem>
@@ -511,15 +336,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                 />
               </div>
 
-              {(margin !== null || payable != null) && (
+              {(payable != null || margin !== null) && (
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs">
                   {payable != null && (
                     <span className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">Customer pays</span>
                       <span className="font-semibold text-foreground">{money(payable)}</span>
-                      {isOffer && offerPrice != null && savingsPercent > 0 && (
-                        <span className="font-medium text-emerald-600 dark:text-emerald-500">{savingsPercent}% off</span>
-                      )}
+                      {isOffer && savings > 0 && <span className="font-medium text-emerald-600 dark:text-emerald-500">{savings}% off</span>}
                     </span>
                   )}
                   {margin !== null && (
@@ -536,7 +359,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
 
               <div className="rounded-lg border border-border">
                 <FormField
-                  control={control}
+                  control={form.control}
                   name="isOffer"
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
@@ -557,12 +380,11 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                           aria-label="Run an offer"
                           onCheckedChange={(checked) => {
                             field.onChange(checked);
-                            // Switching off clears the amount and the window, so nothing stale
-                            // is left hidden behind the toggle.
+                            // Nothing stale is left hidden behind the toggle.
                             if (!checked) {
-                              setValue('offerPrice', undefined);
-                              setValue('effectiveFrom', null);
-                              setValue('effectiveTo', null);
+                              form.setValue('offerPrice', undefined);
+                              form.setValue('effectiveFrom', undefined);
+                              form.setValue('effectiveTo', null);
                             }
                           }}
                         />
@@ -574,11 +396,13 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                 {isOffer && (
                   <div className="grid grid-cols-1 gap-4 border-t border-border p-3 sm:grid-cols-3">
                     <FormField
-                      control={control}
+                      control={form.control}
                       name="offerPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Offer price *</FormLabel>
+                          <FormLabel>
+                            Offer price <span className="text-destructive">*</span>
+                          </FormLabel>
                           <FormControl>
                             <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
                           </FormControl>
@@ -586,8 +410,9 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                         </FormItem>
                       )}
                     />
+
                     <FormField
-                      control={control}
+                      control={form.control}
                       name="effectiveFrom"
                       render={({ field }) => (
                         <FormItem>
@@ -595,7 +420,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                           <FormControl>
                             <DateRangePicker
                               value={field.value ? { from: field.value } : undefined}
-                              onSelect={(range) => field.onChange(range?.from ?? null)}
+                              onSelect={(range) => field.onChange(range?.from)}
                               numberOfMonthsToShow={1}
                               placeholder="Immediately"
                               buttonClass="w-full"
@@ -605,8 +430,9 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                         </FormItem>
                       )}
                     />
+
                     <FormField
-                      control={control}
+                      control={form.control}
                       name="effectiveTo"
                       render={({ field }) => (
                         <FormItem>
@@ -624,8 +450,8 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                         </FormItem>
                       )}
                     />
-                    {/* The end date closes the price period itself, not just the discount, so the
-                        variant reads as unpriced once it passes. */}
+
+                    {/* The end date closes the price period itself, not just the discount. */}
                     <p className="text-[11px] text-muted-foreground sm:col-span-3">
                       {effectiveTo
                         ? 'After the end date the variant has no price at all and cannot be bought until a new price is filed.'
@@ -650,7 +476,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
-                control={control}
+                control={form.control}
                 name="stockQuantity"
                 render={({ field }) => (
                   <FormItem>
@@ -659,18 +485,18 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                       <Input
                         type="number"
                         min={0}
-                        step={1}
                         placeholder="0"
                         value={field.value ?? ''}
-                        onChange={(e) => field.onChange(intChange(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
-                control={control}
+                control={form.control}
                 name="lowStockThreshold"
                 render={({ field }) => (
                   <FormItem>
@@ -679,10 +505,9 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                       <Input
                         type="number"
                         min={0}
-                        step={1}
                         placeholder="5"
                         value={field.value ?? ''}
-                        onChange={(e) => field.onChange(intChange(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -700,7 +525,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
             description="Photos specific to this variant. The product's own images are used when none are set."
           >
             <FormField
-              control={control}
+              control={form.control}
               name="images"
               render={({ field }) => (
                 <FormItem>
@@ -718,7 +543,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
           <FormSection icon={ToggleLeft} title="Status" description="Retired variants stay in history but can no longer be sold.">
             <div className="space-y-4">
               <FormField
-                control={control}
+                control={form.control}
                 name="isActive"
                 render={({ field }) => (
                   <FormItem>
@@ -732,8 +557,9 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
                   </FormItem>
                 )}
               />
+
               <FormField
-                control={control}
+                control={form.control}
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
@@ -756,7 +582,7 @@ export default function ManageVariant({ id, productId: initialProductId }: Manag
             Cancel
           </Button>
           <Button type="submit" loading={isLoading}>
-            {isEdit ? 'Update Variant' : 'Create Variant'}
+            {isEdit ? 'Update' : 'Create'} Variant
           </Button>
         </div>
       </form>

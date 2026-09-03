@@ -1,8 +1,9 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateProductVariantModel, RateProductVariantModel, UpdateProductVariantModel } from '@/models/product-variant.model';
+import { RateProductVariantModel, } from '@/models/product-variant.model';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { ProductVariantModel } from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /** Public storefront listing - active variants of published products, no login needed. */
@@ -88,7 +89,7 @@ const useCreateProductVariant = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (model: CreateProductVariantModel) => {
+        mutationFn: async (model: ProductVariantModel) => {
             return unitOfService.ProductVariantService.create(model);
         },
         onSettled: (response) => {
@@ -108,7 +109,7 @@ const useUpdateProductVariant = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ id, model }: { id: number; model: UpdateProductVariantModel }) => {
+        mutationFn: async ({ id, model }: { id: number; model: ProductVariantModel }) => {
             return unitOfService.ProductVariantService.update(id, model);
         },
         onSettled: (response) => {

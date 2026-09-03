@@ -1,21 +1,20 @@
 import { AxiosResponse } from 'axios';
 import { ProductVariantDto } from '@/dtos/product-variant.dto';
-import { ProductVariantListItemDto, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
-import { CreateProductVariantModel, RateProductVariantModel, UpdateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
+import { ProductVariantListItemDto, ProductVariantModel, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
+import { RateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import Response from '@/dtos/Response';
 
 export default interface IProductVariantService {
+    create(model: ProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>>;
+    update(id: number, model: ProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>>;
+
+
     getById(id: number | string): Promise<AxiosResponse<Response<VariantDetailDto>>>;
 
     rate(id: number, model: RateProductVariantModel): Promise<AxiosResponse<Response<VariantRatingDto>>>;
 
-    /** Records a new variant; the previously active one is deactivated by the API. */
-    create(model: CreateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>>;
-
-    /** Updates a variant's safe fields (name, sku, barcode, threshold, active flag). */
-    update(id: number, model: UpdateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>>;
 
     /** The store-wide SKU list, across every product. */
     getAll(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>>;

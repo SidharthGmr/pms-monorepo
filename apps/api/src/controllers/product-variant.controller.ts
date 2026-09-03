@@ -10,7 +10,6 @@ import {
   ProductVariantModel,
   ProductVariantResponseDto,
   StatusEnum,
-  UpdateProductVariantModel,
 } from '@pms/types';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { VariantRatingDto } from '../dtos/product-variant.dto';
@@ -106,7 +105,7 @@ export class ProductVariantController {
 
     // The author comes from the token, never the body: the service stamps it on the variant
     // row and on any PriceHistory / stockHistory row the edit files.
-    const model = { ...req.body, updatedById: userId } as UpdateProductVariantModel;
+    const model = { ...req.body, updatedById: userId } as ProductVariantModel;
 
     const variant = await this.unitOfService.ProductVariant.update(model, id, storeCode);
     return res.status(200).json({ success: true, message: 'Product variant updated successfully', data: variant });

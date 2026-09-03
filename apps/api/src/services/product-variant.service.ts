@@ -1,7 +1,7 @@
 import { Prisma, Status } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, UpdateProductVariantModel } from '@pms/types';
+import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { toVariantResponse, VariantRatingDto } from '../dtos/product-variant.dto';
 import NotFoundError from '../exceptions/not-found-error';
@@ -110,7 +110,7 @@ export class ProductVariantService implements IProductVariantService {
     return variant;
   }
 
-  async update(data: UpdateProductVariantModel, id: number, storeCode: string,): Promise<ProductVariantResponseDto> {
+  async update(data: ProductVariantModel, id: number, storeCode: string,): Promise<ProductVariantResponseDto> {
     const existing = await this.unitOfWork.ProductVariant.findById(id);
     if (!existing) throw new NotFoundError('Variant not found');
     if (existing.storeCode !== storeCode) throw new ForbiddenError('Variant does not belong to your store');
@@ -136,7 +136,7 @@ export class ProductVariantService implements IProductVariantService {
           ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
           ...(data.isActive !== undefined && { isActive: data.isActive }),
           ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
-          updatedById: data.updatedById,
+          ...(data.updatedById !== undefined && { updatedById: data.updatedById }),
         },
       });
 
@@ -158,7 +158,7 @@ export class ProductVariantService implements IProductVariantService {
             ...(effectiveFrom !== undefined && { effectiveFrom }),
             ...(effectiveTo !== undefined && { effectiveTo }),
             reason: data.reason ?? 'Price updated',
-            createdById: data.updatedById,
+            createdById: data.updatedById as string,
           },
           transactionClient
         );
@@ -170,7 +170,7 @@ export class ProductVariantService implements IProductVariantService {
             productId: existing.productId,
             variantId: id,
             storeCode,
-            createdById: data.updatedById,
+            createdById: data.updatedById as string,
             quantity: data.stockQuantity - existing.stockQuantity,
             reason: data.reason ?? 'Manual stock adjustment',
           },

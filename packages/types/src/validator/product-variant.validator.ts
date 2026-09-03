@@ -1,49 +1,10 @@
 import { z } from "zod";
 import { StatusEnum } from "../enum/status.enum";
 
-/**
- * One defining attribute of a variant, e.g. Size = L. Both halves are master-data ids
- * (`attributeid` -> master attribute, `attributeValueId` -> master entry) rather than free
- * text, so renaming a value in Master Entries does not orphan the variants using it.
- */
-export const variantAttributeFields = z.object({
-  attributeid: z.number().int().positive("Pick an attribute"),
-  attributeValueId: z.number().int().positive("Pick a value"),
-});
-
-/** The attributes JSON a variant is created/updated with. Blank rows never reach here. */
-export const variantAttributesField = z.array(variantAttributeFields).optional();
 
 
 export const productVariantValidator = z.object({
-  body: z.object({
-    productId: z.number().int().positive("Product ID is required"),
-    sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
-    name: z.string().min(1, "Name is required").max(150, "Name is too long"),
-    description: z.string().min(1, "Description is required"),
-    barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
-    images: z.array(z.string()).optional(),
-    isActive: z.boolean().optional(),
-    isFeatured: z.boolean().optional(),
-    status: z.nativeEnum(StatusEnum).optional(),
-    lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
-    compareAtPrice: z.number().nonnegative("Compare-at price must be a non-negative number").nullable().optional(),
-    stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").optional(),
-    sellingPrice: z.number().nonnegative("Selling price must be a non-negative number"),
-    offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
-    costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
-    effectiveFrom: z.coerce.date().optional(),
-    effectiveTo: z.coerce.date().nullable().optional(),
-    reason: z.string().nullable().optional(),
-    isOffer: z.boolean().optional(),
-    attributes: variantAttributesField,
-  }),
-});
-
-
-
-export const productVariantFields = z.object({
-  productId: z.number().int().positive("Product ID is required"),
+  productId: z.number({ error: "Select a product" }).int().positive("Product ID is required"),
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
   name: z.string().min(1, "Name is required").max(150, "Name is too long"),
   description: z.string().min(1, "Description is required"),
@@ -54,9 +15,44 @@ export const productVariantFields = z.object({
   status: z.nativeEnum(StatusEnum).optional(),
   lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
   compareAtPrice: z.number().nonnegative("Compare-at price must be a non-negative number").nullable().optional(),
-  attributes: variantAttributesField,
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").optional(),
-  sellingPrice: z.number().nonnegative("Selling price must be a non-negative number"),
+  sellingPrice: z.number({ error: "Selling price is required" }).nonnegative("Selling price must be a non-negative number"),
+  offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
+  costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
+  effectiveFrom: z.coerce.date().optional(),
+  effectiveTo: z.coerce.date().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  isOffer: z.boolean().optional(),
+  attributes: z.array(
+    z.object({
+      attributeid: z.number({ error: "Pick an attribute" }).int().positive("Pick an attribute"),
+      attributeValueId: z.number({ error: "Pick a value" }).int().positive("Pick a value"),
+    })
+  ).optional(),
+});
+
+
+
+export const productVariantFields = z.object({
+  productId: z.number({ error: "Select a product" }).int().positive("Product ID is required"),
+  sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
+  name: z.string().min(1, "Name is required").max(150, "Name is too long"),
+  description: z.string().min(1, "Description is required"),
+  barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
+  images: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  status: z.nativeEnum(StatusEnum).optional(),
+  lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
+  compareAtPrice: z.number().nonnegative("Compare-at price must be a non-negative number").nullable().optional(),
+  attributes: z.array(
+    z.object({
+      attributeid: z.number({ error: "Pick an attribute" }).int().positive("Pick an attribute"),
+      attributeValueId: z.number({ error: "Pick a value" }).int().positive("Pick a value"),
+    })
+  ).optional(),
+  stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").optional(),
+  sellingPrice: z.number({ error: "Selling price is required" }).nonnegative("Selling price must be a non-negative number"),
   offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
   costPrice: z.number().nonnegative("Cost price must be a non-negative number").nullable().optional(),
   effectiveFrom: z.coerce.date().optional(),
@@ -87,7 +83,12 @@ export const updateProductVariantFields = z.object({
   description: z.string().min(1, "Description cannot be empty").optional(),
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
   barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
-  attributes: variantAttributesField,
+  attributes: z.array(
+    z.object({
+      attributeid: z.number({ error: "Pick an attribute" }).int().positive("Pick an attribute"),
+      attributeValueId: z.number({ error: "Pick a value" }).int().positive("Pick a value"),
+    })
+  ).optional(),
   images: z.array(z.string()).optional(),
   lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
   isActive: z.boolean().optional(),

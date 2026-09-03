@@ -5,8 +5,8 @@ import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IProductVariantService from './interfaces/IProductVariantService';
 import { ProductVariantDto } from '@/dtos/product-variant.dto';
-import { ProductVariantListItemDto, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
-import { CreateProductVariantModel, RateProductVariantModel, UpdateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
+import { ProductVariantListItemDto, ProductVariantModel, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
+import { RateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import Response from '@/dtos/Response';
@@ -33,13 +33,13 @@ export default class ProductVariantService implements IProductVariantService {
             .post<VariantRatingDto, AxiosResponse<Response<VariantRatingDto>>>(`/product-variants/rating/${id}`, model);
     }
 
-    create(model: CreateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {
+    create(model: ProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {
         return this.httpService
             .call()
             .post<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>('/product-variants', model);
     }
 
-    update(id: number, model: UpdateProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {
+    update(id: number, model: ProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>> {
         return this.httpService
             .call()
             .put<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>(`/product-variants/${id}`, model);

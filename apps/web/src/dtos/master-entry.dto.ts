@@ -11,7 +11,6 @@ export interface MasterAttributeDto {
   displayOrder?: number | null;
   createdAt: string;
   updatedAt?: string | null;
-  /** Number of values under this group, so a listing can show "Size (4 values)". */
   entryCount?: number;
 }
 

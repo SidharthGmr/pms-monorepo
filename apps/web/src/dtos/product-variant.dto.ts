@@ -22,7 +22,8 @@ export interface ProductVariantDto {
    * The variant's defining attributes as master-data id pairs, e.g. `[{ attributeid: 3,
    * attributeValueId: 12 }]` for Size = L. Empty for rows created by a bare price change.
    * The record form is what rows written before the id migration still hold - read it with
-   * `attributesToRows` (`@/schema/productVariantSchema`) rather than assuming either shape.
+   * `toAttributeRows` (`features/product-variants/add-edit/attribute-rows`) rather than
+   * assuming either shape.
    */
   attributes?: ProductVariantAttributeDto[] | Record<string, string | number | boolean> | null;
   stockQuantity?: number;
