@@ -17,6 +17,8 @@ const useCreateStaff = () => {
             if (response && response.status === 201) {
                 queryClient.invalidateQueries({ queryKey: ['StaffService.getAll'] });
                 queryClient.invalidateQueries({ queryKey: ['StaffService.getCount'] });
+                queryClient.invalidateQueries({ queryKey: ['StaffService.getById'] });
+                queryClient.invalidateQueries({ queryKey: ['StaffService.getByUserId'] });
             }
         },
         onError: (error) => error,
@@ -71,7 +73,7 @@ const useGetStaffByStoreId = (storeId: number, enabled: boolean = true) => {
     });
 };
 
-const useGetStaffByUserId = (userId: number, enabled: boolean = true) => {
+const useGetStaffByUserId = (userId: string, enabled: boolean = true) => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
     return useQuery({
@@ -97,6 +99,8 @@ const useUpdateStaff = () => {
             if (response && response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ['StaffService.getAll'] });
                 queryClient.invalidateQueries({ queryKey: ['StaffService.getCount'] });
+                queryClient.invalidateQueries({ queryKey: ['StaffService.getById'] });
+                queryClient.invalidateQueries({ queryKey: ['StaffService.getByUserId'] });
             }
         },
         onError: (error) => error,

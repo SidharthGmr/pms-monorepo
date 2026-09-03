@@ -17,7 +17,6 @@ import {
   TrendingUp,
   Truck,
   User,
-  Users,
 } from 'lucide-react';
 
 export interface SideBarMenuDto {
@@ -302,23 +301,6 @@ export const SideBarMenu: SideBarMenuDto[] = [
         isActive: false,
       },
     ],
-  },
-
-  {
-    id: 'staff',
-    title: 'Staff',
-    icon: Users,
-    url: '/admin/staff/',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'customer',
-    title: 'Customer',
-    icon: Users,
-    url: '/admin/customer/',
-    role: [Roles.ADMIN],
-    isActive: false,
   },
 
   {

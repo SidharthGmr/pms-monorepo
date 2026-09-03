@@ -44,7 +44,7 @@ export default class StaffService implements IStaffService {
             .get<ListResponseDto<StaffDto>, AxiosResponse<Response<ListResponseDto<StaffDto>>>>(`/staff/store/${storeId}`);
     }
 
-    getByUserId(userId: number): Promise<AxiosResponse<Response<StaffDto>>> {
+    getByUserId(userId: string): Promise<AxiosResponse<Response<StaffDto>>> {
         return this.httpService
             .call()
             .get<StaffDto, AxiosResponse<Response<StaffDto>>>(`/staff/user/${userId}`);

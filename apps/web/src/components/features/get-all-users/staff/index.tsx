@@ -1,181 +1,91 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { StaffDto } from '@/dtos/staff.dto';
-import { StaffFilterParams } from '@/params/staff.params';
-import { useGetAllStaff, useDeleteStaff } from '@/hooks/service-hooks/useStaffService';
-import { useCustomDataTable } from '@/hooks/use-custom-table';
-import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
-import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 
+import { InfoRow } from '@/components/common/profile-components';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
+import { Roles } from '@/enums/roles.enum';
+import { useGetStaffByUserId } from '@/hooks/service-hooks/useStaffService';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import useModalShowHide from '@/hooks/use-modal-show-hide';
-
+import { AxiosError } from 'axios';
+import { Pencil } from 'lucide-react';
+import { useState } from 'react';
 import ManageStaff from './add-edit';
-import config from '@/config';
-import { toast } from '@/components/ui/use-toast';
-import StaffListFilter from './filter';
-import ConfirmBox from '@/components/common/confirm-box';
-import { CustomDataTable } from '@/components/Table/data-table';
-import { DataTablePagination } from '@/components/Table/data-table-pagination';
-import { useStaffSalaryColumns } from '../../staff-salaries/columns';
 
-export default function StaffList() {
-  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
-  const [data, setData] = useState<StaffDto[]>([]);
-  const [recordCount, setRecordCount] = useState<number>(0);
-  const searchParams = useSearchParams();
+const dash = (value?: string | number | null) => (value?.toString().trim() ? value : '—');
 
-  const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
-  const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
+const money = (amount?: number | null) =>
+  amount == null ? '—' : `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const [filterParams, setFilterParams] = useState<StaffFilterParams>({
-    search: searchParams.get('search') || '',
-    isActive: searchParams.get('isActive') ? searchParams.get('isActive') === 'true' : undefined,
-    department: searchParams.get('department') || undefined,
-    position: searchParams.get('position') || undefined,
-    startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
-    endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
-    page: +(searchParams.get('page') || 1),
-    recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-  });
+export default function StaffDetails({ userId }: { userId: string }) {
+  const { data: getStaffResponse, isLoading, isError, error, refetch } = useGetStaffByUserId(userId);
+  const staff = getStaffResponse?.data?.data;
 
-  const columns = useStaffSalaryColumns(
-    (id) => openEditModal(id),
-    (id) => openDeleteModal(id)
-  );
+  const [showEditModal, setShowEditModal] = useState(false);
+  // Editing a staff posting is an admin action, matching the guards on the staff endpoints.
+  const { currentUser } = useGetCurrentUser();
+  const canEdit = currentUser?.role === Roles.SUPER_ADMIN || currentUser?.role === Roles.ADMIN;
 
-  const getAllStaffResponse = useGetAllStaff(filterParams);
-  const deleteStaffMutation = useDeleteStaff();
+  const date = (value?: Date | string | null, withTime = false) =>
+    value ? unitOfService.DateTimeService.convertToLocalDate(value as Date, withTime) : '—';
 
-  useEffect(() => {
-    if (getAllStaffResponse.isSuccess && getAllStaffResponse.data?.data?.data) {
-      setData(getAllStaffResponse.data.data.data.data ?? []);
-      setRecordCount(getAllStaffResponse.data.data.data.totalRecord);
-    }
-  }, [getAllStaffResponse.isSuccess, getAllStaffResponse.data]);
+  if (isLoading) {
+    return (
+      <>
+        {[...Array(6)].map((_, index) => (
+          <Skeleton key={index} className="h-9 rounded-lg" />
+        ))}
+      </>
+    );
+  }
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<StaffDto>('', 'desc', columns);
+  // The API answers 404 when the user has no staff row, which is a normal state here, not a
+  // failure - only anything else is worth showing as an error.
+  const notFound = (error as AxiosError)?.response?.status === 404;
 
-  const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
+  if (isError && !notFound) {
+    return <p className="text-xs text-destructive sm:col-span-2">Could not load the staff record.</p>;
+  }
 
-  const table = useCustomDataTable({
-    columns,
-    data,
-    manualFiltering: true,
-    manualPagination: true,
-    manualSorting: true,
-    pageCount: Math.ceil((recordCount || 0) / (filterParams.recordPerPage || 1)),
-    pagination,
-    sorting,
-    onPaginationChange,
-    onSortingChange,
-  });
-
-  useEffect(() => {
-    setFilterParams((prev) => ({
-      ...prev,
-      page: pagination.pageIndex + 1,
-      recordPerPage: pagination.pageSize,
-    }));
-  }, [pagination]);
-
-  const resetForm = () => {
-    setFilterParams({
-      search: undefined,
-      isActive: undefined,
-      department: undefined,
-      position: undefined,
-      page: 1,
-      recordPerPage: config.recordPerPage,
-    });
-  };
-
-  const handleDelete = async (id: number) => {
-    const response = await deleteStaffMutation.mutateAsync(id);
-    if (response && response.status === 200) {
-      toast({ variant: 'success', title: 'Staff member deleted successfully' });
-    } else {
-      const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
-    }
-    closeDeleteModal(true);
-  };
-
-  if (getAllStaffResponse.isError) {
-    return <div className="text-center py-10 text-destructive">Error loading staff members</div>;
+  if (!staff || notFound) {
+    return <p className="text-xs text-muted-foreground sm:col-span-2">No staff record exists for this user yet.</p>;
   }
 
   return (
     <>
-      <div className="space-y-4">
-        <StaffListFilter
-          table={table}
-          resetForm={resetForm}
-          onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || undefined, page: 1 }))}
-          onIsActiveChange={(value) => {
-            setFilterParams((oldValue) => {
-              return {
-                ...oldValue,
-                isActive: value ? value === 'true' : undefined,
-              };
-            });
-          }}
-          onDepartmentChange={(value) => {
-            setFilterParams((oldValue) => {
-              return { ...oldValue, department: value || undefined };
-            });
-          }}
-          onPositionChange={(value) => {
-            setFilterParams((oldValue) => {
-              return { ...oldValue, position: value || undefined };
-            });
-          }}
-          onStartDateChanged={(value) => {
-            const selectedDate = value;
-            if (selectedDate) {
-              selectedDate.setHours(0, 0, 0, 0);
-            }
+      <InfoRow label="Position" value={dash(staff.position)} />
+      <InfoRow label="Department" value={dash(staff.department)} />
+      <InfoRow label="Store" value={dash(staff.store?.name)} />
+      <InfoRow label="Store code" value={<span className="font-mono text-[11px]">{dash(staff.storeCode)}</span>} />
+      <InfoRow label="Hire date" value={date(staff.hireDate)} />
+      <InfoRow label="Salary" value={money(staff.salary)} />
+      <InfoRow label="Employment" value={<Badge variant={staff.isActive ? 'green' : 'rose'}>{staff.isActive ? 'Active' : 'Inactive'}</Badge>} />
+      <InfoRow label="Staff ID" value={dash(staff.id)} />
+      <InfoRow label="Added on" value={date(staff.createdAt, true)} />
+      <InfoRow label="Last updated" value={date(staff.updatedAt, true)} />
 
-            setFilterParams((oldValue) => {
-              return {
-                ...oldValue,
-                startDate: selectedDate?.toISOString(),
-              };
-            });
+      {canEdit && (
+        <div className="flex justify-end pt-1 sm:col-span-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
+            <Pencil className="mr-2 h-3.5 w-3.5" />
+            Edit staff details
+          </Button>
+        </div>
+      )}
+
+      {showEditModal && (
+        <ManageStaff
+          id={staff.id}
+          isOpen={showEditModal}
+          onClose={(refresh) => {
+            setShowEditModal(false);
+            if (refresh) refetch();
           }}
-          onEndDateChanged={(value) => {
-            const selectedDate = value;
-            if (selectedDate) {
-              selectedDate.setHours(23, 59, 59, 999);
-            }
-
-            setFilterParams((oldValue) => {
-              return {
-                ...oldValue,
-                endDate: selectedDate?.toISOString(),
-              };
-            });
-          }}
-        />
-        <CustomDataTable table={table} columns={columns} isLoading={getAllStaffResponse.isLoading} />
-        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllStaffResponse.isLoading} />
-      </div>
-
-      {showEditModal && <ManageStaff id={+(editId ?? 0)} isOpen={showEditModal} onClose={closeEditModal} />}
-
-      {showDeleteModal && (
-        <ConfirmBox
-          isOpen={showDeleteModal}
-          onClose={() => closeDeleteModal(false)}
-          onSubmit={() => handleDelete(+(deleteId ?? 0))}
-          bodyText="Are you sure you want to delete this staff member? This action cannot be undone."
-          noButtonText="Cancel"
-          yesButtonText="Delete"
-          loading={deleteStaffMutation.isPending}
         />
       )}
     </>

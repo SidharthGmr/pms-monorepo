@@ -13,6 +13,8 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { BadgeCheck, Cake, Clock, KeyRound, Mail, MapPin, Phone, ShieldCheck, Store, UserRound } from 'lucide-react';
 import { ReactNode } from 'react';
 import SectionCard from './section-card';
+import StaffDetails from '../staff';
+import { Role, UserDto } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -38,7 +40,7 @@ const dash = (value?: string | null) => (value?.toString().trim() ? value : '—
 
 export default function EachUserDetails({ userId }: { userId: string }) {
   const { data: getUserResponse, isLoading, isError } = useGetUserById(userId);
-  const user = getUserResponse?.data?.data;
+  const user = getUserResponse?.data?.data as UserDto;
 
   const date = (value?: Date | string | null, withTime = false) =>
     value ? unitOfService.DateTimeService.convertToLocalDate(value as Date, withTime) : '—';
@@ -137,6 +139,14 @@ export default function EachUserDetails({ userId }: { userId: string }) {
               <InfoRow label="Last updated" value={date(user.updatedAt, true)} />
             </div>
           </SectionCard>
+
+          {user.role === Role.staff && (
+            <SectionCard title="Staff Details" icon={<Clock className="h-4 w-4" />}>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <StaffDetails userId={userId} />
+              </div>
+            </SectionCard>
+          )}
 
           <SectionCard title="Address" icon={<MapPin className="h-4 w-4" />}>
             <div className="grid gap-2 sm:grid-cols-2">

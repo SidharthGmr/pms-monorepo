@@ -70,7 +70,9 @@ export class UserController {
   };
 
   getUserById = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
-    const userId = req.user?.userId;
+    // The id comes from the route, not from the token: reading `req.user.userId` here made
+    // GET /users/:userId return the caller's own record whatever id was asked for.
+    const userId = req.params['userId'] as string;
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -78,6 +80,19 @@ export class UserController {
         data: null
       });
     }
+
+    // Honouring the param opens the endpoint to any id, so who may read what is enforced here
+    // rather than on the route - every caller reads its own profile through this same handler.
+    const isSelf = userId === req.user?.userId;
+    const isAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === Role.ADMIN;
+    if (!isSelf && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to view this user',
+        data: null
+      });
+    }
+
     const user = await this.unitOfService.User.getUserById(userId);
 
     if (!user) {
