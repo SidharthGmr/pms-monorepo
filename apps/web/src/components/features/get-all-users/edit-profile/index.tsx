@@ -10,25 +10,14 @@ import { TYPES } from '@/config/types';
 import { useGetUserById, useUpdateUser } from '@/hooks/service-hooks/useUserList.service.hook';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { zodResolver } from '@/lib/zod-resolver';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
-
-const profileFormSchema = z.object({
-  name: z.string().min(3, { message: 'Name must be at least 3 characters.' }),
-  userName: z.string().optional(),
-  phone: z.string().optional(),
-  dateOfBirth: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  pincode: z.string().optional(),
-  bio: z.string().optional(),
-});
-
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
+import { profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
+import Response from '@/dtos/Response';
+import { AxiosResponse } from 'axios';
+import DateTimePicker from '@/components/common/data-time-picker/date-time-picker';
 
 interface EditUserProfileProps {
   isOpen: boolean;
@@ -39,10 +28,12 @@ interface EditUserProfileProps {
 export default function EditUserProfile({ isOpen, onClose, userId }: EditUserProfileProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const updateUser = useUpdateUser();
+  const [showLoader, setShowLoader] = useState<boolean>(false);
+
   const { data: userData, isLoading: isFetching } = useGetUserById(userId, !!userId);
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
+  const form = useForm<UpdateProfileModel>({
+    resolver: zodResolver(profileValidator),
     defaultValues: {
       name: '',
       userName: '',
@@ -77,12 +68,22 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
 
   const { handleSubmit } = form;
 
-  const submitData = async (data: ProfileFormValues) => {
-    const payload = {
-      ...data,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-    };
-    const response = await updateUser.mutateAsync({ id: userId, model: payload });
+  const submitData = async (model: UpdateProfileModel) => {
+    const formData = new FormData();
+
+    Object.keys(model).forEach((key) => {
+      const value = model[key as keyof UpdateProfileModel];
+      if (key === 'dateOfBirth' && model[key] !== undefined) {
+        formData.append(key, new Date(value as string).toISOString());
+      } else {
+        formData.append(key, value as string);
+      }
+    });
+
+    let response: AxiosResponse<Response<UserDto>>;
+    setShowLoader(true);
+
+    response = await updateUser.mutateAsync({ id: userId, model: formData });
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: 'Profile updated successfully' });
@@ -117,7 +118,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -130,7 +131,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -143,7 +144,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -156,7 +157,15 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Date of Birth</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <div className="flex">
+                          <DateTimePicker
+                            placeholder="Select Date"
+                            mode="single"
+                            value={field.value ? new Date(field.value) : undefined}
+                            selected={field.value ? new Date(field.value) : undefined}
+                            onSelect={(date) => field.onChange(date ?? undefined)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -182,7 +191,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -195,7 +204,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -208,7 +217,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Country</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -221,7 +230,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Pincode</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input placeholder="Emi Offer Price*" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -234,7 +243,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem className="md:col-span-2">
                       <FormLabel>Bio</FormLabel>
                       <FormControl>
-                        <Textarea className="resize-none" {...field} />
+                        <Textarea placeholder="Emi Offer Price*" className="resize-none" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

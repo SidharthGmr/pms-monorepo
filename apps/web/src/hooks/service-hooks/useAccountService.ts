@@ -5,7 +5,6 @@ import VerifyTokenModel from '@/models/VerifyTokenModel';
 import ForgotPasswordModel from '@/models/ForgotPasswordModel';
 import ResetPasswordTokenModel from '@/models/ResetPasswordTokenModel';
 import { CreateUserModel } from '@/models/user.model';
-import { UpdateProfileModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
@@ -100,7 +99,7 @@ const useCreateUser = () => {
 const useUpdateProfile = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
-  const mutationFn = async (model: UpdateProfileModel) => {
+  const mutationFn = async (model: any) => {
     return await unitOfService.AccountService.updateProfile(model);
   };
 

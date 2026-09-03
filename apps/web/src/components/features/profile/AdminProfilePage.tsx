@@ -13,7 +13,7 @@ import { useUpdateProfile } from '@/hooks/service-hooks/useAccountService';
 import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { profileFields, type ProfileFormValues, type UpdateProfileModel } from '@pms/types';
+import { profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
 import { zodResolver } from '@/lib/zod-resolver';
 import { motion } from 'framer-motion';
 import { Building, CheckCircle2, Compass, FileText, Globe, Hash, Loader2, Mail, Map, MapPin, Phone, Save, Shield, User, UserCog } from 'lucide-react';
@@ -21,36 +21,10 @@ import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { AxiosResponse } from 'axios';
+import Response from '@/dtos/Response';
+import DateTimePicker from '@/components/common/data-time-picker/date-time-picker';
 
-const DEFAULT_VALUES: ProfileFormValues = {
-  name: '',
-  userName: '',
-  phone: '',
-  profileImageUrl: '',
-  address: '',
-  city: '',
-  state: '',
-  country: '',
-  pincode: '',
-  bio: '',
-};
-
-// Fields shown in the UI — drives the completeness meter. `dateOfBirth` is kept
-// in the DTO/model (@pms/types) but intentionally not surfaced in the UI.
-const TRACKED_FIELDS: (keyof ProfileFormValues)[] = [
-  'name',
-  'userName',
-  'phone',
-  'profileImageUrl',
-  'address',
-  'city',
-  'state',
-  'country',
-  'pincode',
-  'bio',
-];
-
-/** A card section with an icon badge, title and description. */
 function SectionCard({ icon, title, description, children }: { icon: ReactNode; title: string; description?: string; children: ReactNode }) {
   return (
     <Card className="border-0 p-0 shadow-sm ring-1 ring-slate-200 overflow-hidden">
@@ -68,6 +42,21 @@ function SectionCard({ icon, title, description, children }: { icon: ReactNode; 
   );
 }
 
+// Fields shown in the UI — drives the completeness meter. `dateOfBirth` is kept
+// in the DTO/model (@pms/types) but intentionally not surfaced in the UI.
+const TRACKED_FIELDS: (keyof UpdateProfileModel)[] = [
+  'name',
+  'userName',
+  'phone',
+  'profileImageUrl',
+  'address',
+  'city',
+  'state',
+  'country',
+  'pincode',
+  'bio',
+];
+
 export default function AdminProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -78,16 +67,24 @@ export default function AdminProfilePage() {
   const unitOfService = useMemo(() => container.get<IUnitOfService>(TYPES.IUnitOfService), []);
   const updateProfileMutation = useUpdateProfile();
 
-  // The NextAuth session only carries JWT fields (userId/name/email/role), so
-  // load the full profile from the DB — otherwise saved fields like
-  // profileImageUrl/address never round-trip back into the form.
   const userId = (currentUser as any)?.userId || '';
   const { data: dbUserResp, refetch: refetchUser } = useGetUserById(userId, !!userId);
   const dbUser = dbUserResp?.data?.data;
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFields),
-    defaultValues: DEFAULT_VALUES,
+  const form = useForm<UpdateProfileModel>({
+    resolver: zodResolver(profileValidator),
+    defaultValues: {
+      name: '',
+      userName: '',
+      phone: '',
+      dateOfBirth: undefined,
+      address: '',
+      city: '',
+      state: '',
+      country: '',
+      pincode: '',
+      bio: '',
+    },
   });
 
   useEffect(() => {
@@ -102,6 +99,7 @@ export default function AdminProfilePage() {
       userName: u.userName || '',
       phone: u.phone || '',
       profileImageUrl: u.profileImageUrl || '',
+      dateOfBirth: u.dateOfBirth ? new Date(u.dateOfBirth) : undefined,
       address: u.address || '',
       city: u.city || '',
       state: u.state || '',
@@ -111,36 +109,30 @@ export default function AdminProfilePage() {
     });
   }, [dbUser, currentUser, form]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
-    setIsSubmitting(true);
-    try {
-      const payload: UpdateProfileModel = { ...data };
-      const response = await updateProfileMutation.mutateAsync(payload);
+  const submitData = async (model: UpdateProfileModel) => {
+    const formData = new FormData();
 
-      if (response && (response.status === 200 || response.status === 201)) {
-        toast({ variant: 'success', title: 'Profile updated successfully' });
-
-        // Re-pull the saved record from the DB so all fields reflect what persisted.
-        await refetchUser();
-
-        if (update) {
-          await update({
-            ...session?.user,
-            name: data.name,
-            userName: data.userName,
-            phone: data.phone,
-            profileImageUrl: data.profileImageUrl,
-          });
-        }
+    Object.keys(model).forEach((key) => {
+      const value = model[key as keyof UpdateProfileModel];
+      if (key === 'dateOfBirth' && model[key] !== undefined) {
+        formData.append(key, new Date(value as string).toISOString());
       } else {
-        const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-        toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
+        formData.append(key, value as string);
       }
-    } catch (error: any) {
-      const errorMessage = unitOfService.ErrorHandlerService.getErrorMessage(error?.response || error);
-      toast({ variant: 'destructive', title: 'Error', description: <span>{errorMessage}</span> });
-    } finally {
+    });
+
+    let response: AxiosResponse<Response<UserDto>>;
+    setIsSubmitting(true);
+
+    response = await updateProfileMutation.mutateAsync(formData);
+
+    if (response && (response.status === 200 || response.status === 201)) {
+      toast({ variant: 'success', title: 'Profile updated successfully' });
       setIsSubmitting(false);
+    } else {
+      setIsSubmitting(false);
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
     }
   };
 
@@ -175,7 +167,7 @@ export default function AdminProfilePage() {
       className="mx-auto max-w-6xl space-y-5 p-4 md:p-6 pb-24"
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={form.handleSubmit(submitData)} className="space-y-5">
           {/* Identity header */}
           <Card className="border-0 p-0 shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="relative h-28 bg-gradient-to-br from-primary to-secondary md:h-32">
@@ -292,6 +284,27 @@ export default function AdminProfilePage() {
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter your phone number" className={inputClass} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date of Birth</FormLabel>
+                      <FormControl>
+                        <div className="flex">
+                          <DateTimePicker
+                            placeholder="Select Date"
+                            mode="single"
+                            value={field.value ? new Date(field.value) : undefined}
+                            selected={field.value ? new Date(field.value) : undefined}
+                            onSelect={(date) => field.onChange(date ?? undefined)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
