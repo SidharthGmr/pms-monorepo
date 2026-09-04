@@ -9,10 +9,10 @@
     "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
     "dev:web": "npm run dev -w @pms/web",
     "dev:api": "npm run dev -w @pms/api",
-    "build": "npm run build -w @pms/types && npm run build -w @pms/api && npm run build -w @pms/web",
+    "build": "npm run build:types && npm run build -w @pms/api && npm run build -w @pms/web",
     "build:types": "npm run build -w @pms/types",
-    "build:web": "npm run build -w @pms/web",
-    "build:api": "npm run build -w @pms/api",
+    "build:web": "npm run build:types && npm run build -w @pms/web",
+    "build:api": "npm run build:types && npm run build -w @pms/api",
     "typecheck": "npm run typecheck -w @pms/api && npm run typecheck -w @pms/web",
     "lint": "npm run lint -w @pms/web",
     "start:api": "npm run start -w @pms/api",
@@ -29,6 +29,6 @@
     "@types/react-dom": "^18"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }

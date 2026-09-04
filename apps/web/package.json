@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "start": "next start",
-    "build": "tsc -p ../../packages/types && next build",
+    "build": "next build",
     "lint": "next lint",
     "stop": "taskkill -f -im node.exe",
     "typecheck": "tsc --noEmit"
@@ -103,6 +103,6 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   }
 }

@@ -22,23 +22,27 @@ deployment.
 
 ## apps/api on Vercel
 
-`apps/api/vercel.json` carries the install/build commands and routes every request to
-the serverless entry `apps/api/api/index.js`, which re-exports the compiled app from
-`dist/`. Do **not** reintroduce the legacy `builds` key: when it is present Vercel
-ignores the install command and runs `npm install` inside `apps/api` alone, which then
-tries to fetch `@pms/types` from the public registry and fails with a 404.
+`apps/api/vercel.json` sets the build command and routes every request to the
+serverless entry `apps/api/api/index.js`, which re-exports the compiled app from
+`dist/`. Two rules learned the hard way:
 
-| Setting          | Value                                        |
-| ---------------- | -------------------------------------------- |
-| Root Directory   | `apps/api`                                   |
-| Framework Preset | Other                                        |
-| Install Command  | *(from vercel.json: `cd ../.. && npm ci`)*   |
+- **No `builds` key.** With it present Vercel ignores install settings, runs
+  `npm install` inside `apps/api` alone, and 404s fetching `@pms/types` from npm.
+- **No `cd ../..` or `../../packages/types` in commands.** Vercel's build container does
+  not expose the repo root at that relative path. Leave the Install Command blank:
+  Vercel detects the npm workspace and installs from the monorepo root itself, and
+  `@pms/types` compiles during that install via its `prepare` script.
+
+| Setting          | Value                                  |
+| ---------------- | -------------------------------------- |
+| Root Directory   | `apps/api`                             |
+| Framework Preset | Other                                  |
+| Install Command  | *(blank - Vercel installs at repo root)* |
 | Build Command    | *(from vercel.json: `npm run vercel-build`)* |
-| Node.js Version  | 20.x (pinned in `engines`)                   |
+| Node.js Version  | 24.x (pinned in `engines`; 20.x is deprecated on Vercel) |
 
 Under **Settings -> General**, keep *"Include source files outside of the Root Directory
-in the Build Step"* enabled: the install runs from the repo root and the build compiles
-`packages/types`.
+in the Build Step"* enabled so the workspace root is part of the build.
 
 Environment variables - every key in `apps/api/.env.example`. Production-specific:
 
@@ -73,10 +77,11 @@ the Vercel function logs for that id to find the stack trace.
 
 | Setting          | Value                    |
 | ---------------- | ------------------------ |
-| Root Directory   | `apps/web`               |
-| Framework Preset | Next.js                  |
-| Install Command  | `cd ../.. && npm ci`     |
-| Build Command    | `npm run build`          |
+| Root Directory   | `apps/web`                              |
+| Framework Preset | Next.js                                 |
+| Install Command  | *(blank - Vercel installs at repo root)* |
+| Build Command    | *(default `npm run build` = `next build`)* |
+| Node.js Version  | 24.x                                    |
 
 Environment variables — every key in `apps/web/.env.example`. `NEXTAUTH_URL` must be
 the final public URL (including a custom domain if you attach one), and

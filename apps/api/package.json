@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node index.ts",
-    "build": "tsc -p ../../packages/types && prisma generate && tsc",
-    "vercel-build": "tsc -p ../../packages/types && prisma generate && tsc",
+    "build": "prisma generate && tsc",
+    "vercel-build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "migrate:deploy": "prisma migrate deploy",
@@ -55,6 +55,6 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   }
 }

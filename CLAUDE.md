@@ -8,7 +8,7 @@ PMS is an npm-workspaces monorepo for a multi-store Product/Inventory Management
 
 - `apps/api` — Express 5 + TypeScript + Prisma/PostgreSQL REST API (InversifyJS DI, layered architecture).
 - `apps/web` — Next.js 14 (App Router) frontend, NextAuth for session/JWT handling, Redux Toolkit + React Query, shadcn/ui + Radix components, Tailwind.
-- `packages/types` (`@pms/types`) — DTOs/params/Zod validators shared between `api` and `web`. Exports are hand-picked in `packages/types/src/index.ts`; add new shared types there. **It compiles to CommonJS in `packages/types/dist/`** (`main`/`types` point there), so after editing anything under `packages/types/src` run `npm run build:types` (or the app build scripts, which do it first) or the apps will see stale types/runtime. Never import `@pms/types` from inside the package itself — use relative paths, or the first build of a clean checkout fails. It is a runtime `dependency` of both apps (the Zod validators execute on the API), not a devDependency.
+- `packages/types` (`@pms/types`) — DTOs/params/Zod validators shared between `api` and `web`. Exports are hand-picked in `packages/types/src/index.ts`; add new shared types there. **It compiles to CommonJS in `packages/types/dist/`** (`main`/`types` point there). It builds itself on `npm install` via a `prepare` script; after editing anything under `packages/types/src` run `npm run build:types` or the apps will see stale types/runtime. App-level build scripts deliberately do not reach for `../../packages/types` - that relative path does not exist inside Vercel's build container. Never import `@pms/types` from inside the package itself — use relative paths, or the first build of a clean checkout fails. It is a runtime `dependency` of both apps (the Zod validators execute on the API), not a devDependency.
 - The actual UI component library lives in `apps/web/src/components` (shadcn/ui, configured via `apps/web/components.json`). The old `packages/ui` scaffold was removed.
 
 Workspace package names are `@pms/api`, `@pms/web`, `@pms/types`. Root `package.json` orchestrates with plain npm workspace scripts (no Turborepo).
@@ -23,8 +23,8 @@ npm run dev:web        # apps/web only (Next.js, http://localhost:3000)
 npm run dev:api        # apps/api only (nodemon+ts-node, http://localhost:4000)
 npm run build          # types -> api -> web, in that order
 npm run build:types    # tsc -p packages/types
-npm run build:api      # tsc -p ../../packages/types && prisma generate && tsc
-npm run build:web      # tsc -p ../../packages/types && next build
+npm run build:api      # build:types, then prisma generate && tsc
+npm run build:web      # build:types, then next build
 npm run typecheck      # tsc --noEmit in both apps
 npm run lint           # next lint (web)
 npm run start:api      # node apps/api/dist/index.js
@@ -38,7 +38,7 @@ See `DEPLOYMENT.md` for Vercel settings, required env vars, and the pre-deploy c
 ```bash
 cd apps/api
 npm run dev                 # nodemon --exec ts-node index.ts
-npm run build                # builds @pms/types, then prisma generate && tsc -> dist/
+npm run build                # prisma generate && tsc -> dist/ (types must already be built)
 npm start                    # node dist/index.js
 npx prisma migrate dev       # create/apply a migration (prisma/schema.prisma)
 npx prisma generate          # regenerate Prisma client (also runs on postinstall)
