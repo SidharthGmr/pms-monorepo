@@ -22,15 +22,25 @@ deployment.
 
 ## apps/api on Vercel
 
-| Setting          | Value                                   |
-| ---------------- | --------------------------------------- |
-| Root Directory   | `apps/api`                              |
-| Framework Preset | Other                                   |
-| Install Command  | `cd ../.. && npm ci`                    |
-| Build Command    | `npm run vercel-build`                  |
-| Output Directory | *(leave blank — `vercel.json` routes to `dist/index.js`)* |
+`apps/api/vercel.json` carries the install/build commands and routes every request to
+the serverless entry `apps/api/api/index.js`, which re-exports the compiled app from
+`dist/`. Do **not** reintroduce the legacy `builds` key: when it is present Vercel
+ignores the install command and runs `npm install` inside `apps/api` alone, which then
+tries to fetch `@pms/types` from the public registry and fails with a 404.
 
-Environment variables — every key in `apps/api/.env.example`. Production-specific:
+| Setting          | Value                                        |
+| ---------------- | -------------------------------------------- |
+| Root Directory   | `apps/api`                                   |
+| Framework Preset | Other                                        |
+| Install Command  | *(from vercel.json: `cd ../.. && npm ci`)*   |
+| Build Command    | *(from vercel.json: `npm run vercel-build`)* |
+| Node.js Version  | 20.x (pinned in `engines`)                   |
+
+Under **Settings -> General**, keep *"Include source files outside of the Root Directory
+in the Build Step"* enabled: the install runs from the repo root and the build compiles
+`packages/types`.
+
+Environment variables - every key in `apps/api/.env.example`. Production-specific:
 
 ```
 NODE_ENV=production
@@ -39,6 +49,8 @@ CORS_ORIGINS=https://your-web-domain.com
 APP_PUBLIC_URL=https://your-web-domain.com
 ENABLE_API_DOCS=false      # Swagger off unless you want /api public
 TRUST_PROXY_HOPS=1
+DATABASE_URL=<pooled url>  # PgBouncer / Supabase 6543 / Neon pooled / Accelerate
+DIRECT_URL=<direct url>
 ```
 
 Run migrations as a separate step, not in the build (the build runs on every preview

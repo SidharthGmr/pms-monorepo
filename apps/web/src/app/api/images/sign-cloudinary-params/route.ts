@@ -30,8 +30,10 @@ export async function GET() {
     return NextResponse.json({ success: false, message: 'File uploads are not configured' }, { status: 503 });
   }
 
-  const user = session.user as { storeCode?: string | null; userId?: string; id?: string };
-  const scope = user.storeCode || user.userId || user.id || 'shared';
+  // session.user is the decoded API token (see NextAuth `session` callback), which
+  // carries more than the UserDto type declares; read the tenancy fields loosely.
+  const user = session.user as unknown as { storeCode?: string | null; userId?: string; id?: string | number };
+  const scope = user.storeCode || user.userId || (user.id != null ? String(user.id) : '') || 'shared';
 
   const timestamp = Math.floor(Date.now() / 1000);
   const folder = `pms_invoices/${scope}`;
