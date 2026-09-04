@@ -8,30 +8,37 @@ PMS is an npm-workspaces monorepo for a multi-store Product/Inventory Management
 
 - `apps/api` — Express 5 + TypeScript + Prisma/PostgreSQL REST API (InversifyJS DI, layered architecture).
 - `apps/web` — Next.js 14 (App Router) frontend, NextAuth for session/JWT handling, Redux Toolkit + React Query, shadcn/ui + Radix components, Tailwind.
-- `packages/types` (`@pms/types`) — small set of DTOs/params/Zod validators shared between `api` and `web` (e.g. `UserDto`, `RoleDto`, user-list params). Exports are hand-picked in `packages/types/src/index.ts`; add new shared types there.
-- `packages/ui` (`@repo/ui`) — leftover `create-turbo` scaffold (empty `src/`, references `@repo/eslint-config`/`@repo/typescript-config` which don't exist in this repo). Not imported by `apps/web`; the actual component library lives in `apps/web/src/components` (shadcn/ui, configured via `apps/web/components.json`).
+- `packages/types` (`@pms/types`) — DTOs/params/Zod validators shared between `api` and `web`. Exports are hand-picked in `packages/types/src/index.ts`; add new shared types there. **It compiles to CommonJS in `packages/types/dist/`** (`main`/`types` point there), so after editing anything under `packages/types/src` run `npm run build:types` (or the app build scripts, which do it first) or the apps will see stale types/runtime. Never import `@pms/types` from inside the package itself — use relative paths, or the first build of a clean checkout fails. It is a runtime `dependency` of both apps (the Zod validators execute on the API), not a devDependency.
+- The actual UI component library lives in `apps/web/src/components` (shadcn/ui, configured via `apps/web/components.json`). The old `packages/ui` scaffold was removed.
 
-Root `package.json` declares workspaces (`apps/*`, `packages/*`) but there is no `turbo.json`/root tsconfig — orchestration is plain npm workspace scripts, not Turborepo pipelines, despite `turbo` being a devDependency.
+Workspace package names are `@pms/api`, `@pms/web`, `@pms/types`. Root `package.json` orchestrates with plain npm workspace scripts (no Turborepo).
 
 ## Commands
 
 Run from the repo root unless noted:
 
 ```bash
-npm run dev          # runs apps/web and apps/api concurrently
-npm run dev:web       # apps/web only (Next.js, http://localhost:3000)
-npm run dev:api       # apps/api only (nodemon+ts-node, http://localhost:4000)
-npm run build         # build --workspaces (builds every workspace)
-npm run build:web
-npm run build:api     # prisma generate && tsc
+npm run dev            # runs apps/web and apps/api concurrently
+npm run dev:web        # apps/web only (Next.js, http://localhost:3000)
+npm run dev:api        # apps/api only (nodemon+ts-node, http://localhost:4000)
+npm run build          # types -> api -> web, in that order
+npm run build:types    # tsc -p packages/types
+npm run build:api      # tsc -p ../../packages/types && prisma generate && tsc
+npm run build:web      # tsc -p ../../packages/types && next build
+npm run typecheck      # tsc --noEmit in both apps
+npm run lint           # next lint (web)
+npm run start:api      # node apps/api/dist/index.js
+npm run migrate:deploy # prisma migrate deploy (run separately from the build)
 ```
+
+See `DEPLOYMENT.md` for Vercel settings, required env vars, and the pre-deploy checklist. CI (`.github/workflows/ci.yml`) runs typecheck, lint, and both builds on every push/PR.
 
 ### apps/api
 
 ```bash
 cd apps/api
 npm run dev                 # nodemon --exec ts-node index.ts
-npm run build                # prisma generate && tsc -> dist/
+npm run build                # builds @pms/types, then prisma generate && tsc -> dist/
 npm start                    # node dist/index.js
 npx prisma migrate dev       # create/apply a migration (prisma/schema.prisma)
 npx prisma generate          # regenerate Prisma client (also runs on postinstall)
@@ -39,7 +46,11 @@ npx prisma generate          # regenerate Prisma client (also runs on postinstal
 
 There is no test runner configured in `apps/api` or `apps/web` — do not assume `npm test` exists.
 
-Swagger UI is served at `/api` (JSON at `/swagger.json`), defined in `src/config/swagger.ts` and wired up directly in `index.ts` (not the `swagger-ui-express` static middleware, to avoid serverless asset path issues on Vercel).
+**Environment is validated at boot** by `src/config/env.ts` (Zod). A missing/invalid variable throws before the server starts; in `NODE_ENV=production` it additionally refuses `SITE_MODE=local`, `CORS_ORIGINS=*`, and a missing `APP_PUBLIC_URL`. Read config through `env` (or `src/config/index.ts`, which wraps it), not `process.env`. `apps/api/.env.example` lists every key.
+
+Swagger UI is served at `/api` (JSON at `/swagger.json`) only when `ENABLE_API_DOCS` is true (default: on outside production). It is defined in `src/config/swagger.ts` and wired directly in `index.ts` with CDN assets, not the `swagger-ui-express` static middleware, to avoid serverless asset path issues on Vercel.
+
+Logging goes through `src/utils/logger.ts` (JSON lines in production, redacts token/password/otp fields). Do not add `console.log` to request paths; use `logger.*` with a context object.
 
 ### apps/web
 
@@ -57,7 +68,7 @@ Layered, DI-driven design: **routes -> controllers -> `IUnitOfService` -> servic
 - **DI container**: `src/config/ioc.config.ts` binds every controller/service/repository interface to its implementation via InversifyJS. `src/config/ioc.types.ts` holds the `Symbol.for(...)` keys. Controllers/services pull dependencies via constructor default params, e.g. `constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService))` — not decorator-based `@inject`.
 - **Unit of Work / Unit of Service**: `src/repository/unitofwork.repository.ts` aggregates all repositories behind one object (`unitOfWork.Product`, `unitOfWork.Order`, ...) and exposes `.transaction()` for `prisma.$transaction`. `src/services/unitOfService.ts` does the analogous aggregation for services, and controllers only ever depend on `IUnitOfService`.
 - **Adding a new entity/feature** touches all of these in lockstep: `repository/interfaces/i*.repository.ts` + `repository/*.repository.ts`, `services/interfaces/I*.service.ts` + `services/*.service.ts`, `controllers/*.controller.ts`, a `routes/*Routes.ts` mounted in `src/routes/index.routes.ts`, plus new symbols in `ioc.types.ts` and bindings in `ioc.config.ts`, and usually additions to `UnitOfWork`/`UnitOfService`.
-- **Request pipeline / middleware order** (see `index.ts`): CORS -> `express.json()` -> Swagger routes (public, mounted _before_ the client-id check) -> `clientid.middleware.ts` (global gate, requires a `clientId` header matching `CLIENT_ID` env unless `SITE_MODE=local`) -> `routes` -> `errorHandler.middleware.ts`. Per-route middleware order is `authenticateToken` (JWT, `authentication.middleware.ts`) -> `authorization([roles])` (RBAC, `authorization.middleware.ts`, looks up the user via `IUnitOfService.User`) -> `storeRequiredMiddleware` (`store-required.middleware.ts`, requires `req.user.storeCode`). Getting this order wrong breaks `req.user` population.
+- **Request pipeline / middleware order** (see `index.ts`): `requestContext` (stamps `req.requestId`, echoes `x-request-id`, writes one access-log line) -> `helmet` -> CORS (allowlist from `CORS_ORIGINS`) -> `express.json({ limit })` -> `/health/live` + `/health/ready` (public, no clientId) -> Swagger routes (public, gated by `ENABLE_API_DOCS`) -> `apiLimiter` (global rate limit) -> `clientid.middleware.ts` (global gate, constant-time compare against `CLIENT_ID`, bypassed only when `SITE_MODE=local`) -> `routes` -> 404 handler (CustomResponse shape) -> `errorHandler.middleware.ts` (logs 500s with `requestId`, maps Prisma P2002 -> 400, P2025 -> 404, bad JSON -> 400). Per-route middleware order is `authenticateToken` (JWT, `authentication.middleware.ts`) -> `authorization([roles])` (RBAC, `authorization.middleware.ts`, looks up the user via `IUnitOfService.User`) -> `storeRequiredMiddleware` (`store-required.middleware.ts`, requires `req.user.storeCode`). Getting this order wrong breaks `req.user` population. `validate(schema)` returns `{ success:false, message, errors: string[] }` — the same envelope as everything else.
 - **Multi-tenancy key is `storeCode` (a string), not `storeId`.** The Prisma schema (`prisma/schema.prisma`) relates every business model (`product`, `category`, `order`, `payment`, `staff`, ...) to `store` via `storeCode -> store.code`. `apps/api/STORE_MANAGEMENT_GUIDE.md` describes an older/aspirational `storeId`-based design — treat it as background reading only, not as a description of the current schema; trust `schema.prisma` and the actual controllers (which read `req.user.storeCode`).
 - **Auth model**: JWT access + refresh tokens (`auth.controller.ts`/`authRoutes.ts`), `req.user` is populated from the decoded JWT (`userId`, `name`, `email`, `role`, `storeCode`) — it is not re-fetched from the DB except inside `authorization.middleware.ts`.
 - **Response shape**: controllers return `CustomResponse<T>`-shaped JSON (`{ success, message, data }`), list endpoints use `ListResponseDto<T>` (`{ totalRecord, data }`). Follow this shape for new endpoints instead of returning raw Prisma results.
@@ -71,7 +82,9 @@ Layered, DI-driven design: **routes -> controllers -> `IUnitOfService` -> servic
 - **`HttpService.ts`** wraps axios: attaches the `clientId` header (must match the API's `CLIENT_ID`) and a bearer token from `localStorage['at']`, auto-refreshes the token via NextAuth's `getSession()` on a 401 (retrying the original request once), force-logs-out on refresh failure, and redirects to `/access-denied` on 403. New API calls should be added as methods on the relevant `*Service.ts` rather than raw axios calls in components.
 - **State**: Redux Toolkit store in `src/lib/store.ts`, typed hooks `useAppDispatch`/`useAppSelector` (`src/lib/hooks.ts`) — ESLint (`.eslintrc.json`) enforces using these typed hooks instead of raw `useSelector`/`useDispatch` from `react-redux`. Server-state/caching goes through React Query (`ReactQueryProvider.tsx`).
 - **UI components**: shadcn/ui + Radix primitives configured via `components.json` (aliases `@/components`, base color `slate`), organized under `src/components/{ui,common,admin,layout,Header,Table,features,...}` — not `packages/ui`.
-- Environment-driven config is centralized in `src/config/index.ts` (`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_CLIENT_ID`, `NEXT_PUBLIC_CDN_BASE_URL`, etc.) — read config from there instead of `process.env` directly in components/services.
+- Environment-driven config is centralized in `src/config/index.ts` (`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_CLIENT_ID`, `NEXT_PUBLIC_CDN_BASE_URL`, etc.) — read config from there instead of `process.env` directly in components/services. `apps/web/.env.example` lists every key. Secrets (Cloudinary API secret, `NEXTAUTH_SECRET`) must never get the `NEXT_PUBLIC_` prefix.
+- **Next.js route handlers under `src/app/api/*` must check `getServerSession(authOptions)`** before touching Cloudinary or anything else with a server secret — the `admin-media/*` and `images/sign-cloudinary-params` handlers show the pattern. Two unauthenticated image routes were removed for exactly this reason.
+- `next.config.mjs` sets security headers, `poweredByHeader: false`, strips `console.log`/`console.debug` in production builds (errors/warnings stay), and gates the build on ESLint (`ignoreDuringBuilds: false`) — keep `npm run lint` at zero errors.
 
 ## Cross-cutting notes
 
