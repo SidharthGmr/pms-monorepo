@@ -1,7 +1,5 @@
 'use client';
 import ActionTooltip from '@/components/common/tooltip-action-button';
-import VariantRating from './variant-rating';
-import RateVariantButton from './rate-variant-button';
 import { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, History } from 'lucide-react';
 import { useMemo } from 'react';
@@ -55,8 +53,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         header: ({ column }) => <DataTableColumnHeader column={column} className=" " title="Variant" />,
         meta: { sortingKey: 'name' },
         cell: ({ row }) => {
-          const { name, sku, attributes, product } = row.original;
-          const pairs = attributes && typeof attributes === 'object' ? Object.entries(attributes) : [];
+          const { name, sku, product } = row.original;
 
           return (
             <div className="flex min-w-[180px] max-w-[280px] flex-col gap-1">

@@ -1,7 +1,6 @@
 'use client';
 import { PageHeader } from '@/components/common/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,8 +11,8 @@ import { useGetAllSuppliers } from '@/hooks/service-hooks/useSupplierService';
 import { ReceiveStockFormValues, receiveStockSchema } from '@/schema/receiveStockSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
 import axios from 'axios';
-import { CheckCircle2, FileText, Package, Package2, Plus, Receipt, RotateCcw, UploadCloud, X } from 'lucide-react';
-import { ReactNode, useCallback, useMemo, useState } from 'react';
+import { CheckCircle2, FileText, Package, Plus, Receipt, RotateCcw, UploadCloud, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import ConfirmBox from '@/components/common/confirm-box';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { PurchaseItemRow, PurchaseItemsHeader } from './purchase-item-row';
@@ -22,45 +21,6 @@ import { SelectSearch } from '@/components/common/select-search';
 import ManageSupplier from '@/components/features/suppliers/add-edit';
 import { StatusEnum } from '@pms/types';
 
-/** A numbered form section with an icon, title and optional description. */
-function Section({
-  step,
-  icon,
-  title,
-  description,
-  aside,
-  children,
-}: {
-  step: number;
-  icon: ReactNode;
-  title: string;
-  description?: string;
-  aside?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <Card className="border-0 p-0 shadow-sm ring-1 ring-slate-200">
-      <CardContent className="p-0">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              {icon}
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                {step}
-              </span>
-            </span>
-            <div>
-              <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-              {description && <p className="text-xs text-slate-500">{description}</p>}
-            </div>
-          </div>
-          {aside}
-        </div>
-        <div className="p-5">{children}</div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function ReceiveStockPage() {
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
@@ -71,7 +31,7 @@ export default function ReceiveStockPage() {
   const { data: productsData } = useGetAllProducts();
   const products = productsData?.data?.data?.data || [];
 
-  const { data: suppliersData, isError, isLoading } = useGetAllSuppliers({ showAllRecords: true, status: StatusEnum.Published });
+  const { data: suppliersData } = useGetAllSuppliers({ showAllRecords: true, status: StatusEnum.Published });
   const suppliers = suppliersData?.data?.data?.data || [];
   const supplierItems = useMemo(() => suppliers.map((s) => ({ label: s.name, value: String(s.id) })), [suppliers]);
 
@@ -130,15 +90,21 @@ export default function ReceiveStockPage() {
 
   const uploadInvoiceToCloudinary = async (file: File): Promise<string> => {
     try {
-      const { data } = await axios.get('/api/images/sign-cloudinary-params');
+      // The signing route fixes folder + timestamp server-side; send exactly those
+      // (plus file and api_key) or Cloudinary rejects the signature.
+      const { data: signed } = await axios.get<{ data: { apiKey: string; cloudName: string; timestamp: number; folder: string; signature: string } }>(
+        '/api/images/sign-cloudinary-params',
+      );
+      const { apiKey, cloudName, timestamp, folder, signature } = signed.data;
+
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('api_key', data.apikey);
-      formData.append('timestamp', data.timestamp);
-      formData.append('signature', data.signature);
-      formData.append('folder', data.folder);
+      formData.append('api_key', apiKey);
+      formData.append('timestamp', String(timestamp));
+      formData.append('signature', signature);
+      formData.append('folder', folder);
 
-      const res = await axios.post(`https://api.cloudinary.com/v1_1/${data.cloudName}/image/upload`, formData);
+      const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, formData);
       return res.data.secure_url;
     } catch (error) {
       console.error('Upload failed', error);

@@ -7,7 +7,6 @@ import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-paginatio
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
-import Loader from '../../loader';
 import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { container } from '@/config/ioc';

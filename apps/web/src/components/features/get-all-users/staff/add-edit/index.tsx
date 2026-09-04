@@ -9,7 +9,6 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateStaff, useGetStaffById, useUpdateStaff } from '@/hooks/service-hooks/useStaffService';
-import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { CreateStaffModel } from '@/models/staff.model';
 import StaffSchema from '@/schema/staffSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -45,7 +44,6 @@ const positionsData = [
 export default function ManageStaff({ id, isOpen, onClose }: ManageStaffProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
-  const getAllUserResponse = useGetAllUserList();
   const createStaff = useCreateStaff();
   const updateStaff = useUpdateStaff();
   const { data: staffResponse, isLoading: isFetching } = useGetStaffById(id ?? 0, isEdit);

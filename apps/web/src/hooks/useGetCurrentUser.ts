@@ -16,9 +16,11 @@ const useGetCurrentUser = () => {
     }
   }, [status, session]);
 
+  // isAuthenticated belongs in the deps: without it the memo held the previous
+  // flag for a render after login or logout, so consumers read a stale value.
   const memoizedCurrentUser = useMemo(() => {
     return { currentUser, status, isAuthenticated };
-  }, [currentUser, status]);
+  }, [currentUser, status, isAuthenticated]);
 
   return memoizedCurrentUser;
 };

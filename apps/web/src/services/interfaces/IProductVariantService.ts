@@ -1,14 +1,19 @@
 import { AxiosResponse } from 'axios';
 import { ProductVariantDto } from '@/dtos/product-variant.dto';
-import { ProductVariantListItemDto, ProductVariantModel, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
+import {
+    ProductVariantListItemDto,
+    ProductVariantCreateRequest,
+    ProductVariantUpdateRequest,
+    ProductVariantListItemDto as VariantDetailDto,
+} from '@pms/types';
 import { RateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import Response from '@/dtos/Response';
 
 export default interface IProductVariantService {
-    create(model: ProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>>;
-    update(id: number, model: ProductVariantModel): Promise<AxiosResponse<Response<ProductVariantDto>>>;
+    create(model: ProductVariantCreateRequest): Promise<AxiosResponse<Response<ProductVariantDto>>>;
+    update(id: number, model: ProductVariantUpdateRequest): Promise<AxiosResponse<Response<ProductVariantDto>>>;
 
 
     getById(id: number | string): Promise<AxiosResponse<Response<VariantDetailDto>>>;

@@ -45,14 +45,6 @@ export function scheduleAccessTokenRefresh(accessToken: string, onRefreshFailed?
   const nowMs = Date.now();
   const remainingMs = expMs - nowMs;
 
-  const expiryDate = new Date(expMs);
-  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  // console.log(`[auth] Token expires at: ${expiryDate.toLocaleString()}`);
-  //console.log(`[auth] Token expires in: ${minutes}m ${seconds}s`);
-
   const refreshInMs = remainingMs - REFRESH_BUFFER_MS;
 
   // ✅ store failure handler and clear previous timer

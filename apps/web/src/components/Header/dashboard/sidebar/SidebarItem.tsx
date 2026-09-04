@@ -20,8 +20,6 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   const isOpen = openIndex === index;
-  // const router = useRouter();
-  const hasChildren = !!item.submenu?.length;
   const Icon = item.icon;
 
   // Highlight the current page. Sub-routes (e.g. /admin/categories/create) should

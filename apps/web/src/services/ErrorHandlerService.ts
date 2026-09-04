@@ -21,7 +21,7 @@ export default class ErrorHandlerService implements IErrorHandlerService {
           else if (actualError.data && typeof actualError.data === 'string') {
             return actualError.data;
           } else {
-            if (config.enviroment === 'production') {
+            if (config.environment === 'production') {
               return 'Some error occured';
             } else {
               return JSON.stringify(actualError);
@@ -38,7 +38,7 @@ export default class ErrorHandlerService implements IErrorHandlerService {
             else if (actualError.data && typeof actualError.data === 'string') {
               return actualError.data;
             } else {
-              if (config.enviroment === 'production') {
+              if (config.environment === 'production') {
                 return 'Some error occured';
               } else {
                 return JSON.stringify(actualError);

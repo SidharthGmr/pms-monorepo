@@ -1,8 +1,12 @@
 node_modules
+/node_modules
+
+# Build output
+dist
+
 # Keep environment variables out of version control
 .env
-dist
+.env.*
+!.env.example
+
 .vercel
-**/swagger.ts
-src/config/swagger.ts
-/node_modules

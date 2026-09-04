@@ -60,7 +60,7 @@ export default function StaffSalaryListFilter<TData>({
 }: StaffSalaryListFilterProps<TData>) {
   const [searchedText, setSearchedText] = useState('');
   const [searchedValue] = useDebounce(searchedText, 1000);
-  const [isFiltered, setIsFiltered] = useState(false);
+  const [, setIsFiltered] = useState(false);
 
   useEffect(() => {
     if (onTextChange) {

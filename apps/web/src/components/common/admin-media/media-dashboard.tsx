@@ -2,22 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { 
-  Upload, 
-  X, 
-  File, 
-  Image as ImageIcon, 
-  Video, 
-  AlertCircle, 
-  Copy, 
-  Check, 
-  Trash2, 
-  ExternalLink, 
-  RefreshCw,
-  FolderOpen,
-  User,
-  Search
-} from "lucide-react";
+import { Upload, File, Video, Copy, Check, Trash2, ExternalLink, RefreshCw, FolderOpen, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

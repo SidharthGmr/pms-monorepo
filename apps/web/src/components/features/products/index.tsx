@@ -2,17 +2,15 @@
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ProductDto } from '@/dtos/product.dto';
 import { useDeleteProduct, useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { useProductPricing } from '@/hooks/useProductPricing';
 import { ProductFilterParams } from '@/params/product.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
 import ConfirmBox from '../../common/confirm-box';
@@ -58,7 +56,7 @@ export default function ProductList() {
 
   //const { sorting, onSortingChange } = useTanstackTableSorting<ProductDto>('', 'desc', columns);
 
-  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<ProductResponseDto>(
+  const { sorting, onSortingChange } = useTanstackTableSorting<ProductResponseDto>(
     filterParams.sortBy ?? '',
     filterParams.sortDirection ?? '',
     columns

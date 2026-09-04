@@ -133,7 +133,7 @@ export const authOptions: NextAuthOptions = {
     async signOut() { },
   },
   // Enable debug messages in the console if you are having problems
-  debug: config.enviroment !== 'production',
+  debug: config.environment !== 'production',
   pages: {
     signIn: '/',
   },

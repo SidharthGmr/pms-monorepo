@@ -9,14 +9,12 @@ import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { CustomDataTable } from '../../Table/data-table';
 import { DataTablePagination } from '../../Table/data-table-pagination';
 import { useUserColumns } from './columns';
 import EditUserProfile from './edit-profile';
 import UserListListFilter from './filter';
 import { UserListParams } from '@pms/types';
-import ManageStaff from './staff';
 
 export default function GetAllUserss({ role }: { role?: string }) {
   const [data, setData] = useState<UserDto[]>([]);
@@ -100,7 +98,6 @@ export default function GetAllUserss({ role }: { role?: string }) {
   };
 
   const error = getAllUserResponse.isError;
-  const loading = getAllUserResponse.isLoading;
 
   if (error) {
     return (

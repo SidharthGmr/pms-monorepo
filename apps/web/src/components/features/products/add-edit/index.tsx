@@ -51,7 +51,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
   const { data: productResponse, isLoading: isFetching } = useGetProductById(id ?? 0, isEdit);
 
   const getAllProductsResponse = useGetProductById(id ?? 0, isEdit);
-  const [data, setData] = useState<ProductResponseDto>();
+  const [, setData] = useState<ProductResponseDto>();
   useEffect(() => {
     if (getAllProductsResponse.isSuccess && getAllProductsResponse.data?.data?.data) {
       setData(getAllProductsResponse.data.data.data);

@@ -19,7 +19,7 @@ import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useCreateProductVariant, useGetProductVariantById, useUpdateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductVariantModel, productVariantValidator } from '@pms/types';
+import { ProductVariantCreateRequest, ProductVariantModel, ProductVariantUpdateRequest, productVariantValidator } from '@pms/types';
 import { Boxes, ImageIcon, Loader2, Package, Tag, ToggleLeft, TrendingUp, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
@@ -120,8 +120,8 @@ export default function ManageVariant({ id, productId }: ManageVariantProps) {
 
   const submitData = async (model: ProductVariantModel) => {
     const response = isEdit
-      ? await updateMutation.mutateAsync({ id: id!, model: model as ProductVariantModel })
-      : await createMutation.mutateAsync(model as ProductVariantModel);
+      ? await updateMutation.mutateAsync({ id: id!, model: model as ProductVariantUpdateRequest })
+      : await createMutation.mutateAsync(model as ProductVariantCreateRequest);
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: `Variant ${isEdit ? 'updated' : 'created'} successfully` });

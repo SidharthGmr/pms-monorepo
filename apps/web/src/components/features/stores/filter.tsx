@@ -16,7 +16,7 @@ export default function StoreListFilter<TData>({ table, onTextChange, resetForm 
   const [searchedText, setSearchedText] = useState('');
   const [searchedValue] = useDebounce(searchedText, 600);
 
-  const [isFiltered, setIsFiltered] = useState(false);
+  const [, setIsFiltered] = useState(false);
 
   useEffect(() => {
     if (onTextChange) {

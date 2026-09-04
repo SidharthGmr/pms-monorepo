@@ -14,7 +14,6 @@ import { BsEnvelope, BsPhone } from 'react-icons/bs';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import ECardListRowActions from './row-action';
 import UserTableDetail from '@/components/common/table-user-details';
-import { IoIosCheckmark, IoMdCloseCircle } from 'react-icons/io';
 import ActionTooltip from '@/components/common/tooltip-action-button';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

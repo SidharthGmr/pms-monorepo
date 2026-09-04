@@ -1,29 +1,40 @@
 import { Request, Response, NextFunction } from "express";
-import { ZodObject, ZodError } from "zod";
+import { ZodError, ZodType } from "zod";
+import CustomResponse from "../dtos/custom-response";
+import PlainDto from "../dtos/plain.dto";
 
+/**
+ * Wraps a schema shaped as `{ body?, query?, params? }` and rejects a bad request
+ * with the same `{ success, message, errors }` envelope every other endpoint uses,
+ * so the web client can surface the message without special-casing validation.
+ */
 export const validate =
-  (schema: ZodObject<any>) =>
+  (schema: ZodType<any>) =>
   (req: Request, res: Response, next: NextFunction) => {
-    try {
-      // Check if body/query/params match the schema
-      schema.parse({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-      });
-      next(); // All good, proceed
-    } catch (error) {
-      if (error instanceof ZodError) {
-        console.log("Validation error details:", error.issues);
-        // Return a nice error message
-        return res.status(400).json({
-          error: "Validation Failed",
-          details: error.issues.map((e) => ({
-            field: e.path[1], // e.g., "emailId"
-            message: e.message, // e.g., "Invalid email"
-          })),
-        });
-      }
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
+    const result = schema.safeParse({
+      body: req.body,
+      query: req.query,
+      params: req.params,
+    });
+
+    if (result.success) return next();
+
+    return res.status(400).json(toValidationResponse(result.error));
   };
+
+function toValidationResponse(error: ZodError): CustomResponse<PlainDto> {
+  const errors = error.issues.map((issue) => {
+    // issue.path is ['body', 'sellingPrice']; drop the container segment so the
+    // client sees the field name its own form uses.
+    const field = issue.path.slice(1).join('.');
+    return field ? `${field}: ${issue.message}` : issue.message;
+  });
+
+  // `errors` is a string[] by contract - the web client joins it for display
+  // (ErrorHandlerService), so an object array would render as [object Object].
+  return {
+    success: false,
+    message: error.issues[0]?.message || 'Validation failed',
+    errors,
+  };
+}

@@ -1,5 +1,6 @@
 
-import { ProductResponseDto, PurchasedStatus } from '@pms/types';
+import { ProductResponseDto } from './product.dto';
+import { PurchasedStatus } from '../enum/purchased-status.enum';
 
 
 export interface PurchaseResponseDto {

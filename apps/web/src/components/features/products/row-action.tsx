@@ -1,15 +1,11 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { toast } from '@/components/ui/use-toast';
-import { container } from '@/config/ioc';
-import { TYPES } from '@/config/types';
 import { ProductDto } from '@/dtos/product.dto';
-import { useAddToCart } from '@/hooks/service-hooks/useCartService';
 import { ProductPricing } from '@/hooks/useProductPricing';
-import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 import AddStockModal from './add-stock-modal';
@@ -22,30 +18,14 @@ interface ProductListRowActionsProps<TData> {
 }
 
 export default function ProductListRowActions<TData>({ row, deleteRecord, pricing }: ProductListRowActionsProps<TData>) {
-  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const queryClient = useQueryClient();
   const item = row.original as ProductDto;
   const [isAddStockOpen, setIsAddStockOpen] = useState(false);
   const [isStockHistoryOpen, setIsStockHistoryOpen] = useState(false);
-  const addToCartMutation = useAddToCart();
 
   // The cart snapshots a price from the product's effective variant, so a
   // product with no price cannot be added at all.
   const isPriced = pricing?.sellingPrice != null;
-
-  const handleAddToCart = async () => {
-    try {
-      const response = await addToCartMutation.mutateAsync({ productIds: [item.id] });
-      if (response && response.status === 201) {
-        toast({ variant: 'success', title: 'Added to cart', description: `${item.name} was added to your cart.` });
-      } else {
-        const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-        toast({ variant: 'destructive', title: 'Could not add to cart', description: <span>{error}</span> });
-      }
-    } catch (error: any) {
-      const message = unitOfService.ErrorHandlerService.getErrorMessage(error);
-      toast({ variant: 'destructive', title: 'Could not add to cart', description: <span>{message || 'Unknown error occurred'}</span> });
-    }
-  };
 
   return (
     <>
@@ -65,6 +45,9 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
               Add Stock
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsStockHistoryOpen(true)}>
+            Stock History
+          </DropdownMenuItem>
 
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link href={`/admin/products/variants/${item?.id}`}>Variants</Link>
@@ -75,19 +58,26 @@ export default function ProductListRowActions<TData>({ row, deleteRecord, pricin
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* {isAddStockOpen && (
+      {isAddStockOpen && (
         <AddStockModal
           productId={item.id}
           productName={item.name}
           isOpen={isAddStockOpen}
           onClose={() => setIsAddStockOpen(false)}
-          onSuccess={() => window.location.reload()}
+          onSuccess={() => {
+            // The modal does not refresh anything itself. Invalidating the list
+            // query updates the stock column in place; the previous wiring did a
+            // full window.location.reload().
+            queryClient.invalidateQueries({ queryKey: ['ProductService.getAll'] });
+            queryClient.invalidateQueries({ queryKey: ['ProductService.getStockHistory', item.id] });
+            setIsAddStockOpen(false);
+          }}
         />
       )}
 
       {isStockHistoryOpen && (
         <StockHistoryModal productId={item.id} productName={item.name} isOpen={isStockHistoryOpen} onClose={() => setIsStockHistoryOpen(false)} />
-      )} */}
+      )}
     </>
   );
 }

@@ -4,7 +4,6 @@ import { LoginDto, refreshTokenResponseDto } from '@/dtos/LoginDto';
 import PlainDto from '@/dtos/PlainDto';
 import Response from '@/dtos/Response';
 import LoginModel from '@/models/LoginModel';
-import VerifyEmailModel from '@/models/VerifyEmailModel';
 import { CreateUserModel } from '@/models/user.model';
 import { UpdateProfileModel } from '@pms/types';
 import { UserDto } from '@/dtos/UserDto';

@@ -1,11 +1,16 @@
 {
     "compilerOptions": {
         "target": "ES2020",
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
+        // CommonJS so apps/api can `require` the built output at runtime. The
+        // previous ESNext build emitted extensionless ESM imports, which Node
+        // cannot resolve - `node dist/index.js` in apps/api failed on startup.
+        "module": "CommonJS",
+        "moduleResolution": "node",
         "exactOptionalPropertyTypes": false,
         "strict": true,
         "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "outDir": "dist",

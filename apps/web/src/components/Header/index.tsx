@@ -110,7 +110,7 @@ const Header: React.FC = () => {
                             <div onMouseEnter={() => showDropdownHover(index)} onMouseLeave={hideDropdownHover} className="">
                               <Link
                                 href={menuItem.url || '#'}
-                                onClick={(e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
+                                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                                   if (menuItem.submenu) {
                                     e.preventDefault();
                                     showDropdown(index);
@@ -134,7 +134,7 @@ const Header: React.FC = () => {
                                     .map((submenuItem, subIndex) => (
                                       <div key={subIndex} className="flex-1 bg-grey lg:bg-white rounded-sm">
                                         <Link
-                                          onClick={(e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
+                                          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                                             if (submenuItem.subsubmenu) {
                                               e.preventDefault();
                                               showSubDropdown(subIndex);

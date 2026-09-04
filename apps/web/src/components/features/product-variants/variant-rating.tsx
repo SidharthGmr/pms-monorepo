@@ -6,7 +6,6 @@ import { TYPES } from '@/config/types';
 import { useRateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface VariantRatingProps {
@@ -18,12 +17,12 @@ interface VariantRatingProps {
   className?: string;
 }
 
-export default function VariantRating({ variantId, rating, ratingCount, interactive = false, size = 'sm', className }: VariantRatingProps) {
+export default function VariantRating({ variantId, rating, ratingCount, size = 'sm', className }: VariantRatingProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const rateVariant = useRateProductVariant();
 
   const [average, setAverage] = useState<number | null>(rating ?? null);
-  const [count, setCount] = useState<number>(ratingCount ?? 0);
+  const [, setCount] = useState<number>(ratingCount ?? 0);
   const [myRating, setMyRating] = useState<number | null>(null);
 
   // A card can be recycled onto a different variant as a list pages or refetches.
@@ -50,7 +49,6 @@ export default function VariantRating({ variantId, rating, ratingCount, interact
 
   // Once this user has rated, their own score is the honest thing to show them.
   const shown = myRating ?? (average != null ? Math.round(average) : 0);
-  const label = average != null ? `${average.toFixed(1)} (${count})` : 'No ratings yet';
 
   // if (!interactive) {
   //   return average == null ? (

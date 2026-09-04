@@ -84,12 +84,9 @@ const useCreateUser = () => {
   };
 
   return useMutation({
-
-    onSettled: (response: { status?: number; data?: any } | undefined) => {
-      if (response && response.status === 200 && response.data) {
-        // handle success
-      }
-    },
+    // Was omitted, which made every useCreateUser().mutate() call throw
+    // "No mutationFn found" at runtime.
+    mutationFn,
     onError: (error) => {
       return error;
     },
@@ -105,9 +102,6 @@ const useUpdateProfile = () => {
 
   return useMutation({
     mutationFn,
-    onSettled: (response) => {
-      // You can invalidate queries or update session manually in the component
-    },
     onError: (error) => {
       return error;
     },

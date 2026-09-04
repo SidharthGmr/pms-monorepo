@@ -10,7 +10,6 @@ import useFilterHook from '@/hooks/use-filter-hook';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
-import { Search } from 'lucide-react';
 import { SelectSearch } from '../../common/select-search';
 import { DateRangePicker } from '../../common/date-range-picker';
 
@@ -28,24 +27,7 @@ const RoleData = [
   { label: 'Customer', value: Roles.USER },
 ];
 
-// These would typically come from your database or API
-const departmentsData = [
-  { label: 'Sales', value: 'Sales' },
-  { label: 'Marketing', value: 'Marketing' },
-  { label: 'IT', value: 'IT' },
-  { label: 'HR', value: 'HR' },
-  { label: 'Finance', value: 'Finance' },
-  { label: 'Operations', value: 'Operations' },
-];
 
-const positionsData = [
-  { label: 'Manager', value: 'Manager' },
-  { label: 'Assistant Manager', value: 'Assistant Manager' },
-  { label: 'Supervisor', value: 'Supervisor' },
-  { label: 'Associate', value: 'Associate' },
-  { label: 'Cashier', value: 'Cashier' },
-  { label: 'Sales Representative', value: 'Sales Representative' },
-];
 
 interface ECardListFilterProps<TData> {
   table: Table<TData>;

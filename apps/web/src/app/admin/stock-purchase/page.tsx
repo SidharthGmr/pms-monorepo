@@ -1,4 +1,3 @@
-import { PageHeader } from '@/components/common/page-header';
 import ReceiveStockPage from '@/components/features/receive-stock';
 import { Metadata } from 'next';
 import config from '@/config';

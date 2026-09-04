@@ -1,6 +1,5 @@
 import { PageHeader } from '@/components/common/page-header';
 import ManageProduct from '@/components/features/products/add-edit';
-import { Card } from '@/components/ui/card';
 import config from '@/config';
 import { Metadata } from 'next';
 

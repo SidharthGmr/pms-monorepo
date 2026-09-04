@@ -13,9 +13,7 @@ import { useMemo } from 'react';
 import { BsEnvelope, BsPhone } from 'react-icons/bs';
 
 import UserTableDetail from '@/components/common/table-user-details';
-import { IoIosCheckmark, IoMdCloseCircle } from 'react-icons/io';
 import ActionTooltip from '@/components/common/tooltip-action-button';
-import ECardListRowActions from '../row-action';
 import { DataTableColumnHeader } from '@/components/Table/data-table-column-header';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

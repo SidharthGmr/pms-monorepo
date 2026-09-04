@@ -60,7 +60,7 @@ const TRACKED_FIELDS: (keyof UpdateProfileModel)[] = [
 export default function AdminProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { data: session, status, update } = useSession();
+  const { status } = useSession();
   const { currentUser, isAuthenticated } = useGetCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,7 +68,7 @@ export default function AdminProfilePage() {
   const updateProfileMutation = useUpdateProfile();
 
   const userId = (currentUser as any)?.userId || '';
-  const { data: dbUserResp, refetch: refetchUser } = useGetUserById(userId, !!userId);
+  const { data: dbUserResp } = useGetUserById(userId, !!userId);
   const dbUser = dbUserResp?.data?.data;
 
   const form = useForm<UpdateProfileModel>({
@@ -121,10 +121,9 @@ export default function AdminProfilePage() {
       }
     });
 
-    let response: AxiosResponse<Response<UserDto>>;
     setIsSubmitting(true);
 
-    response = await updateProfileMutation.mutateAsync(formData);
+    const response: AxiosResponse<Response<UserDto>> = await updateProfileMutation.mutateAsync(formData);
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: 'Profile updated successfully' });

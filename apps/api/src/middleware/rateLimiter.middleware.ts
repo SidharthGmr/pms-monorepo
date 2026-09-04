@@ -26,6 +26,23 @@ export const refreshLimiter = rateLimit({
 });
 
 
+/**
+ * Baseline ceiling for every route. Auth routes stack the far stricter
+ * `authLimiter` on top of this; this one only exists so a single client cannot
+ * saturate the database with an unbounded read loop.
+ */
+export const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Uptime probes should never be throttled or they will report a false outage.
+    skip: (req) => req.path.startsWith('/health'),
+    message: {
+        success: false,
+        message: "Too many requests. Please slow down and try again shortly.",
+    },
+});
 
 
 // export const otpLimiter = rateLimit({

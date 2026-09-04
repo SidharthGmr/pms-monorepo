@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, lint & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      # apps/api validates its environment at import time (src/config/env.ts),
+      # so the build needs plausible values even though nothing connects.
+      NODE_ENV: test
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      CLIENT_ID: ci-client-id
+      JWT_SECRET: ci-only-secret-value-at-least-32-characters-long
+      CORS_ORIGINS: http://localhost:3000
+      # apps/web inlines NEXT_PUBLIC_* at build time.
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+      NEXT_PUBLIC_API_CLIENT_ID: ci-client-id
+      NEXT_PUBLIC_MAIN_DOMAIN_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-only-nextauth-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Shared types first: both apps resolve @pms/types from its dist/.
+      - name: Build @pms/types
+        run: npm run build:types
+
+      - name: Prisma generate
+        run: npx prisma generate
+        working-directory: apps/api
+
+      # A pending schema change without a migration would break `migrate deploy`
+      # in production; catch it here.
+      - name: Prisma schema is migrated
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --exit-code --shadow-database-url "$DATABASE_URL"
+        working-directory: apps/api
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint (web)
+        run: npm run lint
+
+      - name: Build API
+        run: npm run build:api
+
+      - name: Build web
+        run: npm run build:web

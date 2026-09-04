@@ -48,7 +48,6 @@ export default function SectionCard({
   cta,
   ctaTitle,
   href,
-  onClick,
   showViewAll = false,
   viewAllHref = '#',
   viewAllLabel = 'View All',

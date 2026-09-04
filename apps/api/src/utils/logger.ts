@@ -1,49 +1,43 @@
-/**
- * Simple logger utility for production-ready logging
- * In production, you might want to integrate with services like Winston, Pino, or cloud logging
- */
+import env, { isProduction } from '../config/env';
 
-type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+type Level = 'debug' | 'info' | 'warn' | 'error';
 
-class Logger {
-    private shouldLog(level: LogLevel): boolean {
-        if (process.env.NODE_ENV === 'test') return false;
-        if (process.env.NODE_ENV === 'production' && level === 'debug') return false;
-        return true;
-    }
+const RANK: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 };
+const threshold = RANK[env.LOG_LEVEL];
 
-    private formatMessage(level: LogLevel, message: string, meta?: any): string {
-        const timestamp = new Date().toISOString();
-        const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
-        return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`;
-    }
+/** Never let a token, password or card detail reach the log sink. */
+const REDACTED_KEYS = /^(password|newpassword|confirmpassword|token|refreshtoken|accesstoken|authorization|clientid|otp|secret|signature)$/i;
 
-    info(message: string, meta?: any): void {
-        if (this.shouldLog('info')) {
-            console.log(this.formatMessage('info', message, meta));
-        }
-    }
+function redact(value: unknown, depth = 0): unknown {
+  if (value === null || typeof value !== 'object' || depth > 4) return value;
+  if (Array.isArray(value)) return value.map((item) => redact(item, depth + 1));
 
-    warn(message: string, meta?: any): void {
-        if (this.shouldLog('warn')) {
-            console.warn(this.formatMessage('warn', message, meta));
-        }
-    }
-
-    error(message: string, error?: Error | any): void {
-        if (this.shouldLog('error')) {
-            const meta = error instanceof Error
-                ? { message: error.message, stack: error.stack }
-                : error;
-            console.error(this.formatMessage('error', message, meta));
-        }
-    }
-
-    debug(message: string, meta?: any): void {
-        if (this.shouldLog('debug')) {
-            console.debug(this.formatMessage('debug', message, meta));
-        }
-    }
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    out[key] = REDACTED_KEYS.test(key) ? '[redacted]' : redact(item, depth + 1);
+  }
+  return out;
 }
 
-export default new Logger();
+function emit(level: Level, message: string, context?: Record<string, unknown>) {
+  if (RANK[level] < threshold) return;
+
+  const entry = { level, time: new Date().toISOString(), message, ...(context ? (redact(context) as object) : {}) };
+
+  // One JSON object per line so hosted log platforms (Vercel, CloudWatch,
+  // Datadog) index the fields instead of storing an opaque string.
+  const line = isProduction ? JSON.stringify(entry) : `${level.toUpperCase()} ${message}${context ? ` ${JSON.stringify(redact(context))}` : ''}`;
+
+  if (level === 'error') console.error(line);
+  else if (level === 'warn') console.warn(line);
+  else console.log(line);
+}
+
+const logger = {
+  debug: (message: string, context?: Record<string, unknown>) => emit('debug', message, context),
+  info: (message: string, context?: Record<string, unknown>) => emit('info', message, context),
+  warn: (message: string, context?: Record<string, unknown>) => emit('warn', message, context),
+  error: (message: string, context?: Record<string, unknown>) => emit('error', message, context),
+};
+
+export default logger;

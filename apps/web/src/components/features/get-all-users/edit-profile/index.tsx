@@ -12,7 +12,6 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { zodResolver } from '@/lib/zod-resolver';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
 import { profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
 import Response from '@/dtos/Response';
@@ -28,7 +27,7 @@ interface EditUserProfileProps {
 export default function EditUserProfile({ isOpen, onClose, userId }: EditUserProfileProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const updateUser = useUpdateUser();
-  const [showLoader, setShowLoader] = useState<boolean>(false);
+  const [, setShowLoader] = useState<boolean>(false);
 
   const { data: userData, isLoading: isFetching } = useGetUserById(userId, !!userId);
 
@@ -80,10 +79,9 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
       }
     });
 
-    let response: AxiosResponse<Response<UserDto>>;
     setShowLoader(true);
 
-    response = await updateUser.mutateAsync({ id: userId, model: formData });
+    const response: AxiosResponse<Response<UserDto>> = await updateUser.mutateAsync({ id: userId, model: formData });
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: 'Profile updated successfully' });

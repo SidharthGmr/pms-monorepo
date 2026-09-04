@@ -11,7 +11,6 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useUpdateProfile } from '@/hooks/service-hooks/useAccountService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
-import IAccountService from '@/services/interfaces/IAccountService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { zodResolver } from '@/lib/zod-resolver';
 import { useSession } from 'next-auth/react';
@@ -42,7 +41,6 @@ export default function ProfilePage() {
   const { currentUser, isAuthenticated } = useGetCurrentUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const accountService = container.get<IAccountService>(TYPES.IAccountService);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),

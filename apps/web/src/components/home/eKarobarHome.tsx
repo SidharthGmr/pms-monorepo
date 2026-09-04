@@ -3,14 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import config from '@/config';
 import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import {
-  ArrowRight,
   BadgeCheck,
   CalendarDays,
   ChevronRight,
@@ -20,13 +18,10 @@ import {
   Mail,
   MapPin,
   Menu,
-  Package,
   Phone,
   RotateCcw,
   Search,
-  ShieldCheck,
   ShoppingBag,
-  ShoppingCart,
   Store,
   Tag,
   Truck,
@@ -100,25 +95,11 @@ const SORT_OPTIONS = [
   { value: 'sku-desc', label: 'SKU: Z to A', sortBy: 'sku', sortOrder: 'desc' as const },
 ];
 
-/** Pastel grounds for category tiles that have no image of their own. */
-const CATEGORY_TONES = ['bg-emerald-100', 'bg-sky-100', 'bg-rose-100', 'bg-amber-100', 'bg-violet-100', 'bg-teal-100', 'bg-orange-100'];
+
 
 /* --------------------------------- helpers -------------------------------- */
 
-const wholeRupees = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
-const withPaise = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const formatPrice = (value: number): string => (Number.isInteger(value) ? wholeRupees : withPaise).format(value);
-
-/** `{ clr: 'PNK', strg: '64GB' }` reads as "PNK · 64GB" - what tells one SKU from another. */
-const describeVariant = (variant: ProductVariantListItemDto): string => {
-  if (variant.name) return variant.name;
-  const attributes = variant.attributes;
-  if (!attributes || typeof attributes !== 'object') return '';
-  return Object.values(attributes)
-    .filter((value) => value !== null && value !== undefined && value !== '')
-    .map(String)
-    .join(' · ');
-};
+/* --------------------------------- helpers -------------------------------- */
 
 const imageFor = (variant: ProductVariantListItemDto): string | undefined => variant.images?.[0] ?? variant.product?.images?.[0];
 
@@ -138,120 +119,15 @@ function SectionHeading({ title, href, cta = 'View all' }: { title: string; href
   );
 }
 
-function VariantCard({ variant, compact = false }: { variant: ProductVariantListItemDto; compact?: boolean }) {
-  const stock = variant.stockQuantity ?? 0;
-  const soldOut = stock <= 0;
-  const isLowStock = !soldOut && stock <= (variant.lowStockThreshold || 5);
-  // A price staged for a future date leaves the SKU with no price in force today.
-  const unpriced = variant.sellingPrice === null || variant.sellingPrice === undefined;
-  const description = describeVariant(variant);
-  const image = imageFor(variant);
-
-  // The discount comes from the live offer, not `compareAtPrice` - that column is never
-  // selected into the response, so the old badge could never have fired. Same rule as
-  // `payablePrice` on the API: the amount only counts while the flag is on.
-  const onOffer = variant.isOffer === true && variant.offerPrice != null && variant.sellingPrice != null;
-  const wasPrice = onOffer ? (variant.sellingPrice as number) : null;
-  const payable = onOffer ? (variant.offerPrice as number) : variant.sellingPrice;
-  const discount = onOffer && wasPrice ? Math.round(((wasPrice - (variant.offerPrice as number)) / wasPrice) * 100) : null;
-
-  return (
-    <Card className="group flex h-full flex-col overflow-hidden rounded-xl border-border bg-card p-0 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
-      <div className={`relative overflow-hidden bg-muted/30 ${compact ? 'aspect-[4/3]' : 'aspect-square'}`}>
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt={`${variant.product?.name ?? 'Product'}${description ? ` - ${description}` : ''}`}
-            className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-9 w-9 text-muted-foreground/30" />
-          </div>
-        )}
-
-        {discount !== null && (
-          <span className="absolute left-2.5 top-2.5 rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">-{discount}%</span>
-        )}
-        {soldOut ? (
-          <span className="absolute right-2.5 top-2.5 rounded-full bg-foreground/85 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-background">
-            Sold out
-          </span>
-        ) : isLowStock ? (
-          <span className="absolute right-2.5 top-2.5 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-            {stock} left
-          </span>
-        ) : null}
-        {soldOut && <div className="pointer-events-none absolute inset-0 bg-background/45" />}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-0.5 p-3">
-        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
-          {variant.product?.name ?? variant.sku}
-        </h3>
-        {/* What distinguishes this SKU from its siblings - the reason it is its own card. */}
-        <p className="line-clamp-1 min-h-[1rem] text-[11px] text-muted-foreground">{description}</p>
-
-        <div className="mt-2 flex items-baseline gap-2">
-          {unpriced ? (
-            <span className="text-sm font-semibold text-muted-foreground">Coming soon</span>
-          ) : (
-            <>
-              <span className="text-base font-bold tracking-tight text-foreground">{formatPrice(variant.sellingPrice as number)}</span>
-              {wasPrice && discount !== null && <span className="text-xs text-muted-foreground line-through">{formatPrice(wasPrice)}</span>}
-            </>
-          )}
-        </div>
-
-        <div className="mt-3">
-          {soldOut || unpriced ? (
-            <Button size="sm" className="h-9 w-full rounded-lg text-xs font-semibold" disabled>
-              {soldOut ? 'Sold out' : 'Not yet on sale'}
-            </Button>
-          ) : (
-            <Link href="/login" className="block">
-              <Button size="sm" className="h-9 w-full rounded-lg text-xs font-semibold">
-                <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
-                Order now
-              </Button>
-            </Link>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function CardSkeletons({ count = 5 }: { count?: number }) {
-  return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-      {Array.from({ length: count }).map((_, index) => (
-        <Card key={index} className="overflow-hidden rounded-xl border-border p-0">
-          <Skeleton className="aspect-square w-full rounded-none" />
-          <div className="space-y-2 p-3">
-            <Skeleton className="h-2.5 w-14" />
-            <Skeleton className="h-3.5 w-full" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 /* ----------------------------------- page --------------------------------- */
 
 export default function EKarobarHome() {
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch] = useDebounce(searchText, 600);
-  const [sortKey, setSortKey] = useState('newest');
-  const [category, setCategory] = useState<string | undefined>(undefined);
-  const [trendingTab, setTrendingTab] = useState<string | undefined>(undefined);
+  const [sortKey] = useState('newest');
   const [page, setPage] = useState(1);
 
   const [variants, setVariants] = useState<ProductVariantListItemDto[]>([]);
-  const [recordCount, setRecordCount] = useState(0);
 
   // The storefront lists sellable SKUs, not products: a 64GB and a 128GB phone are different
   // things to buy, at different prices. Paging happens over variants so the counts are real.
@@ -266,12 +142,11 @@ export default function EKarobarHome() {
     };
   }, [debouncedSearch, page, sortKey]);
 
-  const { data: response, isLoading, isError, isSuccess } = useGetAllPublicProductVariants(filterParams);
+  const { data: response, isSuccess } = useGetAllPublicProductVariants(filterParams);
 
   useEffect(() => {
     if (isSuccess && response?.data?.data) {
       setVariants(response.data.data.data ?? []);
-      setRecordCount(response.data.data.totalRecord ?? 0);
     }
   }, [isSuccess, response]);
 
@@ -280,32 +155,10 @@ export default function EKarobarHome() {
     setPage(1);
   }, [debouncedSearch, sortKey]);
 
-  // Category chips come from what is on the page - the categories endpoint needs a login,
-  // and a shopper browsing anonymously has no token to send.
-  // Name plus whatever art the category carries, de-duplicated by name.
-  const categories = useMemo(() => {
-    const seen = new Map<string, string | undefined>();
-    for (const variant of variants) {
-      const name = variant.product?.category?.name;
-      if (!name) continue;
-      if (!seen.has(name)) seen.set(name, variant.product?.category?.images?.[0]);
-    }
-    return Array.from(seen, ([name, image]) => ({ name, image })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [variants]);
-
-  const visible = category ? variants.filter((variant) => variant.product?.category?.name === category) : variants;
-
   // The curated rows are slices of the same page rather than separate endpoints: the data has
   // no "popular" or "featured" signal yet, so ranking one would be invented.
   const popular = variants.slice(0, 5);
-  const latest = variants.slice(0, 5);
-  const newArrivals = variants.slice(0, 4);
-  const trending = trendingTab ? variants.filter((variant) => variant.product?.category?.name === trendingTab) : variants;
 
-  const pageSize = config.recordPerPage;
-  const pageCount = Math.max(1, Math.ceil((recordCount || 0) / pageSize));
-  const firstOnPage = recordCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const lastOnPage = Math.min(firstOnPage + variants.length - 1, recordCount);
 
   return (
     <div id="top" className="min-h-screen bg-background text-foreground antialiased">
