@@ -14,9 +14,14 @@ export default class HttpService implements IHttpService {
     this.clientId = config.clientId;
   }
 
+  // Unauthenticated endpoints (signup, login, refresh): same baseURL and clientId
+  // gate as `call()`, but no bearer token and no 401 interceptor - a 401 here is a
+  // real answer, not an expired session to refresh.
   externalCall(contentType: string = 'application/json'): AxiosInstance {
     return axios.create({
+      baseURL: this.baseUrl,
       headers: {
+        clientId: this.clientId,
         'Content-Type': contentType,
       },
       validateStatus: (status) => {

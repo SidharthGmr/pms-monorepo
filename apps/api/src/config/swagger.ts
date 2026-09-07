@@ -100,12 +100,13 @@ export const swaggerOptions = {
       },
     ],
   },
-  apis: [
-    './src/routes/*.ts',
-    './src/routes/*.js',
-    './dist/routes/*.js',
-    './api/*.ts', // if vercel uses api folder
-  ],
+  // Absolute, and derived from this file's own location: process.cwd() is not the
+  // app root under serverless, so the old cwd-relative globs matched nothing on
+  // Vercel and the spec shipped with zero paths. Under ts-node __dirname is
+  // src/config (routes are .ts); in the compiled bundle it is dist/src/config
+  // (routes are .js, and tsc keeps the JSDoc blocks). Forward slashes because the
+  // glob matcher does not accept Windows backslashes.
+  apis: [`${__dirname.replace(/\\/g, '/')}/../routes/*.ts`, `${__dirname.replace(/\\/g, '/')}/../routes/*.js`],
 };
 
 /**

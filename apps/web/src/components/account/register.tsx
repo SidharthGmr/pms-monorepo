@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import config from '@/config';
+import { container } from '@/config/ioc';
+import { TYPES } from '@/config/types';
 import { CreateUserModel } from '@/models/user.model';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import SignupSchema from '@/schema/userSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Lock, Mail, Phone, User } from 'lucide-react';
@@ -19,6 +21,7 @@ import { Switch } from '../ui/switch';
 export default function RegisterModule() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
   const form = useForm<CreateUserModel>({
     resolver: yupResolver(SignupSchema),
@@ -37,15 +40,12 @@ export default function RegisterModule() {
   const submitData = async (data: CreateUserModel) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      // Goes through AccountService so the request carries the clientId header the
+      // API gates every route on; a raw fetch() here silently 401s in production,
+      // where SITE_MODE no longer waives that gate.
+      const response = await unitOfService.AccountService.createUser(data);
 
-      if (response.ok) {
+      if (response && response.data?.success) {
         form.reset();
 
         toast({
@@ -54,18 +54,16 @@ export default function RegisterModule() {
           variant: 'success',
         });
 
-        form.reset();
         router.push('/login/');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save data');
+        throw new Error(response?.data?.message || 'Failed to save data');
       }
     } catch (error) {
       console.error('Error saving data:', error);
 
       toast({
-        variant: 'destructive', // Changed to destructive for error
-        description: 'Failed to create account. Please try again.',
+        variant: 'destructive',
+        description: error instanceof Error ? error.message : 'Failed to create account. Please try again.',
       });
     } finally {
       setIsLoading(false);
