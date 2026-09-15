@@ -1,8 +1,6 @@
 import { Prisma, Status } from "@prisma/client";
+import { AttributeDto, AttributeFilterParams, ListResponseDto, StatusEnum } from "@pms/types";
 import prisma from "../config/prisma";
-import { AttributeDto } from "../dtos/attribute.dto";
-import { ListResponseDto } from "../dtos/list-response.dto";
-import { AttributeFilterParams } from "../params/attribute.params";
 import { IAttributeRepository } from "./interfaces/iattribute.repository";
 
 export class AttributeRepository implements IAttributeRepository {
@@ -24,7 +22,7 @@ export class AttributeRepository implements IAttributeRepository {
       }
 
       if (filters.status !== undefined) {
-        where.status = filters.status;
+        where.status = filters.status as StatusEnum;
       } else {
         where.NOT = { status: Status.Trash };
       }
@@ -33,10 +31,10 @@ export class AttributeRepository implements IAttributeRepository {
         where.storeCode = filters.storeCode;
       }
 
-      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+      if (filters.startDate != null || filters.endDate != null) {
         where.createdAt = {
-          ...(filters.startDate !== undefined && { gte: filters.startDate }),
-          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+          ...(filters.startDate != null && { gte: filters.startDate }),
+          ...(filters.endDate != null && { lte: filters.endDate }),
         };
       }
     }

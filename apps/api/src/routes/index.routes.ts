@@ -28,13 +28,13 @@ import priceHistoryRouter from "./priceHistoryRoutes";
 
 const routes = express.Router();
 
+routes.use("/attributes", attributeRouter);
 routes.use("/auth", accountRouter);
 routes.use("/users", userRouter);
 routes.use("/health", healthRouter);
 routes.use("/categories", categoryRouter);
 routes.use("/products", productRouter);
 routes.use("/product-variants", productVariantRouter);
-routes.use("/attributes", attributeRouter);
 routes.use("/staff-attendance", staffAttendanceRouter);
 routes.use("/orders", orderRouter);
 routes.use("/order-items", orderItemRouter);

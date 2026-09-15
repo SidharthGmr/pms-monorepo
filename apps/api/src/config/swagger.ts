@@ -10,16 +10,15 @@ export const swaggerOptions = {
     // URL would bake localhost into the deployed spec.
     servers: [{ url: '/' }],
     tags: [
+      { name: 'Attribute', description: 'Attribute endpoints' },
       { name: 'Account', description: 'Authentication endpoints' },
       { name: 'User', description: 'User endpoints' },
       { name: 'HealthCheck', description: 'Health check endpoints' },
       { name: 'Product', description: 'Product endpoints' },
       { name: 'ProductVariant', description: 'Product Variant' },
       { name: 'Category', description: 'Category endpoints' },
-      { name: 'Attribute', description: 'Attribute endpoints' },
       { name: 'BrandName', description: 'Brand name endpoints' },
       { name: 'Dashboard', description: 'Dashboard endpoints' },
-
       { name: 'Staff', description: 'Staff endpoints' },
       { name: 'StaffAttendance', description: 'Staff attendance endpoints' },
       { name: 'Order', description: 'Order endpoints' },

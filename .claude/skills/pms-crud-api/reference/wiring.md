@@ -1,9 +1,14 @@
 # Wiring: the 5 registration edits
 
+These are the five edits inside `apps/api`. They come *after* the shared types are written and
+exported from `packages/types/src/index.ts` and `npm run build:types` has run — that barrel
+export is a sixth edited file, and skipping it fails earlier, at compile time.
+
 Nothing works until all five are done. Symptoms of a missing edit:
 
 | Symptom | Missing edit |
 |---|---|
+| `Module '"@pms/types"' has no exported member 'CouponDto'` | the barrel export, or `npm run build:types` was not re-run |
 | `No matching bindings found for serviceIdentifier: Symbol(CouponController)` at boot | #1 or #2 |
 | `Cannot read properties of undefined (reading 'findAll')` inside the service | #3 |
 | `this.unitOfService.Coupon is undefined` in the controller | #4 |
@@ -15,7 +20,7 @@ lists diffable.
 
 ---
 
-## 1. `src/config/ioc.types.ts`
+## 1. `apps/api/src/config/ioc.types.ts`
 
 Three new symbols, added to their respective groups (services near the top,
 controllers in the middle, repositories at the bottom). The `Symbol.for` string
@@ -31,7 +36,7 @@ drops the leading `I`:
 
 ---
 
-## 2. `src/config/ioc.config.ts`
+## 2. `apps/api/src/config/ioc.config.ts`
 
 Four imports + three binds. Imports are grouped by kind (controllers, service
 interfaces, service impls, repo impls, repo interfaces) — add to the matching group:
@@ -55,7 +60,7 @@ services, then repositories) — put each line at the end of its own block.
 
 ---
 
-## 3. `src/repository/interfaces/iunitofwork.repository.ts` + `src/repository/unitofwork.repository.ts`
+## 3. `apps/api/src/repository/interfaces/iunitofwork.repository.ts` + `apps/api/src/repository/unitofwork.repository.ts`
 
 Interface — one import, one property:
 
@@ -85,7 +90,7 @@ export default class UnitOfWork implements IUnitOfWork {
 
 ---
 
-## 4. `src/services/interfaces/iunitof.service.ts` + `src/services/unitOfService.ts`
+## 4. `apps/api/src/services/interfaces/iunitof.service.ts` + `apps/api/src/services/unitOfService.ts`
 
 Exactly the same four-part shape, one level up:
 
@@ -112,7 +117,7 @@ export default class UnitOfService implements IUnitOfService {
 
 ---
 
-## 5. `src/routes/index.routes.ts`
+## 5. `apps/api/src/routes/index.routes.ts`
 
 ```ts
 import couponRouter from './couponRoutes';
@@ -129,10 +134,12 @@ after the client-id gate, so the full URL is `http://localhost:4000/coupons`.
 ## Verify
 
 ```bash
-cd apps/api
-npx tsc --noEmit     # no test runner exists in this repo
-npm run dev          # boot — a missing bind fails here, loudly
+npm run build:types   # from the repo root; @pms/types resolves through dist/
+npm run typecheck     # both apps — a types change reaches apps/web too
+npm run dev:api       # boot — a missing bind fails here, loudly
 ```
+
+There is no test runner in this repo; do not invent `npm test`.
 
 Then exercise the resource. Swagger UI (`http://localhost:4000/api`) has the bearer
 token + `clientId` inputs wired up, which is the fastest path. From curl during local
@@ -146,6 +153,9 @@ curl -H "clientId: $CLIENT_ID" -H "Authorization: Bearer $TOKEN" \
 
 Checklist for a finished resource:
 
+- [ ] dto, params, model and validator are in `packages/types` and exported from its `index.ts`
+- [ ] nothing new was added under `apps/api/src/{dtos,params,enum,models,schemas}`
+- [ ] `packages/types` imports no `@prisma/client`
 - [ ] list is paginated, honours `search`/`status`/`showAllRecords`, and is scoped by `storeCode`
 - [ ] `sortBy` outside `SORTABLE_COLUMNS` falls back instead of throwing
 - [ ] unknown id → 404 with `{ success: false, message: '... not found' }`

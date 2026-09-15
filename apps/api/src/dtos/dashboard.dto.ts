@@ -1,5 +1,4 @@
-import { AttributeDto } from './attribute.dto';
-import { ProductResponseDto } from '@pms/types';
+import { AttributeDto, ProductResponseDto } from '@pms/types';
 
 export interface DistributionDto {
   name: string;

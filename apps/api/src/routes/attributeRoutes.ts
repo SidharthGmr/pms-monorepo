@@ -5,7 +5,7 @@ import { AttributeController } from "../controllers/attribute.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import { validate } from "../middleware/validate";
-import { createAttributeSchema, updateAttributeSchema } from "../schemas/attributeSchema";
+import { attributeValidator } from "@pms/types";
 
 const attributeRouter = Router();
 const attributeController = container.get<AttributeController>(TYPES.AttributeController);
@@ -16,6 +16,46 @@ const attributeController = container.get<AttributeController>(TYPES.AttributeCo
  *   - name: Attribute
  *     description: Attribute Management
  */
+
+/**
+ * @swagger
+ * /attributes:
+ *   post:
+ *     summary: Create a new attribute
+ *     tags: [Attribute]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               unit:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [Published, Draft, Trash]
+ *               displayOrder:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Attribute created successfully
+ *       400:
+ *         description: Store code not found. User must be associated with a store.
+ */
+attributeRouter.post("/", authenticateToken, validate(attributeValidator), asyncHandler(attributeController.create));
+
 
 /**
  * @swagger
@@ -31,52 +71,44 @@ const attributeController = container.get<AttributeController>(TYPES.AttributeCo
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *         required: false
- *         description: Page number for pagination (optional)
  *       - in: query
  *         name: recordPerPage
  *         schema:
  *           type: integer
  *         required: false
- *         description: Number of records per page (optional)
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
  *         required: false
- *         description: Search term to filter attributes by name (optional)
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [Published, Draft, Trash]
  *         required: false
- *         description: Filter by status (optional)
  *       - in: query
  *         name: showAllRecords
  *         schema:
  *           type: boolean
  *         required: false
- *         description: Show all records without pagination (optional)
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date-time
  *         required: false
- *         description: Filter by start date (optional)
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date-time
  *         required: false
- *         description: Filter by end date (optional)
  *     responses:
  *       200:
  *         description: Attributes fetched successfully
@@ -97,7 +129,6 @@ attributeRouter.get("/", authenticateToken, asyncHandler(attributeController.get
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -106,52 +137,13 @@ attributeRouter.get("/", authenticateToken, asyncHandler(attributeController.get
  *     responses:
  *       200:
  *         description: Attribute fetched successfully
+ *       400:
+ *         description: Invalid id
  *       404:
  *         description: Attribute not found
  */
 attributeRouter.get("/:id", authenticateToken, asyncHandler(attributeController.getById));
 
-/**
- * @swagger
- * /attributes:
- *   post:
- *     summary: Create a new attribute
- *     tags: [Attribute]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: clientId
- *         schema:
- *           type: string
- *         required: true
- *         description: Enter Client Id
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [name, storeId]
- *             properties:
- *               name:
- *                 type: string
- *               unit:
- *                 type: string
- *               storeId:
- *                 type: integer
- *                 example: 1
- *                 description: ID of the store this attribute belongs to
- *               status:
- *                 type: string
- *                 enum: [Published, Draft, Trash]
- *               displayOrder:
- *                 type: integer
- *     responses:
- *       201:
- *         description: Attribute created successfully
- */
-attributeRouter.post("/", authenticateToken, validate(createAttributeSchema), asyncHandler(attributeController.create));
 
 /**
  * @swagger
@@ -167,7 +159,6 @@ attributeRouter.post("/", authenticateToken, validate(createAttributeSchema), as
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -179,16 +170,26 @@ attributeRouter.post("/", authenticateToken, validate(createAttributeSchema), as
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [name]
  *             properties:
  *               name:
  *                 type: string
  *               unit:
  *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [Published, Draft, Trash]
+ *               displayOrder:
+ *                 type: integer
  *     responses:
  *       200:
  *         description: Attribute updated successfully
+ *       400:
+ *         description: Invalid id
+ *       404:
+ *         description: Attribute not found
  */
-attributeRouter.put("/:id", authenticateToken, validate(updateAttributeSchema), asyncHandler(attributeController.update));
+attributeRouter.put("/:id", authenticateToken, validate(attributeValidator), asyncHandler(attributeController.update));
 
 /**
  * @swagger
@@ -204,15 +205,18 @@ attributeRouter.put("/:id", authenticateToken, validate(updateAttributeSchema), 
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
  *     responses:
- *       200:
+ *       204:
  *         description: Attribute deleted successfully
+ *       400:
+ *         description: Invalid id
+ *       404:
+ *         description: Attribute not found
  */
 attributeRouter.delete("/:id", authenticateToken, asyncHandler(attributeController.delete));
 

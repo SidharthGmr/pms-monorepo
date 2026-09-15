@@ -1,6 +1,4 @@
-import { AttributeDto } from "../../dtos/attribute.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
-import { AttributeFilterParams } from "../../params/attribute.params";
+import { AttributeDto, AttributeFilterParams, ListResponseDto } from "@pms/types";
 
 export interface IAttributeRepository {
   findAll(filters?: AttributeFilterParams, page?: number, limit?: number): Promise<ListResponseDto<AttributeDto>>;

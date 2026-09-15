@@ -1,10 +1,12 @@
 // models
 export * from "./params/user-list.params";
 export * from "./params/category.params";
+export * from "./params/attribute.params";
 
 // dtos
 export * from "./dto/list-response.dto";
 export * from "./dto/custom-response";
+export type { default as CustomResponse } from "./dto/custom-response";
 export * from "./dto/role.dto";
 export * from "./dto/user.dto";
 export * from "./dto/product.dto";
@@ -12,6 +14,7 @@ export * from "./dto/product-variant.dto";
 export * from "./dto/purchase.dto";
 export * from "./dto/category.dto";
 export * from "./dto/profile.dto";
+export * from "./dto/attribute.dto";
 
 // enums
 export * from "./enum/role.enum";
@@ -25,6 +28,7 @@ export * from "./model/category.model"
 export * from "./model/profile.model";
 export * from "./model/productVarient.model";
 export * from "./model/brand-name.model";
+export * from "./model/attribute.model";
 
 //Validators
 export * from "./validator/product.validator";
@@ -33,3 +37,4 @@ export * from "./validator/category.validator";
 export * from "./validator/product-variant.validator";
 export * from "./validator/profile.validator";
 export * from "./validator/brand.validator";
+export * from "./validator/attribute.validator";

@@ -83,14 +83,14 @@ export class ProductService implements IProductService {
         updateData.images = data.images;
       }
 
-      const storeData = await transactionClient.product.update({
+      const productData = await transactionClient.product.update({
         where: { id: id },
         data: updateData,
       });
 
 
 
-      return storeData;
+      return productData;
     });
   }
 

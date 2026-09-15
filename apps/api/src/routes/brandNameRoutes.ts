@@ -1,14 +1,19 @@
-import { Router } from "express";
-import { container } from "../config/ioc.config";
-import { TYPES } from "../config/ioc.types";
-import { BrandNameController } from "../controllers/brand-name.controller";
-import asyncHandler from "../middleware/asyncHandler.middleware";
-import { authenticateToken } from "../middleware/authentication.middleware";
-import { validate } from "../middleware/validate";
-import { createBrandNameSchema, updateBrandNameSchema } from "../schemas/brandNameSchema";
+import { Role } from '@prisma/client';
+import { Router } from 'express';
+import { container } from '../config/ioc.config';
+import { TYPES } from '../config/ioc.types';
+import { BrandNameController } from '../controllers/brand-name.controller';
+import asyncHandler from '../middleware/asyncHandler.middleware';
+import { authenticateToken } from '../middleware/authentication.middleware';
+import authorization from '../middleware/authorization.middleware';
+import { storeRequiredMiddleware } from '../middleware/store-required.middleware';
+import { validate } from '../middleware/validate';
+import { createBrandNameSchema, updateBrandNameSchema } from '../schemas/brandNameSchema';
 
 const brandNameRouter = Router();
 const brandNameController = container.get<BrandNameController>(TYPES.BrandNameController);
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 /**
  * @swagger
@@ -20,8 +25,9 @@ const brandNameController = container.get<BrandNameController>(TYPES.BrandNameCo
 /**
  * @swagger
  * /brand-names:
- *   get:
- *     summary: Get all brand names
+ *   post:
+ *     summary: Create a new brand name
+ *     description: storeCode is taken from the authenticated user's token, never from the body.
  *     tags: [BrandName]
  *     security:
  *       - bearerAuth: []
@@ -31,55 +37,117 @@ const brandNameController = container.get<BrandNameController>(TYPES.BrandNameCo
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               status:
+ *                 type: string
+ *                 enum: [Published, Draft, Trash]
+ *               displayOrder:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Brand name created successfully
+ *       400:
+ *         description: Validation failed, or a brand name with this name already exists in the store
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
+ */
+brandNameRouter.post(
+  '/',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  validate(createBrandNameSchema),
+  asyncHandler(brandNameController.create)
+);
+
+/**
+ * @swagger
+ * /brand-names:
+ *   get:
+ *     summary: Get all brand names
+ *     description: Scoped to the authenticated user's store.
+ *     tags: [BrandName]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *         required: false
- *         description: Page number for pagination (optional)
  *       - in: query
  *         name: recordPerPage
  *         schema:
  *           type: integer
  *         required: false
- *         description: Number of records per page (optional)
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
  *         required: false
- *         description: Search term to filter brand names (optional)
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [Published, Draft, Trash]
  *         required: false
- *         description: Filter by status (optional)
  *       - in: query
  *         name: showAllRecords
  *         schema:
  *           type: boolean
  *         required: false
- *         description: Show all records without pagination (optional)
  *       - in: query
  *         name: categoryIds
  *         schema:
  *           type: string
  *         required: false
- *         description: Comma-separated category IDs to filter brand names (optional)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         required: false
  *     responses:
  *       200:
  *         description: Brand names fetched successfully
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: The user has no store assigned
  */
-brandNameRouter.get("/", authenticateToken, asyncHandler(brandNameController.getAll));
+brandNameRouter.get('/', authenticateToken, storeRequiredMiddleware, asyncHandler(brandNameController.getAll));
 
 /**
  * @swagger
  * /brand-names/{id}:
  *   get:
  *     summary: Get brand name by ID
+ *     description: A brand name belonging to another store is reported as 404.
  *     tags: [BrandName]
  *     security:
  *       - bearerAuth: []
@@ -89,7 +157,6 @@ brandNameRouter.get("/", authenticateToken, asyncHandler(brandNameController.get
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -98,71 +165,23 @@ brandNameRouter.get("/", authenticateToken, asyncHandler(brandNameController.get
  *     responses:
  *       200:
  *         description: Brand name fetched successfully
+ *       400:
+ *         description: Invalid id
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: The user has no store assigned
  *       404:
  *         description: Brand name not found
  */
-brandNameRouter.get("/:id", authenticateToken, asyncHandler(brandNameController.getById));
-
-/**
-* @swagger
-* /brand-names:
-*   post:
-*     summary: Create a new brand name
-*     tags: [BrandName]
-*     security:
-*       - bearerAuth: []
-*     parameters:
-*       - in: header
-*         name: clientId
-*         schema:
-*           type: string
-*         required: true
-*         description: Enter Client Id
-*     requestBody:
-*       required: true
-*       content:
-*         application/json:
-*           schema:
-*             type: object
-*             required:
-*               - name
-*             properties:
-*               name:
-*                 type: string
-*                 minLength: 1
-*                 example: "Nike"
-*                 description: Brand name (required)
-*               status:
-*                 type: string
-*                 enum: [Published, Draft, Trash]
-*                 example: "Published"
-*                 description: Brand status (optional, defaults to Draft)
-*               displayOrder:
-*                 type: integer
-*                 example: 1
-*                 description: Display order for sorting (optional)
-*           example:
-*             name: "Nike"
-*             status: "Published"
-*             displayOrder: 1
-*     responses:
-*       201:
-*         description: Brand name created successfully
-*       400:
-*         description: Validation error or store code not found
-*       401:
-*         description: Unauthorized - Invalid or missing token
-*       409:
-*         description: Conflict - Brand name already exists
-*     description: Creates a new brand name. The storeCode is automatically taken from the authenticated user's token.
-*/
-brandNameRouter.post("/", authenticateToken, validate(createBrandNameSchema), asyncHandler(brandNameController.create));
+brandNameRouter.get('/:id', authenticateToken, storeRequiredMiddleware, asyncHandler(brandNameController.getById));
 
 /**
  * @swagger
  * /brand-names/{id}:
  *   put:
  *     summary: Update a brand name
+ *     description: storeCode cannot be changed through this endpoint; the row stays in the caller's store.
  *     tags: [BrandName]
  *     security:
  *       - bearerAuth: []
@@ -172,7 +191,6 @@ brandNameRouter.post("/", authenticateToken, validate(createBrandNameSchema), as
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -185,23 +203,44 @@ brandNameRouter.post("/", authenticateToken, validate(createBrandNameSchema), as
  *           schema:
  *             type: object
  *             properties:
- *               brandName:
+ *               name:
  *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               status:
- *                 type: boolean
+ *                 type: string
+ *                 enum: [Published, Draft, Trash]
  *               displayOrder:
  *                 type: integer
  *     responses:
  *       200:
  *         description: Brand name updated successfully
+ *       400:
+ *         description: Invalid id, validation failed, or the new name already exists in the store
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
+ *       404:
+ *         description: Brand name not found
  */
-brandNameRouter.put("/:id", authenticateToken, validate(updateBrandNameSchema), asyncHandler(brandNameController.update));
+brandNameRouter.put(
+  '/:id',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  validate(updateBrandNameSchema),
+  asyncHandler(brandNameController.update)
+);
 
 /**
  * @swagger
  * /brand-names/{id}:
  *   delete:
- *     summary: Delete a brand name (soft delete)
+ *     summary: Delete a brand name
+ *     description: Soft delete - sets status to Trash. Responds 204, so the body is dropped in transit.
  *     tags: [BrandName]
  *     security:
  *       - bearerAuth: []
@@ -211,16 +250,29 @@ brandNameRouter.put("/:id", authenticateToken, validate(updateBrandNameSchema), 
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
  *     responses:
- *       200:
+ *       204:
  *         description: Brand name deleted successfully
+ *       400:
+ *         description: Invalid id
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
+ *       404:
+ *         description: Brand name not found
  */
-brandNameRouter.delete("/:id", authenticateToken, asyncHandler(brandNameController.delete));
+brandNameRouter.delete(
+  '/:id',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  asyncHandler(brandNameController.delete)
+);
 
 export default brandNameRouter;
