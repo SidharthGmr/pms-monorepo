@@ -8,6 +8,7 @@ import NotFoundError from "../exceptions/not-found-error";
 import { ProductFilterParams } from "../params/product.params";
 import IUnitOfService from "../services/interfaces/iunitof.service";
 import CustomResponse from "@pms/types/src/dto/custom-response";
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class ProductController {
   constructor(
@@ -20,7 +21,7 @@ export class ProductController {
     const createdById = isAdmin ? undefined : req.user?.userId;
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     const filters: ProductFilterParams = Object.fromEntries(
       Object.entries({
@@ -96,10 +97,7 @@ export class ProductController {
     const storeCode = req.user?.storeCode;
 
     if (!storeCode || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     const body = req.body as ProductModel;
     const product = await this.unitOfService.Product.create(body, userId, storeCode);
@@ -113,10 +111,7 @@ export class ProductController {
     const storeCode = req.user?.storeCode; // Get from logged-in user
     if (!id) throw new NotFoundError("Product id is required");
     if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const existingProduct = await this.unitOfService.Product.getById(id);

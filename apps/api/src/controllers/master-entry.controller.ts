@@ -7,6 +7,7 @@ import { ListResponseDto } from '../dtos/list-response.dto';
 import { CreateMasterEntryDto, MasterEntryDto } from '../dtos/master-entry.dto';
 import { MasterEntryFilterParams } from '../params/master-entry.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class MasterEntryController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -46,7 +47,7 @@ export class MasterEntryController {
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<MasterEntryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const data = await this.unitOfService.MasterEntry.create(req.body as CreateMasterEntryDto, storeCode);

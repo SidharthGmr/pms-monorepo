@@ -7,6 +7,7 @@ import CustomResponse from '../dtos/custom-response';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { SupplierFilterParams } from '../params/supplier.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class SupplierController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -40,10 +41,7 @@ export class SupplierController {
     const storeCode = req.user?.storeCode; // Get from logged-in user
 
     if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     const data = await this.unitOfService.Supplier.create(body, storeCode);
     return res.status(201).json({ success: true, message: 'Supplier created successfully', data });

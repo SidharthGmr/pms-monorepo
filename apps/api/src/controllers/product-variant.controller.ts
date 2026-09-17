@@ -13,6 +13,7 @@ import {
 } from '@pms/types';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { VariantRatingDto } from '../dtos/product-variant.dto';
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class ProductVariantController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -20,7 +21,7 @@ export class ProductVariantController {
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantListItemDto>>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const filters: ProductVariantFilterParams = Object.fromEntries(
@@ -53,7 +54,7 @@ export class ProductVariantController {
     const id = parseInt(req.params['id'] as string);
 
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
 
@@ -67,7 +68,7 @@ export class ProductVariantController {
     const id = parseInt(req.params['id'] as string);
 
     if (!storeCode || !userId) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
 
@@ -81,10 +82,7 @@ export class ProductVariantController {
     const storeCode = req.user?.storeCode;
 
     if (!storeCode || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const model = req.body as ProductVariantModel;
@@ -99,7 +97,7 @@ export class ProductVariantController {
     const id = parseInt(req.params['id'] as string);
 
     if (!storeCode || !userId) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
 
@@ -140,10 +138,7 @@ export class ProductVariantController {
     const productId = parseInt(req.params['productId'] as string);
 
     if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.',
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid product id' });
 
@@ -159,10 +154,7 @@ export class ProductVariantController {
     const productId = parseInt(req.params['productId'] as string);
 
     if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.',
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid product id' });
 

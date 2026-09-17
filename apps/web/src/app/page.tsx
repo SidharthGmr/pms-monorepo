@@ -1,4 +1,4 @@
-import EKarobarHome from '@/components/home/eKarobarHome';
+import Storefront from '@/components/storefront';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,6 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <EKarobarHome />;
+  return <Storefront />;
 }
 

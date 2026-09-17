@@ -1,14 +1,19 @@
-import { Router } from "express";
-import { container } from "../config/ioc.config";
-import { TYPES } from "../config/ioc.types";
-import { CategoryController } from "../controllers/category.controller";
-import asyncHandler from "../middleware/asyncHandler.middleware";
-import { authenticateToken } from "../middleware/authentication.middleware";
-import { validate } from "../middleware/validate";
-import { categoryValidator } from "@pms/types";
+import { Role } from '@prisma/client';
+import { categoryValidator } from '@pms/types';
+import { Router } from 'express';
+import { container } from '../config/ioc.config';
+import { TYPES } from '../config/ioc.types';
+import { CategoryController } from '../controllers/category.controller';
+import asyncHandler from '../middleware/asyncHandler.middleware';
+import { authenticateToken } from '../middleware/authentication.middleware';
+import authorization from '../middleware/authorization.middleware';
+import { storeRequiredMiddleware } from '../middleware/store-required.middleware';
+import { validate } from '../middleware/validate';
 
 const categoryRouter = Router();
 const categoryController = container.get<CategoryController>(TYPES.CategoryController);
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 /**
  * @swagger
@@ -20,8 +25,9 @@ const categoryController = container.get<CategoryController>(TYPES.CategoryContr
 /**
  * @swagger
  * /categories:
- *   get:
- *     summary: Get all categories
+ *   post:
+ *     summary: Create a new category
+ *     description: storeCode and createdById are taken from the authenticated user's token, never from the body.
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -31,7 +37,65 @@ const categoryController = container.get<CategoryController>(TYPES.CategoryContr
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               parentId:
+ *                 type: integer
+ *               status:
+ *                 type: string
+ *                 enum: [Published, Draft, Trash]
+ *               displayOrder:
+ *                 type: integer
+ *               metadata:
+ *                 type: object
+ *     responses:
+ *       201:
+ *         description: Category created successfully
+ *       400:
+ *         description: Validation failed, or the parent category does not exist in this store
+ *       401:
+ *         description: Missing or expired access token, or no userId on the token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
+ */
+categoryRouter.post(
+  '/',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  validate(categoryValidator),
+  asyncHandler(categoryController.create)
+);
+
+/**
+ * @swagger
+ * /categories:
+ *   get:
+ *     summary: Get all categories
+ *     description: Scoped to the authenticated user's store.
+ *     tags: [Category]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
  *       - in: query
  *         name: page
  *         schema:
@@ -81,17 +145,36 @@ const categoryController = container.get<CategoryController>(TYPES.CategoryContr
  *           type: string
  *           format: date-time
  *         required: false
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [name, status, displayOrder, createdAt, updatedAt]
+ *         required: false
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         required: false
  *     responses:
  *       200:
  *         description: Categories fetched successfully
+ *       400:
+ *         description: The user has no store assigned
+ *       401:
+ *         description: Missing or expired access token, or no userId on the token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  */
-categoryRouter.get("/", authenticateToken, asyncHandler(categoryController.getAll));
+categoryRouter.get('/', authenticateToken, storeRequiredMiddleware, asyncHandler(categoryController.getAll));
 
 /**
  * @swagger
  * /categories/{id}:
  *   get:
  *     summary: Get category by ID
+ *     description: A category belonging to another store is reported as 404.
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -101,7 +184,6 @@ categoryRouter.get("/", authenticateToken, asyncHandler(categoryController.getAl
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -110,86 +192,23 @@ categoryRouter.get("/", authenticateToken, asyncHandler(categoryController.getAl
  *     responses:
  *       200:
  *         description: Category fetched successfully
+ *       400:
+ *         description: Invalid id
+ *       401:
+ *         description: Missing or expired access token, or no userId on the token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  *       404:
  *         description: Category not found
  */
-categoryRouter.get("/:id", authenticateToken, asyncHandler(categoryController.getById));
+categoryRouter.get('/:id', authenticateToken, storeRequiredMiddleware, asyncHandler(categoryController.getById));
 
-/**
- * @swagger
- * /categories:
- *   post:
- *     summary: Create a new category
- *     tags: [Category]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: header
- *         name: clientId
- *         schema:
- *           type: string
- *         required: true
- *         description: Enter Client Id
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *                 example: "Electronics"
- *                 description: Category name (required)
- *               description:
- *                 type: string
- *                 example: "Electronic items and gadgets"
- *                 description: Category description (optional)
- *               parentId:
- *                 type: integer
- *                 example: 1
- *                 description: Parent category ID for nested categories (optional)
- *               status:
- *                 type: string
- *                 enum: [Published, Draft, Trash]
- *                 example: "Draft"
- *                 description: Category status (optional, defaults to Draft)
- *               displayOrder:
- *                 type: integer
- *                 minimum: 0
- *                 example: 1
- *                 description: Display order for sorting (optional, defaults to 0)
- *               metadata:
- *                 type: object
- *                 additionalProperties: true
- *                 nullable: true
- *                 example: { "icon": "laptop", "bannerColor": "#0af" }
- *                 description: Free-form JSON for store-specific extras (optional)
- *           example:
- *             name: "Electronics"
- *             description: "Electronic items and gadgets"
- *             status: "Published"
- *             displayOrder: 1
- *     responses:
- *       201:
- *         description: Category created successfully
- *       400:
- *         description: Validation error, store code not found, or parent category not found in this store
- *       401:
- *         description: Unauthorized - Invalid or missing token
- *     description: >
- *       Creates a new category. `storeCode` and `createdById` are taken from the authenticated
- *       user's token and are never read from the request body. A `parentId` must reference a
- *       category in the same store.
- */
-categoryRouter.post("/", authenticateToken, validate(categoryValidator), asyncHandler(categoryController.create));
 /**
  * @swagger
  * /categories/{id}:
  *   put:
  *     summary: Update a category
+ *     description: Omitted optional fields are left unchanged; storeCode cannot be changed through this endpoint.
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -199,7 +218,6 @@ categoryRouter.post("/", authenticateToken, validate(categoryValidator), asyncHa
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -211,47 +229,52 @@ categoryRouter.post("/", authenticateToken, validate(categoryValidator), asyncHa
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
+ *             required: [name]
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Electronics"
  *               description:
  *                 type: string
- *                 nullable: true
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               parentId:
  *                 type: integer
- *                 nullable: true
- *                 description: Must reference a category in the same store. Self-parenting and circular hierarchies are rejected.
  *               status:
  *                 type: string
- *                 enum: [Published, Draft]
+ *                 enum: [Published, Draft, Trash]
  *               displayOrder:
  *                 type: integer
- *                 minimum: 0
  *               metadata:
  *                 type: object
- *                 additionalProperties: true
- *                 nullable: true
  *     responses:
  *       200:
  *         description: Category updated successfully
  *       400:
- *         description: Validation error, or the parent would create a circular hierarchy
+ *         description: Invalid id, validation failed, a parent outside this store, self-parenting, or a circular hierarchy
+ *       401:
+ *         description: Missing or expired access token, or no userId on the token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  *       404:
  *         description: Category not found
- *     description: >
- *       `storeCode` is always taken from the token, so a category cannot be moved to another
- *       store. `updatedById` is recorded automatically.
  */
-categoryRouter.put("/:id", authenticateToken, validate(categoryValidator), asyncHandler(categoryController.update));
+categoryRouter.put(
+  '/:id',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  validate(categoryValidator),
+  asyncHandler(categoryController.update)
+);
 
 /**
  * @swagger
  * /categories/{id}:
  *   delete:
  *     summary: Delete a category
+ *     description: Soft delete - stamps deletedAt and deletedById. Refused while sub-categories or products still reference it.
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -261,7 +284,6 @@ categoryRouter.put("/:id", authenticateToken, validate(categoryValidator), async
  *         schema:
  *           type: string
  *         required: true
- *         description: Enter Client Id
  *       - in: path
  *         name: id
  *         required: true
@@ -270,16 +292,23 @@ categoryRouter.put("/:id", authenticateToken, validate(categoryValidator), async
  *     responses:
  *       200:
  *         description: Category deleted successfully
+ *       400:
+ *         description: Invalid id
+ *       401:
+ *         description: Missing or expired access token, or no userId on the token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  *       404:
  *         description: Category not found
  *       409:
- *         description: Category still has sub-categories or products and cannot be deleted
- *     description: >
- *       Soft delete - sets `deletedAt` and `deletedById` rather than removing the row. Deleted
- *       categories are hidden from the list unless `includeDeleted=true` is passed to GET
- *       /categories. Rejected with 409 while sub-categories or products still reference it.
+ *         description: The category still has sub-categories or products
  */
-categoryRouter.delete("/:id", authenticateToken, asyncHandler(categoryController.delete));
+categoryRouter.delete(
+  '/:id',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  asyncHandler(categoryController.delete)
+);
 
 export default categoryRouter;
-

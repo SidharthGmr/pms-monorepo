@@ -6,6 +6,7 @@ import { ListResponseDto } from "../dtos/list-response.dto";
 import { OrderItemDto, UpdateOrderItemDto } from "../dtos/order-item.dto";
 import { CreateOrderItemModel } from "../models/order-item.model";
 import IUnitOfService from "../services/interfaces/iunitof.service";
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class OrderItemController {
   constructor(
@@ -38,10 +39,7 @@ export class OrderItemController {
     const body = req.body as CreateOrderItemModel;
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     const item = await this.unitOfService.OrderItem.create(body, storeCode);
     return res.status(201).json({ success: true, message: "Order item created successfully", data: item });

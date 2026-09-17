@@ -8,6 +8,7 @@ import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
 import { CreateOrderModel } from "../models/order.model";
 import { OrderFilterParams } from "../params/order.params";
 import IUnitOfService from "../services/interfaces/iunitof.service";
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 const STAFF_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
@@ -58,10 +59,7 @@ export class OrderController {
     const storeCode = req.user?.storeCode;
 
     if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const createdById = body.createdById || req.user?.userId;

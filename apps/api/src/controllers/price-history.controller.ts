@@ -7,6 +7,7 @@ import { PriceHistoryDto, PriceHistorySummaryDto } from '../dtos/price-history.d
 import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../models/price-history.model';
 import { PriceHistoryFilterParams } from '../params/price-history.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
+import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 
 export class PriceHistoryController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {}
@@ -47,7 +48,7 @@ export class PriceHistoryController {
   getById = async (req: Request, res: Response): Promise<Response<CustomResponse<PriceHistoryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const id = parseInt(req.params['id'] as string);
@@ -60,7 +61,7 @@ export class PriceHistoryController {
   getByVariant = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<PriceHistoryDto>>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const variantId = parseInt(req.params['variantId'] as string);
@@ -76,7 +77,7 @@ export class PriceHistoryController {
   getEffective = async (req: Request, res: Response): Promise<Response<CustomResponse<PriceHistoryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const variantId = parseInt(req.params['variantId'] as string);
@@ -94,7 +95,7 @@ export class PriceHistoryController {
   getSummary = async (req: Request, res: Response): Promise<Response<CustomResponse<PriceHistorySummaryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const variantId = parseInt(req.params['variantId'] as string);
@@ -107,12 +108,12 @@ export class PriceHistoryController {
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<PriceHistoryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const userId = req.user?.userId;
     if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
+      return res.status(401).json(MISSING_USER_ID);
     }
 
     const body = req.body as {
@@ -143,7 +144,7 @@ export class PriceHistoryController {
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<PriceHistoryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const id = parseInt(req.params['id'] as string);
@@ -170,7 +171,7 @@ export class PriceHistoryController {
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<PriceHistoryDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const id = parseInt(req.params['id'] as string);

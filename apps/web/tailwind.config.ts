@@ -74,6 +74,26 @@ const config = {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
+  			storefront: {
+  				'hero-from': 'hsl(var(--storefront-hero-from))',
+  				'hero-to': 'hsl(var(--storefront-hero-to))',
+  				'hero-foreground': 'hsl(var(--storefront-hero-foreground))',
+  				'hero-cta': 'hsl(var(--storefront-hero-cta))',
+  				'hero-cta-foreground': 'hsl(var(--storefront-hero-cta-foreground))',
+  				accent: 'hsl(var(--storefront-accent))',
+  				'accent-foreground': 'hsl(var(--storefront-accent-foreground))',
+  				surface: 'hsl(var(--storefront-surface))',
+  				'surface-heading': 'hsl(var(--storefront-surface-heading))',
+  				'surface-foreground': 'hsl(var(--storefront-surface-foreground))',
+  				'surface-muted': 'hsl(var(--storefront-surface-muted))',
+  				'surface-border': 'hsl(var(--storefront-surface-border))',
+  				'promo-1': 'hsl(var(--storefront-promo-1))',
+  				'promo-1-foreground': 'hsl(var(--storefront-promo-1-foreground))',
+  				'promo-2': 'hsl(var(--storefront-promo-2))',
+  				'promo-2-foreground': 'hsl(var(--storefront-promo-2-foreground))',
+  				'promo-3': 'hsl(var(--storefront-promo-3))',
+  				'promo-3-foreground': 'hsl(var(--storefront-promo-3-foreground))'
+  			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',

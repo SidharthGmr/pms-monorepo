@@ -175,6 +175,11 @@ keys whose `Symbol.for("…")` string drops the leading `I`
 - **`storeCode` comes from `req.user`, never from the request body.** Read it in the
   controller and pass it to the service; put it into `FilterParams` for list endpoints so
   tenants can't read each other's rows.
+  The two guards that go with it are shared, not retyped:
+  `import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses'` and
+  `return res.status(400).json(MISSING_STORE_CODE)` / `res.status(401).json(MISSING_USER_ID)`.
+  Never inline the message or declare a local copy of either const - the web client matches on
+  the wording, and 29 hand-written copies had already accumulated before they were centralised.
 - **Delete is soft**: set `status: StatusEnum.Trash` + `updatedAt`, never `prisma.x.delete()`.
   List queries exclude Trash by default (`NOT: { status: StatusEnum.Trash }`). `StatusEnum`
   comes from `@pms/types`; Prisma's own `Status` is only for typing `Prisma.xWhereInput`.

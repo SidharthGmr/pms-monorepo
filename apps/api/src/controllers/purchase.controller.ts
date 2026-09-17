@@ -5,6 +5,7 @@ import IUnitOfService from '../services/interfaces/iunitof.service';
 import CustomResponse from '../dtos/custom-response';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { PurchaseResponseDto } from '@pms/types';
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class PurchaseController {
   constructor(
@@ -24,10 +25,7 @@ export class PurchaseController {
     const storeCode = req.user?.storeCode;
 
     if (!storeCode || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.',
-      });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
     const result = await this.unitOfService.Purchase.create(req.body, userId, storeCode);
     return res.status(201).json({ success: true, message: 'Purchase created successfully', data: result });
@@ -36,7 +34,7 @@ export class PurchaseController {
   getAllPurchases = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<PurchaseResponseDto>>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const page = req.query.page ? parseInt(req.query.page as string) : 1;

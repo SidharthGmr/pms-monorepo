@@ -1,15 +1,32 @@
+import { CategoryFilterParams, CategoryModel, CategoryResponseDto, CustomResponse, ListResponseDto } from '@pms/types';
 import { Status } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
-import CustomResponse from '@pms/types/src/dto/custom-response';
-import { CategoryFilterParams, CategoryModel, CategoryResponseDto, ListResponseDto } from '@pms/types';
+import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 
 export class CategoryController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
 
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<CategoryResponseDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
+
+    const body = req.body as CategoryModel;
+    const category = await this.unitOfService.Category.create(body, storeCode, userId);
+    return res.status(201).json({ success: true, message: 'Category created successfully', data: category });
+  };
+
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<CategoryResponseDto>>>> => {
+    // Without a storeCode the repository applies no store filter at all, which would list
+    // every tenant's categories - so this is a guard, not a convenience.
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
     const filters: CategoryFilterParams = Object.fromEntries(
       Object.entries({
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
@@ -21,7 +38,7 @@ export class CategoryController {
         includeDeleted: req.query['includeDeleted'] !== undefined ? req.query['includeDeleted'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
-        storeCode: req.user?.storeCode || undefined,
+        storeCode,
         // The client sends `sortDirection`; accept `sortOrder` too rather than
         // silently dropping the sort, which is how the list ignored it entirely.
         sortBy: req.query['sortBy'] as string | undefined,
@@ -29,71 +46,31 @@ export class CategoryController {
       }).filter(([, v]) => v !== undefined)
     );
     const categories = await this.unitOfService.Category.getAll(filters);
-    return res.status(200).json({
-      success: true,
-      message: 'Categories fetched successfully',
-      data: categories,
-    });
+    return res.status(200).json({ success: true, message: 'Categories fetched successfully', data: categories });
   };
 
   getById = async (req: Request, res: Response): Promise<Response<CustomResponse<CategoryResponseDto>>> => {
     const id = parseInt(req.params['id'] as string);
-    const storeCode = req.user?.storeCode; // Get from logged-in user
-
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
     const category = await this.unitOfService.Category.getById(id, storeCode);
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Category not found"
-      });
-    }
     return res.status(200).json({ success: true, message: 'Category fetched successfully', data: category });
-  };
-
-  create = async (req: Request, res: Response): Promise<Response<CustomResponse<CategoryResponseDto>>> => {
-    const body = req.body as CategoryModel;
-    const storeCode = req.user?.storeCode; // Get from logged-in user
-    const userId = req.user?.userId;
-
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-    // `createdById` is a required FK, so a token without a userId cannot create.
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
-    }
-
-    const category = await this.unitOfService.Category.create(body, storeCode, userId);
-    return res.status(201).json({ success: true, message: 'Category created successfully', data: category });
   };
 
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<CategoryResponseDto>>> => {
     const id = parseInt(req.params['id'] as string);
-
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
-    const body = req.body as CategoryModel;
-    const storeCode = req.user?.storeCode; // Get from logged-in user
-    const userId = req.user?.userId;
 
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
-    }
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
+
+    const body = req.body as CategoryModel;
     const category = await this.unitOfService.Category.update(id, body, storeCode, userId);
     return res.status(200).json({ success: true, message: 'Category updated successfully', data: category });
   };
@@ -101,20 +78,14 @@ export class CategoryController {
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<CategoryResponseDto>>> => {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
-    const storeCode = req.user?.storeCode; // Get from logged-in user
-    const userId = req.user?.userId;
 
-    if (!storeCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Store code not found. User must be associated with a store.'
-      });
-    }
-    // Recorded as `deletedById`, so the delete cannot proceed anonymously.
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'User not identified on the request token.' });
-    }
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
+
     const category = await this.unitOfService.Category.delete(id, storeCode, userId);
-    return res.status(200).json({ success: true, status: 204, message: 'Category deleted successfully', data: category });
+    return res.status(200).json({ success: true, message: 'Category deleted successfully', data: category });
   };
 }

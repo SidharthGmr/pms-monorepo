@@ -8,11 +8,7 @@ import CustomResponse from '../dtos/custom-response';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import { BrandNameFilterParams } from '../params/brand-name.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
-
-const MISSING_STORE_CODE = {
-  success: false,
-  message: 'Store code not found. User must be associated with a store.',
-};
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class BrandNameController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }

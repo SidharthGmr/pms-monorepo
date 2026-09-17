@@ -7,6 +7,7 @@ import { ListResponseDto } from '../dtos/list-response.dto';
 import { CreateMasterAttributeDto, MasterAttributeDto } from '../dtos/master-entry.dto';
 import { MasterAttributeFilterParams } from '../params/master-entry.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class MasterAttributeController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -44,7 +45,7 @@ export class MasterAttributeController {
   getByCode = async (req: Request, res: Response): Promise<Response<CustomResponse<MasterAttributeDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const code = (req.params['code'] as string).toUpperCase();
@@ -55,7 +56,7 @@ export class MasterAttributeController {
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<MasterAttributeDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const data = await this.unitOfService.MasterAttribute.create(req.body as CreateMasterAttributeDto, storeCode);

@@ -8,6 +8,7 @@ import { CreateWishlistDto, WishlistDto } from '../dtos/wishlist.dto';
 import { WishlistFilterParams } from '../params/wishlist.params';
 import { ReviewActor } from '../services/interfaces/Ireview.service';
 import IUnitOfService from '../services/interfaces/iunitof.service';
+import { MISSING_STORE_CODE } from '../constants/responses';
 
 const STAFF_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
@@ -22,7 +23,7 @@ export class WishlistController {
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
-      return res.status(400).json({ success: false, message: 'Store code not found. User must be associated with a store.' });
+      return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const { variantId } = req.body as CreateWishlistDto;

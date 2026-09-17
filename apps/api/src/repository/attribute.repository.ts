@@ -3,6 +3,18 @@ import { AttributeDto, AttributeFilterParams, ListResponseDto, StatusEnum } from
 import prisma from "../config/prisma";
 import { IAttributeRepository } from "./interfaces/iattribute.repository";
 
+const attributeSelect = {
+  id: true,
+  name: true,
+  unit: true,
+  storeCode: false,
+  status: true,
+  displayOrder: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.attributeSelect;
+
+
 export class AttributeRepository implements IAttributeRepository {
   async findAll(
     filters?: AttributeFilterParams,
@@ -49,6 +61,7 @@ export class AttributeRepository implements IAttributeRepository {
         orderBy: { [sortBy]: sortOrder },
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
+        select: attributeSelect,
       }),
       prisma.attribute.count({ where }),
     ]);
@@ -56,11 +69,15 @@ export class AttributeRepository implements IAttributeRepository {
     return { totalRecord: total, data };
   }
 
+
   async findById(id: number): Promise<AttributeDto | null> {
-    return prisma.attribute.findUnique({ where: { id } });
+    const attributeData = await prisma.attribute.findUnique({ where: { id }, select: attributeSelect });
+    if (!attributeData) return null;
+    return attributeData;
   }
 
+
   async delete(id: number): Promise<AttributeDto> {
-    return prisma.attribute.update({ where: { id }, data: { status: Status.Trash } });
+    return prisma.attribute.update({ where: { id }, data: { status: Status.Trash }, select: attributeSelect });
   }
 }
