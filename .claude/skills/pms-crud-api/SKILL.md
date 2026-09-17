@@ -108,6 +108,46 @@ Hard rules that fall out of this:
 - A repository that throws HTTP-shaped errors is wrong — it returns `null`, the service
   turns that into `NotFoundError`.
 - Nothing returns a raw Prisma row to the client: reads return `Dto` / `ListResponseDto<Dto>`.
+- **One `<entity>Select` object decides the response shape, and every method passes it.** Each
+  repository declares its own, named after its entity and listing that entity's own columns —
+  `attributeSelect` in `attribute.repository.ts`, `productSelect` in `product.repository.ts`,
+  `categorySelect` in a new `category.repository.ts`. Declare it once at module scope, typed
+  with `satisfies Prisma.<model>Select`, and hand it to *every* Prisma call in the file that
+  returns a row — `findAll`, `findById` and the soft-delete `update` alike:
+
+  ```ts
+  const attributeSelect = {
+    id: true,
+    name: true,
+    unit: true,
+    storeCode: false,   // withheld: the caller already knows its own store
+    status: true,
+    displayOrder: true,
+    createdAt: true,
+    updatedAt: true,
+  } satisfies Prisma.attributeSelect;
+  ```
+
+  Two things that bite when you copy this into a new repository. The model name in
+  `Prisma.<model>Select` follows `schema.prisma`, whose casing is not uniform —
+  `Prisma.attributeSelect` and `Prisma.productSelect` are lowercase,
+  `Prisma.ProductVariantSelect` is not; read the schema rather than guessing. And a repository
+  may hold more than one select when it serves genuinely different shapes — `product-variant`
+  has `productVarientSelect` (note the existing typo), `variantInternalSelect` and
+  `listItemSelect` — in which case the extra ones are named for their purpose, not the entity.
+  One shape means one `<entity>Select`; do not split it per method.
+
+  A field marked `true` reaches the client; `false` never leaves the database. Miss the
+  `select` on one method and that endpoint quietly returns the whole row, including the fields
+  the others withhold — and **`tsc` will not catch it**, because a Prisma result is not a fresh
+  object literal, so excess-property checking does not apply. `attribute.repository.ts` is the
+  reference; its `delete` leaked `storeCode` this way until 2026-09-17, while `findAll` and
+  `findById` were correct.
+
+  The select and the DTO move together. Drop a field from `XDto` in `packages/types` and skip
+  `npm run build:types`, and you get `Property 'storeCode' is missing … but required in type
+  'XDto'` pointing at the repository — that is the stale `dist/` talking, not a bug in the
+  repository. Rebuild before reading the error.
 
 ## Workflow
 

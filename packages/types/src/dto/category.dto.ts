@@ -1,8 +1,10 @@
 import { Status } from "../enum/status.enum";
 
+// `storeCode` and `metadata` are deliberately absent: both are marked `false` in
+// `categorySelect` (`category.repository.ts`), so neither leaves the database. `metadata` is
+// still accepted on create/update - it is write-only.
 export interface CategoryResponseDto {
   id: number;
-  storeCode: string;
   name: string;
   description: string | null;
   images: string[];
@@ -15,5 +17,4 @@ export interface CategoryResponseDto {
   createdById: string;
   updatedById: string | null;
   deletedById: string | null;
-  metadata: unknown;
 }

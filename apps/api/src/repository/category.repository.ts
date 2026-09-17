@@ -7,6 +7,27 @@ import { CategoryFilterParams, CategoryResponseDto, ListResponseDto, StatusEnum 
 // back to the default instead of failing the query.
 const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
 
+// The response shape for every category read. A field marked `false` is withheld, so this
+// has to be passed to every query in this file - a method that omits `select` returns the
+// whole row instead, and tsc cannot see the difference.
+const categorySelect = {
+  id: true,
+  storeCode: false,
+  name: true,
+  description: true,
+  images: true,
+  parentId: true,
+  status: true,
+  displayOrder: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdById: true,
+  updatedById: true,
+  deletedById: true,
+  metadata: false,
+} satisfies Prisma.categorySelect;
+
 export class CategoryRepository implements ICategoryRepository {
   async findAll(
     filters?: CategoryFilterParams,
@@ -15,8 +36,7 @@ export class CategoryRepository implements ICategoryRepository {
     sortBy = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<ListResponseDto<CategoryResponseDto>> {
-    // Soft delete is the only delete now, so `deletedAt` - not `status: Trash` - decides
-    // whether a row is visible. `includeDeleted` lets an admin see the trashed ones.
+
     const where: Prisma.categoryWhereInput = {};
 
     if (filters) {
@@ -69,6 +89,7 @@ export class CategoryRepository implements ICategoryRepository {
         orderBy,
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
+        select: categorySelect,
       }),
       prisma.category.count({ where }),
     ]);
@@ -81,6 +102,15 @@ export class CategoryRepository implements ICategoryRepository {
   async findById(id: number, storeCode: string, includeDeleted = false): Promise<CategoryResponseDto | null> {
     return prisma.category.findFirst({
       where: { id, storeCode, ...(includeDeleted ? {} : { deletedAt: null }) },
+      select: categorySelect,
+    });
+  }
+
+  async delete(id: number, storeCode: string, userId: string): Promise<CategoryResponseDto> {
+    return prisma.category.update({
+      where: { storeCode_id: { storeCode, id } },
+      data: { deletedAt: new Date(), deletedById: userId },
+      select: categorySelect,
     });
   }
 
@@ -92,10 +122,5 @@ export class CategoryRepository implements ICategoryRepository {
     return prisma.product.count({ where: { categoryId: id, storeCode, deletedAt: null } });
   }
 
-  async delete(id: number, storeCode: string, userId: string): Promise<CategoryResponseDto> {
-    return prisma.category.update({
-      where: { storeCode_id: { storeCode, id } },
-      data: { deletedAt: new Date(), deletedById: userId },
-    });
-  }
+
 }
