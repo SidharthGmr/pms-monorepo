@@ -176,24 +176,21 @@ model store {
 }
 
 model category {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   storeCode    String
   name         String
   description  String?
-  /// Optional tile art, same shape as `product.images` so one uploader serves both.
-  images       String[] @default([])
+  images       String[]  @default([])
   parentId     Int?
-  status       Status   @default(Published)
-  displayOrder Int      @default(0)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  createdById String
-  updatedById String?
-  deletedById String?
-  metadata    Json?
+  status       Status    @default(Published)
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  createdById  String
+  updatedById  String?
+  deletedById  String?
+  metadata     Json?
 
   children  category[] @relation("CategoryHierarchy")
   parent    category?  @relation("CategoryHierarchy", fields: [storeCode, parentId], references: [storeCode, id], onDelete: Restrict)
@@ -202,8 +199,9 @@ model category {
   updatedBy users?     @relation("CategoryUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
   deletedBy users?     @relation("CategoryDeletedBy", fields: [deletedById], references: [userId], onDelete: SetNull)
 
-  products   product[]
-  brandNames brandName[] @relation("BrandNameToCategory")
+  products         product[]
+  brandNames       brandName[]       @relation("BrandNameToCategory")
+  masterAttributes MasterAttribute[]
 
   @@unique([storeCode, id])
   @@unique([storeCode, name])
@@ -443,29 +441,31 @@ model MasterAttribute {
   name         String
   code         String
   description  String?
-  /// For measured attributes: "kg", "cm", "ml".
   unit         String?
+  categoryId   Int?
+  brandNameId  Int?
   storeCode    String
   status       Status        @default(Published)
   displayOrder Int?          @default(0)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime?     @updatedAt
   store        store         @relation(fields: [storeCode], references: [code])
+  category     category?     @relation(fields: [storeCode, categoryId], references: [storeCode, id], onDelete: Restrict)
+  brandName    brandName?    @relation(fields: [storeCode, brandNameId], references: [storeCode, id], onDelete: Restrict)
   entries      MasterEntry[]
 
   @@unique([code, storeCode])
   @@unique([name, storeCode])
   @@index([storeCode])
+  @@index([storeCode, categoryId])
+  @@index([storeCode, brandNameId])
 }
 
 model MasterEntry {
   id           Int             @id @default(autoincrement())
   attributeId  Int
-  /// Human label shown in a dropdown: "Large".
   name         String
-  /// Stored/compared value: "L". Unique within its attribute.
   value        String
-  /// Swatch for colour-style attributes.
   colorHex     String?
   metadata     Json?
   storeCode    String
@@ -500,18 +500,19 @@ model Wishlist {
 }
 
 model brandName {
-  id           Int        @id @default(autoincrement())
-  name         String
+  id               Int               @id @default(autoincrement())
+  name             String
   /// Optional logo, same shape as `product.images` so one uploader serves both.
-  images       String[]   @default([])
-  storeCode    String
-  status       Status     @default(Published)
-  displayOrder Int?       @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime?
-  store        store      @relation(fields: [storeCode], references: [code])
-  product      product[]
-  categories   category[] @relation("BrandNameToCategory")
+  images           String[]          @default([])
+  storeCode        String
+  status           Status            @default(Published)
+  displayOrder     Int?              @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime?
+  store            store             @relation(fields: [storeCode], references: [code])
+  product          product[]
+  categories       category[]        @relation("BrandNameToCategory")
+  masterAttributes MasterAttribute[]
 
   @@unique([name, storeCode])
   @@unique([storeCode, id])
