@@ -12,6 +12,14 @@ import { MISSING_STORE_CODE } from '../constants/responses';
 export class MasterAttributeController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
 
+  // A non-numeric categoryId/brandNameId is dropped rather than passed on as NaN,
+  // which Prisma rejects at query time.
+  private toId = (raw: unknown): number | undefined => {
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    const parsed = parseInt(raw as string);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<MasterAttributeDto>>>> => {
     const rawDirection = (req.query['sortDirection'] || req.query['sortOrder']) as string | undefined;
 
@@ -22,6 +30,8 @@ export class MasterAttributeController {
         search: req.query['search'] as string | undefined,
         status: req.query['status'] ? (req.query['status'] as Status) : undefined,
         code: req.query['code'] ? (req.query['code'] as string).toUpperCase() : undefined,
+        categoryId: this.toId(req.query['categoryId']),
+        brandNameId: this.toId(req.query['brandNameId']),
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,

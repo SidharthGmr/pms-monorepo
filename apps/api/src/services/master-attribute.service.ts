@@ -36,6 +36,8 @@ export class MasterAttributeService implements IMasterAttributeService {
           code: data.code.toUpperCase(),
           description: data.description || null,
           unit: data.unit || null,
+          categoryId: data.categoryId ?? null,
+          brandNameId: data.brandNameId ?? null,
           storeCode,
           status: data.status ?? Status.Published,
           displayOrder: data.displayOrder ?? null,
@@ -62,6 +64,9 @@ export class MasterAttributeService implements IMasterAttributeService {
           ...(data.code !== undefined && { code: data.code.toUpperCase() }),
           ...(data.description !== undefined && { description: data.description || null }),
           ...(data.unit !== undefined && { unit: data.unit || null }),
+          // `?? null` rather than `|| null` so clearing the scope stays distinct from 0.
+          ...(data.categoryId !== undefined && { categoryId: data.categoryId ?? null }),
+          ...(data.brandNameId !== undefined && { brandNameId: data.brandNameId ?? null }),
           ...(data.status !== undefined && { status: data.status }),
           ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder ?? null }),
         },

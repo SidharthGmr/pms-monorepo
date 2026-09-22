@@ -12,6 +12,9 @@ export const MasterAttributeSchema = Yup.object().shape({
     .required('Code is required'),
   description: Yup.string().max(500, 'Description is too long').nullable().optional(),
   unit: Yup.string().max(20, 'Unit is too long').nullable().optional(),
+  // Both scopes are optional - leaving them empty makes the attribute global.
+  categoryId: Yup.number().nullable().optional(),
+  brandNameId: Yup.number().nullable().optional(),
   status: Yup.string().required('Status is required'),
   displayOrder: Yup.number().nullable().optional(),
 });

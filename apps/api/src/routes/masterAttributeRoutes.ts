@@ -62,6 +62,14 @@ const ADMIN = [Role.SUPER_ADMIN, Role.ADMIN];
  *           type: string
  *         description: Exact code match (case-insensitive input, e.g. SIZE)
  *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: brandNameId
+ *         schema:
+ *           type: integer
+ *       - in: query
  *         name: showAllRecords
  *         schema:
  *           type: boolean
@@ -176,6 +184,12 @@ masterAttributeRouter.get("/:id", authenticateToken, asyncHandler(masterAttribut
  *               unit:
  *                 type: string
  *                 example: cm
+ *               categoryId:
+ *                 type: integer
+ *                 nullable: true
+ *               brandNameId:
+ *                 type: integer
+ *                 nullable: true
  *               status:
  *                 type: string
  *                 enum: [Published, Draft, Trash]
@@ -185,7 +199,7 @@ masterAttributeRouter.get("/:id", authenticateToken, asyncHandler(masterAttribut
  *       201:
  *         description: Master attribute created successfully
  *       400:
- *         description: Validation error or duplicate name/code for this store
+ *         description: Validation error, duplicate name/code for this store, or unknown categoryId/brandNameId
  */
 masterAttributeRouter.post(
   "/",
@@ -230,6 +244,12 @@ masterAttributeRouter.post(
  *                 type: string
  *               unit:
  *                 type: string
+ *               categoryId:
+ *                 type: integer
+ *                 nullable: true
+ *               brandNameId:
+ *                 type: integer
+ *                 nullable: true
  *               status:
  *                 type: string
  *                 enum: [Published, Draft, Trash]

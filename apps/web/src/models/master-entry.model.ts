@@ -3,6 +3,10 @@ export interface CreateMasterAttributeModel {
   code: string;
   description?: string | null;
   unit?: string | null;
+  /** Leave empty to let the attribute apply to every category. */
+  categoryId?: number | null;
+  /** Leave empty to let the attribute apply to every brand. */
+  brandNameId?: number | null;
   /** Required here because the form always picks one; the API treats it as optional. */
   status: string;
   displayOrder?: number | null;

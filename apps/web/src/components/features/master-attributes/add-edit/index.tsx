@@ -9,6 +9,8 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
+import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
+import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateMasterAttribute, useGetMasterAttributeById, useUpdateMasterAttribute } from '@/hooks/service-hooks/useMasterEntryService';
 import { CreateMasterAttributeModel } from '@/models/master-entry.model';
 import { MasterAttributeSchema } from '@/schema/masterEntrySchema';
@@ -29,6 +31,8 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
   const createMutation = useCreateMasterAttribute();
   const updateMutation = useUpdateMasterAttribute();
   const { data: response, isLoading: isFetching } = useGetMasterAttributeById(id ?? 0, isEdit);
+  const getAllCategories = useGetAllCategories({ showAllRecords: true });
+  const getAllBrandNames = useGetAllBrandNames({ showAllRecords: true });
 
   const form = useForm<CreateMasterAttributeModel>({
     resolver: yupResolver(MasterAttributeSchema),
@@ -37,6 +41,8 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
       code: '',
       description: '',
       unit: '',
+      categoryId: undefined,
+      brandNameId: undefined,
       status: StatusValues.Published,
       displayOrder: 0,
     },
@@ -50,6 +56,8 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
         code: attribute.code,
         description: attribute.description ?? '',
         unit: attribute.unit ?? '',
+        categoryId: attribute.categoryId ?? undefined,
+        brandNameId: attribute.brandNameId ?? undefined,
         status: attribute.status as string,
         displayOrder: attribute.displayOrder ?? 0,
       });
@@ -69,6 +77,9 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
+
+  const categoryItems = getAllCategories?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [];
+  const brandItems = getAllBrandNames?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose(false)}>
@@ -130,6 +141,56 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
                 </FormItem>
               )}
             />
+
+            {/* Both scopes are optional: an attribute left unset applies to every
+                category and brand, which is how the existing rows behave. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <div className="flex">
+                        <SelectSearch
+                          buttonClass="w-full"
+                          placeholder="All categories"
+                          items={categoryItems}
+                          value={field.value ?? ''}
+                          containerName="master-attribute-form-category"
+                          onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="brandNameId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Brand</FormLabel>
+                    <FormControl>
+                      <div className="flex">
+                        <SelectSearch
+                          buttonClass="w-full"
+                          placeholder="All brands"
+                          items={brandItems}
+                          value={field.value ?? ''}
+                          containerName="master-attribute-form-brand"
+                          onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FormField

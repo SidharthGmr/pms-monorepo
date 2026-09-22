@@ -4,6 +4,13 @@ import { PageFilterParams } from "./page.params";
 export interface MasterAttributeFilterParams extends PageFilterParams {
     status?: Status;
     code?: string;
+    /**
+     * Narrows to the attributes a category can use. Rows left unscoped (categoryId null)
+     * apply everywhere, so they are returned alongside the matches rather than filtered out.
+     */
+    categoryId?: number;
+    /** Same inclusive behaviour as `categoryId`, for brands. */
+    brandNameId?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
 }

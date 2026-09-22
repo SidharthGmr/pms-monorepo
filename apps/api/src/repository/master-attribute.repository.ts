@@ -7,6 +7,8 @@ import { IMasterAttributeRepository } from "./interfaces/imaster-attribute.repos
 
 const attributeInclude = {
     _count: { select: { entries: true } },
+    category: { select: { id: true, name: true } },
+    brandName: { select: { id: true, name: true } },
 };
 
 type AttributeWithCount = Prisma.MasterAttributeGetPayload<{ include: typeof attributeInclude }>;
@@ -22,12 +24,16 @@ function toDto(row: AttributeWithCount): MasterAttributeDto {
         code: row.code,
         description: row.description,
         unit: row.unit,
+        categoryId: row.categoryId,
+        brandNameId: row.brandNameId,
         storeCode: row.storeCode,
         status: row.status,
         displayOrder: row.displayOrder,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
         entryCount: row._count.entries,
+        category: row.category,
+        brandName: row.brandName,
     };
 }
 
@@ -56,6 +62,18 @@ export class MasterAttributeRepository implements IMasterAttributeRepository {
 
             if (filters.code !== undefined) where.code = filters.code;
             if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
+
+            // An unscoped attribute (null) applies everywhere, so it stays in the result
+            // next to the ones scoped to the requested id. These go under AND because the
+            // OR slot is already taken by `search`.
+            const scopeFilters: Prisma.MasterAttributeWhereInput[] = [];
+            if (filters.categoryId !== undefined) {
+                scopeFilters.push({ OR: [{ categoryId: filters.categoryId }, { categoryId: null }] });
+            }
+            if (filters.brandNameId !== undefined) {
+                scopeFilters.push({ OR: [{ brandNameId: filters.brandNameId }, { brandNameId: null }] });
+            }
+            if (scopeFilters.length > 0) where.AND = scopeFilters;
 
             if (filters.startDate != null || filters.endDate != null) {
                 where.createdAt = {

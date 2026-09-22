@@ -260,8 +260,6 @@ export class AccountService implements IAccountService {
     };
   }
 
-
-
 }
 
 export default AccountService;
