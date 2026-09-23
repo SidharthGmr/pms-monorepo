@@ -3,6 +3,7 @@ import { TYPES } from '@/config/types';
 import { CreateAttributeModel, UpdateAttributeModel } from '@/models/attribute.model';
 import { AttributeFilterParams } from '@/params/attribute.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { AttributeModel } from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const useCreateAttribute = () => {
@@ -10,7 +11,7 @@ const useCreateAttribute = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (model: CreateAttributeModel) =>
+    mutationFn: (model: AttributeModel) =>
       unitOfService.AttributeService.create(model),
     onSettled: (response) => {
       if (response && response.status === 201) {
@@ -41,7 +42,7 @@ const useGetAttributeById = (id: number | string, enabled: boolean = true) => {
   });
 };
 
-type UpdateAttributeArgs = { id: number | string; model: UpdateAttributeModel };
+type UpdateAttributeArgs = { id: number | string; model: AttributeModel };
 
 const useUpdateAttribute = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

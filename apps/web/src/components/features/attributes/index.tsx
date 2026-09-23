@@ -2,7 +2,7 @@
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { AttributeDto } from '@/dtos/attribute.dto';
+import { AttributeDto } from '@pms/types';
 import { useDeleteAttribute, useGetAllAttributes } from '@/hooks/service-hooks/useAttributeService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';

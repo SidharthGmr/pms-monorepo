@@ -2,7 +2,7 @@
 import ActionTooltip from '@/components/common/tooltip-action-button';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { AttributeDto } from '@/dtos/attribute.dto';
+import { AttributeDto } from '@pms/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';

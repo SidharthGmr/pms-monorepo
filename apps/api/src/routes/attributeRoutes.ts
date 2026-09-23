@@ -1,14 +1,21 @@
+
+import { attributeValidator, updateAttributeValidator } from "@pms/types";
+import { Role } from "@prisma/client";
 import { Router } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import { AttributeController } from "../controllers/attribute.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { storeRequiredMiddleware } from "../middleware/store-required.middleware";
 import { validate } from "../middleware/validate";
-import { attributeValidator } from "@pms/types";
+
 
 const attributeRouter = Router();
 const attributeController = container.get<AttributeController>(TYPES.AttributeController);
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 /**
  * @swagger
@@ -22,6 +29,7 @@ const attributeController = container.get<AttributeController>(TYPES.AttributeCo
  * /attributes:
  *   post:
  *     summary: Create a new attribute
+ *     description: storeCode is taken from the authenticated user's token, never from the body.
  *     tags: [Attribute]
  *     security:
  *       - bearerAuth: []
@@ -52,9 +60,20 @@ const attributeController = container.get<AttributeController>(TYPES.AttributeCo
  *       201:
  *         description: Attribute created successfully
  *       400:
- *         description: Store code not found. User must be associated with a store.
+ *         description: Validation failed
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  */
-attributeRouter.post("/", authenticateToken, validate(attributeValidator), asyncHandler(attributeController.create));
+attributeRouter.post(
+  "/",
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  validate(attributeValidator),
+  asyncHandler(attributeController.create)
+);
 
 
 /**
@@ -62,6 +81,7 @@ attributeRouter.post("/", authenticateToken, validate(attributeValidator), async
  * /attributes:
  *   get:
  *     summary: Get all attributes
+ *     description: Scoped to the authenticated user's store.
  *     tags: [Attribute]
  *     security:
  *       - bearerAuth: []
@@ -112,8 +132,12 @@ attributeRouter.post("/", authenticateToken, validate(attributeValidator), async
  *     responses:
  *       200:
  *         description: Attributes fetched successfully
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  */
-attributeRouter.get("/", authenticateToken, asyncHandler(attributeController.getAll));
+attributeRouter.get("/", authenticateToken, authorization(STAFF_ROLES), storeRequiredMiddleware, asyncHandler(attributeController.getAll));
 
 /**
  * @swagger
@@ -139,10 +163,14 @@ attributeRouter.get("/", authenticateToken, asyncHandler(attributeController.get
  *         description: Attribute fetched successfully
  *       400:
  *         description: Invalid id
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  *       404:
  *         description: Attribute not found
  */
-attributeRouter.get("/:id", authenticateToken, asyncHandler(attributeController.getById));
+attributeRouter.get("/:id", authenticateToken, authorization(STAFF_ROLES), storeRequiredMiddleware, asyncHandler(attributeController.getById));
 
 
 /**
@@ -150,6 +178,7 @@ attributeRouter.get("/:id", authenticateToken, asyncHandler(attributeController.
  * /attributes/{id}:
  *   put:
  *     summary: Update an attribute
+ *     description: Partial update - only the properties present in the body are written.
  *     tags: [Attribute]
  *     security:
  *       - bearerAuth: []
@@ -170,7 +199,6 @@ attributeRouter.get("/:id", authenticateToken, asyncHandler(attributeController.
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name]
  *             properties:
  *               name:
  *                 type: string
@@ -185,11 +213,22 @@ attributeRouter.get("/:id", authenticateToken, asyncHandler(attributeController.
  *       200:
  *         description: Attribute updated successfully
  *       400:
- *         description: Invalid id
+ *         description: Invalid id, or validation failed
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  *       404:
  *         description: Attribute not found
  */
-attributeRouter.put("/:id", authenticateToken, validate(attributeValidator), asyncHandler(attributeController.update));
+attributeRouter.put(
+  "/:id",
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  validate(updateAttributeValidator),
+  asyncHandler(attributeController.update)
+);
 
 /**
  * @swagger
@@ -215,9 +254,19 @@ attributeRouter.put("/:id", authenticateToken, validate(attributeValidator), asy
  *         description: Attribute deleted successfully
  *       400:
  *         description: Invalid id
+ *       401:
+ *         description: Missing or expired access token
+ *       403:
+ *         description: Not enough permissions, or the user has no store assigned
  *       404:
  *         description: Attribute not found
  */
-attributeRouter.delete("/:id", authenticateToken, asyncHandler(attributeController.delete));
+attributeRouter.delete(
+  "/:id",
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  storeRequiredMiddleware,
+  asyncHandler(attributeController.delete)
+);
 
 export default attributeRouter;

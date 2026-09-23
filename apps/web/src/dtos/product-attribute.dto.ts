@@ -1,4 +1,4 @@
-import { AttributeDto } from './attribute.dto';
+import { AttributeDto } from '@pms/types';
 export type { AttributeDto };
 
 export interface ProductAttributeDto {

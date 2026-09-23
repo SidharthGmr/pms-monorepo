@@ -31,6 +31,29 @@ function duplicateRecordMessage(err: Prisma.PrismaClientKnownRequestError): stri
   return `A ${model} with this ${fields.join(' and ')} already exists.`;
 }
 
+// P2003 = foreign key violation: the body pointed at a parent row that does not exist,
+// or that belongs to another store (the composite keys include storeCode). meta looks like
+// { modelName: 'MasterAttribute', field_name: 'MasterAttribute_storeCode_categoryId_fkey (index)' }
+function missingRelationMessage(err: Prisma.PrismaClientKnownRequestError): string {
+  const rawField = err.meta?.['field_name'];
+  const fieldName = typeof rawField === 'string' ? rawField : '';
+  const modelName = err.meta?.['modelName'] as string | undefined;
+
+  // Reduce the constraint name back to the column the caller actually sent.
+  // Older Prisma versions report the bare column instead, which this also handles.
+  const columns = fieldName
+    .replace(/\s*\(index\)\s*$/, '')
+    .replace(/_fkey$/, '')
+    .split('_')
+    .filter((part) => part && part !== modelName && !TENANT_COLUMNS.has(part));
+
+  const column = columns[columns.length - 1];
+  if (!column) return 'A record referenced by this request does not exist.';
+
+  // 'categoryId' -> 'category', 'brandNameId' -> 'brand name'
+  return `The selected ${humanizeModelName(column.replace(/Id$/, ''))} does not exist.`;
+}
+
 export default function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   // A duplicate value is bad user input, not a server fault. Prisma's P2002 is
   // not a CustomError, so without this it would fall through as a 500 - and the
@@ -43,6 +66,12 @@ export default function errorHandler(err: any, req: Request, res: Response, _nex
   // not a crash. P2025 otherwise reaches the client as an opaque 500.
   if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
     err = new NotFoundError('The requested record no longer exists.');
+  }
+
+  // Pointing at a parent row that does not exist is bad user input. Without this it
+  // reaches the client as a 500 whose message quotes the failing query and its file path.
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+    err = new ClientError(missingRelationMessage(err));
   }
 
   // Malformed JSON in the request body: body-parser throws a SyntaxError with

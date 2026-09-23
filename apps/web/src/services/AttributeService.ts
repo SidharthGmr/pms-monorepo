@@ -4,11 +4,10 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IAttributeService from './interfaces/IAttributeService';
-import { AttributeDto } from '@/dtos/attribute.dto';
-import { CreateAttributeModel, UpdateAttributeModel } from '@/models/attribute.model';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { AttributeFilterParams } from '@/params/attribute.params';
 import Response from '@/dtos/Response';
+import { AttributeDto, AttributeModel } from '@pms/types';
 
 @injectable()
 export default class AttributeService implements IAttributeService {
@@ -18,7 +17,7 @@ export default class AttributeService implements IAttributeService {
         this.httpService = httpService;
     }
 
-    create(model: CreateAttributeModel): Promise<AxiosResponse<Response<AttributeDto>>> {
+    create(model: AttributeModel): Promise<AxiosResponse<Response<AttributeDto>>> {
         return this.httpService
             .call()
             .post<AttributeDto, AxiosResponse<Response<AttributeDto>>>('/attributes', model);
@@ -36,7 +35,7 @@ export default class AttributeService implements IAttributeService {
             .get<AttributeDto, AxiosResponse<Response<AttributeDto>>>(`/attributes/${id}`);
     }
 
-    update(id: number | string, model: UpdateAttributeModel): Promise<AxiosResponse<Response<AttributeDto>>> {
+    update(id: number | string, model: AttributeModel): Promise<AxiosResponse<Response<AttributeDto>>> {
         return this.httpService
             .call()
             .put<AttributeDto, AxiosResponse<Response<AttributeDto>>>(`/attributes/${id}`, model);

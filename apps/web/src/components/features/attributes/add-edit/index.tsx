@@ -9,10 +9,9 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useCreateAttribute, useGetAttributeById, useUpdateAttribute } from '@/hooks/service-hooks/useAttributeService';
-import { CreateAttributeModel } from '@/models/attribute.model';
-import AttributeSchema from '@/schema/attributeSchema';
+import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { AttributeModel, attributeFields } from '@pms/types';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -30,10 +29,14 @@ export default function ManageAttribute({ id, isOpen, onClose }: ManageAttribute
   const updateMutation = useUpdateAttribute();
   const { data: attrResponse, isLoading: isFetching } = useGetAttributeById(id ?? 0, isEdit);
 
-
-  const form = useForm<CreateAttributeModel>({
-    resolver: yupResolver(AttributeSchema),
-    defaultValues: { name: '', unit: '0', status: StatusValues.Published, displayOrder: null },
+  const form = useForm<AttributeModel>({
+    resolver: zodResolver(attributeFields),
+    defaultValues: {
+      name: '',
+      unit: '',
+      status: StatusValues.Draft,
+      displayOrder: 0,
+    },
   });
 
   useEffect(() => {
@@ -43,8 +46,7 @@ export default function ManageAttribute({ id, isOpen, onClose }: ManageAttribute
     }
   }, [isEdit, attrResponse, form]);
 
-  const submitData = async (model: CreateAttributeModel) => {
-    console.log(model)
+  const submitData = async (model: AttributeModel) => {
     const payload = { ...model, unit: model.unit || null };
     const response = isEdit ? await updateMutation.mutateAsync({ id: id!, model: payload }) : await createMutation.mutateAsync(payload);
 
@@ -60,7 +62,7 @@ export default function ManageAttribute({ id, isOpen, onClose }: ManageAttribute
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onClose(false)}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose(false)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Attribute' : 'Add Attribute'}</DialogTitle>
@@ -76,33 +78,49 @@ export default function ManageAttribute({ id, isOpen, onClose }: ManageAttribute
                 <FormItem>
                   <FormLabel>Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Color, Weight, Material" {...field} />
+                    <Input placeholder="e.g. Color, Weight, Material" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. kg, cm (optional)" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-
-            <FormField
-              control={form.control}
-              name="displayOrder"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Display Order</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      placeholder="e.g. 1, 2, 3 (optional)"
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(e.target.value === '' ? 0 : +e.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="displayOrder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Display Order</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="e.g. 1, 2, 3 (optional)"
+                        value={field.value ?? ''}
+                        // Clearing the box means "no position", not position 0.
+                        onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

@@ -17,7 +17,7 @@ export class AttributeService implements IAttributeService {
           name: data.name,
           unit: data.unit || null,
           status: data.status || StatusEnum.Draft,
-          displayOrder: data.displayOrder || null,
+          displayOrder: data.displayOrder ?? null,
         },
       });
       return attributeData;
@@ -41,10 +41,13 @@ export class AttributeService implements IAttributeService {
       const attributeData = await transactionClient.attribute.update({
         where: { id },
         data: {
-          name: data.name,
-          unit: data.unit || null,
-          status: data.status || StatusEnum.Draft,
-          displayOrder: data.displayOrder || null,
+          // Only the properties present in the body are written, which is the contract the
+          // route documents. Assigning unconditionally reset every column the caller omitted -
+          // a unit-only PUT was clearing displayOrder and knocking status back to Draft.
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.unit !== undefined && { unit: data.unit || null }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder ?? null }),
           updatedAt: new Date(),
         },
       });
