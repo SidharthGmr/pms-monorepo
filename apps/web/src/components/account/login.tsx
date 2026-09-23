@@ -106,10 +106,13 @@ export default function LoginModule() {
       return;
     }
     setShowLoader(false);
+
+    // `authorize()` throws the API's own message and NextAuth hands it back here, so this
+    // shows what the backend actually said rather than a fixed string.
     toast({
       variant: 'destructive',
       title: 'Error',
-      description: <span>Invalid username or password</span>,
+      description: <span>{loginStatus?.error || 'Invalid username or password. Please try again.'}</span>,
     });
   };
 

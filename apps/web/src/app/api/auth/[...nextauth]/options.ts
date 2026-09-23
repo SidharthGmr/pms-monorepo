@@ -43,10 +43,18 @@ export const authOptions: NextAuthOptions = {
           return response.data.data.user;
 
         } catch (error) {
+          // Throwing (rather than returning null) is what carries a message to the client:
+          // NextAuth puts `error.message` in the callback redirect, and `signIn()` reads it
+          // back off the URL. Returning null collapses everything to "CredentialsSignin".
           if (axios.isAxiosError(error)) {
-            throw new Error(error.response?.data?.message || 'Invalid username or password');
+            // No `response` means the request never landed - the API is down or unreachable.
+            // Reporting that as bad credentials sends the user off hunting for a typo.
+            if (!error.response) {
+              throw new Error('Cannot reach the server. Please try again in a moment.');
+            }
+            throw new Error(error.response.data?.message || 'Invalid email or password');
           }
-          return null;
+          throw new Error('Something went wrong while signing in. Please try again.');
         }
       },
     }),

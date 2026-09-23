@@ -1,0 +1,6 @@
+◇ injected env (27) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env.development // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (0) from .env.development // tip: ◈ secrets for agents [www.dotenvx.com]
+INFO api started {"port":4000,"env":"development","docs":"http://localhost:4000/api","siteMode":"local (clientId gate bypassed)","corsOrigins":["http://localhost:3000"]}
+❌ Brevo SMTP transporter error: Invalid login: 535 5.7.8 Authentication failed

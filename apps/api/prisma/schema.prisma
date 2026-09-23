@@ -502,7 +502,6 @@ model Wishlist {
 model brandName {
   id               Int               @id @default(autoincrement())
   name             String
-  /// Optional logo, same shape as `product.images` so one uploader serves both.
   images           String[]          @default([])
   storeCode        String
   status           Status            @default(Published)
