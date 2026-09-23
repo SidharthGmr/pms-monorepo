@@ -1,3 +1,4 @@
+import { BrandNameValidator, updateBrandNameValidator } from '@pms/types';
 import { Role } from '@prisma/client';
 import { Router } from 'express';
 import { container } from '../config/ioc.config';
@@ -8,7 +9,6 @@ import { authenticateToken } from '../middleware/authentication.middleware';
 import authorization from '../middleware/authorization.middleware';
 import { storeRequiredMiddleware } from '../middleware/store-required.middleware';
 import { validate } from '../middleware/validate';
-import { createBrandNameSchema, updateBrandNameSchema } from '../schemas/brandNameSchema';
 
 const brandNameRouter = Router();
 const brandNameController = container.get<BrandNameController>(TYPES.BrandNameController);
@@ -71,7 +71,7 @@ brandNameRouter.post(
   authenticateToken,
   authorization(STAFF_ROLES),
   storeRequiredMiddleware,
-  validate(createBrandNameSchema),
+  validate(BrandNameValidator),
   asyncHandler(brandNameController.create)
 );
 
@@ -231,7 +231,7 @@ brandNameRouter.put(
   authenticateToken,
   authorization(STAFF_ROLES),
   storeRequiredMiddleware,
-  validate(updateBrandNameSchema),
+  validate(updateBrandNameValidator),
   asyncHandler(brandNameController.update)
 );
 

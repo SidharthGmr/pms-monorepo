@@ -1,7 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateBrandNameModel } from '@/models/brand-name.model';
-import { BrandNameFilterParams } from '@/params/brand-name.params';
+import { BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 

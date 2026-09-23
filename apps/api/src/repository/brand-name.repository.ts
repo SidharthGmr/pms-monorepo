@@ -1,8 +1,7 @@
+import { BrandNameDto, BrandNameFilterParams } from "@pms/types";
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { BrandNameDto } from "../dtos/brand-name.dto";
 import { ListResponseDto } from "../dtos/list-response.dto";
-import { BrandNameFilterParams } from "../params/brand-name.params";
 import { IBrandNameRepository } from "./interfaces/ibrand-name.repository";
 
 // Sorting is client-driven, so only real columns are honoured - anything else falls
@@ -58,7 +57,9 @@ export class BrandNameRepository implements IBrandNameRepository {
 
         const showAll = filters?.showAllRecords === true;
 
-        if (filters?.status !== undefined) {
+        // `!= null` on purpose: the UI sends `status: null` for "no filter", which must
+        // behave like an absent filter rather than being passed to Prisma.
+        if (filters?.status != null) {
             where.status = filters.status;
         } else if (!showAll) {
             where.NOT = { status: Status.Trash };

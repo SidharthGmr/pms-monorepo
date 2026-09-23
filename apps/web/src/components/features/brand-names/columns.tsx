@@ -3,7 +3,7 @@ import ActionTooltip from '@/components/common/tooltip-action-button';
 import { Badge } from '@/components/ui/badge';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { BrandNameDto } from '@/dtos/brand-name.dto';
+import { BrandNameDto } from '@pms/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
@@ -71,7 +71,7 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
           const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
           return (
             <span className="text-sm text-muted-foreground">
-              {row.original.createdAt ? unitOfService.DateTimeService.convertToLocalDate(row.original.createdAt, true) : '—'}
+              {row.original.createdAt ? unitOfService.DateTimeService.convertToLocalDate(new Date(row.original.createdAt), true) : '—'}
             </span>
           );
         },
@@ -87,7 +87,7 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
           const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
           return (
             <span className="text-sm text-muted-foreground">
-              {row.original.updatedAt ? unitOfService.DateTimeService.convertToLocalDate(row.original.updatedAt, true) : '—'}
+              {row.original.updatedAt ? unitOfService.DateTimeService.convertToLocalDate(new Date(row.original.updatedAt), true) : '—'}
             </span>
           );
         },

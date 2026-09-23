@@ -10,12 +10,11 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useCreateBrandName, useGetBrandNameById, useUpdateBrandName } from '@/hooks/service-hooks/useBrandNameService';
-import { CreateBrandNameModel } from '@/models/brand-name.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { BrandNameValidator } from '@pms/types';
+import { brandNameFields, CreateBrandNameModel } from '@pms/types';
 
 interface ManageBrandNameProps {
   id?: number;
@@ -32,7 +31,9 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
   const { data: getbrandNameResponse, isLoading: isFetching } = useGetBrandNameById(id ?? 0, isEdit);
 
   const form = useForm<CreateBrandNameModel>({
-    resolver: zodResolver(BrandNameValidator),
+    // The flat field schema, not the `body` wrapped one the API route uses - RHF hands
+    // the resolver flat values, so the wrapped schema would never match.
+    resolver: zodResolver(brandNameFields),
     defaultValues: {
       name: '',
       images: [],

@@ -2,6 +2,8 @@
 export * from "./params/user-list.params";
 export * from "./params/category.params";
 export * from "./params/attribute.params";
+export * from "./params/brand-name.params";
+export * from "./params/page.params";
 
 // dtos
 export * from "./dto/list-response.dto";
@@ -15,6 +17,7 @@ export * from "./dto/purchase.dto";
 export * from "./dto/category.dto";
 export * from "./dto/profile.dto";
 export * from "./dto/attribute.dto";
+export * from "./dto/brand-name.dto";
 
 // enums
 export * from "./enum/role.enum";

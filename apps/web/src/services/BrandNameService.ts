@@ -4,10 +4,8 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IBrandNameService from './interfaces/IBrandNameService';
-import { BrandNameDto } from '@/dtos/brand-name.dto';
-import { CreateBrandNameModel  } from '@/models/brand-name.model';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
 import { ListResponseDto } from '@/dtos/list-response.dto';
-import { BrandNameFilterParams } from '@/params/brand-name.params';
 import Response from '@/dtos/Response';
 
 @injectable()

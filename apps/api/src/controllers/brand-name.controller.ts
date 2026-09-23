@@ -1,12 +1,9 @@
-import { CreateBrandModel } from '@pms/types';
-import { Status } from '@prisma/client';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, Status } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { BrandNameDto } from '../dtos/brand-name.dto';
 import CustomResponse from '../dtos/custom-response';
 import { ListResponseDto } from '../dtos/list-response.dto';
-import { BrandNameFilterParams } from '../params/brand-name.params';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE } from '../constants/responses';
 
@@ -17,7 +14,7 @@ export class BrandNameController {
     const storeCode = req.user?.storeCode;
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
 
-    const body = req.body as CreateBrandModel;
+    const body = req.body as CreateBrandNameModel;
     const data = await this.unitOfService.BrandName.create(body, storeCode);
     return res.status(201).json({ success: true, message: 'Brand name created successfully', data });
   };
@@ -68,7 +65,7 @@ export class BrandNameController {
     const storeCode = req.user?.storeCode;
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
 
-    const body = req.body as CreateBrandModel;
+    const body = req.body as CreateBrandNameModel;
     const data = await this.unitOfService.BrandName.update(id, body, storeCode);
     return res.status(200).json({ success: true, message: 'Brand name updated successfully', data });
   };

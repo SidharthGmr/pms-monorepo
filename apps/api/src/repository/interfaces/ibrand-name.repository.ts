@@ -1,6 +1,5 @@
-import { BrandNameDto } from "../../dtos/brand-name.dto";
+import { BrandNameDto, BrandNameFilterParams } from "@pms/types";
 import { ListResponseDto } from "../../dtos/list-response.dto";
-import { BrandNameFilterParams } from "../../params/brand-name.params";
 
 export interface IBrandNameRepository {
     findAll(filters?: BrandNameFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<BrandNameDto>>;

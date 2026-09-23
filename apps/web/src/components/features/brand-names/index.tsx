@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BrandNameDto } from '@/dtos/brand-name.dto';
 import { useGetAllBrandNames, useDeleteBrandName } from '@/hooks/service-hooks/useBrandNameService';
-import { BrandNameFilterParams } from '@/params/brand-name.params';
+import { BrandNameDto, BrandNameFilterParams, Status } from '@pms/types';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
@@ -38,7 +37,7 @@ export default function BrandNameList() {
 
   const [filterParams, setFilterParams] = useState<BrandNameFilterParams>({
     search: searchParams.get('search') || '',
-    status: searchParams.get('status') || '',
+    status: (searchParams.get('status') as Status) || null,
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     sortBy: searchParams.get('sortBy') || 'createdAt',
@@ -100,7 +99,7 @@ export default function BrandNameList() {
   const resetForm = () => {
     setFilterParams(() => {
       return {
-        status: searchParams.get('status') || '',
+        status: (searchParams.get('status') as Status) || null,
         page: +(searchParams.get('page') || 1),
         search: searchParams.get('search') || '',
         recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
@@ -145,7 +144,7 @@ export default function BrandNameList() {
             setFilterParams((oldValue) => {
               return {
                 ...oldValue,
-                status: value || '',
+                status: (value as Status) || null,
                 page: 1,
               };
             });
