@@ -219,8 +219,6 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
                 <FormItem>
                   <FormLabel>Display Order</FormLabel>
                   <FormControl>
-                    {/* Text input on purpose: the field holds whatever was typed and the
-                        shared schema coerces it to a number (or null) on submit. */}
                     <Input {...field} value={field.value ?? ''} placeholder="Enter Display Order" />
                   </FormControl>
                   <FormMessage />

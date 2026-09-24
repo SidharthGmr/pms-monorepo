@@ -3,7 +3,7 @@ import ActionTooltip from '@/components/common/tooltip-action-button';
 import { Badge } from '@/components/ui/badge';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CategoryDto } from '@/dtos/category.dto';
+import { CategoryResponseDto } from '@pms/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 
 export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
-  useMemo<ColumnDef<CategoryDto>[]>(
+  useMemo<ColumnDef<CategoryResponseDto>[]>(
     () => [
       {
         id: 'actions',

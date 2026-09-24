@@ -1,9 +1,9 @@
 ---
 name: pms-crud-api
-description: Build a new CRUD REST API endpoint set for this monorepo — shared types (dto/params/enum/model/validator) in packages/types, and the layered routes → controller → UnitOfService → service → UnitOfWork → repository → Prisma stack in apps/api (Node.js + TypeScript + Express 5 + Prisma + InversifyJS). Use whenever the user wants to "create an API", "add CRUD endpoints", "add a new module/entity/resource" (e.g. coupons, warehouses, taxes), "scaffold list/get/create/update/delete", wire a controller/service/repository, add a DTO/model/validator to @pms/types, or extend an existing entity with new endpoints. Also use when reviewing whether an API addition follows the project structure.
+description: Build a new CRUD REST API endpoint set for this monorepo — shared types (dto/params/enum/model/validator) in packages/types, and the layered routes → controller → UnitOfService → service → UnitOfWork → repository → Prisma stack in apps/api (Node.js + TypeScript + Express 5 + Prisma + InversifyJS). Use whenever the user wants to "create an API", "add CRUD endpoints", "add a new module/entity/resource" (e.g. coupons, warehouses, taxes), "scaffold list/get/create/update/delete", wire a controller/service/repository, add a DTO/model/validator to @pms/types, or extend an existing entity with new endpoints. Also use when reviewing whether an API addition follows the project structure. Covers the matching admin UI too: the shadcn Dialog add/edit form in apps/web (Manage<Entity>, react-hook-form + the shared zod validator, listing wrapper) — use it for "add the category form", "build the add/edit modal", "wire the UI for this API".
 metadata:
-  version: "1.6.0"
-  tags: "api, crud, express, typescript, prisma, inversify"
+  version: "1.7.0"
+  tags: "api, crud, express, typescript, prisma, inversify, nextjs, react-hook-form, zod, shadcn"
 ---
 
 # PMS CRUD API Builder
@@ -286,6 +286,62 @@ keys whose `Symbol.for("…")` string drops the leading `I`
   `CLIENT_ID`; set `SITE_MODE=local` when calling from scripts/curl during dev.
 - Prettier here: `singleQuote: true`, `semi: true`, `printWidth: 150`, 2-space indent.
 
+## Admin UI: the add/edit Dialog
+
+The `apps/web` half of a resource: a shadcn `Dialog` holding a react-hook-form, opened from the
+listing page. Full annotated component in `reference/dialog-template.md`.
+
+```
+components/features/<kebab-plural>/
+  add-edit/index.tsx   Manage<Entity>  — the Dialog + form
+  index.tsx            the list (columns, filters, pagination, opens the dialog for Edit)
+  listing-wrapper.tsx  page shell + "Add" button (opens the dialog with no id)
+  columns.tsx  filter.tsx  row-action.tsx
+```
+
+Rules, each of which has already cost a bug here:
+
+- **Pass the FLAT `xFields` schema to the resolver, never the `body` wrapped `XValidator`.**
+  Each validator file exports both: `xFields` (flat, for the form) and `XValidator` /
+  `updateXValidator` (wrapped, for the API's `validate()`, which parses
+  `{ body, query, params }`). React-hook-form hands the resolver flat values, so a wrapped
+  schema can never match — the form shows no errors and silently refuses to submit. Verify with
+  `xFields.safeParse({...formValues})` before wiring anything else.
+- **Import `zodResolver` from `@/lib/zod-resolver`**, not `@hookform/resolvers/zod`.
+  The installed `@hookform/resolvers@3.6.0` is the zod-3 build: it decides "is this a validation
+  error?" with `err.errors != null`, and zod 4 renamed that to `issues`, so it rethrows instead
+  of populating field errors.
+- **`id` is optional**: `id?: number` with `const isEdit = !!id && id > 0`. The listing wrapper
+  opens the same component for Add with no id.
+- **Mount conditionally** — `{showModal && <ManageX … />}`. Defaults are then fresh on every
+  open and the component never needs to reset itself on close. Listing pages get
+  `showModal`/`openModal`/`closeModal`/`uniqueId` from `@/hooks/use-modal-show-hide`.
+- **Branch create-vs-update on `isEdit`**, never on a flag set when the GET resolves — otherwise
+  a submit that beats the fetch creates a duplicate instead of updating.
+- **Types come from `@pms/types`**: `useForm<XModel>`, the DTO for the `reset()` mapping, the
+  validator for the resolver. No local `@/models`, `@/dtos`, `@/params`, `@/schema` copies, and
+  no Yup in new code — the shared zod validator is the single source for both apps.
+- **Numeric fields must match the column, not the widget.** A nullable `Int?` clears to `null`;
+  an `Int NOT NULL @default(0)` clears to `undefined` so the default applies. Getting this
+  backwards fails at the DB, not at validation. Table in the reference file.
+- **Loading and error states** are `isEdit && getResponse.isLoading` / `.isError` — the fetch
+  query, never the create/update `isPending`, which is false while fetching.
+- **Cancel routes through one handler** that raises a `ConfirmBox` when `isDirty`, and
+  `onClose(false)` — a cancel changed nothing, so the list must not refetch. `onClose(true)` is
+  for a successful save only. Pair it with `useUnsavedChangesWarning(isDirty)` and
+  `onInteractOutside={(e) => e.preventDefault()}` so a stray click cannot discard a half-filled
+  form.
+- **Errors**: `unitOfService.ErrorHandlerService.getErrorMessage(response)` into a destructive
+  toast. Never hand-roll the message — the API's own text is what should surface.
+- **Controls**: `Input`, `Textarea` (never a raw `<textarea>` with inline classes),
+  `SelectSearch` from `@/components/common/select-search` with `StatusData` from
+  `@/data/status.data` for status, `ProductImageUploader` for `string[]` image fields. Give each
+  `SelectSearch` its own `containerName` — copy-pasting another entity's is a common slip.
+
+Verify the UI half with `npm run lint` at **zero errors** (`next.config.mjs` sets
+`ignoreDuringBuilds: false`, so a warning is fine and an unused variable is not) and
+`npx tsc --noEmit` in both apps, since the shared types reach both.
+
 ## Comments
 
 **Write no comments.** The layers are uniform, so a reader who knows one resource knows them
@@ -309,13 +365,17 @@ signature. Delete commented-out code rather than leaving it — git has it.
 `packages/types` is the only home for dtos, params, enums, models and validators — including
 API-only ones. There is no "web needs it too" test any more.
 
-The migration there is partial, so expect three shapes in the tree (verified 2026-09-08):
+The migration there is partial, so expect three shapes in the tree (verified 2026-09-24):
 
 | State | Resources |
 |---|---|
-| Fully in `packages/types` — copy these | `attribute`, `category`, `purchase`, `profile` |
-| Split, so both halves exist | `product` (params still local), `product-variant` (dto + params still local), `brand-name` (only the validator moved; its `model` exists in **both** places) |
-| Not started | every other resource — ~80 files under `apps/api/src/{dtos,params,models,schemas}` |
+| Fully in `packages/types` — copy these | `attribute`, `brand-name`, `category`, `purchase`, `profile` |
+| Split, so both halves exist | `product` (params still local), `product-variant` (dto + params still local) |
+| Not started | every other resource — ~70 files under `apps/api/src/{dtos,params,models,schemas}`, and the matching `apps/web/src/{dtos,models,params,schema}` copies |
+
+`attribute`, `brand-name` and `category` are the three to copy: each has the flat + wrapped
+validator split, and `brand-name`/`category` also have their `apps/web` types pointed at
+`@pms/types` with no local duplicates left.
 
 `apps/api/src/enum/user.enum.ts` is also still imported by `auth.controller.ts`,
 `product.controller.ts` and `authRoutes.ts`. Read a split or unmigrated resource for its layer
@@ -328,3 +388,6 @@ across when you are already editing it.
 - `reference/layer-templates.md` — full copy-paste template for every file, `packages/types`
   first (sections 1–3b) then `apps/api` (4–9).
 - `reference/wiring.md` — the 5 registration edits, with the exact lines to add.
+- `reference/dialog-template.md` — the `apps/web` add/edit Dialog: full component, optional
+  image/relation/number field blocks, the listing-wrapper wiring, and the known deviations in
+  `ManageBrandName` not to copy.

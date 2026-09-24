@@ -3,7 +3,7 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { CategoryDto } from '@/dtos/category.dto';
+import { CategoryResponseDto } from '@pms/types';
 
 interface CategoryRowActionsProps<TData> {
   row: Row<TData>;
@@ -12,7 +12,7 @@ interface CategoryRowActionsProps<TData> {
 }
 
 export default function CategoryRowActions<TData>({ row, editRecord, deleteRecord }: CategoryRowActionsProps<TData>) {
-  const item = row.original as CategoryDto;
+  const item = row.original as CategoryResponseDto;
 
   return (
     <DropdownMenu modal={false}>

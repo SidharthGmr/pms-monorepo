@@ -1,5 +1,5 @@
 import { Role } from '@prisma/client';
-import { categoryValidator } from '@pms/types';
+import { categoryValidator, updateCategoryValidator } from '@pms/types';
 import { Router } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
@@ -265,7 +265,7 @@ categoryRouter.put(
   authenticateToken,
   authorization(STAFF_ROLES),
   storeRequiredMiddleware,
-  validate(categoryValidator),
+  validate(updateCategoryValidator),
   asyncHandler(categoryController.update)
 );
 

@@ -1,6 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateCategoryModel, UpdateCategoryModel } from '@/models/category.model';
+import { CategoryModel } from '@pms/types';
 
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { CategoryFilterParams } from '@pms/types';
@@ -11,7 +11,7 @@ const useCreateCategory = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (model: CreateCategoryModel) => unitOfService.CategoryService.create(model),
+        mutationFn: (model: CategoryModel) => unitOfService.CategoryService.create(model),
         onSettled: (response) => {
             if (response && response.status === 201) {
                 queryClient.invalidateQueries({ queryKey: ['CategoryService.getAll'] });
@@ -41,7 +41,7 @@ const useGetCategoryById = (id: number | string, enabled: boolean = true) => {
     });
 };
 
-type UpdateCategoryArgs = { id: number | string; model: UpdateCategoryModel };
+type UpdateCategoryArgs = { id: number | string; model: Partial<CategoryModel> };
 
 const useUpdateCategory = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

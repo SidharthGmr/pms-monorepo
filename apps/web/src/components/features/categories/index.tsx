@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { CategoryDto } from '@/dtos/category.dto';
+import { CategoryResponseDto } from '@pms/types';
 import { useGetAllCategories, useDeleteCategory } from '@/hooks/service-hooks/useCategoryService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
@@ -24,7 +24,7 @@ export default function CategoryList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
 
-  const [data, setData] = useState<CategoryDto[]>([]);
+  const [data, setData] = useState<CategoryResponseDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
@@ -57,7 +57,7 @@ export default function CategoryList() {
     }
   }, [getAllCategoriesResponse.status, getAllCategoriesResponse.data]);
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<CategoryDto>('name', 'asc', columns);
+  const { sorting, onSortingChange } = useTanstackTableSorting<CategoryResponseDto>('name', 'asc', columns);
   const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage ?? config.recordPerPage);
 
   const table = useCustomDataTable({

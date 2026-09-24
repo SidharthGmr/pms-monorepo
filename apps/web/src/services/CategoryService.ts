@@ -4,8 +4,7 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import ICategoryService from './interfaces/ICategoryService';
-import { CategoryDto } from '@/dtos/category.dto';
-import { CreateCategoryModel, UpdateCategoryModel } from '@/models/category.model';
+import { CategoryModel, CategoryResponseDto } from '@pms/types';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import Response from '@/dtos/Response';
 import { CategoryFilterParams } from '@pms/types';
@@ -18,28 +17,28 @@ export default class CategoryService implements ICategoryService {
         this.httpService = httpService;
     }
 
-    create(model: CreateCategoryModel): Promise<AxiosResponse<Response<CategoryDto>>> {
+    create(model: CategoryModel): Promise<AxiosResponse<Response<CategoryResponseDto>>> {
         return this.httpService
             .call()
-            .post<CategoryDto, AxiosResponse<Response<CategoryDto>>>('/categories', model);
+            .post<CategoryResponseDto, AxiosResponse<Response<CategoryResponseDto>>>('/categories', model);
     }
 
-    getAll(params?: CategoryFilterParams): Promise<AxiosResponse<Response<ListResponseDto<CategoryDto>>>> {
+    getAll(params?: CategoryFilterParams): Promise<AxiosResponse<Response<ListResponseDto<CategoryResponseDto>>>> {
         return this.httpService
             .call()
-            .get<ListResponseDto<CategoryDto>, AxiosResponse<Response<ListResponseDto<CategoryDto>>>>('/categories', { params });
+            .get<ListResponseDto<CategoryResponseDto>, AxiosResponse<Response<ListResponseDto<CategoryResponseDto>>>>('/categories', { params });
     }
 
-    getById(id: number | string): Promise<AxiosResponse<Response<CategoryDto>>> {
+    getById(id: number | string): Promise<AxiosResponse<Response<CategoryResponseDto>>> {
         return this.httpService
             .call()
-            .get<CategoryDto, AxiosResponse<Response<CategoryDto>>>(`/categories/${id}`);
+            .get<CategoryResponseDto, AxiosResponse<Response<CategoryResponseDto>>>(`/categories/${id}`);
     }
 
-    update(id: number | string, model: UpdateCategoryModel): Promise<AxiosResponse<Response<CategoryDto>>> {
+    update(id: number | string, model: Partial<CategoryModel>): Promise<AxiosResponse<Response<CategoryResponseDto>>> {
         return this.httpService
             .call()
-            .put<CategoryDto, AxiosResponse<Response<CategoryDto>>>(`/categories/${id}`, model);
+            .put<CategoryResponseDto, AxiosResponse<Response<CategoryResponseDto>>>(`/categories/${id}`, model);
     }
 
     delete(id: number | string): Promise<AxiosResponse<Response<void>>> {
