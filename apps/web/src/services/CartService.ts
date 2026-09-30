@@ -1,8 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CartDto } from '@/dtos/cart.dto';
 import Response from '@/dtos/Response';
-import { AddToCartModel, UpdateCartItemModel } from '@/models/cart.model';
+import { AddToCartModel, CartDto, UpdateCartItemModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import ICartService from './interfaces/ICartService';

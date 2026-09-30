@@ -1,4 +1,4 @@
-import { CartStatus } from '@prisma/client';
+import { CartStatus } from "../enum/cart-status.enum";
 
 export interface CartItemDto {
   id: number;
@@ -9,12 +9,10 @@ export interface CartItemDto {
   productSlug: string;
   productImages: string[];
   quantity: number;
-  /** Snapshot of the variant's selling price when the item was added. */
   unitPrice: number | null;
-  /** unitPrice * quantity, or null when no price was captured. */
   lineTotal: number | null;
-  addedAt: Date;
-  updatedAt: Date | null;
+  addedAt: Date | string;
+  updatedAt: Date | string | null;
 }
 
 export interface CartDto {
@@ -24,14 +22,11 @@ export interface CartDto {
   sessionToken: string | null;
   status: CartStatus;
   currency: string;
-  expiresAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date | null;
+  expiresAt: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string | null;
   items: CartItemDto[];
-  /** Number of distinct lines in the cart. */
   itemCount: number;
-  /** Sum of every line's quantity. */
   totalQuantity: number;
-  /** Sum of every line total. Lines with no unitPrice contribute 0. */
   totalAmount: number;
 }

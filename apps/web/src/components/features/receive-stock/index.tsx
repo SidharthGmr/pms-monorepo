@@ -21,14 +21,13 @@ import { SelectSearch } from '@/components/common/select-search';
 import ManageSupplier from '@/components/features/suppliers/add-edit';
 import { StatusEnum } from '@pms/types';
 
-
 export default function ReceiveStockPage() {
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const { data: productsData } = useGetAllProducts();
+  const { data: productsData } = useGetAllProducts({ showAllRecords: true, status: StatusEnum.Published });
   const products = productsData?.data?.data?.data || [];
 
   const { data: suppliersData } = useGetAllSuppliers({ showAllRecords: true, status: StatusEnum.Published });
@@ -93,7 +92,7 @@ export default function ReceiveStockPage() {
       // The signing route fixes folder + timestamp server-side; send exactly those
       // (plus file and api_key) or Cloudinary rejects the signature.
       const { data: signed } = await axios.get<{ data: { apiKey: string; cloudName: string; timestamp: number; folder: string; signature: string } }>(
-        '/api/images/sign-cloudinary-params',
+        '/api/images/sign-cloudinary-params'
       );
       const { apiKey, cloudName, timestamp, folder, signature } = signed.data;
 

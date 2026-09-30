@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CartDto } from '../dtos/cart.dto';
+import { AddToCartCommand, CartDto, UpdateCartItemCommand } from '@pms/types';
 import CustomResponse from '../dtos/custom-response';
-import { AddToCartModel, UpdateCartItemModel } from '../models/cart.model';
 import { CartOwner } from '../repository/interfaces/icart.repository';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 
@@ -66,7 +65,7 @@ export class CartController {
     }
 
     const owner = this.ownerFrom(req, storeId, body.userId);
-    const model: AddToCartModel = {
+    const model: AddToCartCommand = {
       storeId,
       userId: owner.userId,
       sessionToken: owner.sessionToken,
@@ -93,7 +92,7 @@ export class CartController {
     }
 
     const owner = this.ownerFrom(req, storeId, body.userId);
-    const model: UpdateCartItemModel = {
+    const model: UpdateCartItemCommand = {
       storeId,
       userId: owner.userId,
       sessionToken: owner.sessionToken,

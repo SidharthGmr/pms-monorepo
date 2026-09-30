@@ -1,5 +1,4 @@
-import { CartDto } from '../../dtos/cart.dto';
-import { AddToCartModel, UpdateCartItemModel } from '../../models/cart.model';
+import { AddToCartCommand, CartDto, UpdateCartItemCommand } from '@pms/types';
 import { CartOwner } from '../../repository/interfaces/icart.repository';
 
 export interface ICartService {
@@ -11,12 +10,12 @@ export interface ICartService {
    * Each productId is resolved to its currently effective variant; a product
    * with no priced variant is rejected rather than silently dropped.
    */
-  addProducts(data: AddToCartModel): Promise<CartDto>;
+  addProducts(data: AddToCartCommand): Promise<CartDto>;
 
   /** Sets an absolute quantity for a product's line. 0 removes it. */
-  updateProductQuantity(productId: number, data: UpdateCartItemModel): Promise<CartDto>;
+  updateProductQuantity(productId: number, data: UpdateCartItemCommand): Promise<CartDto>;
 
-  setVariantQuantity(variantId: number, data: UpdateCartItemModel): Promise<CartDto>;
+  setVariantQuantity(variantId: number, data: UpdateCartItemCommand): Promise<CartDto>;
 
   removeVariant(variantId: number, owner: CartOwner): Promise<CartDto>;
 

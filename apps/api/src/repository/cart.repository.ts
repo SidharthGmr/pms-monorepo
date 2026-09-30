@@ -1,6 +1,6 @@
+import { CartDto, CartItemDto } from '@pms/types';
 import { CartStatus, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
-import { CartDto, CartItemDto } from '../dtos/cart.dto';
 import { CartOwner, ICartRepository } from './interfaces/icart.repository';
 
 const cartInclude = {

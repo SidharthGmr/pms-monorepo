@@ -1,6 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { AddToCartModel, UpdateCartItemModel } from '@/models/cart.model';
+import { AddToCartModel, UpdateCartItemModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 

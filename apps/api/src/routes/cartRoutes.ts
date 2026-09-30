@@ -1,9 +1,12 @@
+import { AddToCartValidator, UpdateCartItemValidator } from '@pms/types';
 import { Router } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import { CartController } from '../controllers/cart.controller';
 import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
+import { storeRequiredMiddleware } from '../middleware/store-required.middleware';
+import { validate } from '../middleware/validate';
 
 const cartRouter = Router();
 const cartController = container.get<CartController>(TYPES.CartController);
@@ -43,7 +46,7 @@ const cartController = container.get<CartController>(TYPES.CartController);
  *       400:
  *         description: Store code missing from the token
  */
-cartRouter.get('/active', authenticateToken, asyncHandler(cartController.getActive));
+cartRouter.get('/active', authenticateToken, storeRequiredMiddleware, asyncHandler(cartController.getActive));
 
 /**
  * @swagger
@@ -87,7 +90,7 @@ cartRouter.get('/active', authenticateToken, asyncHandler(cartController.getActi
  *       400:
  *         description: Invalid payload, or a product has no active price
  */
-cartRouter.post('/', authenticateToken, asyncHandler(cartController.addProducts));
+cartRouter.post('/', authenticateToken, storeRequiredMiddleware, validate(AddToCartValidator), asyncHandler(cartController.addProducts));
 
 /**
  * @swagger
@@ -128,7 +131,13 @@ cartRouter.post('/', authenticateToken, asyncHandler(cartController.addProducts)
  *       404:
  *         description: No active cart found
  */
-cartRouter.put('/items/:productId', authenticateToken, asyncHandler(cartController.updateQuantity));
+cartRouter.put(
+  '/items/:productId',
+  authenticateToken,
+  storeRequiredMiddleware,
+  validate(UpdateCartItemValidator),
+  asyncHandler(cartController.updateQuantity)
+);
 
 /**
  * @swagger
@@ -156,7 +165,7 @@ cartRouter.put('/items/:productId', authenticateToken, asyncHandler(cartControll
  *       404:
  *         description: No active cart found
  */
-cartRouter.delete('/items/:productId', authenticateToken, asyncHandler(cartController.removeProduct));
+cartRouter.delete('/items/:productId', authenticateToken, storeRequiredMiddleware, asyncHandler(cartController.removeProduct));
 
 /**
  * @swagger
@@ -180,9 +189,15 @@ cartRouter.delete('/items/:productId', authenticateToken, asyncHandler(cartContr
  *         description: No active cart found
  */
 /** Variant-keyed lines: what a storefront cart actually holds. */
-cartRouter.put('/variants/:variantId', authenticateToken, asyncHandler(cartController.updateVariantQuantity));
-cartRouter.delete('/variants/:variantId', authenticateToken, asyncHandler(cartController.removeVariant));
+cartRouter.put(
+  '/variants/:variantId',
+  authenticateToken,
+  storeRequiredMiddleware,
+  validate(UpdateCartItemValidator),
+  asyncHandler(cartController.updateVariantQuantity)
+);
+cartRouter.delete('/variants/:variantId', authenticateToken, storeRequiredMiddleware, asyncHandler(cartController.removeVariant));
 
-cartRouter.delete('/', authenticateToken, asyncHandler(cartController.clear));
+cartRouter.delete('/', authenticateToken, storeRequiredMiddleware, asyncHandler(cartController.clear));
 
 export default cartRouter;

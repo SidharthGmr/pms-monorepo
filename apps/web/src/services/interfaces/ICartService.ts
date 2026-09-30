@@ -1,6 +1,5 @@
-import { CartDto } from '@/dtos/cart.dto';
 import Response from '@/dtos/Response';
-import { AddToCartModel, UpdateCartItemModel } from '@/models/cart.model';
+import { AddToCartModel, CartDto, UpdateCartItemModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface ICartService {

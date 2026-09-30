@@ -1,11 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { CartDto } from '../dtos/cart.dto';
+import { AddToCartCommand, CartDto, UpdateCartItemCommand } from '@pms/types';
 import ClientError from '../exceptions/client-error';
 import { payableForVariant } from '../utils/variant-pricing';
 import NotFoundError from '../exceptions/not-found-error';
-import { AddToCartModel, UpdateCartItemModel } from '../models/cart.model';
 import { CartOwner, ICartRepository } from '../repository/interfaces/icart.repository';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { ICartService } from './interfaces/Icart.service';
@@ -72,7 +71,7 @@ export class CartService implements ICartService {
     return { variantId: variant.id, unitPrice };
   }
 
-  async addProducts(data: AddToCartModel): Promise<CartDto> {
+  async addProducts(data: AddToCartCommand): Promise<CartDto> {
     const owner: CartOwner = { storeId: data.storeId, userId: data.userId, sessionToken: data.sessionToken };
     this.assertOwner(owner);
 
@@ -127,7 +126,7 @@ export class CartService implements ICartService {
     });
   }
 
-  async updateProductQuantity(productId: number, data: UpdateCartItemModel): Promise<CartDto> {
+  async updateProductQuantity(productId: number, data: UpdateCartItemCommand): Promise<CartDto> {
     const owner: CartOwner = { storeId: data.storeId, userId: data.userId, sessionToken: data.sessionToken };
     this.assertOwner(owner);
 
@@ -149,7 +148,7 @@ export class CartService implements ICartService {
   }
 
   /** Sets an absolute quantity for one SKU. 0 removes the line. */
-  async setVariantQuantity(variantId: number, data: UpdateCartItemModel): Promise<CartDto> {
+  async setVariantQuantity(variantId: number, data: UpdateCartItemCommand): Promise<CartDto> {
     const owner: CartOwner = { storeId: data.storeId, userId: data.userId, sessionToken: data.sessionToken };
     this.assertOwner(owner);
 

@@ -1,5 +1,5 @@
+import { CartDto } from '@pms/types';
 import { Prisma } from '@prisma/client';
-import { CartDto } from '../../dtos/cart.dto';
 
 /**
  * A cart belongs to exactly one of a signed-in user or a guest session, so both
