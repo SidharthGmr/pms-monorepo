@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { useClearCart, useGetActiveCart, useRemoveFromCart, useUpdateCartQuantity } from '@/hooks/service-hooks/useCartService';
+import { useClearCart, useGetActiveCart, useRemoveCartVariant, useUpdateCartVariantQuantity } from '@/hooks/service-hooks/useCartService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Minus, Package, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -28,8 +28,10 @@ export default function CartPage() {
   const cart = cartResponse?.data?.data ?? null;
   const items = cart?.items ?? [];
 
-  const updateQuantityMutation = useUpdateCartQuantity();
-  const removeMutation = useRemoveFromCart();
+  // Each line is one variant, so edit by variantId. The product-keyed hooks cannot tell
+  // two variants of the same product apart.
+  const updateQuantityMutation = useUpdateCartVariantQuantity();
+  const removeMutation = useRemoveCartVariant();
   const clearMutation = useClearCart();
 
   const isMutating = updateQuantityMutation.isPending || removeMutation.isPending || clearMutation.isPending;
@@ -47,12 +49,12 @@ export default function CartPage() {
     }
   };
 
-  const setQuantity = (productId: number, quantity: number) =>
-    runCartAction(() => updateQuantityMutation.mutateAsync({ productId, model: { quantity } }), 'Could not update quantity');
+  const setQuantity = (variantId: number, quantity: number) =>
+    runCartAction(() => updateQuantityMutation.mutateAsync({ variantId, model: { quantity } }), 'Could not update quantity');
 
-  const removeItem = (productId: number) => runCartAction(() => removeMutation.mutateAsync({ productId }), 'Could not remove item');
+  const removeItem = (variantId: number) => runCartAction(() => removeMutation.mutateAsync(variantId), 'Could not remove item');
 
-  const clearCart = () => runCartAction(() => clearMutation.mutateAsync(undefined), 'Could not clear cart');
+  const clearCart = () => runCartAction(() => clearMutation.mutateAsync(), 'Could not clear cart');
 
   const currency = cart?.currency ?? 'INR';
   const money = (value: number | null) => `${currency} ${(value ?? 0).toFixed(2)}`;
@@ -118,6 +120,9 @@ export default function CartPage() {
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">{item.productName}</p>
+                  {item.variantName && item.variantName !== item.productName && (
+                    <p className="truncate text-xs text-muted-foreground">{item.variantName}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {item.unitPrice === null ? 'No price recorded' : `${money(item.unitPrice)} each`}
                   </p>
@@ -128,7 +133,7 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 rounded-md hover:bg-background"
-                        onClick={() => setQuantity(item.productId, item.quantity - 1)}
+                        onClick={() => setQuantity(item.variantId, item.quantity - 1)}
                         disabled={isMutating}
                         aria-label={`Decrease quantity of ${item.productName}`}
                         type="button"
@@ -140,7 +145,7 @@ export default function CartPage() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 rounded-md hover:bg-background"
-                        onClick={() => setQuantity(item.productId, item.quantity + 1)}
+                        onClick={() => setQuantity(item.variantId, item.quantity + 1)}
                         disabled={isMutating}
                         aria-label={`Increase quantity of ${item.productName}`}
                         type="button"
@@ -153,7 +158,7 @@ export default function CartPage() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => removeItem(item.productId)}
+                      onClick={() => removeItem(item.variantId)}
                       disabled={isMutating}
                       aria-label={`Remove ${item.productName} from cart`}
                       type="button"

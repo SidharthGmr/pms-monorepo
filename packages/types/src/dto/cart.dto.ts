@@ -4,6 +4,8 @@ export interface CartItemDto {
   id: number;
   cartId: number;
   variantId: number;
+  /** Tells two lines of the same product apart, e.g. "Red / XL". */
+  variantName: string;
   productId: number;
   productName: string;
   productSlug: string;

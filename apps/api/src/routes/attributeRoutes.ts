@@ -129,6 +129,18 @@ attributeRouter.post(
  *           type: string
  *           format: date-time
  *         required: false
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [name, unit, status, displayOrder, createdAt, updatedAt]
+ *         required: false
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         required: false
  *     responses:
  *       200:
  *         description: Attributes fetched successfully
@@ -250,8 +262,10 @@ attributeRouter.put(
  *         schema:
  *           type: integer
  *     responses:
- *       204:
- *         description: Attribute deleted successfully
+ *       200:
+ *         description: Attribute moved to Trash; the trashed row is returned
+ *       409:
+ *         description: Products still use this attribute
  *       400:
  *         description: Invalid id
  *       401:

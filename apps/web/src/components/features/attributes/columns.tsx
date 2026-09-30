@@ -31,10 +31,11 @@ export const useAttributeColumns = (editRecord: (id: number) => void, deleteReco
       {
         id: 'displayOrder',
         accessorKey: 'displayOrder',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase text-center" title="Display Order" />,
         cell: ({ row }) => <span className="text-sm text-muted-foreground text-center block">{row.original.displayOrder ?? '—'}</span>,
+        meta: { sortingKey: 'displayOrder' },
       },
       {
         id: 'actions-mobile',
@@ -53,16 +54,20 @@ export const useAttributeColumns = (editRecord: (id: number) => void, deleteReco
       {
         id: 'status',
         accessorKey: 'status',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'scusses' : 'orange'}>{row.original.status}</Badge>,
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === StatusValues.Published ? 'scusses' : row.original.status === StatusValues.Trash ? 'destructive' : 'orange'}>
+            {row.original.status}
+          </Badge>
+        ),
         meta: { sortingKey: 'status' },
       },
       {
         id: 'createdAt',
         accessorKey: 'createdAt',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Created At" />,
         cell: ({ row }) => {

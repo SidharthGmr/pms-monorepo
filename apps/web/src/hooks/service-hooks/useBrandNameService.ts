@@ -63,7 +63,8 @@ const useDeleteBrandName = () => {
     return useMutation({
         mutationFn: (id: number | string) => unitOfService.BrandNameService.delete(id),
         onSettled: (response) => {
-            if (response && response.status === 204) {
+            // Delete answers 200 with the trashed row, like category.
+            if (response && response.status === 200) {
                 queryClient.invalidateQueries({ queryKey: ['BrandNameService.getAll'] });
             }
         },

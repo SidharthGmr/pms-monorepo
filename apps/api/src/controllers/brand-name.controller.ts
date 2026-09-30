@@ -1,4 +1,4 @@
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, Status } from '@pms/types';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
@@ -6,6 +6,7 @@ import CustomResponse from '../dtos/custom-response';
 import { ListResponseDto } from '../dtos/list-response.dto';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE } from '../constants/responses';
+import { parseStatusQuery } from '../utils/status-query';
 
 export class BrandNameController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -35,7 +36,7 @@ export class BrandNameController {
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
         recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
         search: req.query['search'] as string | undefined,
-        status: req.query['status'] ? req.query['status'] as Status : undefined,
+        status: parseStatusQuery(req.query['status']),
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined,
         storeCode: req.user?.storeCode || undefined,
@@ -77,7 +78,8 @@ export class BrandNameController {
     const storeCode = req.user?.storeCode;
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
 
+    // 200 with the trashed row, the same as category. A 204 made Express drop the body.
     const data = await this.unitOfService.BrandName.delete(id, storeCode);
-    return res.status(204).json({ success: true, message: 'Brand name deleted successfully', data });
+    return res.status(200).json({ success: true, message: 'Brand name deleted successfully', data });
   };
 }

@@ -113,7 +113,7 @@ model Cart {
   userId       String?
   sessionToken String?    @unique @db.VarChar(255)
   status       CartStatus @default(ACTIVE)
-  currency     String     @default("IND") @db.Char(3)
+  currency     String     @default("INR") @db.Char(3)
   expiresAt    DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -122,6 +122,10 @@ model Cart {
   user  users?     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   items CartItem[]
 
+  // Also unique: Cart_active_owner_key on (storeId, userId) WHERE status = 'ACTIVE' AND
+  // userId IS NOT NULL - one active cart per user and store, so concurrent "Add to cart"
+  // requests cannot open two. It is a partial index in migration 20260930120000_review_fixes
+  // (Prisma 5 cannot declare one) and CartRepository.getOrCreateActive relies on it.
   @@index([storeId, status, updatedAt])
   @@index([userId, status])
 }
@@ -182,7 +186,7 @@ model category {
   description  String?
   images       String[]  @default([])
   parentId     Int?
-  status       Status    @default(Published)
+  status       Status    @default(Draft)
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -203,8 +207,10 @@ model category {
   brandNames       brandName[]       @relation("BrandNameToCategory")
   masterAttributes MasterAttribute[]
 
+  // Also unique: category_storeCode_name_live_key on (storeCode, name) WHERE deletedAt IS NULL - a partial index in migration
+  // 20260930120000_review_fixes. Prisma 5 cannot declare partial indexes, so it is not listed
+  // here; if `prisma migrate dev` ever generates a DROP INDEX for it, remove that line.
   @@unique([storeCode, id])
-  @@unique([storeCode, name])
   @@index([storeCode, parentId])
   @@index([storeCode, status])
   @@index([storeCode, displayOrder])
@@ -504,7 +510,7 @@ model brandName {
   name             String
   images           String[]          @default([])
   storeCode        String
-  status           Status            @default(Published)
+  status           Status            @default(Draft)
   displayOrder     Int?              @default(0)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime?
@@ -513,7 +519,9 @@ model brandName {
   categories       category[]        @relation("BrandNameToCategory")
   masterAttributes MasterAttribute[]
 
-  @@unique([name, storeCode])
+  // Also unique: brandName_storeCode_name_live_key on (storeCode, name) WHERE status <> 'Trash' - a partial index in migration
+  // 20260930120000_review_fixes. Prisma 5 cannot declare partial indexes, so it is not listed
+  // here; if `prisma migrate dev` ever generates a DROP INDEX for it, remove that line.
   @@unique([storeCode, id])
   @@index([id])
   @@index([storeCode])
@@ -524,13 +532,16 @@ model attribute {
   name         String
   unit         String?
   storeCode    String
-  status       Status    @default(Published)
+  status       Status    @default(Draft)
   displayOrder Int?      @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   store        store     @relation(fields: [storeCode], references: [code])
   products     product[]
 
+  // Also unique: attribute_storeCode_name_live_key on (storeCode, name) WHERE status <> 'Trash' - a partial index in migration
+  // 20260930120000_review_fixes. Prisma 5 cannot declare partial indexes, so it is not listed
+  // here; if `prisma migrate dev` ever generates a DROP INDEX for it, remove that line.
   @@unique([storeCode, id])
   @@index([id])
   @@index([storeCode])

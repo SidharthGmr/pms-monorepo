@@ -10,7 +10,9 @@ const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt',
 // The response shape for every category read. A field marked `false` is withheld, so this
 // has to be passed to every query in this file - a method that omits `select` returns the
 // whole row instead, and tsc cannot see the difference.
-const categorySelect = {
+// Exported because the service writes through `transactionClient`, and those writes must
+// withhold the same fields.
+export const categorySelect = {
   id: true,
   storeCode: false,
   name: true,

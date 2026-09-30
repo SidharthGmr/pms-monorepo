@@ -30,8 +30,10 @@ export class CartService implements ICartService {
    * default (first active) variant and price it from the ledger, matching what product
    * listings show as `currentPrice`.
    */
-  private async resolveVariant(productId: number, tx: Prisma.TransactionClient): Promise<{ variantId: number; unitPrice: number }> {
-    const [variant] = await this.unitOfWork.ProductVariant.getActive(productId, tx);
+  private async resolveVariant(productId: number, storeCode: string, tx: Prisma.TransactionClient): Promise<{ variantId: number; unitPrice: number }> {
+    // Scoped to the cart's store: product ids are global, so without this a product from
+    // another store could be dropped into this store's cart.
+    const [variant] = await this.unitOfWork.ProductVariant.getActive(productId, tx, storeCode);
     if (!variant) {
       throw new ClientError(`Product ${productId} has no active variant yet, so it cannot be added to a cart.`);
     }
@@ -44,6 +46,26 @@ export class CartService implements ICartService {
     return { variantId: variant.id, unitPrice };
   }
 
+  /**
+   * The variant of the line already in this cart for a product. The product-keyed endpoints
+   * must act on what the shopper actually has, not re-resolve the product's default variant -
+   * otherwise a line for variant B would edit, or 404 on, variant A. When the product has
+   * more than one line there is no safe way to pick one, so the caller must use the
+   * variant-keyed endpoint.
+   */
+  private lineVariantForProduct(cart: CartDto, productId: number): number {
+    const lines = cart.items.filter((item) => item.productId === productId);
+    if (lines.length === 0) {
+      throw new NotFoundError(`Product ${productId} is not in your cart.`);
+    }
+    if (lines.length > 1) {
+      throw new ClientError(
+        `Product ${productId} has ${lines.length} variants in your cart. Update them individually with /carts/variants/{variantId}.`
+      );
+    }
+    return lines[0]!.variantId;
+  }
+
   async getActive(owner: CartOwner): Promise<CartDto | null> {
     this.assertOwner(owner);
     return this.cartRepo.getActive(owner);
@@ -54,15 +76,13 @@ export class CartService implements ICartService {
    * guess wrong - but it has to prove the variant is sellable and belongs to this store,
    * because the id arrives from the client.
    */
-  private async resolveChosenVariant(variantId: number, storeId: number, tx: Prisma.TransactionClient): Promise<{ variantId: number; unitPrice: number }> {
-    const store = await this.unitOfWork.Store.getById(storeId);
-    const variant = await this.unitOfWork.ProductVariant.findById(variantId, tx);
+  private async resolveChosenVariant(variantId: number, storeCode: string, tx: Prisma.TransactionClient): Promise<{ variantId: number; unitPrice: number }> {
+    // `findDetailById` is scoped to the store and skips soft-deleted rows, so a variant from
+    // another store or one that was deleted comes back null rather than being sold.
+    const variant = await this.unitOfWork.ProductVariant.findDetailById(variantId, storeCode, tx);
 
     if (!variant || !variant.isActive) {
       throw new ClientError(`Variant ${variantId} is not available.`);
-    }
-    if (store && variant.storeCode !== store.code) {
-      throw new ClientError(`Variant ${variantId} belongs to a different store.`);
     }
     const unitPrice = payableForVariant(variant);
     if (unitPrice == null) {
@@ -74,6 +94,11 @@ export class CartService implements ICartService {
   async addProducts(data: AddToCartCommand): Promise<CartDto> {
     const owner: CartOwner = { storeId: data.storeId, userId: data.userId, sessionToken: data.sessionToken };
     this.assertOwner(owner);
+
+    // Looked up once per request, not once per line.
+    const store = await this.unitOfWork.Store.getById(data.storeId);
+    if (!store) throw new NotFoundError(`Store ${data.storeId} not found.`);
+    const storeCode = store.code;
 
     // Variant-keyed adds are the storefront path: the shopper chose a specific SKU.
     if (data.variantIds && data.variantIds.length > 0) {
@@ -88,7 +113,7 @@ export class CartService implements ICartService {
       return this.unitOfWork.transaction(async (tx) => {
         const cart = await this.cartRepo.getOrCreateActive(owner, data.currency ?? DEFAULT_CURRENCY, tx);
         for (const [variantId, quantity] of quantityByVariant) {
-          const resolved = await this.resolveChosenVariant(variantId, data.storeId, tx);
+          const resolved = await this.resolveChosenVariant(variantId, storeCode, tx);
           await this.cartRepo.addItem(cart.id, resolved.variantId, quantity, resolved.unitPrice, tx);
         }
         const updated = await this.cartRepo.getById(cart.id, tx);
@@ -115,7 +140,7 @@ export class CartService implements ICartService {
       const cart = await this.cartRepo.getOrCreateActive(owner, data.currency ?? DEFAULT_CURRENCY, tx);
 
       for (const [productId, quantity] of quantityByProduct) {
-        const { variantId, unitPrice } = await this.resolveVariant(productId, tx);
+        const { variantId, unitPrice } = await this.resolveVariant(productId, storeCode, tx);
         await this.cartRepo.addItem(cart.id, variantId, quantity, unitPrice, tx);
       }
 
@@ -138,7 +163,7 @@ export class CartService implements ICartService {
       const cart = await this.cartRepo.getActive(owner, tx);
       if (!cart) throw new NotFoundError('No active cart found');
 
-      const { variantId } = await this.resolveVariant(productId, tx);
+      const variantId = this.lineVariantForProduct(cart, productId);
       await this.cartRepo.setItemQuantity(cart.id, variantId, data.quantity, tx);
 
       const updated = await this.cartRepo.getById(cart.id, tx);
@@ -196,7 +221,7 @@ export class CartService implements ICartService {
       const cart = await this.cartRepo.getActive(owner, tx);
       if (!cart) throw new NotFoundError('No active cart found');
 
-      const { variantId } = await this.resolveVariant(productId, tx);
+      const variantId = this.lineVariantForProduct(cart, productId);
       await this.cartRepo.removeItem(cart.id, variantId, tx);
 
       const updated = await this.cartRepo.getById(cart.id, tx);

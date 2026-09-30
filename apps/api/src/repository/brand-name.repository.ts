@@ -59,9 +59,11 @@ export class BrandNameRepository implements IBrandNameRepository {
 
         // `!= null` on purpose: the UI sends `status: null` for "no filter", which must
         // behave like an absent filter rather than being passed to Prisma.
+        // `showAllRecords` only turns off paging. It used to also switch off the Trash
+        // exclusion, so every dropdown and the admin list showed deleted brands.
         if (filters?.status != null) {
             where.status = filters.status;
-        } else if (!showAll) {
+        } else {
             where.NOT = { status: Status.Trash };
         }
         const skip = showAll ? undefined : (page - 1) * limit;
@@ -90,6 +92,10 @@ export class BrandNameRepository implements IBrandNameRepository {
     // not found - the caller cannot probe ids outside its own tenant.
     async findById(id: number, storeCode: string): Promise<BrandNameDto | null> {
         return prisma.brandName.findUnique({ where: { storeCode_id: { storeCode, id } }, select: brandNameSelect });
+    }
+
+    async countProducts(id: number, storeCode: string): Promise<number> {
+        return prisma.product.count({ where: { brandNameId: id, storeCode, deletedAt: null } });
     }
 
     async delete(id: number, storeCode: string): Promise<BrandNameDto> {

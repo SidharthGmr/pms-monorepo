@@ -20,13 +20,13 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
         cell: ({ row }) => <BrandNameRowActions row={row} editRecord={editRecord} deleteRecord={deleteRecord} />,
       },
       {
-        id: 'brandName',
-        accessorKey: 'brandName',
-        enableSorting: false,
+        id: 'name',
+        accessorKey: 'name',
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Brand Name" />,
         cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
-        meta: { sortingKey: 'brandName' },
+        meta: { sortingKey: 'name' },
       },
       {
         id: 'actions-mobile',
@@ -45,17 +45,21 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
       {
         id: 'status',
         accessorKey: 'status',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
-        cell: ({ row }) => <Badge variant={row.original.status === StatusValues.Published ? 'green' : 'orange'}>{row.original.status}</Badge>,
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === StatusValues.Published ? 'green' : row.original.status === StatusValues.Trash ? 'destructive' : 'orange'}>
+            {row.original.status}
+          </Badge>
+        ),
         meta: { sortingKey: 'status' },
       },
 
       {
         id: 'displayOrder',
         accessorKey: 'displayOrder',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Display Order" />,
         cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.displayOrder ?? '—'}</span>,
@@ -64,7 +68,7 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
       {
         id: 'createdAt',
         accessorKey: 'createdAt',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Created At" />,
         cell: ({ row }) => {
@@ -80,7 +84,7 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
       {
         id: 'updatedAt',
         accessorKey: 'updatedAt',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Updated At" />,
         cell: ({ row }) => {

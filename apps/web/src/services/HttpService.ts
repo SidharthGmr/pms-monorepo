@@ -1,5 +1,5 @@
 import config from '@/config';
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { injectable } from 'inversify';
 import { getSession, signOut } from 'next-auth/react';
 import IHttpService from './interfaces/IHttpService';
@@ -51,60 +51,51 @@ export default class HttpService implements IHttpService {
     }
 
     instance.interceptors.response.use(
-      (response) => {
-        return response;
-      },
-      async (error: Error | AxiosError) => {
-        const originalRequest = (error as any).config;
+      // `validateStatus` resolves every status below 500, so a 401 arrives here as a normal
+      // response. The refresh used to sit in the rejected branch below, which only ever sees
+      // 5xx and network errors, so an expired token was never renewed.
+      async (response: AxiosResponse) => {
+        const originalRequest = response.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-        // Handle 401 Unauthorized - Attempt to Auto-Renew Token
-        if (axios.isAxiosError(error) && error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
+        if (response.status !== 401 || originalRequest._retry || typeof window === 'undefined') {
+          // 403 is left for the caller to show. A blanket redirect to /access-denied would
+          // fire for "no store assigned" too, and middleware.ts turns a direct visit to that
+          // page into page-not-found, so it never helped.
+          return response;
+        }
 
-          try {
-            // Calling getSession() forces NextAuth's jwt callback to run.
-            // If the token is expired, NextAuth will auto-refresh it based on the logic in options.ts
-            const session = await getSession();
+        originalRequest._retry = true;
 
-            if ((session as any)?.error === "RefreshAccessTokenError") {
-              // Refresh token is completely expired or invalid. Force logout.
-              localStorage.removeItem('at');
-              await signOut({ callbackUrl: '/' });
-              return Promise.reject(error);
-            }
+        try {
+          // Calling getSession() forces NextAuth's jwt callback to run, which refreshes an
+          // expired access token (see options.ts).
+          const session = await getSession();
 
-            const newToken = (session?.user as any)?.token;
-            if (newToken) {
-              // Update local storage and headers with the brand new token
-              localStorage.setItem('at', newToken);
-              instance.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-              originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-
-              // Retry the original failed request invisibly
-              return instance(originalRequest);
-            }
-          } catch (refreshError) {
-            // Failsafe logout if refresh throws an unexpected error
+          if ((session as any)?.error === 'RefreshAccessTokenError') {
+            // The refresh token is expired or revoked too. Force logout.
             localStorage.removeItem('at');
             await signOut({ callbackUrl: '/' });
-            return Promise.reject(refreshError);
+            return response;
           }
+
+          const newToken = (session?.user as any)?.token;
+          if (!newToken) return response;
+
+          localStorage.setItem('at', newToken);
+          instance.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+
+          // Retry the original request once with the new token.
+          return instance(originalRequest);
+        } catch {
+          // Failsafe logout if the refresh itself throws.
+          localStorage.removeItem('at');
+          await signOut({ callbackUrl: '/' });
+          return response;
         }
-
-        // Handle 403 Forbidden - Access Denied
-        if (axios.isAxiosError(error) && error.response?.status === 403) {
-          if (typeof window !== 'undefined') {
-            window.location.href = '/access-denied';
-          }
-        }
-
-        const statusCode: number = (error as AxiosError)?.response?.status || 0;
-        if (statusCode >= 400 && statusCode < 500) {
-          return Promise.reject(error);
-        }
-
-        // Handle global error here if needed
-
+      },
+      (error: Error | AxiosError) => {
+        // Only 5xx and network failures land here.
         return Promise.reject(error);
       }
     );

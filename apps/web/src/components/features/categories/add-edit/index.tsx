@@ -24,7 +24,7 @@ import { useForm } from 'react-hook-form';
 import { InModalActionType, InModalState, modalReducer } from '@/reducers/InModalAction';
 
 const initialState: InModalState = {
-  modalHeading: 'Add Grade',
+  modalHeading: 'Add Category',
   isUpdate: false,
   refreshRequired: false,
   showLoader: false,
@@ -37,10 +37,9 @@ interface ManageCategoryProps {
 }
 
 export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryProps) {
-  const [showLoader, setShowLoader] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
-  const [states, dispatch] = useReducer(modalReducer, initialState);
+  const [, dispatch] = useReducer(modalReducer, initialState);
 
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
@@ -94,8 +93,14 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
   }, [getCategoryResponse.status, getCategoryResponse.data?.data?.data]);
 
   // The API rejects self-parenting, so don't offer the category being edited as its own parent.
-  const parentOptions =
-    getAllCategories?.data?.data?.data?.data?.filter((item) => !isEdit || item.id !== id).map((item) => ({ value: item.id, label: item.name })) ?? [];
+  // "None" comes first so a chosen parent can be cleared again; without it the field could
+  // only ever move to another parent. Drafts stay selectable but are labelled.
+  const parentOptions = [
+    { value: '', label: 'None (top level)' },
+    ...(getAllCategories?.data?.data?.data?.data
+      ?.filter((item) => !isEdit || item.id !== id)
+      .map((item) => ({ value: item.id, label: item.status === StatusValues.Draft ? `${item.name} (Draft)` : item.name })) ?? []),
+  ];
 
   const submitData = async (model: CategoryModel) => {
     const response = isEdit ? await updateCategory.mutateAsync({ id: id!, model }) : await createCategory.mutateAsync(model);
@@ -242,7 +247,19 @@ export default function ManageCategory({ id, isOpen, onClose }: ManageCategoryPr
                   <FormItem>
                     <FormLabel>Display Order</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value ?? ''} placeholder="Enter Display Order" />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="Enter Display Order"
+                        name={field.name}
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        value={field.value ?? ''}
+                        // The validator wants a number. A plain text input handed it a string, so
+                        // any edit failed with "expected number". An empty box means "not set":
+                        // create falls back to the DB default of 0, update leaves it unchanged.
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

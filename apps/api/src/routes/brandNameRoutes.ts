@@ -256,8 +256,10 @@ brandNameRouter.put(
  *         schema:
  *           type: integer
  *     responses:
- *       204:
- *         description: Brand name deleted successfully
+ *       200:
+ *         description: Brand name moved to Trash; the trashed row is returned
+ *       409:
+ *         description: Products still use this brand
  *       400:
  *         description: Invalid id
  *       401:

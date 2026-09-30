@@ -1,9 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateAttributeModel, UpdateAttributeModel } from '@/models/attribute.model';
-import { AttributeFilterParams } from '@/params/attribute.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { AttributeModel } from '@pms/types';
+import { AttributeFilterParams, AttributeModel } from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const useCreateAttribute = () => {
@@ -42,7 +40,7 @@ const useGetAttributeById = (id: number | string, enabled: boolean = true) => {
   });
 };
 
-type UpdateAttributeArgs = { id: number | string; model: AttributeModel };
+type UpdateAttributeArgs = { id: number | string; model: Partial<AttributeModel> };
 
 const useUpdateAttribute = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -67,7 +65,8 @@ const useDeleteAttribute = () => {
   return useMutation({
     mutationFn: (id: number | string) => unitOfService.AttributeService.delete(id),
     onSettled: (response) => {
-      if (response && response.status === 204) {
+      // Delete answers 200 with the trashed row, like category.
+      if (response && response.status === 200) {
         queryClient.invalidateQueries({ queryKey: ['AttributeService.getAll'] });
       }
     },

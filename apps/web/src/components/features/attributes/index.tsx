@@ -2,13 +2,12 @@
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { AttributeDto } from '@pms/types';
+import { AttributeDto, AttributeFilterParams, Status } from '@pms/types';
 import { useDeleteAttribute, useGetAllAttributes } from '@/hooks/service-hooks/useAttributeService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { AttributeFilterParams } from '@/params/attribute.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -33,11 +32,13 @@ export default function AttributeList() {
 
   const [filterParams, setFilterParams] = useState<AttributeFilterParams>({
     search: searchParams.get('search') || '',
-    status: searchParams.get('status') || null,
+    status: (searchParams.get('status') as Status) || null,
     startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
     endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
+    sortBy: searchParams.get('sortBy') || 'createdAt',
+    sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
   const columns = useAttributeColumns(
@@ -57,7 +58,11 @@ export default function AttributeList() {
     }
   }, [attributesResponse.status, attributesResponse.data?.data?.data]);
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<AttributeDto>('name', 'asc', columns);
+  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<AttributeDto>(
+    filterParams.sortBy ?? 'createdAt',
+    filterParams.sortDirection ?? 'DESC',
+    columns
+  );
   const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage ?? config.recordPerPage);
 
   const table = useCustomDataTable({
@@ -81,6 +86,11 @@ export default function AttributeList() {
     }));
   }, [pagination]);
 
+  // The table sorts server-side (manualSorting), so a header click has to reach the API.
+  useEffect(() => {
+    setFilterParams((prev) => ({ ...prev, sortBy: field, sortDirection: order }));
+  }, [field, order]);
+
   const resetForm = () => {
     setFilterParams({
       search: undefined,
@@ -89,13 +99,15 @@ export default function AttributeList() {
       endDate: undefined,
       page: 1,
       recordPerPage: config.recordPerPage,
+      sortBy: 'createdAt',
+      sortDirection: 'DESC',
     });
   };
 
   const handleDelete = async (id: number) => {
     const response = await deleteMutation.mutateAsync(id);
-    if (response && response.status === 204) {
-      toast({ variant: 'success', title: 'Attribute deleted successfully' });
+    if (response && response.status === 200) {
+      toast({ variant: 'success', title: 'Attribute moved to Trash' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -124,7 +136,7 @@ export default function AttributeList() {
           table={table}
           resetForm={resetForm}
           onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || undefined, page: 1 }))}
-          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: value || null }))}
+          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: (value as Status) || null, page: 1 }))}
           onStartDateChanged={(value) => {
             const selectedDate = value;
             if (selectedDate) selectedDate.setHours(0, 0, 0, 0);
@@ -159,7 +171,7 @@ export default function AttributeList() {
           isOpen={showDeleteModal}
           onClose={() => closeDeleteModal(false)}
           onSubmit={() => handleDelete(+(deleteId ?? 0))}
-          bodyText="Are you sure you want to delete this attribute?"
+          bodyText="Move this attribute to Trash? You can find it again with the Trash status filter."
           noButtonText="Cancel"
           yesButtonText="Delete"
           loading={deleteMutation.isPending}

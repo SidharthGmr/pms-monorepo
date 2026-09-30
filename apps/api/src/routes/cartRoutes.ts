@@ -34,12 +34,6 @@ const cartController = container.get<CartController>(TYPES.CartController);
  *           type: string
  *         required: true
  *         description: Enter Client Id
- *       - in: query
- *         name: userId
- *         schema:
- *           type: string
- *         required: false
- *         description: Build/read the cart on another user's behalf (POS). Defaults to the caller.
  *     responses:
  *       200:
  *         description: Cart fetched successfully (data is null when no active cart exists)
@@ -74,9 +68,6 @@ cartRouter.get('/active', authenticateToken, storeRequiredMiddleware, asyncHandl
  *               storeId:
  *                 type: integer
  *                 description: Optional. Must match the store the caller is signed in to.
- *               userId:
- *                 type: string
- *                 description: Optional. Cart owner; defaults to the caller.
  *               productIds:
  *                 type: array
  *                 items:
@@ -123,8 +114,6 @@ cartRouter.post('/', authenticateToken, storeRequiredMiddleware, validate(AddToC
  *               quantity:
  *                 type: integer
  *                 minimum: 0
- *               userId:
- *                 type: string
  *     responses:
  *       200:
  *         description: Cart updated successfully

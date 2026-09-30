@@ -15,10 +15,8 @@ export default class CartService implements ICartService {
     this.httpService = httpService;
   }
 
-  getActive(userId?: string | null): Promise<AxiosResponse<Response<CartDto | null>>> {
-    return this.httpService
-      .call()
-      .get<CartDto | null, AxiosResponse<Response<CartDto | null>>>('/carts/active', { params: userId ? { userId } : undefined });
+  getActive(): Promise<AxiosResponse<Response<CartDto | null>>> {
+    return this.httpService.call().get<CartDto | null, AxiosResponse<Response<CartDto | null>>>('/carts/active');
   }
 
   addProducts(model: AddToCartModel): Promise<AxiosResponse<Response<CartDto>>> {
@@ -29,23 +27,19 @@ export default class CartService implements ICartService {
     return this.httpService.call().put<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/variants/${variantId}`, model);
   }
 
-  removeVariant(variantId: number, userId?: string | null): Promise<AxiosResponse<Response<CartDto>>> {
-    return this.httpService
-      .call()
-      .delete<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/variants/${variantId}`, { params: userId ? { userId } : undefined });
+  removeVariant(variantId: number): Promise<AxiosResponse<Response<CartDto>>> {
+    return this.httpService.call().delete<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/variants/${variantId}`);
   }
 
   updateQuantity(productId: number, model: UpdateCartItemModel): Promise<AxiosResponse<Response<CartDto>>> {
     return this.httpService.call().put<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/items/${productId}`, model);
   }
 
-  removeProduct(productId: number, userId?: string | null): Promise<AxiosResponse<Response<CartDto>>> {
-    return this.httpService
-      .call()
-      .delete<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/items/${productId}`, { params: userId ? { userId } : undefined });
+  removeProduct(productId: number): Promise<AxiosResponse<Response<CartDto>>> {
+    return this.httpService.call().delete<CartDto, AxiosResponse<Response<CartDto>>>(`/carts/items/${productId}`);
   }
 
-  clear(userId?: string | null): Promise<AxiosResponse<Response<CartDto>>> {
-    return this.httpService.call().delete<CartDto, AxiosResponse<Response<CartDto>>>('/carts', { params: userId ? { userId } : undefined });
+  clear(): Promise<AxiosResponse<Response<CartDto>>> {
+    return this.httpService.call().delete<CartDto, AxiosResponse<Response<CartDto>>>('/carts');
   }
 }

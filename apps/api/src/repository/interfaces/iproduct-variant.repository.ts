@@ -15,7 +15,8 @@ export interface IProductVariantRepository {
 
   findById(id: number, tx?: Prisma.TransactionClient): Promise<ProductVariantInternalDto | null>;
 
-  getActive(productId: number, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto[]>;
+  /** Pass `storeCode` to refuse a product that belongs to another store. */
+  getActive(productId: number, tx?: Prisma.TransactionClient, storeCode?: string): Promise<ProductVariantResponseDto[]>;
 
   getEffectiveOn(variantId: number, date: Date, tx?: Prisma.TransactionClient): Promise<ProductVariantResponseDto | null>;
 

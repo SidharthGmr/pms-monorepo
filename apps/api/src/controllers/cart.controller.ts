@@ -30,27 +30,24 @@ export class CartController {
   }
 
   /**
-   * A staff member operating the POS may build a cart on a customer's behalf, so
-   * an explicit userId in the request wins; otherwise the cart belongs to the
-   * caller. sessionToken supports guest carts.
+   * The cart always belongs to the signed-in caller. The owner is taken from the verified
+   * JWT only - never from the body or query string - otherwise any authenticated user
+   * could read, edit or clear another user's cart by passing their userId.
    */
-  private ownerFrom(req: Request, storeId: number, userId?: string | null): CartOwner {
-    const sessionToken = (req.header('x-cart-session') || (req.query['sessionToken'] as string) || null) as string | null;
-    const resolvedUserId = userId ?? (req.user?.userId as string | undefined) ?? null;
-    return { storeId, userId: resolvedUserId, sessionToken: resolvedUserId ? null : sessionToken };
+  private ownerFrom(req: Request, storeId: number): CartOwner {
+    return { storeId, userId: req.user?.userId ?? null, sessionToken: null };
   }
 
   getActive = async (req: Request, res: Response): Promise<Response<CustomResponse<CartDto | null>>> => {
     const { storeId, error } = await this.resolveStoreId(req);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
 
-    const userId = (req.query['userId'] as string) || undefined;
-    const cart = await this.unitOfService.Cart.getActive(this.ownerFrom(req, storeId, userId));
+    const cart = await this.unitOfService.Cart.getActive(this.ownerFrom(req, storeId));
     return res.status(200).json({ success: true, message: 'Cart fetched successfully', data: cart });
   };
 
   addProducts = async (req: Request, res: Response): Promise<Response<CustomResponse<CartDto>>> => {
-    const body = req.body as { storeId?: number; userId?: string | null; productIds?: unknown; variantIds?: unknown; currency?: string };
+    const body = req.body as { storeId?: number; productIds?: unknown; variantIds?: unknown; currency?: string };
 
     const { storeId, error } = await this.resolveStoreId(req, body.storeId);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
@@ -64,7 +61,7 @@ export class CartController {
       return res.status(400).json({ success: false, message: 'Send variantIds (preferred) or productIds as a non-empty array.' });
     }
 
-    const owner = this.ownerFrom(req, storeId, body.userId);
+    const owner = this.ownerFrom(req, storeId);
     const model: AddToCartCommand = {
       storeId,
       userId: owner.userId,
@@ -82,7 +79,7 @@ export class CartController {
     const productId = parseInt(req.params['productId'] as string);
     if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid product id' });
 
-    const body = req.body as { storeId?: number; userId?: string | null; quantity?: number };
+    const body = req.body as { storeId?: number; quantity?: number };
 
     const { storeId, error } = await this.resolveStoreId(req, body.storeId);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
@@ -91,7 +88,7 @@ export class CartController {
       return res.status(400).json({ success: false, message: 'quantity is required.' });
     }
 
-    const owner = this.ownerFrom(req, storeId, body.userId);
+    const owner = this.ownerFrom(req, storeId);
     const model: UpdateCartItemCommand = {
       storeId,
       userId: owner.userId,
@@ -107,7 +104,7 @@ export class CartController {
     const variantId = parseInt(req.params['variantId'] as string);
     if (isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variant id' });
 
-    const body = req.body as { storeId?: number; userId?: string | null; quantity?: number };
+    const body = req.body as { storeId?: number; quantity?: number };
 
     const { storeId, error } = await this.resolveStoreId(req, body.storeId);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
@@ -116,7 +113,7 @@ export class CartController {
       return res.status(400).json({ success: false, message: 'quantity is required.' });
     }
 
-    const owner = this.ownerFrom(req, storeId, body.userId);
+    const owner = this.ownerFrom(req, storeId);
     const cart = await this.unitOfService.Cart.setVariantQuantity(variantId, {
       storeId,
       userId: owner.userId,
@@ -133,8 +130,7 @@ export class CartController {
     const { storeId, error } = await this.resolveStoreId(req);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
 
-    const userId = (req.query['userId'] as string) || undefined;
-    const cart = await this.unitOfService.Cart.removeVariant(variantId, this.ownerFrom(req, storeId, userId));
+    const cart = await this.unitOfService.Cart.removeVariant(variantId, this.ownerFrom(req, storeId));
     return res.status(200).json({ success: true, message: 'Item removed from cart successfully', data: cart });
   };
 
@@ -145,8 +141,7 @@ export class CartController {
     const { storeId, error } = await this.resolveStoreId(req);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
 
-    const userId = (req.query['userId'] as string) || undefined;
-    const cart = await this.unitOfService.Cart.removeProduct(productId, this.ownerFrom(req, storeId, userId));
+    const cart = await this.unitOfService.Cart.removeProduct(productId, this.ownerFrom(req, storeId));
     return res.status(200).json({ success: true, message: 'Product removed from cart successfully', data: cart });
   };
 
@@ -154,8 +149,7 @@ export class CartController {
     const { storeId, error } = await this.resolveStoreId(req);
     if (error || storeId === undefined) return res.status(400).json({ success: false, message: error });
 
-    const userId = (req.query['userId'] as string) || undefined;
-    const cart = await this.unitOfService.Cart.clear(this.ownerFrom(req, storeId, userId));
+    const cart = await this.unitOfService.Cart.clear(this.ownerFrom(req, storeId));
     return res.status(200).json({ success: true, message: 'Cart cleared successfully', data: cart });
   };
 }

@@ -21,9 +21,20 @@ function humanizeModelName(modelName?: string): string {
 
 // P2002 = unique constraint violation. meta looks like
 // { modelName: 'brandName', target: ['name', 'storeCode'] }
+// Partial unique indexes live in raw SQL migrations because Prisma 5 cannot declare them,
+// so Prisma reports only the index name. Map each back to the columns the user typed.
+const RAW_UNIQUE_INDEX_COLUMNS: Record<string, string[]> = {
+  brandName_storeCode_name_live_key: ['name'],
+  category_storeCode_name_live_key: ['name'],
+  attribute_storeCode_name_live_key: ['name'],
+};
+
 function duplicateRecordMessage(err: Prisma.PrismaClientKnownRequestError): string {
   const target = err.meta?.['target'];
-  const columns = Array.isArray(target) ? target.filter((c): c is string => typeof c === 'string') : typeof target === 'string' ? [target] : [];
+  const rawColumns = typeof target === 'string' ? RAW_UNIQUE_INDEX_COLUMNS[target] : undefined;
+  const columns = Array.isArray(target)
+    ? target.filter((c): c is string => typeof c === 'string')
+    : rawColumns ?? (typeof target === 'string' && !/_(key|idx)$/.test(target) ? [target] : []);
   const fields = columns.filter((c) => !TENANT_COLUMNS.has(c));
   const model = humanizeModelName(err.meta?.['modelName'] as string | undefined);
 

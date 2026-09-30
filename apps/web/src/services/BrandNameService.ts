@@ -40,9 +40,9 @@ export default class BrandNameService implements IBrandNameService {
             .put<BrandNameDto, AxiosResponse<Response<BrandNameDto>>>(`/brand-names/${id}`, model);
     }
 
-    delete(id: number | string): Promise<AxiosResponse<Response<void>>> {
+    delete(id: number | string): Promise<AxiosResponse<Response<BrandNameDto>>> {
         return this.httpService
             .call()
-            .delete<void, AxiosResponse<Response<void>>>(`/brand-names/${id}`);
+            .delete<BrandNameDto, AxiosResponse<Response<BrandNameDto>>>(`/brand-names/${id}`);
     }
 }

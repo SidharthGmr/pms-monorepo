@@ -9,5 +9,6 @@ export default interface IBrandNameService {
     getAll(params?: BrandNameFilterParams): Promise<AxiosResponse<Response<ListResponseDto<BrandNameDto>>>>;
     getById(id: number | string): Promise<AxiosResponse<Response<BrandNameDto>>>;
     update(id: number | string, model: CreateBrandNameModel): Promise<AxiosResponse<Response<BrandNameDto>>>;
-    delete(id: number | string): Promise<AxiosResponse<Response<void>>>;
+    /** Moves the brand to Trash and returns it. 409 while products still use it. */
+    delete(id: number | string): Promise<AxiosResponse<Response<BrandNameDto>>>;
 }

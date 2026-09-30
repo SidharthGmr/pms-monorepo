@@ -44,7 +44,8 @@ export default function BrandNameList() {
     sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
 
-  const getAllBrandNamesResponse = useGetAllBrandNames({ ...filterParams, showAllRecords: true });
+  // Paged like the table. `showAllRecords` here returned every row on every page.
+  const getAllBrandNamesResponse = useGetAllBrandNames(filterParams);
   const deleteBrandNameMutation = useDeleteBrandName();
 
   useEffect(() => {
@@ -111,8 +112,8 @@ export default function BrandNameList() {
 
   const handleDelete = async (id: number) => {
     const response = await deleteBrandNameMutation.mutateAsync(id);
-    if (response && response.status === 204) {
-      toast({ variant: 'success', title: 'Brand name deleted successfully' });
+    if (response && response.status === 200) {
+      toast({ variant: 'success', title: 'Brand name moved to Trash' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -150,9 +151,9 @@ export default function BrandNameList() {
             });
           }}
         />
-        <DataTablePagination table={table} loading={getAllBrandNamesResponse.isLoading} />
+        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllBrandNamesResponse.isLoading} />
         <CustomDataTable table={table} columns={columns} isLoading={getAllBrandNamesResponse.isLoading} />
-        <DataTablePagination table={table} loading={getAllBrandNamesResponse.isLoading} />
+        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllBrandNamesResponse.isLoading} />
         {showEditModal && editId && (
           <ManageBrandName
             id={+editId}
@@ -170,7 +171,7 @@ export default function BrandNameList() {
           onSubmit={() => handleDelete(+deleteId)}
           heading="Delete Brand Name"
           loading={deleteBrandNameMutation.isPending}
-          bodyText="Are you sure you want to delete this brand name? This action cannot be undone."
+          bodyText="Move this brand name to Trash? You can find it again with the Trash status filter."
         />
       )}
     </>

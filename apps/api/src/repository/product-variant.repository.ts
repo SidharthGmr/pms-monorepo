@@ -184,9 +184,9 @@ export class ProductVariantRepository implements IProductVariantRepository {
     return toVariantInternalDto(row, price, stock);
   }
 
-  async getActive(productId: number, tx: Prisma.TransactionClient = prisma): Promise<ProductVariantResponseDto[]> {
+  async getActive(productId: number, tx: Prisma.TransactionClient = prisma, storeCode?: string): Promise<ProductVariantResponseDto[]> {
     const rows = await tx.productVariant.findMany({
-      where: { productId, isActive: true, deletedAt: null },
+      where: { productId, isActive: true, deletedAt: null, ...(storeCode !== undefined && { storeCode }) },
       orderBy: { id: 'asc' },
       select: productVarientSelect,
     });

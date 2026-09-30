@@ -34,7 +34,7 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
       {
         id: 'name',
         accessorKey: 'name',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Name" />,
         cell: ({ row }) => (
@@ -68,7 +68,7 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
       {
         id: 'displayOrder',
         accessorKey: 'displayOrder',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Display Order" />,
         cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.displayOrder ?? 0}</span>,
@@ -77,7 +77,7 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
       {
         id: 'status',
         accessorKey: 'status',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Status" />,
         cell: ({ row }) =>
@@ -91,7 +91,7 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
       {
         id: 'createdAt',
         accessorKey: 'createdAt',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Created At" />,
         cell: ({ row }) => {
@@ -107,7 +107,7 @@ export const useCategoryColumns = (editRecord: (id: number) => void, deleteRecor
       {
         id: 'updatedAt',
         accessorKey: 'updatedAt',
-        enableSorting: false,
+        enableSorting: true,
         enableHiding: false,
         header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Updated At" />,
         cell: ({ row }) => {

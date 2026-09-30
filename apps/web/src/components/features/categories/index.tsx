@@ -36,7 +36,9 @@ export default function CategoryList() {
   );
 
   const [filterParams, setFilterParams] = useState<CategoryFilterParams>({
-    status: searchParams.get('status') || 'Published',
+    // No hidden default: the status dropdown starts empty, so the list must start unfiltered
+    // too. Defaulting to Published hid Drafts while the filter looked cleared.
+    status: searchParams.get('status') || undefined,
     page: +(searchParams.get('page') || 1),
     search: searchParams.get('search') || '',
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
@@ -57,7 +59,11 @@ export default function CategoryList() {
     }
   }, [getAllCategoriesResponse.status, getAllCategoriesResponse.data]);
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<CategoryResponseDto>('name', 'asc', columns);
+  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<CategoryResponseDto>(
+    filterParams.sortBy ?? 'createdAt',
+    filterParams.sortDirection ?? 'DESC',
+    columns
+  );
   const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage ?? config.recordPerPage);
 
   const table = useCustomDataTable({
@@ -81,6 +87,11 @@ export default function CategoryList() {
     }));
   }, [pagination]);
 
+  // The table sorts server-side (manualSorting), so a header click has to reach the API.
+  useEffect(() => {
+    setFilterParams((prev) => ({ ...prev, sortBy: field, sortDirection: order }));
+  }, [field, order]);
+
   const resetForm = () => {
     setFilterParams({
       search: undefined,
@@ -95,8 +106,9 @@ export default function CategoryList() {
     });
   };
   const handleDelete = async (id: number) => {
-    // HttpService rejects on a non-2xx, so the 409 the API returns while sub-categories or
-    // products still reference the category arrives as a throw, not as a response.
+    // HttpService resolves every status below 500, so the 409 the API returns while
+    // sub-categories or products still reference the category arrives as a response and is
+    // shown by the else branch. The catch only sees 5xx and network failures.
     try {
       const response = await deleteCategoryMutation.mutateAsync(id);
       if (response && response.status === 200) {
@@ -124,7 +136,7 @@ export default function CategoryList() {
           table={table}
           resetForm={resetForm}
           onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || undefined, page: 1 }))}
-          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: value || '' }))}
+          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: value || undefined, page: 1 }))}
           onStartDateChanged={(value) => {
             const selectedDate = value;
             if (selectedDate) selectedDate.setHours(0, 0, 0, 0);

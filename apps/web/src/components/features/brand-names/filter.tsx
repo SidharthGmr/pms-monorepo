@@ -8,6 +8,10 @@ import { useEffect, useState } from 'react';
 import { SelectSearch } from '../../common/select-search';
 import useFilterHook from '@/hooks/use-filter-hook';
 import StatusData from '@/data/status.data';
+import { StatusValues } from '@/enums/status-values.enum';
+
+// Trash is listed so a deleted brand can be found and restored by editing its status.
+const BRAND_STATUS_OPTIONS = [...StatusData, { label: 'Trash', value: StatusValues.Trash }];
 
 interface BrandNameListFilterProps<TData> {
   table: Table<TData>;
@@ -42,7 +46,7 @@ export default function BrandNameListFilter<TData>({
     isFiltered: isStatusFiltered,
     setIsFiltered: setIsStatusFiltered,
   } = useFilterHook({
-    inputData: StatusData,
+    inputData: BRAND_STATUS_OPTIONS,
     dataMapper: (el) => ({
       label: el.label,
       value: el.value,

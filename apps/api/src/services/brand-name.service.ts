@@ -2,6 +2,7 @@ import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import { ListResponseDto } from '../dtos/list-response.dto';
+import ConflictError from '../exceptions/conflict-error';
 import NotFoundError from '../exceptions/not-found-error';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { brandNameSelect } from '../repository/brand-name.repository';
@@ -56,6 +57,14 @@ export class BrandNameService implements IBrandNameService {
 
   async delete(id: number, storeCode: string): Promise<BrandNameDto> {
     await this.findInStore(id, storeCode);
+
+    // Trashing a brand that products still reference would leave them pointing at a row the
+    // admin can no longer see. Category already refuses this; brand now matches.
+    const productCount = await this.unitOfWork.BrandName.countProducts(id, storeCode);
+    if (productCount > 0) {
+      throw new ConflictError(`Cannot delete this brand - ${productCount} product${productCount === 1 ? '' : 's'} still use it.`);
+    }
+
     return this.unitOfWork.BrandName.delete(id, storeCode);
   }
 

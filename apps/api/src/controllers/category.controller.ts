@@ -1,10 +1,17 @@
 import { CategoryFilterParams, CategoryModel, CategoryResponseDto, CustomResponse, ListResponseDto } from '@pms/types';
-import { Status } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
+import { parseStatusQuery } from '../utils/status-query';
+
+function parseParentIdQuery(value: unknown): number | null | undefined {
+  if (value === undefined || value === '') return undefined;
+  if (value === 'root' || value === 'null') return null;
+  const id = parseInt(value as string);
+  return isNaN(id) ? undefined : id;
+}
 
 export class CategoryController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -32,8 +39,9 @@ export class CategoryController {
         page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
         recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
         search: req.query['search'] as string | undefined,
-        parentId: req.query['parentId'] ? parseInt(req.query['parentId'] as string) : undefined,
-        status: req.query['status'] ? req.query['status'] as Status : undefined,
+        // `parentId=root` (or `null`) lists top-level categories only.
+        parentId: parseParentIdQuery(req.query['parentId']),
+        status: parseStatusQuery(req.query['status']),
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         includeDeleted: req.query['includeDeleted'] !== undefined ? req.query['includeDeleted'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,

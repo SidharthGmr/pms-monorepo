@@ -5,9 +5,8 @@ import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IAttributeService from './interfaces/IAttributeService';
 import { ListResponseDto } from '@/dtos/list-response.dto';
-import { AttributeFilterParams } from '@/params/attribute.params';
 import Response from '@/dtos/Response';
-import { AttributeDto, AttributeModel } from '@pms/types';
+import { AttributeDto, AttributeFilterParams, AttributeModel } from '@pms/types';
 
 @injectable()
 export default class AttributeService implements IAttributeService {
@@ -35,15 +34,15 @@ export default class AttributeService implements IAttributeService {
             .get<AttributeDto, AxiosResponse<Response<AttributeDto>>>(`/attributes/${id}`);
     }
 
-    update(id: number | string, model: AttributeModel): Promise<AxiosResponse<Response<AttributeDto>>> {
+    update(id: number | string, model: Partial<AttributeModel>): Promise<AxiosResponse<Response<AttributeDto>>> {
         return this.httpService
             .call()
             .put<AttributeDto, AxiosResponse<Response<AttributeDto>>>(`/attributes/${id}`, model);
     }
 
-    delete(id: number | string): Promise<AxiosResponse<Response<void>>> {
+    delete(id: number | string): Promise<AxiosResponse<Response<AttributeDto>>> {
         return this.httpService
             .call()
-            .delete<void, AxiosResponse<Response<void>>>(`/attributes/${id}`);
+            .delete<AttributeDto, AxiosResponse<Response<AttributeDto>>>(`/attributes/${id}`);
     }
 }

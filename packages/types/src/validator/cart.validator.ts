@@ -9,11 +9,11 @@ const positiveIdArray = z
   )
   .nonempty("Send at least one id");
 
+// The cart owner is never accepted from the client - the API takes it from the JWT.
+// Zod drops unknown keys, so an old client still sending userId is ignored, not obeyed.
 export const addToCartFields = z
   .object({
     storeId: z.number().int().positive().optional(),
-    userId: z.string().min(1).nullable().optional(),
-    sessionToken: z.string().min(1).nullable().optional(),
     productIds: positiveIdArray.optional(),
     variantIds: positiveIdArray.optional(),
     currency: z
@@ -34,8 +34,6 @@ export const addToCartFields = z
 
 export const updateCartItemFields = z.object({
   storeId: z.number().int().positive().optional(),
-  userId: z.string().min(1).nullable().optional(),
-  sessionToken: z.string().min(1).nullable().optional(),
   quantity: z
     .number({ error: "Quantity is required" })
     .int("Quantity must be a whole number")

@@ -12,9 +12,11 @@ import { DateRangePicker } from '@/components/common/date-range-picker';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useEffect, useState } from 'react';
 
+// Trash is listed so a deleted attribute can be found and restored by editing its status.
 const ATTRIBUTE_STATUS_OPTIONS = [
   { label: 'Published', value: StatusValues.Published },
   { label: 'Draft', value: StatusValues.Draft },
+  { label: 'Trash', value: StatusValues.Trash },
 ];
 
 interface AttributeListFilterProps<TData> {

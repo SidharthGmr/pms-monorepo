@@ -5,6 +5,7 @@ import ClientError from "../exceptions/client-error";
 import ConflictError from "../exceptions/conflict-error";
 import NotFoundError from "../exceptions/not-found-error";
 
+import { categorySelect } from "../repository/category.repository";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { ICategoryService } from "./interfaces/Icategory.service";
 import { CategoryFilterParams, CategoryModel, CategoryResponseDto, ListResponseDto, StatusEnum } from "@pms/types";
@@ -44,6 +45,8 @@ export class CategoryService implements ICategoryService {
           ...metadataInput(data.metadata),
           createdById: userId,
         },
+        // Without this the raw row, storeCode and metadata included, went back to the client.
+        select: categorySelect,
       });
     });
   }
@@ -87,6 +90,7 @@ export class CategoryService implements ICategoryService {
           ...metadataInput(data.metadata),
           updatedById: userId,
         },
+        select: categorySelect,
       });
     });
   }

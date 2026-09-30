@@ -1,9 +1,16 @@
 import { Prisma, Status } from "@prisma/client";
-import { AttributeDto, AttributeFilterParams, ListResponseDto, StatusEnum } from "@pms/types";
+import { AttributeDto, AttributeFilterParams, ListResponseDto } from "@pms/types";
 import prisma from "../config/prisma";
 import { IAttributeRepository } from "./interfaces/iattribute.repository";
 
-const attributeSelect = {
+// Sorting is client-driven, so only real columns are honoured - anything else falls
+// back to the default instead of failing the query.
+const SORTABLE_COLUMNS = new Set(['name', 'unit', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
+
+// The response shape for every attribute read and write. `storeCode` is withheld, so this has
+// to be passed to every query - including the service's create/update through
+// `transactionClient` - or the whole row, tenant key included, goes back to the client.
+export const attributeSelect = {
   id: true,
   name: true,
   unit: true,
@@ -23,7 +30,7 @@ export class AttributeRepository implements IAttributeRepository {
     sortBy = "createdAt",
     sortOrder: "asc" | "desc" = "desc"
   ): Promise<ListResponseDto<AttributeDto>> {
-    const where: Prisma.attributeWhereInput = { NOT: { status: Status.Trash } };
+    const where: Prisma.attributeWhereInput = {};
 
     if (filters) {
       page = filters.page ?? page;
@@ -31,12 +38,6 @@ export class AttributeRepository implements IAttributeRepository {
 
       if (filters.search) {
         where.OR = [{ name: { contains: filters.search, mode: "insensitive" } }];
-      }
-
-      if (filters.status !== undefined) {
-        where.status = filters.status as StatusEnum;
-      } else {
-        where.NOT = { status: Status.Trash };
       }
 
       if (filters.storeCode !== undefined) {
@@ -51,14 +52,30 @@ export class AttributeRepository implements IAttributeRepository {
       }
     }
 
+    // A status filter selects that bucket, Trash included. No filter means "everything but
+    // Trash". Setting NOT unconditionally made `?status=Trash` read as
+    // `status = Trash AND status <> Trash`, which can never match.
+    if (filters?.status != null) {
+      where.status = filters.status;
+    } else {
+      where.NOT = { status: Status.Trash };
+    }
+
     const showAll = filters?.showAllRecords === true;
     const skip = showAll ? undefined : (page - 1) * limit;
     const take = showAll ? undefined : limit;
 
+    const column = SORTABLE_COLUMNS.has(sortBy) ? sortBy : 'createdAt';
+    const direction: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy: Prisma.attributeOrderByWithRelationInput[] =
+      column === 'displayOrder'
+        ? [{ displayOrder: { sort: direction, nulls: 'last' } }, { id: 'desc' }]
+        : [{ [column]: direction }, { id: 'desc' }];
+
     const [data, total] = await Promise.all([
       prisma.attribute.findMany({
         where,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy,
         ...(skip !== undefined && { skip }),
         ...(take !== undefined && { take }),
         select: attributeSelect,
@@ -69,15 +86,21 @@ export class AttributeRepository implements IAttributeRepository {
     return { totalRecord: total, data };
   }
 
-
-  async findById(id: number): Promise<AttributeDto | null> {
-    const attributeData = await prisma.attribute.findUnique({ where: { id }, select: attributeSelect });
-    if (!attributeData) return null;
-    return attributeData;
+  // Scoped on the `@@unique([storeCode, id])` key, so an attribute in another store is simply
+  // not found - the caller cannot read, edit or delete ids outside its own tenant.
+  async findById(id: number, storeCode: string): Promise<AttributeDto | null> {
+    return prisma.attribute.findUnique({ where: { storeCode_id: { storeCode, id } }, select: attributeSelect });
   }
 
+  async delete(id: number, storeCode: string): Promise<AttributeDto> {
+    return prisma.attribute.update({
+      where: { storeCode_id: { storeCode, id } },
+      data: { status: Status.Trash },
+      select: attributeSelect,
+    });
+  }
 
-  async delete(id: number): Promise<AttributeDto> {
-    return prisma.attribute.update({ where: { id }, data: { status: Status.Trash }, select: attributeSelect });
+  async countProducts(id: number, storeCode: string): Promise<number> {
+    return prisma.product.count({ where: { attributeId: id, storeCode, deletedAt: null } });
   }
 }

@@ -20,7 +20,7 @@ export function CartIndicator() {
 
   // This header is also used by the super-admin layout, which has no cart, so skip
   // the request entirely there rather than fetching and rendering nothing.
-  const { data: cartResponse } = useGetActiveCart(undefined, hasCart);
+  const { data: cartResponse } = useGetActiveCart(hasCart);
 
   const totalQuantity = cartResponse?.data?.data?.totalQuantity ?? 0;
 
