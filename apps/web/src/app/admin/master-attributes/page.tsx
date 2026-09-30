@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function MasterAttributesPage() {
   return (
-    <div className="grid gap-5">
+    <div>
       <MasterAttributeListingWrapper />
     </div>
   );

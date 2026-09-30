@@ -1,4 +1,4 @@
-import DashboardSummary from '@/components/admin-home/DashboardSummary';
+import DashboardSwitcher from '@/components/admin-home/DashboardSwitcher';
 import config from '@/config';
 import { Roles } from '@/enums/roles.enum';
 import { Metadata } from 'next';
@@ -26,7 +26,7 @@ export default async function AdminPage() {
 
   return (
     <div className=" mx-auto max-w-7xl space-y-6">
-      <DashboardSummary />
+      <DashboardSwitcher />
     </div>
   );
 }
