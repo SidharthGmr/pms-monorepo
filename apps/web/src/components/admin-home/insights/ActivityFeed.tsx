@@ -1,7 +1,7 @@
 'use client';
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { Activity, ArrowRight, ShoppingBag, Truck } from 'lucide-react';
 import { OrderDto } from '@/dtos/order.dto';
 import { PurchaseDto } from '@/dtos/purchase.dto';
@@ -32,8 +32,10 @@ const ORDER_STATUS_STYLE: Record<string, string> = {
   [OrderStatus.Returned]: 'bg-zinc-100 text-zinc-700',
 };
 
-// Sales and purchases in one timeline, newest first, so the last few things that happened in
-// the store read as a single story instead of two side-by-side lists.
+const dayLabel = (d: Date) => (isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'EEE, d MMM'));
+
+// Sales and purchases in one timeline, newest first and grouped by day, so the last few things
+// that happened in the store read as a single story instead of two side-by-side lists.
 export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
   const orders = useGetAllOrders({ page: 1, recordPerPage: limit });
   const purchases = useGetAllPurchases({ page: 1, recordPerPage: limit });
@@ -66,9 +68,9 @@ export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
 
   if (isLoading) {
     return (
-      <ul className="divide-y">
+      <ul className="space-y-1">
         {Array.from({ length: 5 }).map((_, i) => (
-          <li key={i} className="flex items-center gap-3 py-3">
+          <li key={i} className="flex items-center gap-3 py-2.5">
             <Skeleton className="h-9 w-9 rounded-full" />
             <div className="flex-1 space-y-1.5">
               <Skeleton className="h-3.5 w-1/3" />
@@ -92,41 +94,52 @@ export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
   }
 
   return (
-    <ul className="divide-y">
-      {items.map((item) => {
+    <ol className="relative">
+      {/* Timeline rail behind the icons. */}
+      <span className="absolute bottom-3 left-[17px] top-3 w-px bg-border" aria-hidden />
+      {items.map((item, i) => {
         const isOrder = item.kind === 'order';
+        const showDay = i === 0 || dayLabel(item.at) !== dayLabel(items[i - 1].at);
         return (
-          <li key={item.key}>
-            <Link href={item.href} className="group flex items-center gap-3 py-3 transition-colors hover:bg-muted/40 -mx-2 px-2 rounded-md">
-              <span
-                className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-                  isOrder ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                )}
-                aria-hidden
-              >
-                {isOrder ? <ShoppingBag className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-mono text-sm font-semibold">{item.title}</span>
-                  <span className={cn('rounded-full px-1.5 py-0 text-[10px] font-medium capitalize', ORDER_STATUS_STYLE[item.status] ?? 'bg-muted text-muted-foreground')}>
-                    {item.status.toLowerCase()}
-                  </span>
+          <Fragment key={item.key}>
+            {showDay && (
+              <li className="relative z-10 flex items-center gap-3 py-1.5 first:pt-0">
+                <span className="ml-[9px] h-4 w-4 rounded-full border-2 border-background bg-muted" aria-hidden />
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{dayLabel(item.at)}</span>
+              </li>
+            )}
+            <li>
+              <Link href={item.href} className="group relative z-10 -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50">
+                <span
+                  className={cn(
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-background shadow-sm',
+                    isOrder ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                  )}
+                  aria-hidden
+                >
+                  {isOrder ? <ShoppingBag className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-mono text-sm font-semibold">{item.title}</span>
+                    <span className={cn('rounded-full px-1.5 py-0 text-[10px] font-medium capitalize', ORDER_STATUS_STYLE[item.status] ?? 'bg-muted text-muted-foreground')}>
+                      {item.status.toLowerCase()}
+                    </span>
+                  </div>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {isOrder ? 'Sale to' : 'Stock from'} <span className="text-foreground/80">{item.subtitle}</span> · {formatDistanceToNow(item.at, { addSuffix: true })}
+                  </p>
                 </div>
-                <p className="truncate text-xs text-muted-foreground">
-                  {isOrder ? 'Sale to' : 'Stock from'} {item.subtitle} · {formatDistanceToNow(item.at, { addSuffix: true })}
-                </p>
-              </div>
-              <span className={cn('shrink-0 text-sm font-semibold tabular-nums', isOrder ? 'text-emerald-600' : 'text-amber-600')}>
-                {isOrder ? '+' : '−'}
-                {formatMoney(item.amount)}
-              </span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/0 transition-colors group-hover:text-muted-foreground" />
-            </Link>
-          </li>
+                <span className={cn('shrink-0 text-sm font-semibold tabular-nums', isOrder ? 'text-emerald-600' : 'text-amber-600')}>
+                  {isOrder ? '+' : '−'}
+                  {formatMoney(item.amount)}
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+              </Link>
+            </li>
+          </Fragment>
         );
       })}
-    </ul>
+    </ol>
   );
 }
