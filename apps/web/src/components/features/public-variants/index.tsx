@@ -11,7 +11,15 @@ import { useEffect, useState } from 'react';
 import PublicVariantFilter, { DEFAULT_SORT } from './filter';
 import VariantCard, { VariantCardSkeleton } from './variant-card';
 import { ProductVariantListItemDto } from '@pms/types';
-import Header from '@/components/storefront/sections/Header';
+
+// The API takes comma-separated ids; the checkbox lists work with arrays.
+const toIds = (csv?: string): number[] =>
+  csv
+    ? csv
+        .split(',')
+        .map(Number)
+        .filter((n) => Number.isInteger(n) && n > 0)
+    : [];
 
 export default function PublicVariantList() {
   const searchParams = useSearchParams();
@@ -21,8 +29,9 @@ export default function PublicVariantList() {
 
   const [filterParams, setFilterParams] = useState<ProductVariantFilterParams>({
     search: searchParams.get('search') || '',
-    categoryId: searchParams.get('categoryId') ? +searchParams.get('categoryId')! : undefined,
-    productId: searchParams.get('productId') ? +searchParams.get('productId')! : undefined,
+    categoryIds: searchParams.get('categoryIds') || searchParams.get('categoryId') || undefined,
+    brandNameIds: searchParams.get('brandNameIds') || searchParams.get('brandNameId') || undefined,
+    productIds: searchParams.get('productIds') || searchParams.get('productId') || undefined,
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
     sortBy: searchParams.get('sortBy') || 'createdAt',
@@ -40,36 +49,23 @@ export default function PublicVariantList() {
     }
   }, [getAllProductVariantsResponse.status, getAllProductVariantsResponse.data]);
 
-  const totalRecord = recordCount;
-
   const page = filterParams.page ?? 1;
   const pageSize = filterParams.recordPerPage || config.recordPerPage;
   const pageCount = Math.max(1, Math.ceil(recordCount / pageSize));
-  const hasFilters = !!filterParams.search || filterParams.categoryId !== undefined || filterParams.productId !== undefined;
+  const hasFilters = !!filterParams.search || !!filterParams.categoryIds || !!filterParams.brandNameIds || !!filterParams.productIds;
 
   const resetForm = () => {
     setFilterParams({
       search: '',
-      categoryId: undefined,
-      productId: undefined,
+      categoryIds: undefined,
+      brandNameIds: undefined,
+      productIds: undefined,
       page: 1,
       recordPerPage: config.recordPerPage,
       sortBy: 'createdAt',
       sortDirection: 'DESC',
     });
   };
-
-  if (getAllProductVariantsResponse.isLoading) {
-    return (
-      <>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: pageSize }, (_, i) => (
-            <VariantCardSkeleton key={i} />
-          ))}
-        </div>
-      </>
-    );
-  }
 
   if (getAllProductVariantsResponse.isError) {
     return (
@@ -91,13 +87,15 @@ export default function PublicVariantList() {
         <div className="w-1/4">
           <PublicVariantFilter
             initialSearch={filterParams.search}
-            initialCategoryId={filterParams.categoryId}
-            initialProductId={filterParams.productId}
+            initialCategoryIds={toIds(filterParams.categoryIds)}
+            initialBrandNameIds={toIds(filterParams.brandNameIds)}
+            initialProductIds={toIds(filterParams.productIds)}
             initialSort={filterParams.sortBy && filterParams.sortDirection ? `${filterParams.sortBy}:${filterParams.sortDirection}` : DEFAULT_SORT}
             resetForm={resetForm}
             onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || '', page: 1 }))}
-            onCategoryChange={(categoryId) => setFilterParams((prev) => ({ ...prev, categoryId, page: 1 }))}
-            onProductChange={(productId) => setFilterParams((prev) => ({ ...prev, productId, page: 1 }))}
+            onCategoryChange={(ids) => setFilterParams((prev) => ({ ...prev, categoryIds: ids.join(',') || undefined, page: 1 }))}
+            onBrandNameChange={(ids) => setFilterParams((prev) => ({ ...prev, brandNameIds: ids.join(',') || undefined, page: 1 }))}
+            onProductChange={(ids) => setFilterParams((prev) => ({ ...prev, productIds: ids.join(',') || undefined, page: 1 }))}
             onSortChange={(sort) => {
               const [sortBy, sortDirection] = sort.split(':');
               setFilterParams((prev) => ({ ...prev, sortBy, sortDirection, page: 1 }));
@@ -116,6 +114,16 @@ export default function PublicVariantList() {
             )}
           </div> */}
 
+          {getAllProductVariantsResponse.isLoading && 'Loading…'}
+          {getAllProductVariantsResponse.isFetching && !getAllProductVariantsResponse.isLoading && (
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {Array.from({ length: pageSize }, (_, i) => (
+                  <VariantCardSkeleton key={i} />
+                ))}
+              </div>
+            </>
+          )}
           {data.length === 0 ? (
             <Card>
               <div className="flex flex-col items-center gap-3 py-12 text-center">

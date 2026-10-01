@@ -12,7 +12,6 @@ import config from '@/config';
 import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
 import ConfirmBox from '@/components/common/confirm-box';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,12 +27,6 @@ import BrandNameFilter, { BrandNameFilterValue, DEFAULT_BRAND_NAME_FILTER, SortD
 import ListPagination from '@/components/common/list-pagination';
 import CardAction from '@/components/common/card-action';
 import { PageHeader } from '@/components/common/page-header';
-
-const STATUS_BADGE: Record<Status, 'green' | 'orange' | 'destructive'> = {
-  [StatusValues.Published]: 'green',
-  [StatusValues.Draft]: 'orange',
-  [StatusValues.Trash]: 'destructive',
-};
 
 const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
 
@@ -135,8 +128,6 @@ export default function BrandName() {
     closeDeleteModal(true);
   };
 
-  const formatDate = (value: BrandNameDto['createdAt']) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
-
   const isFiltered = filter.search !== '' || filter.status !== null;
   const showSkeleton = listQuery.isPending;
 
@@ -214,7 +205,6 @@ export default function BrandName() {
             <BrandCard
               key={brand.id}
               brand={brand}
-              formatDate={formatDate}
               onEdit={() => openEditModal(brand.id)}
               onDelete={() => openDeleteModal(brand.id)}
             />
@@ -252,12 +242,11 @@ export default function BrandName() {
 
 interface BrandCardProps {
   brand: BrandNameDto;
-  formatDate: (value: BrandNameDto['createdAt']) => string;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function BrandCard({ brand, formatDate, onEdit, onDelete }: BrandCardProps) {
+function BrandCard({ brand, onEdit, onDelete }: BrandCardProps) {
   const logo = brand.images?.[0];
   const isTrashed = brand.status === StatusValues.Trash;
 

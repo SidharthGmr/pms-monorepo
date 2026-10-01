@@ -60,6 +60,22 @@ const productVariantController = container.get<ProductVariantController>(TYPES.P
  *         schema:
  *           type: integer
  *       - in: query
+ *         name: categoryIds
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Comma-separated category IDs, e.g. `3,7`. Takes precedence over categoryId.
+ *       - in: query
+ *         name: brandNameId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: brandNameIds
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Comma-separated brand IDs, e.g. `5,9`. Takes precedence over brandNameId.
+ *       - in: query
  *         name: isActive
  *         schema:
  *           type: boolean
@@ -119,6 +135,22 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
  *         name: categoryId
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: categoryIds
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Comma-separated category IDs, e.g. `3,7`. Takes precedence over categoryId.
+ *       - in: query
+ *         name: brandNameId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: brandNameIds
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Comma-separated brand IDs, e.g. `5,9`. Takes precedence over brandNameId.
  *       - in: query
  *         name: productId
  *         schema:

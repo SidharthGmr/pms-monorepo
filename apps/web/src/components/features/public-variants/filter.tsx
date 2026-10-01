@@ -1,12 +1,13 @@
 'use client';
-import { SelectSearch } from '@/components/common/select-search';
-import { Button } from '@/components/ui/button';
-import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
-import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService';
-import RadioList from '@/components/common/radio-list';
-import { Cross2Icon } from '@radix-ui/react-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
+import { Cross2Icon } from '@radix-ui/react-icons';
+import CheckList from '@/components/common/check-list';
+import RadioList from '@/components/common/radio-list';
+import { Button } from '@/components/ui/button';
+import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
+import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
+import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService';
 
 /** Only the columns the API can sort on - price and stock are derived, so they are not offered. */
 export const SORT_OPTIONS = [
@@ -21,41 +22,49 @@ export const DEFAULT_SORT = SORT_OPTIONS[0].value;
 
 interface PublicVariantFilterProps {
   initialSearch?: string;
-  initialCategoryId?: number;
-  initialProductId?: number;
+  initialCategoryIds?: number[];
+  initialBrandNameIds?: number[];
+  initialProductIds?: number[];
   initialSort?: string;
   onTextChange?: (q: string) => void;
-  onCategoryChange?: (categoryId: number | undefined) => void;
-  onProductChange?: (productId: number | undefined) => void;
+  onCategoryChange?: (categoryIds: number[]) => void;
+  onBrandNameChange?: (brandNameIds: number[]) => void;
+  onProductChange?: (productIds: number[]) => void;
   onSortChange?: (sort: string) => void;
   resetForm?: () => void;
 }
 
+// Every box is a checkbox list so several values can be combined, and each folds down to its header.
 export default function PublicVariantFilter({
   initialSearch = '',
-  initialCategoryId,
-  initialProductId,
+  initialCategoryIds = [],
+  initialBrandNameIds = [],
+  initialProductIds = [],
   initialSort = DEFAULT_SORT,
   onTextChange,
   onCategoryChange,
+  onBrandNameChange,
   onProductChange,
   onSortChange,
   resetForm,
 }: PublicVariantFilterProps) {
   const [searchedText, setSearchedText] = useState(initialSearch);
   const [searchedValue] = useDebounce(searchedText, 600);
-  const [categoryId, setCategoryId] = useState<number | undefined>(initialCategoryId);
-  const [productId, setProductId] = useState<number | undefined>(initialProductId);
+  const [categoryIds, setCategoryIds] = useState<number[]>(initialCategoryIds);
+  const [brandNameIds, setBrandNameIds] = useState<number[]>(initialBrandNameIds);
+  const [productIds, setProductIds] = useState<number[]>(initialProductIds);
   const [sort, setSort] = useState(initialSort);
   const [isFiltered, setIsFiltered] = useState(false);
 
   const { data: categoriesResponse, isLoading: isCategoriesLoading } = useGetAllCategories({ showAllRecords: true });
+  const { data: brandResponse, isLoading: isBrandsLoading } = useGetAllBrandNames({ showAllRecords: true });
   const { data: productResponse, isLoading: isProductsLoading } = useGetAllPublicProducts({ showAllRecords: true });
 
   const categoryItems = useMemo(
     () => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })),
     [categoriesResponse]
   );
+  const brandItems = useMemo(() => (brandResponse?.data?.data?.data ?? []).map((brand) => ({ label: brand.name, value: brand.id })), [brandResponse]);
   const productItems = useMemo(
     () => (productResponse?.data?.data?.data ?? []).map((product) => ({ label: product.name, value: product.id })),
     [productResponse]
@@ -67,23 +76,29 @@ export default function PublicVariantFilter({
   }, [searchedValue]);
 
   useEffect(() => {
-    setIsFiltered(!!searchedText || categoryId !== undefined || productId !== undefined || sort !== DEFAULT_SORT);
-  }, [searchedText, categoryId, productId, sort]);
+    setIsFiltered(!!searchedText || categoryIds.length > 0 || brandNameIds.length > 0 || productIds.length > 0 || sort !== DEFAULT_SORT);
+  }, [searchedText, categoryIds, brandNameIds, productIds, sort]);
 
-  const selectCategory = (next: number | undefined) => {
-    setCategoryId(next);
+  const selectCategories = (next: number[]) => {
+    setCategoryIds(next);
     onCategoryChange?.(next);
   };
 
-  const selectProduct = (next: number | undefined) => {
-    setProductId(next);
+  const selectBrands = (next: number[]) => {
+    setBrandNameIds(next);
+    onBrandNameChange?.(next);
+  };
+
+  const selectProducts = (next: number[]) => {
+    setProductIds(next);
     onProductChange?.(next);
   };
 
   const resetFilter = () => {
     setSearchedText('');
-    setCategoryId(undefined);
-    setProductId(undefined);
+    setCategoryIds([]);
+    setBrandNameIds([]);
+    setProductIds([]);
     setSort(DEFAULT_SORT);
     setIsFiltered(false);
     resetForm?.();
@@ -91,51 +106,51 @@ export default function PublicVariantFilter({
 
   return (
     <div className="grid gap-2">
-      {/* <Input
-        placeholder="Search product, variant, SKU or barcode..."
-        value={searchedText}
-        onChange={(e) => setSearchedText(e.target.value)}
-        className="bg-background"
-        aria-label="Search variants"
-      /> */}
-      <RadioList
+      <CheckList
         title="Category"
-        allLabel="All categories"
+        collapsible
         searchable
         searchPlaceholder="Search categories…"
         items={categoryItems}
-        value={categoryId}
-        onChange={selectCategory}
+        values={categoryIds}
+        onChange={selectCategories}
         loading={isCategoriesLoading}
         emptyText="No categories yet."
       />
-      <RadioList
+      <CheckList
+        title="Brand"
+        collapsible
+        searchable
+        searchPlaceholder="Search brands…"
+        items={brandItems}
+        values={brandNameIds}
+        onChange={selectBrands}
+        loading={isBrandsLoading}
+        emptyText="No brands yet."
+      />
+      <CheckList
         title="Product"
-        allLabel="All products"
+        collapsible
         searchable
         searchPlaceholder="Search products…"
         items={productItems}
-        value={productId}
-        onChange={selectProduct}
+        values={productIds}
+        onChange={selectProducts}
         loading={isProductsLoading}
         emptyText="No products yet."
       />
-      <div>
-        <SelectSearch
-          value={sort}
-          placeholder="Sort"
-          items={SORT_OPTIONS}
-          valueType="string"
-          disableSearch
-          onChange={(value) => {
-            const next = value ? String(value) : DEFAULT_SORT;
-            setSort(next);
-            onSortChange?.(next);
-          }}
-          buttonClass="bg-background w-full"
-          containerName="public-variant-sort-filter"
-        />
-      </div>
+      <RadioList
+        title="Sort by"
+        allLabel={null}
+        collapsible
+        items={SORT_OPTIONS}
+        value={sort}
+        onChange={(next) => {
+          const value = next ?? DEFAULT_SORT;
+          setSort(value);
+          onSortChange?.(value);
+        }}
+      />
       <div className="place-content-center">
         {isFiltered && (
           <div className="flex justify-start">

@@ -1,6 +1,6 @@
 'use client';
 import { useId, useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface RadioListItem<T extends string | number> {
@@ -26,6 +26,9 @@ export interface RadioListProps<T extends string | number> {
   maxHeight?: number | string;
   emptyText?: string;
   loading?: boolean;
+  /** Adds a chevron to the title that folds the box down to its header. */
+  collapsible?: boolean;
+  defaultOpen?: boolean;
   className?: string;
 }
 
@@ -45,10 +48,14 @@ export default function RadioList<T extends string | number>({
   maxHeight = 300,
   emptyText = 'Nothing to show.',
   loading = false,
+  collapsible = false,
+  defaultOpen = true,
   className,
 }: RadioListProps<T>) {
   const name = useId();
   const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(!collapsible || defaultOpen);
+  const selectedLabel = value === undefined ? undefined : items.find((item) => item.value === value)?.label;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,12 +71,26 @@ export default function RadioList<T extends string | number>({
       {(title || searchable) && (
         <div className="border-b">
           {title && (
-            <div className="flex items-center justify-between px-3 py-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</span>
-              <span className="text-[11px] tabular-nums text-muted-foreground">{loading ? '…' : items.length}</span>
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              {collapsible ? (
+                <button
+                  type="button"
+                  onClick={() => setOpen((v) => !v)}
+                  aria-expanded={open}
+                  aria-controls={`${name}-body`}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', !open && '-rotate-90')} />
+                  <span className="truncate">{title}</span>
+                  {!open && selectedLabel && <span className="truncate rounded-full bg-primary/10 px-1.5 text-[10px] normal-case tracking-normal text-primary">{selectedLabel}</span>}
+                </button>
+              ) : (
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</span>
+              )}
+              <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{loading ? '…' : items.length}</span>
             </div>
           )}
-          {searchable && (
+          {searchable && open && (
             <div className={cn('relative px-2 pb-2', !title && 'pt-2')}>
               <Search
                 className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
@@ -100,7 +121,7 @@ export default function RadioList<T extends string | number>({
         </div>
       )}
 
-      <div className="overflow-y-auto p-1" style={{ maxHeight }}>
+      <div id={`${name}-body`} className={cn('overflow-y-auto p-1', !open && 'hidden')} style={{ maxHeight }}>
         {loading ? (
           <div className="space-y-1 p-1" aria-busy="true">
             {Array.from({ length: 5 }).map((_, i) => (

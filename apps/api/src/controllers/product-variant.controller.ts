@@ -15,6 +15,17 @@ import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { VariantRatingDto } from '../dtos/product-variant.dto';
 import { MISSING_STORE_CODE } from '../constants/responses';
 
+// `?productIds=12,15,18` -> [12, 15, 18]. Anything that is not a positive whole number is dropped,
+// and an empty or absent value is `undefined` so the filter is simply not applied.
+const idList = (raw: unknown): number[] | undefined => {
+  if (typeof raw !== 'string') return undefined;
+  const ids = raw
+    .split(',')
+    .map((part) => parseInt(part.trim(), 10))
+    .filter((id) => Number.isInteger(id) && id > 0);
+  return ids.length ? ids : undefined;
+};
+
 export class ProductVariantController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
 
@@ -31,7 +42,11 @@ export class ProductVariantController {
         search: req.query['search'] as string | undefined,
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
+        productIds: idList(req.query['productIds']),
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
+        categoryIds: idList(req.query['categoryIds']),
+        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
+        brandNameIds: idList(req.query['brandNameIds']),
         isActive: req.query['isActive'] !== undefined ? req.query['isActive'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
@@ -116,7 +131,11 @@ export class ProductVariantController {
         recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
         search: req.query['search'] as string | undefined,
         categoryId: req.query['categoryId'] ? parseInt(req.query['categoryId'] as string) : undefined,
+        categoryIds: idList(req.query['categoryIds']),
+        brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
+        brandNameIds: idList(req.query['brandNameIds']),
         productId: req.query['productId'] ? parseInt(req.query['productId'] as string) : undefined,
+        productIds: idList(req.query['productIds']),
         storeCode: req.query['storeCode'] as string | undefined,
         sortBy: req.query['sortBy'] as string | undefined,
         sortOrder: req.query['sortDirection'] || req.query['sortOrder']

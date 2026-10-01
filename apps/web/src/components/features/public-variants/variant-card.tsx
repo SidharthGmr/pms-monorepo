@@ -101,14 +101,16 @@ export default function VariantCard({ variant }: VariantCardProps) {
           )
         )}
 
-        <div className="absolute right-2 top-2 z-10">
-          <WishlistToggle
-            variantId={variant.id}
-            productName={title}
-            inWishlist={wishlistedVariantIds.has(variant.id)}
-            className="rounded-full bg-background/70 shadow-sm backdrop-blur transition-colors hover:bg-background"
-          />
-        </div>
+        {soldOut && (
+          <div className="absolute right-2 top-2 z-10">
+            <WishlistToggle
+              variantId={variant.id}
+              productName={title}
+              inWishlist={wishlistedVariantIds.has(variant.id)}
+              className="rounded-full bg-background/70 shadow-sm backdrop-blur transition-colors hover:bg-background"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-3.5">
@@ -139,6 +141,7 @@ export default function VariantCard({ variant }: VariantCardProps) {
             ))}
           </div>
         )}
+
         {subtitle && <CardDescription className="mt-2 line-clamp-1 text-muted-foreground">{subtitle}</CardDescription>}
 
         <div className="mt-2.5">
