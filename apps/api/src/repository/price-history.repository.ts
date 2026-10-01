@@ -195,6 +195,20 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
     return { totalRecord: total, data: data.map((row) => toDto(row, previous.get(row.id) ?? null)) };
   }
 
+  async getEffectiveOnMany(variantIds: number[], date: Date, tx: Prisma.TransactionClient = prisma): Promise<Map<number, PriceHistoryDto>> {
+    const result = new Map<number, PriceHistoryDto>();
+    if (variantIds.length === 0) return result;
+    const rows = await tx.priceHistory.findMany({
+      where: { variantId: { in: [...new Set(variantIds)] }, ...effectiveOn(date) },
+      include: priceHistoryInclude,
+      orderBy: EFFECTIVE_ORDER,
+    });
+    for (const row of rows) {
+      if (!result.has(row.variantId)) result.set(row.variantId, toDto(row));
+    }
+    return result;
+  }
+
   async getEffectiveOn(variantId: number, date: Date, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto | null> {
     const row = await tx.priceHistory.findFirst({
       where: { variantId, ...effectiveOn(date) },

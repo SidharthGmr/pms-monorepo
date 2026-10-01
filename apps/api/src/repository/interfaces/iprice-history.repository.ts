@@ -19,6 +19,9 @@ export interface IPriceHistoryRepository {
    */
   getEffectiveOn(variantId: number, date: Date, tx?: Prisma.TransactionClient): Promise<PriceHistoryDto | null>;
 
+  /** Same lookup for many variants in one query; variants with no price on that date are absent from the map. */
+  getEffectiveOnMany(variantIds: number[], date: Date, tx?: Prisma.TransactionClient): Promise<Map<number, PriceHistoryDto>>;
+
   /** Min/max/average/current price for a variant - drives the trend widget. */
   getSummary(variantId: number): Promise<PriceHistorySummaryDto>;
 

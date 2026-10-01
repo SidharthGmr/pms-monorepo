@@ -5,6 +5,7 @@ import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/f
 import { Input } from '@/components/ui/input';
 import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
 import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
+import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
 import { ReceiveStockFormValues } from '@/schema/receiveStockSchema';
 import { Check, Trash2 } from 'lucide-react';
@@ -312,7 +313,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
               <span className="mb-1 block text-xs font-medium text-slate-500 sm:hidden">Unit cost</span>
               <FormControl>
                 <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm text-slate-400">$</span>
+                  <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm text-slate-400">₹</span>
                   <NumericInput
                     name={field.name}
                     ref={field.ref}
@@ -333,7 +334,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
                   className="mt-1 block w-full text-right text-xs font-medium text-primary hover:underline"
                   onClick={() => setValue(`items.${index}.costPrice`, Number(lastCost), { shouldValidate: true, shouldDirty: true })}
                 >
-                  Use ${Number(lastCost).toFixed(2)}
+                  Use {formatPrice(Number(lastCost))}
                 </button>
               )}
             </FormItem>
@@ -344,7 +345,7 @@ export function PurchaseItemRow({ control, index, products, onRemove, canRemove 
       {/* Subtotal */}
       <div className="mt-3 flex items-center justify-between border-t border-dashed border-slate-100 pt-3 sm:mt-0 sm:h-10 sm:justify-end sm:border-0 sm:pt-0">
         <span className="text-xs font-medium text-slate-500 sm:hidden">Subtotal</span>
-        <span className={cn('text-sm font-semibold tabular-nums', lineTotal > 0 ? 'text-slate-900' : 'text-slate-300')}>${lineTotal.toFixed(2)}</span>
+        <span className={cn('text-sm font-semibold tabular-nums', lineTotal > 0 ? 'text-slate-900' : 'text-slate-300')}>{formatPrice(lineTotal)}</span>
       </div>
 
       {/* Remove (desktop) — the slot is always rendered so the columns stay aligned. */}

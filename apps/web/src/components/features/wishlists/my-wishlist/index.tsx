@@ -11,12 +11,12 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { WishlistDto } from '@/dtos/wishlist.dto';
 import { StatusValues } from '@/enums/status-values.enum';
-import { useAddToCart } from '@/hooks/service-hooks/useCartService';
+import { useAddToCart, useCartMembership } from '@/hooks/service-hooks/useCartService';
 import { useGetAllWishlists, useRemoveFromWishlist } from '@/hooks/service-hooks/useWishlistService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { Heart, ImageIcon } from 'lucide-react';
+import { Check, Heart, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -41,6 +41,8 @@ export default function WishlistGrid() {
   } = useGetAllWishlists({ userId, page, recordPerPage: config.recordPerPage }, !!userId);
   const removeMutation = useRemoveFromWishlist();
   const addToCartMutation = useAddToCart();
+  const cart = useCartMembership(!!userId);
+  const isInCart = (entry: WishlistDto) => (entry.variantId !== null ? cart.variantIds.has(entry.variantId) : cart.productIds.has(entry.productId));
   // Keyed on the wishlist row, not the product: two SKUs of one product are two rows,
   // and keying on productId would spin both buttons at once.
   const [addingEntryId, setAddingEntryId] = useState<number | null>(null);
@@ -156,14 +158,18 @@ export default function WishlistGrid() {
               </div>
 
               <div className="mt-auto flex items-center gap-2">
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  disabled={!isAvailable || addingEntryId === entry.id}
-                  onClick={() => handleAddToCart(entry)}
-                >
-                  {addingEntryId === entry.id ? 'Adding...' : 'Add to Cart'}
-                </Button>
+                {isInCart(entry) ? (
+                  <Button asChild variant="outline" size="sm" className="flex-1 border-green-600/40 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+                    <Link href="/dashboard/cart">
+                      <Check className="h-4 w-4" />
+                      In cart
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button size="sm" className="flex-1" disabled={!isAvailable || addingEntryId === entry.id} onClick={() => handleAddToCart(entry)}>
+                    {addingEntryId === entry.id ? 'Adding...' : 'Add to Cart'}
+                  </Button>
+                )}
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/dashboard/products/${entry.productId}`}>View</Link>
                 </Button>

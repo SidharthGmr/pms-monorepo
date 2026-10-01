@@ -3,6 +3,7 @@ import { TYPES } from '@/config/types';
 import { AddToCartModel, UpdateCartItemModel } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 const CART_KEY = 'CartService.getActive';
 
@@ -16,6 +17,22 @@ const useGetActiveCart = (enabled: boolean = true) => {
     },
     enabled,
   });
+};
+
+// Which variants and products are already in the active cart, so an "Add to cart" button can
+// turn into "In cart". Shares the cart query, so it updates the moment anything is added or
+// removed. Pass `enabled=false` for guests - the cart endpoint needs a signed-in user.
+const useCartMembership = (enabled: boolean = true) => {
+  const { data, isLoading } = useGetActiveCart(enabled);
+  return useMemo(() => {
+    const items = data?.data?.data?.items ?? [];
+    return {
+      isLoading,
+      variantIds: new Set(items.map((item) => item.variantId)),
+      productIds: new Set(items.map((item) => item.productId)),
+      quantityOfVariant: (variantId: number) => items.find((item) => item.variantId === variantId)?.quantity ?? 0,
+    };
+  }, [data, isLoading]);
 };
 
 const useAddToCart = () => {
@@ -130,6 +147,7 @@ const useClearCart = () => {
 
 export {
   useGetActiveCart,
+  useCartMembership,
   useAddToCart,
   useUpdateCartQuantity,
   useRemoveFromCart,

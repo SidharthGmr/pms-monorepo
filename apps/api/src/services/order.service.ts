@@ -31,22 +31,41 @@ export class OrderService implements IOrderService {
     return order;
   }
 
+  // Every read and write here is batched so the transaction runs a fixed handful of queries
+  // however many lines the order has. The database is remote, and the earlier one-query-per-line
+  // version timed out on carts of only a few items.
   async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
-      let calculatedTotalAmount = 0;
-      const orderItemsToCreate: { productId: number; variantId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
-
-      // Date the order is placed on — allows backdating; drives the price lookup.
       const orderDate = data.orderDate ? new Date(data.orderDate) : new Date();
+      const items = data.items ?? [];
+      const variantIds = [...new Set(items.map((item) => item.variantId))];
 
-      // Stock and price are both per variant, so every check below is too. Checking at
-      // product level (as this did) let one variant oversell while another held the stock.
-      if (data.items && data.items.length > 0) {
-        for (const item of data.items) {
-          const variant = await transactionClient.productVariant.findUnique({
-            where: { id: item.variantId },
+      const orderItemsToCreate: { productId: number; variantId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
+      let calculatedTotalAmount = 0;
+
+      if (items.length > 0) {
+        const [variants, stockRows, prices] = await Promise.all([
+          transactionClient.productVariant.findMany({
+            where: { id: { in: variantIds } },
             include: { product: { select: { name: true } } },
-          });
+          }),
+          transactionClient.stockHistory.groupBy({
+            by: ['variantId'],
+            where: { variantId: { in: variantIds } },
+            _sum: { quantity: true },
+          }),
+          this.unitOfWork.PriceHistory.getEffectiveOnMany(variantIds, orderDate, transactionClient),
+        ]);
+
+        const variantById = new Map(variants.map((variant) => [variant.id, variant] as const));
+        const stockByVariant = new Map(stockRows.map((row) => [row.variantId as number, row._sum.quantity ?? 0] as const));
+
+        // Two lines for the same variant compete for the same stock, so the check is on the summed request.
+        const requestedByVariant = new Map<number, number>();
+        for (const item of items) requestedByVariant.set(item.variantId, (requestedByVariant.get(item.variantId) ?? 0) + item.quantity);
+
+        for (const item of items) {
+          const variant = variantById.get(item.variantId);
           if (!variant || variant.deletedAt) {
             throw new NotFoundError(`Product variant with ID ${item.variantId} not found`);
           }
@@ -55,25 +74,16 @@ export class OrderService implements IOrderService {
           }
 
           const label = `${variant.product.name}${variant.sku ? ` (${variant.sku})` : ''}`;
-
-          // On-hand stock for this variant = the sum of its own movements.
-          const stockAgg = await transactionClient.stockHistory.aggregate({
-            where: { variantId: item.variantId },
-            _sum: { quantity: true },
-          });
-          const availableStock = stockAgg._sum.quantity ?? 0;
-          if (availableStock < item.quantity) {
-            throw new ClientError(`Insufficient stock for ${label}. Requested: ${item.quantity}, Available: ${availableStock}`);
+          const availableStock = stockByVariant.get(item.variantId) ?? 0;
+          const requested = requestedByVariant.get(item.variantId) ?? item.quantity;
+          if (availableStock < requested) {
+            throw new ClientError(`Insufficient stock for ${label}. Requested: ${requested}, Available: ${availableStock}`);
           }
 
-          // Resolve the price in force on the order date from the ledger. The client never
-          // sends a price — it is always resolved here.
-          const priceRow = await this.unitOfWork.PriceHistory.getEffectiveOn(item.variantId, orderDate, transactionClient);
+          const priceRow = prices.get(item.variantId);
           if (!priceRow) {
             throw new ClientError(`No price found for ${label}. Please set a price before selling it.`);
           }
-          // The ledger holds the amounts, the variant holds the switch - so the order line is
-          // priced from both, matching what the cart charged and the card advertised.
           const unitPrice = payablePrice(
             {
               effectiveFrom: priceRow.effectiveFrom,
@@ -88,13 +98,7 @@ export class OrderService implements IOrderService {
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 
-          orderItemsToCreate.push({
-            productId: variant.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-            unitPrice,
-            totalPrice,
-          });
+          orderItemsToCreate.push({ productId: variant.productId, variantId: item.variantId, quantity: item.quantity, unitPrice, totalPrice });
         }
       }
 
@@ -122,10 +126,9 @@ export class OrderService implements IOrderService {
         },
       });
 
-      // Create order items and deduct stock via negative stockHistory movements.
-      for (const item of orderItemsToCreate) {
-        await transactionClient.orderItem.create({
-          data: {
+      if (orderItemsToCreate.length > 0) {
+        await transactionClient.orderItem.createMany({
+          data: orderItemsToCreate.map((item) => ({
             storeCode,
             orderId: order.id,
             orderNumber,
@@ -134,25 +137,23 @@ export class OrderService implements IOrderService {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
-          },
+          })),
         });
 
-        // Booked against the variant, so the deduction is visible to the same per-variant
-        // stock query the availability check above uses.
-        await transactionClient.stockHistory.create({
-          data: {
+        await transactionClient.stockHistory.createMany({
+          data: orderItemsToCreate.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
             storeCode,
             createdById,
             quantity: -item.quantity,
             reason: `Order #${orderNumber}`,
-          },
+          })),
         });
       }
 
       return order;
-    }, { timeout: 15000 });
+    });
   }
 
   async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {

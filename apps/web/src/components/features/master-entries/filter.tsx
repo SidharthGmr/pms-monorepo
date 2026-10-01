@@ -1,117 +1,173 @@
 'use client';
-import { SelectSearch } from '@/components/common/select-search';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { StatusValues } from '@/enums/status-values.enum';
-import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
-import { Cross2Icon } from '@radix-ui/react-icons';
-import { Table } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, RotateCcw, Search } from 'lucide-react';
+import { SelectSearch } from '@/components/common/select-search';
+import ViewSwitch, { ListView } from '@/components/common/view-switch';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StatusValues } from '@/enums/status-values.enum';
+import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
+import { cn } from '@/lib/utils';
 
-interface MasterEntryFilterProps<TData> {
-  table: Table<TData>;
-  /** Set when arriving from the attributes screen via ?attributeId=... */
-  initialAttributeId?: number;
-  onTextChange?: (q: string) => void;
-  onAttributeChange?: (attributeId: number | undefined) => void;
-  onStatusChange?: (value: string) => void;
-  resetForm?: () => void;
+export type SortDirection = 'ASC' | 'DESC';
+
+export interface MasterEntryFilterValue {
+  search: string;
+  /** `''` means every live status, which is what the API does when status is omitted. */
+  status: string;
+  attributeId?: number;
+  sortBy: string;
+  sortDirection: SortDirection;
 }
 
-export default function MasterEntryFilter<TData>({
-  table,
-  initialAttributeId,
-  onTextChange,
-  onAttributeChange,
-  onStatusChange,
-  resetForm,
-}: MasterEntryFilterProps<TData>) {
-  const [searchedText, setSearchedText] = useState('');
-  const [searchedValue] = useDebounce(searchedText, 600);
-  const [attributeId, setAttributeId] = useState<number | undefined>(initialAttributeId);
-  const [status, setStatus] = useState<string>('');
-  const [isFiltered, setIsFiltered] = useState(false);
+export const DEFAULT_MASTER_ENTRY_FILTER: MasterEntryFilterValue = {
+  search: '',
+  status: '',
+  attributeId: undefined,
+  sortBy: 'createdAt',
+  sortDirection: 'DESC',
+};
 
-  // Every attribute, unpaginated - this feeds the "filter by attribute" dropdown.
+const STATUS_TABS: { label: string; value: string }[] = [
+  { label: 'All', value: '' },
+  { label: 'Published', value: StatusValues.Published },
+  { label: 'Draft', value: StatusValues.Draft },
+];
+
+// Mirrors SORTABLE_COLUMNS in master-entry.repository.ts - anything else falls back to createdAt server-side.
+const SORT_OPTIONS = [
+  { value: 'createdAt', label: 'Date added' },
+  { value: 'updatedAt', label: 'Last updated' },
+  { value: 'name', label: 'Label' },
+  { value: 'value', label: 'Stored value' },
+  { value: 'displayOrder', label: 'Display order' },
+  { value: 'status', label: 'Status' },
+];
+
+interface MasterEntryFilterProps {
+  value: MasterEntryFilterValue;
+  onChange: (patch: Partial<MasterEntryFilterValue>) => void;
+  onReset: () => void;
+  view: ListView;
+  onViewChange: (view: ListView) => void;
+  /** Total matching records, shown next to the active status tab. */
+  total?: number;
+  loading?: boolean;
+}
+
+export default function MasterEntryFilter({ value, onChange, onReset, view, onViewChange, total, loading }: MasterEntryFilterProps) {
+  // The box updates on every keystroke; the query only fires once typing pauses.
+  const [searchText, setSearchText] = useState(value.search);
+  const [debouncedSearch] = useDebounce(searchText.trim(), 500);
+
+  useEffect(() => {
+    if (debouncedSearch !== value.search) onChange({ search: debouncedSearch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
+  // Keep the box in step when the parent resets the filters.
+  useEffect(() => {
+    if (value.search === '' && searchText !== '') setSearchText('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.search]);
+
   const { data: attributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
-
   const attributeItems = useMemo(
-    () => (attributesResponse?.data?.data?.data ?? []).map((attribute) => ({ label: attribute.name, value: attribute.id })),
+    () => (attributesResponse?.data?.data?.data ?? []).map((attribute) => ({ label: `${attribute.name} (${attribute.code})`, value: attribute.id })),
     [attributesResponse]
   );
 
-  useEffect(() => {
-    onTextChange?.(searchedValue);
-    table.setPageIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchedValue]);
+  const isFiltered =
+    value.search !== DEFAULT_MASTER_ENTRY_FILTER.search ||
+    value.status !== DEFAULT_MASTER_ENTRY_FILTER.status ||
+    value.attributeId !== undefined ||
+    value.sortBy !== DEFAULT_MASTER_ENTRY_FILTER.sortBy ||
+    value.sortDirection !== DEFAULT_MASTER_ENTRY_FILTER.sortDirection;
 
-  useEffect(() => {
-    setIsFiltered(!!searchedText || !!status || attributeId !== undefined);
-  }, [searchedText, status, attributeId]);
-
-  const resetFilter = () => {
-    setSearchedText('');
-    setStatus('');
-    setAttributeId(undefined);
-    setIsFiltered(false);
-    table.setPageIndex(0);
-    resetForm?.();
-  };
+  const isDesc = value.sortDirection === 'DESC';
 
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-      <Input
-        placeholder="Search label or value..."
-        value={searchedText}
-        onChange={(e) => setSearchedText(e.target.value)}
-        className="bg-background"
-      />
-      <div>
-        <SelectSearch
-          value={attributeId}
-          placeholder="Filter by attribute"
-          items={attributeItems}
-          valueType="number"
-          onChange={(value) => {
-            const next = value === '' || value === undefined ? undefined : +value;
-            setAttributeId(next);
-            onAttributeChange?.(next);
-            table.setPageIndex(0);
-          }}
-          buttonClass="bg-background"
-          containerName="master-entry-attribute-filter"
-        />
-      </div>
-      <div>
-        <SelectSearch
-          value={status}
-          placeholder="Filter by status"
-          items={[
-            { label: 'Published', value: StatusValues.Published },
-            { label: 'Draft', value: StatusValues.Draft },
-          ]}
-          valueType="string"
-          onChange={(value) => {
-            setStatus(value as string);
-            onStatusChange?.(value as string);
-            table.setPageIndex(0);
-          }}
-          buttonClass="bg-background"
-          containerName="master-entry-status-filter"
-          disableSearch
-        />
-      </div>
-      <div className="place-content-center">
-        {isFiltered && (
-          <div className="flex justify-start">
-            <Button variant="destructive" onClick={resetFilter} className="h-8 px-2 lg:px-3">
+    <div className="space-y-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="flex-1">
+          <Input icon={Search} placeholder="Search by label or stored value…" value={searchText} onChange={(e) => setSearchText(e.target.value)} aria-label="Search values" />
+        </div>
+
+        <div className="w-full lg:w-64">
+          <SelectSearch
+            value={value.attributeId ?? ''}
+            placeholder="All attributes"
+            items={attributeItems}
+            valueType="number"
+            containerName="master-entry-attribute-filter"
+            buttonClass="w-full"
+            onChange={(next) => onChange({ attributeId: next === '' || next === undefined ? undefined : +next })}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Select value={value.sortBy} onValueChange={(sortBy) => onChange({ sortBy })}>
+            <SelectTrigger className="h-10 w-full lg:w-44" aria-label="Sort by">
+              <span className="text-muted-foreground">Sort:&nbsp;</span>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            onClick={() => onChange({ sortDirection: isDesc ? 'ASC' : 'DESC' })}
+            aria-label={isDesc ? 'Sorted descending, switch to ascending' : 'Sorted ascending, switch to descending'}
+            title={isDesc ? 'Descending' : 'Ascending'}
+          >
+            {isDesc ? <ArrowDownWideNarrow /> : <ArrowUpNarrowWide />}
+          </Button>
+
+          {isFiltered && (
+            <Button type="button" variant="ghost" className="shrink-0 text-muted-foreground" onClick={onReset}>
+              <RotateCcw />
               Reset
-              <Cross2Icon className="ml-2 h-4 w-4" />
             </Button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter by status">
+          {STATUS_TABS.map((tab) => {
+            const active = tab.value === value.status;
+            return (
+              <button
+                key={tab.label}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onChange({ status: tab.value })}
+                className={cn(
+                  'inline-flex h-8 items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors',
+                  active ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+              >
+                {tab.label}
+                {active && total !== undefined && (
+                  <span className={cn('rounded-full bg-primary-foreground/20 px-1.5 text-xs tabular-nums', loading && 'opacity-60')}>{total}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <ViewSwitch value={view} onChange={onViewChange} />
       </div>
     </div>
   );

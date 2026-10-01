@@ -8,14 +8,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { useAddToCart } from '@/hooks/service-hooks/useCartService';
+import { useAddToCart, useCartMembership } from '@/hooks/service-hooks/useCartService';
 import { useGetAllWishlists } from '@/hooks/service-hooks/useWishlistService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto } from '@pms/types';
-import { ImageOff, ShoppingCart } from 'lucide-react';
+import { Check, ImageOff, ShoppingCart } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
 
 const attributesOf = (variant: ProductVariantListItemDto): { key: string; value: string }[] => {
@@ -52,6 +54,12 @@ export default function VariantCard({ variant }: VariantCardProps) {
   const { currentUser } = useGetCurrentUser();
   const userId = (currentUser as { userId?: string } | undefined)?.userId;
   const { data: wishlistResponse } = useGetAllWishlists({ userId, showAllRecords: true }, !!userId);
+
+  // The cart is per signed-in user, so guests never see the "In cart" state.
+  const cart = useCartMembership(!!userId);
+  const inCart = cart.variantIds.has(variant.id);
+  const pathname = usePathname();
+  const cartHref = pathname?.startsWith('/dashboard') ? '/dashboard/cart' : '/admin/cart';
 
   const wishlistedVariantIds = useMemo(
     () => new Set((wishlistResponse?.data?.data?.data ?? []).map((entry) => entry.variantId).filter((id): id is number => id !== null)),
@@ -168,18 +176,28 @@ export default function VariantCard({ variant }: VariantCardProps) {
             {!soldOut && !lowStock && <span className="text-[11px] font-medium text-muted-foreground">{stock} in stock</span>}
           </div>
 
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 w-full rounded-lg"
-            icon={ShoppingCart}
-            iconPlacement="left"
-            loading={addToCart.isPending}
-            disabled={soldOut || unpriced || addToCart.isPending}
-            onClick={handleAdd}
-          >
-            {soldOut ? 'Sold out' : unpriced ? 'Unavailable' : 'Add to cart'}
-          </Button>
+          {inCart ? (
+            <Button asChild variant="outline" size="sm" className="h-9 w-full rounded-lg border-green-600/40 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+              <Link href={cartHref} aria-label={`${title} is in your cart. View cart`}>
+                <Check className="h-4 w-4" />
+                In cart · {cart.quantityOfVariant(variant.id)}
+                <span className="ml-auto text-xs font-medium underline-offset-2 hover:underline">View cart</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              className="h-9 w-full rounded-lg"
+              icon={ShoppingCart}
+              iconPlacement="left"
+              loading={addToCart.isPending}
+              disabled={soldOut || unpriced || addToCart.isPending}
+              onClick={handleAdd}
+            >
+              {soldOut ? 'Sold out' : unpriced ? 'Unavailable' : 'Add to cart'}
+            </Button>
+          )}
         </div>
       </div>
     </Card>
