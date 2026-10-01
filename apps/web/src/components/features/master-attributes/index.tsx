@@ -301,7 +301,6 @@ function AttributeCard({ attribute, formatDate, onEdit, onDelete }: AttributeCar
       )}
     >
       <div className="flex items-start gap-3 p-4">
-        {/* Attributes have no image, so the code doubles as the visual anchor. */}
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-xs font-bold uppercase tracking-wide text-primary">
           {attribute.code.slice(0, 3)}
         </div>
@@ -326,7 +325,6 @@ function AttributeCard({ attribute, formatDate, onEdit, onDelete }: AttributeCar
           )}
         </div>
 
-        {/* Hidden until the card is hovered or focused; always visible where there is no pointer to hover with. */}
         <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
           <CardAction label="Edit attribute" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
           <CardAction label="Delete attribute" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />
@@ -334,7 +332,6 @@ function AttributeCard({ attribute, formatDate, onEdit, onDelete }: AttributeCar
       </div>
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-2.5 text-[11px] text-muted-foreground">
-        {/* Deep-links into the entries screen pre-filtered to this attribute. */}
         <Link
           href={`/admin/master-entries?attributeId=${attribute.id}`}
           onClick={stop}

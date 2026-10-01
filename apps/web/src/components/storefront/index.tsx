@@ -64,11 +64,11 @@ export default function Storefront() {
     <div id="top" className="min-h-screen bg-background text-foreground antialiased">
       <UtilityBar />
       <Header searchText={searchText} onSearchChange={setSearchText} />
-      <Hero {...(heroVariant && imageFor(heroVariant) ? { imageUrl: imageFor(heroVariant) } : {})} imageAlt={heroVariant?.product?.name ?? ''} />
-      <TrustStrip />
-      <PromoTiles />
+      {/* <Hero {...(heroVariant && imageFor(heroVariant) ? { imageUrl: imageFor(heroVariant) } : {})} imageAlt={heroVariant?.product?.name ?? ''} />
+      <TrustStrip /> */}
+      {/* <PromoTiles /> */}
 
-      <section id="all-products" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section id="all-products" className="container mx-auto px-4 py-10">
         <PublicVariantList />
       </section>
 

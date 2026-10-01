@@ -2,7 +2,7 @@
 name: pms-crud-api
 description: Build a new CRUD REST API endpoint set for this monorepo — shared types (dto/params/enum/model/validator) in packages/types, and the layered routes → controller → UnitOfService → service → UnitOfWork → repository → Prisma stack in apps/api (Node.js + TypeScript + Express 5 + Prisma + InversifyJS). Use whenever the user wants to "create an API", "add CRUD endpoints", "add a new module/entity/resource" (e.g. coupons, warehouses, taxes), "scaffold list/get/create/update/delete", wire a controller/service/repository, add a DTO/model/validator to @pms/types, or extend an existing entity with new endpoints. Also use when reviewing whether an API addition follows the project structure. Covers the matching admin UI too: the shadcn Dialog add/edit form in apps/web (Manage<Entity>, react-hook-form + the shared zod validator, listing wrapper) — use it for "add the category form", "build the add/edit modal", "wire the UI for this API".
 metadata:
-  version: "1.7.0"
+  version: "1.8.0"
   tags: "api, crud, express, typescript, prisma, inversify, nextjs, react-hook-form, zod, shadcn"
 ---
 
@@ -359,6 +359,33 @@ would still make a wrong change without it:
 Not comment-worthy: what a function is called, what a DTO field maps to, "// create the user",
 section banners (`// 1. validate`), restating a conditional, or JSDoc that repeats the
 signature. Delete commented-out code rather than leaving it — git has it.
+
+**Placement: never between the lines of a block.** When a comment is warranted it goes once,
+at the top of the section it explains - above the function, the JSX element, the hook call or
+the `if`. A comment wedged between statements, inside a JSX tree or beside a prop breaks the
+reading flow of the code around it, and this applies to `apps/web` components as much as to
+the API layers. Two comments that would land inside the same block are one comment at its top.
+
+```tsx
+// ✅ one comment above the block it explains
+// The whole card opens the editor; the overlay buttons stop propagation so delete never falls through to edit.
+<Card role="button" onClick={onEdit} onKeyDown={onKeyDown}>
+  <div className="absolute right-2 top-2">
+    <CardAction label="Edit" onClick={onEdit} />
+    <CardAction label="Delete" onClick={onDelete} />
+  </div>
+</Card>
+
+// ❌ comments threaded through the block
+<Card role="button" onClick={onEdit}>
+  {/* Hidden until hovered */}
+  <div className="absolute right-2 top-2">
+    <CardAction label="Edit" onClick={onEdit} />
+    {/* stops the click reaching the card */}
+    <CardAction label="Delete" onClick={onDelete} />
+  </div>
+</Card>
+```
 
 ## Where the repo actually stands
 

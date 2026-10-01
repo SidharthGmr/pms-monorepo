@@ -82,12 +82,11 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
   const getAllCategories = useGetAllCategories({ showAllRecords: true });
   const getAllBrandNames = useGetAllBrandNames({ showAllRecords: true });
 
+  // Code follows Name until the user types in it; on edit it starts locked because other screens select by it.
+  // savedRef is set once anything was saved so a later Cancel still tells the list to refresh.
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  // Once the user types in Code it stops following Name.
   const [codeTouched, setCodeTouched] = useState(false);
-  // Editing the code of a saved attribute breaks every screen that selects by it, so it starts locked.
   const [codeUnlocked, setCodeUnlocked] = useState(!isEdit);
-  // Set once anything was saved so a later Cancel still tells the list to refresh.
   const savedRef = useRef(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
 
@@ -131,6 +130,7 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
   const isSaving = createMutation.isPending || updateMutation.isPending;
   useUnsavedChangesWarning(isDirty && !isSaving);
 
+  // "Save & add another" keeps status and scope, since several attributes added in a row usually share them.
   const save = async (model: CreateMasterAttributeModel, addAnother: boolean) => {
     const result = isEdit ? await updateMutation.mutateAsync({ id: id!, model }) : await createMutation.mutateAsync(model);
 
@@ -138,7 +138,6 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
       savedRef.current = true;
       toast({ variant: 'success', title: `"${model.name}" ${isEdit ? 'updated' : 'created'}` });
       if (addAnother) {
-        // Keep status and scope: someone adding several attributes usually wants them to match.
         form.reset({ ...DEFAULT_VALUES, status: model.status, categoryId: model.categoryId, brandNameId: model.brandNameId });
         setCodeTouched(false);
         nameRef.current?.focus();
@@ -477,7 +476,6 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
               {display}
             </div>
           ) : (
-            // The panel has the page's full width, so Basics sits beside Scope + Display.
             <div className="grid grid-cols-1 gap-6 px-5 py-5 lg:grid-cols-2 lg:gap-8">
               {basics}
               <div className="space-y-6">

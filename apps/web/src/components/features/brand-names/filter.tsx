@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import ViewSwitch, { ListView } from '@/components/common/view-switch';
 
 export type SortDirection = 'ASC' | 'DESC';
 
@@ -46,12 +47,14 @@ interface BrandNameFilterProps {
   value: BrandNameFilterValue;
   onChange: (patch: Partial<BrandNameFilterValue>) => void;
   onReset: () => void;
+  view: ListView;
+  onViewChange: (view: ListView) => void;
   /** Total matching records, shown next to the active status tab. */
   total?: number;
   loading?: boolean;
 }
 
-export default function BrandNameFilter({ value, onChange, onReset, total, loading }: BrandNameFilterProps) {
+export default function BrandNameFilter({ value, onChange, onReset, view, onViewChange, total, loading }: BrandNameFilterProps) {
   // The box updates on every keystroke; the query only fires once typing pauses.
   const [searchText, setSearchText] = useState(value.search);
   const [debouncedSearch] = useDebounce(searchText.trim(), 500);
@@ -124,7 +127,8 @@ export default function BrandNameFilter({ value, onChange, onReset, total, loadi
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter by status">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter by status">
         {STATUS_TABS.map((tab) => {
           const active = tab.value === value.status;
           return (
@@ -154,6 +158,8 @@ export default function BrandNameFilter({ value, onChange, onReset, total, loadi
             </button>
           );
         })}
+        </div>
+        <ViewSwitch value={view} onChange={onViewChange} />
       </div>
     </div>
   );

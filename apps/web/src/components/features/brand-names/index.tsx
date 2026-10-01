@@ -1,5 +1,5 @@
 'use client';
-import { KeyboardEvent, useMemo, useState } from 'react';
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ImageOff, Pencil, Tag, Trash2 } from 'lucide-react';
 import { BrandNameDto, BrandNameFilterParams, Status } from '@pms/types';
@@ -18,6 +18,12 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageBrandName from './add-edit';
+import AddBrandNamePanel from './add-edit/inline-panel';
+import { BrandNameFormHandle } from './add-edit/form';
+import { useBrandNameColumns } from './columns';
+import { useCustomDataTable } from '@/hooks/use-custom-table';
+import { CustomDataTable } from '@/components/Table/data-table';
+import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
 import BrandNameFilter, { BrandNameFilterValue, DEFAULT_BRAND_NAME_FILTER, SortDirection } from './filter';
 import ListPagination from '@/components/common/list-pagination';
 import CardAction from '@/components/common/card-action';
@@ -34,19 +40,34 @@ const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant), which puts a 20px inset around the image at desktop widths.
 const FLUSH_CARD = 'p-0 md:p-0';
 
+const VIEW_STORAGE_KEY = 'brand-names.view';
+
 export default function BrandName() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Add opens an inline panel above the search bar; Edit still uses the dialog. Cards are the
+  // default view; the stored preference is applied after mount so server and first client render agree.
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const addPanelRef = useRef<BrandNameFormHandle>(null);
+  const [view, setView] = useState<ListView>('grid');
+  useEffect(() => {
+    const stored = readStoredView(VIEW_STORAGE_KEY);
+    if (stored) setView(stored);
+  }, []);
+  const changeView = (next: ListView) => {
+    setView(next);
+    storeView(VIEW_STORAGE_KEY, next);
+  };
   // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
   const [filter, setFilter] = useState<BrandNameFilterValue>(() => ({
     search: searchParams.get('search') ?? DEFAULT_BRAND_NAME_FILTER.search,
     status: (searchParams.get('status') as Status | null) ?? DEFAULT_BRAND_NAME_FILTER.status,
     sortBy: searchParams.get('sortBy') ?? DEFAULT_BRAND_NAME_FILTER.sortBy,
     sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
+    page: +(searchParams.get('page') || 1),
   }));
   const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
-  const [pageSize, setPageSize] = useState(() => Number(searchParams.get('recordPerPage')) || config.recordPerPage);
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get('recordPerPage')) || 8 || config.recordPerPage);
 
   const params = useMemo<BrandNameFilterParams>(
     () => ({
@@ -69,6 +90,23 @@ export default function BrandName() {
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
+
+  // The table view reuses the column layout. Paging and sorting are already applied by the API,
+  // so the table is told it is manual and simply renders the page it is given.
+  const columns = useBrandNameColumns(
+    (id) => openEditModal(id),
+    (id) => openDeleteModal(id)
+  );
+  const table = useCustomDataTable({
+    columns,
+    data: brands,
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: Math.max(1, Math.ceil(total / Math.max(pageSize, 1))),
+    pagination: { pageIndex: page - 1, pageSize },
+    sorting: [{ id: filter.sortBy, desc: filter.sortDirection === 'DESC' }],
+  });
 
   // Any change to what is being listed sends the user back to page 1, otherwise a narrower result set can leave them on an empty page.
   const updateFilter = (patch: Partial<BrandNameFilterValue>) => {
@@ -104,19 +142,23 @@ export default function BrandName() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-4">
+      <Card className="space-y-2">
         <PageHeader
           title="Brand Names"
           description={listQuery.isPending ? 'Manage product brands' : `${total} ${total === 1 ? 'brand' : 'brands'} in your store`}
           variant="add"
-          actionText="Add New Brand"
-          onClick={() => setShowAddModal(true)}
+          actionText={showAddPanel ? 'Close' : 'Add New Brand'}
+          buttonVariant={showAddPanel ? 'outline' : 'default'}
+          onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
         />
+        <AddBrandNamePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
         <Separator />
         <BrandNameFilter
           value={filter}
           onChange={updateFilter}
           onReset={resetFilter}
+          view={view}
+          onViewChange={changeView}
           total={listQuery.isPending ? undefined : total}
           loading={listQuery.isFetching}
         />
@@ -137,6 +179,10 @@ export default function BrandName() {
         <Card className="py-16 text-center">
           <p className="text-sm font-semibold text-destructive">Could not load brands</p>
           <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+        </Card>
+      ) : view === 'table' ? (
+        <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
+          <CustomDataTable columns={columns} table={table} isLoading={showSkeleton} />
         </Card>
       ) : showSkeleton ? (
         <div className={GRID} aria-busy="true" aria-label="Loading brands">
@@ -178,12 +224,18 @@ export default function BrandName() {
 
       {total > pageSize && (
         <Card size="sm">
-          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+          <ListPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={listQuery.isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </Card>
       )}
 
       {showEditModal && editId && <ManageBrandName id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
-      {showAddModal && <ManageBrandName isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
       {showDeleteModal && deleteId && (
         <ConfirmBox
           isOpen={showDeleteModal}
@@ -235,19 +287,28 @@ function BrandCard({ brand, formatDate, onEdit, onDelete }: BrandCardProps) {
       <div className="relative flex h-28 items-center justify-center bg-gradient-to-b from-muted/60 to-muted/20 p-4">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt="" loading="lazy" className="max-h-full max-w-[80%] object-contain drop-shadow-sm transition-transform duration-200 group-hover:scale-105" />
+          <img
+            src={logo}
+            alt=""
+            loading="lazy"
+            className="max-h-full max-w-[80%] object-contain drop-shadow-sm transition-transform duration-200 group-hover:scale-105"
+          />
         ) : (
           <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
             <ImageOff className="h-6 w-6" />
             <span className="text-[10px]">No logo</span>
           </div>
         )}
+        <div className="absolute left-2 top-2 px-1.5 py-0 text-[10px] shadow-sm">
+          <span className="rounded bg-muted px-1.5 py-0.5 font-medium tabular-nums" title="Display order">
+            Order {brand.displayOrder ?? '—'}
+          </span>
+        </div>
 
-        <Badge variant={STATUS_BADGE[brand.status] ?? 'default'} className="absolute left-2 top-2 px-1.5 py-0 text-[10px] shadow-sm">
+        {/* <Badge variant={STATUS_BADGE[brand.status] ?? 'default'} className="absolute left-2 top-2 px-1.5 py-0 text-[10px] shadow-sm">
           {brand.status}
-        </Badge>
+        </Badge> */}
 
-        {/* Hidden until the card is hovered or focused; always visible where there is no pointer to hover with. */}
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
           <CardAction label="Edit brand" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
           <CardAction label="Delete brand" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />
@@ -255,17 +316,17 @@ function BrandCard({ brand, formatDate, onEdit, onDelete }: BrandCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 border-t px-3 py-2.5">
-        <p className="truncate text-sm font-semibold leading-tight" title={brand.name}>
+        <p className="truncate text-sm font-semibold leading-tight text-center" title={brand.name}>
           {brand.name}
         </p>
-        <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        {/* <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
           <span className="rounded bg-muted px-1.5 py-0.5 font-medium tabular-nums" title="Display order">
             Order {brand.displayOrder ?? '—'}
           </span>
           <span className="truncate" title="Date added">
             {formatDate(brand.createdAt)}
           </span>
-        </div>
+        </div> */}
       </div>
     </Card>
   );

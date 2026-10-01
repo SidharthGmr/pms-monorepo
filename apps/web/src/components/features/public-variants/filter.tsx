@@ -1,9 +1,9 @@
 'use client';
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
-import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
+import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService';
+import RadioList from '@/components/common/radio-list';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
@@ -20,7 +20,6 @@ export const SORT_OPTIONS = [
 export const DEFAULT_SORT = SORT_OPTIONS[0].value;
 
 interface PublicVariantFilterProps {
-  /** Seeded from the URL so a shared link opens with its filters applied. */
   initialSearch?: string;
   initialCategoryId?: number;
   initialProductId?: number;
@@ -50,8 +49,8 @@ export default function PublicVariantFilter({
   const [sort, setSort] = useState(initialSort);
   const [isFiltered, setIsFiltered] = useState(false);
 
-  const { data: categoriesResponse } = useGetAllCategories({ showAllRecords: true });
-  const { data: productResponse } = useGetAllProducts({ showAllRecords: true });
+  const { data: categoriesResponse, isLoading: isCategoriesLoading } = useGetAllCategories({ showAllRecords: true });
+  const { data: productResponse, isLoading: isProductsLoading } = useGetAllPublicProducts({ showAllRecords: true });
 
   const categoryItems = useMemo(
     () => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })),
@@ -71,6 +70,16 @@ export default function PublicVariantFilter({
     setIsFiltered(!!searchedText || categoryId !== undefined || productId !== undefined || sort !== DEFAULT_SORT);
   }, [searchedText, categoryId, productId, sort]);
 
+  const selectCategory = (next: number | undefined) => {
+    setCategoryId(next);
+    onCategoryChange?.(next);
+  };
+
+  const selectProduct = (next: number | undefined) => {
+    setProductId(next);
+    onProductChange?.(next);
+  };
+
   const resetFilter = () => {
     setSearchedText('');
     setCategoryId(undefined);
@@ -81,44 +90,36 @@ export default function PublicVariantFilter({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-5">
-      <Input
+    <div className="grid gap-2">
+      {/* <Input
         placeholder="Search product, variant, SKU or barcode..."
         value={searchedText}
         onChange={(e) => setSearchedText(e.target.value)}
         className="bg-background"
         aria-label="Search variants"
+      /> */}
+      <RadioList
+        title="Category"
+        allLabel="All categories"
+        searchable
+        searchPlaceholder="Search categories…"
+        items={categoryItems}
+        value={categoryId}
+        onChange={selectCategory}
+        loading={isCategoriesLoading}
+        emptyText="No categories yet."
       />
-      <div>
-        <SelectSearch
-          value={categoryId}
-          placeholder="All categories"
-          items={categoryItems}
-          valueType="number"
-          onChange={(value) => {
-            const next = value === '' || value === undefined ? undefined : +value;
-            setCategoryId(next);
-            onCategoryChange?.(next);
-          }}
-          buttonClass="bg-background w-full"
-          containerName="public-variant-category-filter"
-        />
-      </div>
-      <div>
-        <SelectSearch
-          value={productId}
-          placeholder="All products"
-          items={productItems}
-          valueType="number"
-          onChange={(value) => {
-            const next = value === '' || value === undefined ? undefined : +value;
-            setProductId(next);
-            onProductChange?.(next);
-          }}
-          buttonClass="bg-background w-full"
-          containerName="public-variant-product-filter"
-        />
-      </div>
+      <RadioList
+        title="Product"
+        allLabel="All products"
+        searchable
+        searchPlaceholder="Search products…"
+        items={productItems}
+        value={productId}
+        onChange={selectProduct}
+        loading={isProductsLoading}
+        emptyText="No products yet."
+      />
       <div>
         <SelectSearch
           value={sort}

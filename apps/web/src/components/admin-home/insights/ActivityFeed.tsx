@@ -95,7 +95,6 @@ export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
 
   return (
     <ol className="relative">
-      {/* Timeline rail behind the icons. */}
       <span className="absolute bottom-3 left-[17px] top-3 w-px bg-border" aria-hidden />
       {items.map((item, i) => {
         const isOrder = item.kind === 'order';

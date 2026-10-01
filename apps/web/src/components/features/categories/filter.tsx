@@ -99,7 +99,6 @@ export default function CategoryFilter({ value, onChange, onReset, total, loadin
         </div>
 
         <div className="w-full lg:w-auto">
-          {/* `key` remounts the picker on reset because it keeps its own copy of the range. */}
           <DateRangePicker
             key={value.dateRange ? 'range' : 'empty'}
             mode="range"

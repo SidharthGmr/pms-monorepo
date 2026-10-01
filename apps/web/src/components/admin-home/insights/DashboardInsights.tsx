@@ -69,7 +69,8 @@ export default function DashboardInsights() {
   const dayOfMonth = today.getDate();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
-  // Month figures divided by the days elapsed give a "typical day" to hold today up against.
+  // Month figures divided by the days elapsed give a "typical day" to hold today up against; the
+  // projection is a straight line, as if every remaining day matched that average.
   const metrics = useMemo(() => {
     const s = summary;
     const monthSale = s?.totalMonthSale ?? 0;
@@ -88,7 +89,6 @@ export default function DashboardInsights() {
       avgDayOrders: monthOrders / elapsed,
       netToday: (s?.todaySale ?? 0) - (s?.todayPurchase ?? 0),
       netMonth: monthSale - monthPurchase,
-      // Straight-line projection: what the month lands on if every remaining day matches the average.
       projectedSale: (monthSale / elapsed) * daysInMonth,
     };
   }, [summary, dayOfMonth, daysInMonth]);
@@ -109,10 +109,8 @@ export default function DashboardInsights() {
 
   return (
     <div className="space-y-5">
-      {/* Hero */}
       <section {...enter(0)}>
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-indigo-700 text-primary-foreground shadow-lg">
-          {/* Dot grid and glows give the band depth without images. */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.12]"
             style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '18px 18px' }}
@@ -163,7 +161,6 @@ export default function DashboardInsights() {
                 <HeroStat label="Sales today" value={isLoading ? undefined : formatMoney(metrics.todaySale)} delta={isLoading ? undefined : trendPct(metrics.todaySale, metrics.avgDaySale)} deltaLabel="vs typical day" />
                 <HeroStat label="Orders today" value={isLoading ? undefined : formatCount(metrics.todayOrders)} delta={isLoading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)} deltaLabel="vs typical day" />
               </div>
-              {/* Month progress: how far through the month we are against how the month is tracking. */}
               <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
                 <div className="flex items-center justify-between text-[11px] text-primary-foreground/80">
                   <span>
@@ -190,7 +187,6 @@ export default function DashboardInsights() {
         </div>
       </section>
 
-      {/* KPI tiles */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile
           {...enter(1)}
@@ -238,7 +234,6 @@ export default function DashboardInsights() {
         />
       </section>
 
-      {/* Main grid */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
           <Panel {...enter(5)} title="Sales vs purchases" icon={IndianRupee} hint="Money in against money out, today and month to date.">
@@ -364,12 +359,12 @@ function trendPct(today: number, typical: number): number | null {
   return Math.round(((today - typical) / typical) * 100);
 }
 
+// Percent change rendered as a pill; `inverted` flips the colouring for spend, where a rise is not good news.
 function TrendChip({ delta, inverted = false, label, onDark = false }: { delta: number | null | undefined; inverted?: boolean; label?: string; onDark?: boolean }) {
   if (delta === undefined) return <Skeleton className={cn('h-4 w-16', onDark && 'bg-white/20')} />;
   if (delta === null) return <span className={cn('text-[11px]', onDark ? 'text-primary-foreground/70' : 'text-muted-foreground')}>No baseline yet</span>;
   const up = delta > 0;
   const flat = delta === 0;
-  // For spend, up is not good news.
   const good = flat ? null : inverted ? !up : up;
   const Icon = flat ? Minus : up ? TrendingUp : TrendingDown;
   return (
@@ -432,7 +427,6 @@ function KpiTile({ icon: Icon, accent, label, value, delta, deltaInverted, progr
   return (
     <Link href={href} className={cn('group block focus-visible:outline-none', className)} style={style}>
       <Card className="relative h-full overflow-hidden border p-4 transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md group-focus-visible:ring-2 group-focus-visible:ring-ring md:p-4">
-        {/* Soft colour wash in the corner ties the tile to its icon. */}
         <div className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.ring)} aria-hidden />
         <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0">

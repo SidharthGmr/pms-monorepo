@@ -270,7 +270,6 @@ function CategoryCard({ category, parentName, formatDate, onEdit, onDelete }: Ca
           {isDeleted ? 'Deleted' : category.status}
         </Badge>
 
-        {/* Hidden until the card is hovered or focused; always visible where there is no pointer to hover with. */}
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
           <CardAction label="Edit category" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
           {!isDeleted && <CardAction label="Delete category" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />}

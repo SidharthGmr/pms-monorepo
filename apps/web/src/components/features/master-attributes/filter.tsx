@@ -158,7 +158,6 @@ export default function MasterAttributeFilter({ value, onChange, onReset, view, 
           })}
         </div>
 
-        {/* Card view is the default; the table is the older layout kept for anyone who prefers rows. */}
         <div className="inline-flex rounded-md border bg-muted/40 p-0.5" role="radiogroup" aria-label="Layout">
           {VIEWS.map(({ value: v, label, icon: Icon }) => {
             const active = v === view;
