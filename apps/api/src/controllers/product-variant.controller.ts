@@ -48,6 +48,7 @@ export class ProductVariantController {
         brandNameId: req.query['brandNameId'] ? parseInt(req.query['brandNameId'] as string) : undefined,
         brandNameIds: idList(req.query['brandNameIds']),
         isActive: req.query['isActive'] !== undefined ? req.query['isActive'] === 'true' : undefined,
+        isFeatured: req.query['isFeatured'] !== undefined ? req.query['isFeatured'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
         sortBy: req.query['sortBy'] as string | undefined,
@@ -144,6 +145,7 @@ export class ProductVariantController {
             : 'desc'
           : undefined,
         isActive: true,
+        isFeatured: req.query['isFeatured'] !== undefined ? req.query['isFeatured'] === 'true' : undefined,
         publishedOnly: true,
       }).filter(([, v]) => v !== undefined)
     );

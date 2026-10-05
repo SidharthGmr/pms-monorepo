@@ -9,6 +9,7 @@ export interface ProductVariantFilterParams extends PageFilterParams {
   brandNameId?: number;
   brandNameIds?: number[];
   isActive?: boolean;
+  isFeatured?: boolean;
   publishedOnly?: boolean;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';

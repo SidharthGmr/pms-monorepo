@@ -171,6 +171,68 @@ categoryRouter.get('/', authenticateToken, storeRequiredMiddleware, asyncHandler
 
 /**
  * @swagger
+ * /categories/public:
+ *   get:
+ *     summary: Get all published categories (public, no authentication)
+ *     description: Storefront listing. Only Published, non-deleted rows are returned; pass storeCode to scope to one store.
+ *     tags: [Category]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *         required: false
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: parentId
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
+ *         required: false
+ *       - in: query
+ *         name: storeCode
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [name, status, displayOrder, createdAt, updatedAt]
+ *         required: false
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Categories fetched successfully
+ */
+// Declared before `/:id` so the literal path is not captured by the param route.
+categoryRouter.get('/public', asyncHandler(categoryController.getAllPublic));
+
+/**
+ * @swagger
  * /categories/{id}:
  *   get:
  *     summary: Get category by ID

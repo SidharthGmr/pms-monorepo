@@ -9,6 +9,7 @@ import { useDebounce } from 'use-debounce';
 import PublicVariantList from '../features/public-variants';
 import Blog from './sections/Blog';
 import Brands from './sections/Brands';
+import FeaturedProducts from './sections/FeaturedProducts';
 import Footer from './sections/Footer';
 import Header from './sections/Header';
 import Newsletter from './sections/Newsletter';
@@ -65,6 +66,7 @@ export default function Storefront() {
         <PublicVariantList />
       </section>
 
+      <FeaturedProducts />
       <Testimonials />
       <WidePromo />
       <Blog />

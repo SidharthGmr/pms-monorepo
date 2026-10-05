@@ -80,6 +80,10 @@ const productVariantController = container.get<ProductVariantController>(TYPES.P
  *         schema:
  *           type: boolean
  *       - in: query
+ *         name: isFeatured
+ *         schema:
+ *           type: boolean
+ *       - in: query
  *         name: showAllRecords
  *         schema:
  *           type: boolean
@@ -156,6 +160,10 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
  *         schema:
  *           type: integer
  *         description: Narrow to one product's sellable variants
+ *       - in: query
+ *         name: isFeatured
+ *         schema:
+ *           type: boolean
  *       - in: query
  *         name: storeCode
  *         schema:

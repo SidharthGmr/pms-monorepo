@@ -1,4 +1,4 @@
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, StatusEnum } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
@@ -40,6 +40,32 @@ export class BrandNameController {
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined,
         storeCode: req.user?.storeCode || undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortOrder: rawSortDirection ? (rawSortDirection.toLowerCase() === 'asc' ? 'asc' : 'desc') : undefined,
+      }).filter(([, v]) => v !== undefined)
+    );
+    const data = await this.unitOfService.BrandName.getAll(filters);
+    return res.status(200).json({ success: true, message: 'Brand names fetched successfully', data });
+  };
+
+  // Storefront listing: no token, so the store comes from the query and only Published rows are returned.
+  getAllPublic = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<BrandNameDto>>>> => {
+    const rawCategoryIds = req.query['categoryIds'];
+    const categoryIds = rawCategoryIds
+      ? (Array.isArray(rawCategoryIds) ? rawCategoryIds : (rawCategoryIds as string).split(','))
+        .map(Number).filter(n => !isNaN(n))
+      : undefined;
+    const rawSortDirection = (req.query['sortDirection'] || req.query['sortOrder']) as string | undefined;
+
+    const filters: BrandNameFilterParams = Object.fromEntries(
+      Object.entries({
+        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
+        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
+        search: req.query['search'] as string | undefined,
+        status: StatusEnum.Published,
+        showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined,
+        storeCode: req.query['storeCode'] as string | undefined,
         sortBy: req.query['sortBy'] as string | undefined,
         sortOrder: rawSortDirection ? (rawSortDirection.toLowerCase() === 'asc' ? 'asc' : 'desc') : undefined,
       }).filter(([, v]) => v !== undefined)

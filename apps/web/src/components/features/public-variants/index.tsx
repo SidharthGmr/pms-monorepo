@@ -7,10 +7,13 @@ import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProduct
 import { ProductVariantFilterParams } from '@/params/product-variant.params';
 import { ChevronLeft, ChevronRight, Package, PackageX } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PublicVariantFilter, { DEFAULT_SORT } from './filter';
 import VariantCard, { VariantCardSkeleton } from './variant-card';
+import ProductCarousel from './product-carousel';
 import { ProductVariantListItemDto } from '@pms/types';
+import { ProductDto } from '@/dtos/product.dto';
+import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService';
 
 // The API takes comma-separated ids; the checkbox lists work with arrays.
 const toIds = (csv?: string): number[] =>
@@ -42,6 +45,11 @@ export default function PublicVariantList() {
 
   const getAllProductVariantsResponse = useGetAllPublicProductVariants({ ...filterParams }, true);
 
+  // Hooks stay above the error return below; the carousel strip is fed from the public product list.
+  const { data: productResponse, isLoading: isProductsLoading } = useGetAllPublicProducts({ showAllRecords: true });
+  const productItems = useMemo(() => productResponse?.data?.data?.data ?? [], [productResponse]);
+  const selectedProductIds = useMemo(() => toIds(filterParams.productIds), [filterParams.productIds]);
+
   useEffect(() => {
     if (getAllProductVariantsResponse.status === 'success' && getAllProductVariantsResponse.data?.data?.data?.data) {
       setData(getAllProductVariantsResponse.data?.data?.data?.data);
@@ -53,6 +61,15 @@ export default function PublicVariantList() {
   const pageSize = filterParams.recordPerPage || config.recordPerPage;
   const pageCount = Math.max(1, Math.ceil(recordCount / pageSize));
   const hasFilters = !!filterParams.search || !!filterParams.categoryIds || !!filterParams.brandNameIds || !!filterParams.productIds;
+
+  // A card click toggles that product in the same multi-select the sidebar checkbox list uses.
+  const toggleProduct = (product: ProductDto) => {
+    setFilterParams((prev) => {
+      const ids = toIds(prev.productIds);
+      const next = ids.includes(product.id) ? ids.filter((id) => id !== product.id) : [...ids, product.id];
+      return { ...prev, productIds: next.join(',') || undefined, page: 1 };
+    });
+  };
 
   const resetForm = () => {
     setFilterParams({
@@ -82,14 +99,16 @@ export default function PublicVariantList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <ProductCarousel products={productItems} loading={isProductsLoading} selectedIds={selectedProductIds} onSelect={toggleProduct} />
+
       <div className="flex gap-5">
         <div className="w-1/4">
           <PublicVariantFilter
             initialSearch={filterParams.search}
             initialCategoryIds={toIds(filterParams.categoryIds)}
             initialBrandNameIds={toIds(filterParams.brandNameIds)}
-            initialProductIds={toIds(filterParams.productIds)}
+            initialProductIds={selectedProductIds}
             initialSort={filterParams.sortBy && filterParams.sortDirection ? `${filterParams.sortBy}:${filterParams.sortDirection}` : DEFAULT_SORT}
             resetForm={resetForm}
             onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || '', page: 1 }))}

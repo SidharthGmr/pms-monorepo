@@ -1,4 +1,4 @@
-import { CategoryFilterParams, CategoryModel, CategoryResponseDto, CustomResponse, ListResponseDto } from '@pms/types';
+import { CategoryFilterParams, CategoryModel, CategoryResponseDto, CustomResponse, ListResponseDto, StatusEnum } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
@@ -49,6 +49,26 @@ export class CategoryController {
         storeCode,
         // The client sends `sortDirection`; accept `sortOrder` too rather than
         // silently dropping the sort, which is how the list ignored it entirely.
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortDirection: (req.query['sortDirection'] || req.query['sortOrder']) as string | undefined,
+      }).filter(([, v]) => v !== undefined)
+    );
+    const categories = await this.unitOfService.Category.getAll(filters);
+    return res.status(200).json({ success: true, message: 'Categories fetched successfully', data: categories });
+  };
+
+  // Storefront listing: no token, so the store comes from the query; only Published, non-deleted rows are returned.
+  getAllPublic = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<CategoryResponseDto>>>> => {
+    const filters: CategoryFilterParams = Object.fromEntries(
+      Object.entries({
+        page: req.query['page'] ? parseInt(req.query['page'] as string) : undefined,
+        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : undefined,
+        search: req.query['search'] as string | undefined,
+        parentId: parseParentIdQuery(req.query['parentId']),
+        status: StatusEnum.Published,
+        showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
+        includeDeleted: false,
+        storeCode: req.query['storeCode'] as string | undefined,
         sortBy: req.query['sortBy'] as string | undefined,
         sortDirection: (req.query['sortDirection'] || req.query['sortOrder']) as string | undefined,
       }).filter(([, v]) => v !== undefined)

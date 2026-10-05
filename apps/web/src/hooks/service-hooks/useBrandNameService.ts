@@ -29,6 +29,17 @@ const useGetAllBrandNames = (params?: BrandNameFilterParams, enabled: boolean = 
     });
 };
 
+/** Storefront listing - Published brands only, no login needed. */
+const useGetAllPublicBrandNames = (params?: BrandNameFilterParams, enabled: boolean = true) => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    return useQuery({
+        queryKey: ['BrandNameService.getAllPublic', params],
+        queryFn: () => unitOfService.BrandNameService.getAllPublic(params),
+        enabled,
+    });
+};
+
 const useGetBrandNameById = (id: number | string, enabled: boolean = true) => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -75,6 +86,7 @@ const useDeleteBrandName = () => {
 export {
     useCreateBrandName,
     useGetAllBrandNames,
+    useGetAllPublicBrandNames,
     useGetBrandNameById,
     useUpdateBrandName,
     useDeleteBrandName,

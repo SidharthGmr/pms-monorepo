@@ -7,6 +7,8 @@ export default interface IBrandNameService {
 
     create(model: CreateBrandNameModel): Promise<AxiosResponse<Response<BrandNameDto>>>;
     getAll(params?: BrandNameFilterParams): Promise<AxiosResponse<Response<ListResponseDto<BrandNameDto>>>>;
+    /** Storefront listing - Published brands only, no login needed. */
+    getAllPublic(params?: BrandNameFilterParams): Promise<AxiosResponse<Response<ListResponseDto<BrandNameDto>>>>;
     getById(id: number | string): Promise<AxiosResponse<Response<BrandNameDto>>>;
     update(id: number | string, model: CreateBrandNameModel): Promise<AxiosResponse<Response<BrandNameDto>>>;
     /** Moves the brand to Trash and returns it. 409 while products still use it. */

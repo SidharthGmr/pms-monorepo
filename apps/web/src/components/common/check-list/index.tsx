@@ -37,7 +37,7 @@ export default function CheckList<T extends string | number>({
   title,
   searchable = false,
   searchPlaceholder = 'Search…',
-  maxHeight = 400,
+  maxHeight = 200,
   emptyText = 'Nothing to show.',
   loading = false,
   collapsible = false,
@@ -51,9 +51,8 @@ export default function CheckList<T extends string | number>({
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const matched = q ? items.filter((item) => item.label.toLowerCase().includes(q)) : items;
-    return [...matched].sort((a, b) => Number(selected.has(b.value)) - Number(selected.has(a.value)));
-  }, [items, query, selected]);
+    return q ? items.filter((item) => item.label.toLowerCase().includes(q)) : items;
+  }, [items, query]);
 
   const toggle = (value: T) => onChange(selected.has(value) ? values.filter((v) => v !== value) : [...values, value]);
 
@@ -75,7 +74,11 @@ export default function CheckList<T extends string | number>({
                 >
                   <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', !open && '-rotate-90')} />
                   <span className="truncate">{title}</span>
-                  {!open && values.length > 0 && <span className="rounded-full bg-primary/10 px-1.5 text-[10px] normal-case tracking-normal text-primary">{values.length} selected</span>}
+                  {!open && values.length > 0 && (
+                    <span className="rounded-full bg-primary/10 px-1.5 text-[10px] normal-case tracking-normal text-primary">
+                      {values.length} selected
+                    </span>
+                  )}
                 </button>
               ) : (
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</span>
@@ -91,7 +94,11 @@ export default function CheckList<T extends string | number>({
           )}
           {searchable && open && (
             <div className={cn('relative px-2 pb-2', !title && 'pt-2')}>
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" style={{ marginTop: title ? -4 : 0 }} aria-hidden />
+              <Search
+                className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+                style={{ marginTop: title ? -4 : 0 }}
+                aria-hidden
+              />
               <input
                 type="search"
                 value={query}

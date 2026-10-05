@@ -28,6 +28,12 @@ export default class BrandNameService implements IBrandNameService {
             .get<ListResponseDto<BrandNameDto>, AxiosResponse<Response<ListResponseDto<BrandNameDto>>>>('/brand-names', { params });
     }
 
+    getAllPublic(params?: BrandNameFilterParams): Promise<AxiosResponse<Response<ListResponseDto<BrandNameDto>>>> {
+        return this.httpService
+            .call()
+            .get<ListResponseDto<BrandNameDto>, AxiosResponse<Response<ListResponseDto<BrandNameDto>>>>('/brand-names/public', { params });
+    }
+
     getById(id: number | string): Promise<AxiosResponse<Response<BrandNameDto>>> {
         return this.httpService
             .call()

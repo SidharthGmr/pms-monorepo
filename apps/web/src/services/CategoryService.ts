@@ -29,6 +29,12 @@ export default class CategoryService implements ICategoryService {
             .get<ListResponseDto<CategoryResponseDto>, AxiosResponse<Response<ListResponseDto<CategoryResponseDto>>>>('/categories', { params });
     }
 
+    getAllPublic(params?: CategoryFilterParams): Promise<AxiosResponse<Response<ListResponseDto<CategoryResponseDto>>>> {
+        return this.httpService
+            .call()
+            .get<ListResponseDto<CategoryResponseDto>, AxiosResponse<Response<ListResponseDto<CategoryResponseDto>>>>('/categories/public', { params });
+    }
+
     getById(id: number | string): Promise<AxiosResponse<Response<CategoryResponseDto>>> {
         return this.httpService
             .call()

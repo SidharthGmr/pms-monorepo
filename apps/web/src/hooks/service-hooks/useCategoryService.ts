@@ -31,6 +31,17 @@ const useGetAllCategories = (params?: CategoryFilterParams, enabled: boolean = t
     });
 };
 
+/** Storefront listing - Published, non-deleted categories only, no login needed. */
+const useGetAllPublicCategories = (params?: CategoryFilterParams, enabled: boolean = true) => {
+    const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+    return useQuery({
+        queryKey: ['CategoryService.getAllPublic', params],
+        queryFn: () => unitOfService.CategoryService.getAllPublic(params),
+        enabled,
+    });
+};
+
 const useGetCategoryById = (id: number | string, enabled: boolean = true) => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -78,6 +89,7 @@ const useDeleteCategory = () => {
 export {
     useCreateCategory,
     useGetAllCategories,
+    useGetAllPublicCategories,
     useGetCategoryById,
     useUpdateCategory,
     useDeleteCategory,

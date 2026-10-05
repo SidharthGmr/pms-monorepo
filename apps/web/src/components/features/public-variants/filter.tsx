@@ -5,8 +5,8 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import CheckList from '@/components/common/check-list';
 import RadioList from '@/components/common/radio-list';
 import { Button } from '@/components/ui/button';
-import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
-import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
+import { useGetAllPublicBrandNames } from '@/hooks/service-hooks/useBrandNameService';
+import { useGetAllPublicCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService';
 
 /** Only the columns the API can sort on - price and stock are derived, so they are not offered. */
@@ -56,8 +56,8 @@ export default function PublicVariantFilter({
   const [sort, setSort] = useState(initialSort);
   const [isFiltered, setIsFiltered] = useState(false);
 
-  const { data: categoriesResponse, isLoading: isCategoriesLoading } = useGetAllCategories({ showAllRecords: true });
-  const { data: brandResponse, isLoading: isBrandsLoading } = useGetAllBrandNames({ showAllRecords: true });
+  const { data: categoriesResponse, isLoading: isCategoriesLoading } = useGetAllPublicCategories({ showAllRecords: true });
+  const { data: brandResponse, isLoading: isBrandsLoading } = useGetAllPublicBrandNames({ showAllRecords: true });
   const { data: productResponse, isLoading: isProductsLoading } = useGetAllPublicProducts({ showAllRecords: true });
 
   const categoryItems = useMemo(
@@ -78,6 +78,12 @@ export default function PublicVariantFilter({
   useEffect(() => {
     setIsFiltered(!!searchedText || categoryIds.length > 0 || brandNameIds.length > 0 || productIds.length > 0 || sort !== DEFAULT_SORT);
   }, [searchedText, categoryIds, brandNameIds, productIds, sort]);
+
+  // The product carousel above the list can toggle products too, so the checkbox state follows the parent.
+  const productKey = initialProductIds.join(',');
+  useEffect(() => {
+    setProductIds(productKey ? productKey.split(',').map(Number) : []);
+  }, [productKey]);
 
   const selectCategories = (next: number[]) => {
     setCategoryIds(next);

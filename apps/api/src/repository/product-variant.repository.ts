@@ -87,6 +87,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
       if (filters.productId !== undefined) where.productId = filters.productId;
       if (filters.productIds?.length) where.productId = { in: filters.productIds };
       if (filters.isActive !== undefined) where.isActive = filters.isActive;
+      if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured;
       const productWhere: Prisma.productWhereInput = {};
       if (filters.categoryId !== undefined) productWhere.categoryId = filters.categoryId;
       if (filters.categoryIds?.length) productWhere.categoryId = { in: filters.categoryIds };

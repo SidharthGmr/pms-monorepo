@@ -144,6 +144,68 @@ brandNameRouter.get('/', authenticateToken, storeRequiredMiddleware, asyncHandle
 
 /**
  * @swagger
+ * /brand-names/public:
+ *   get:
+ *     summary: Get all published brand names (public, no authentication)
+ *     description: Storefront listing. Only Published rows are returned; pass storeCode to scope to one store.
+ *     tags: [BrandName]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *         required: false
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
+ *         required: false
+ *       - in: query
+ *         name: categoryIds
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: storeCode
+ *         schema:
+ *           type: string
+ *         required: false
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [name, status, displayOrder, createdAt, updatedAt]
+ *         required: false
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Brand names fetched successfully
+ */
+// Declared before `/:id` so the literal path is not captured by the param route.
+brandNameRouter.get('/public', asyncHandler(brandNameController.getAllPublic));
+
+/**
+ * @swagger
  * /brand-names/{id}:
  *   get:
  *     summary: Get brand name by ID
