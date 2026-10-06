@@ -23,7 +23,7 @@ const readStored = (): DashboardVariant | null => {
   }
 };
 
-// Two dashboards over the same data: the new Insights layout and the original DashboardSummary.
+// Two dashboards over the same data: the Insights layout and the original DashboardSummary.
 // Insights is the default; the stored preference is applied after mount so server and first
 // client render agree.
 export default function DashboardSwitcher() {
@@ -43,33 +43,38 @@ export default function DashboardSwitcher() {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <div className="inline-flex rounded-md border bg-muted/40 p-0.5" role="radiogroup" aria-label="Dashboard layout">
-          {VARIANTS.map(({ value, label, icon: Icon }) => {
-            const active = value === variant;
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => change(value)}
-                className={cn(
-                  'inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium transition-colors',
-                  active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {variant === 'classic' ? <DashboardSummary /> : <DashboardInsights />}
+  const toolbar = (
+    <div className="inline-flex h-9 items-center rounded-lg border bg-background p-0.5" role="radiogroup" aria-label="Dashboard layout">
+      {VARIANTS.map(({ value, label, icon: Icon }) => {
+        const active = value === variant;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => change(value)}
+            className={cn(
+              'inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors',
+              active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
+
+  if (variant === 'classic') {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-end">{toolbar}</div>
+        <DashboardSummary />
+      </div>
+    );
+  }
+
+  return <DashboardInsights toolbar={toolbar} />;
 }

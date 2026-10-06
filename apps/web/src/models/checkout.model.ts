@@ -3,6 +3,7 @@ export interface CheckoutAdjustmentsModel {
   discount?: number;
   tax?: number;
   shippingCost?: number;
+  platformFee?: number;
 }
 
 export interface CheckoutModel extends CheckoutAdjustmentsModel {

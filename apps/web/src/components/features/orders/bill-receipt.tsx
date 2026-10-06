@@ -70,9 +70,9 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Billed To</h3>
               <p className="font-bold text-slate-900 text-lg">Customer Info</p>
               <div className="space-y-2 text-sm text-slate-600">
-                <p className="flex items-center gap-2 font-medium"><UserIcon className="h-4 w-4 text-slate-400" /> ID: {order.customerId || "N/A"}</p>
-                <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-slate-400" /> customer@example.com</p>
-                <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-slate-400" /> Not Provided</p>
+                <p className="flex items-center gap-2 font-medium"><UserIcon className="h-4 w-4 text-slate-400" /> {order.customer?.name || order.customerId || "N/A"}</p>
+                <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-slate-400" /> {order.customer?.email || "Not provided"}</p>
+                <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-slate-400" /> {order.customer?.phone || "Not provided"}</p>
               </div>
             </div>
           </div>
@@ -101,20 +101,20 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
                   <tr key={item.id} className={idx % 2 === 0 ? "bg-slate-50/50" : "bg-white"}>
                     <td className="py-5 px-2">
                       <p className="font-semibold text-slate-900 text-base">
-                        Product ID: {item.productId}
+                        {item.product?.name || `Product #${item.productId}`}
                       </p>
                       <p className="text-xs text-slate-500 font-mono mt-1 tracking-wide">
-                        SKU: PROD-{item.productId}
+                        {[item.variant?.name && item.product?.name ? item.variant.name.replace(`${item.product.name} - `, '') : item.variant?.name, item.variant?.sku && `SKU: ${item.variant.sku}`].filter(Boolean).join(' · ') || `#${item.productId}`}
                       </p>
                     </td>
                     <td className="py-5 px-2 text-right text-slate-700 font-medium">
-                      ${item.unitPrice?.toFixed(2) || "0.00"}
+                      ₹{item.unitPrice?.toFixed(2) || "0.00"}
                     </td>
                     <td className="py-5 px-2 text-center text-slate-700 font-medium bg-slate-50/30">
                       {item.quantity}
                     </td>
                     <td className="py-5 px-2 text-right font-bold text-slate-900">
-                      ${((item.unitPrice || 0) * (item.quantity || 1)).toFixed(2)}
+                      ₹{((item.unitPrice || 0) * (item.quantity || 1)).toFixed(2)}
                     </td>
                   </tr>
                 ))}
@@ -148,25 +148,25 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal</span>
                   <span className="font-medium text-slate-900">
-                    ${order.totalAmount?.toFixed(2) || "0.00"}
+                    ₹{order.totalAmount?.toFixed(2) || "0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Discount</span>
                   <span className="font-medium text-red-500">
-                    -${order.discount?.toFixed(2) || "0.00"}
+                    -₹{order.discount?.toFixed(2) || "0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Tax</span>
                   <span className="font-medium text-slate-900">
-                    ${order.tax?.toFixed(2) || "0.00"}
+                    ₹{order.tax?.toFixed(2) || "0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600 border-b border-slate-200 pb-4">
-                  <span>Shipping</span>
+                  <span>Shipping &amp; platform fee</span>
                   <span className="font-medium text-slate-900">
-                    ${order.shippingCost?.toFixed(2) || "0.00"}
+                    ₹{order.shippingCost?.toFixed(2) || "0.00"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
@@ -174,7 +174,7 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
                     Total Due
                   </span>
                   <span className="font-black text-slate-900 text-3xl tracking-tighter">
-                    ${order.grandTotal?.toFixed(2) || "0.00"}
+                    ₹{order.grandTotal?.toFixed(2) || "0.00"}
                   </span>
                 </div>
               </div>

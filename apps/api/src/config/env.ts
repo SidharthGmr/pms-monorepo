@@ -62,6 +62,14 @@ const schema = z.object({
   // Max JSON body size. Generous enough for a variant with base64 image refs.
   JSON_BODY_LIMIT: z.string().default('1mb'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  // Charges added to every cart (utils/cart-charges.ts). The tax rate is a percentage of the
+  // subtotal; the other amounts are flat, in the store currency. Shipping is waived once the
+  // subtotal reaches CART_FREE_SHIPPING_ABOVE; leave it empty to always charge shipping.
+  CART_TAX_RATE: z.coerce.number().min(0).max(100).default(0),
+  CART_PLATFORM_FEE: z.coerce.number().min(0).default(0),
+  CART_SHIPPING_CHARGE: z.coerce.number().min(0).default(0),
+  CART_FREE_SHIPPING_ABOVE: z.preprocess((raw) => (raw === undefined || raw === '' ? undefined : raw), z.coerce.number().min(0).optional()),
 });
 
 type Env = z.infer<typeof schema>;

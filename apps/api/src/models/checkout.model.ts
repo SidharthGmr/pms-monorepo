@@ -4,8 +4,10 @@
  */
 export interface CheckoutAdjustmentsModel {
   discount?: number;
+  /** Omitted fields fall back to the cart's computed charges (CartDto.charges). */
   tax?: number;
   shippingCost?: number;
+  platformFee?: number;
 }
 
 /** Shared by both checkout paths. */

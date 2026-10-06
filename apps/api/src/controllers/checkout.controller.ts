@@ -40,6 +40,7 @@ export class CheckoutController {
       ...(body?.discount !== undefined && { discount: Number(body.discount) }),
       ...(body?.tax !== undefined && { tax: Number(body.tax) }),
       ...(body?.shippingCost !== undefined && { shippingCost: Number(body.shippingCost) }),
+      ...(body?.platformFee !== undefined && { platformFee: Number(body.platformFee) }),
     };
   }
 

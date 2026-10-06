@@ -1,13 +1,18 @@
 import { Roles } from '@/enums/roles.enum';
 import {
+  Boxes,
   CreditCard,
   FolderTree,
   Heart,
+  History,
   LayoutDashboard,
   Layers,
   List,
+  ListChecks,
   Package,
+  PackagePlus,
   Receipt,
+  Settings2,
   ShoppingBag,
   ShoppingCart,
   Sliders,
@@ -17,6 +22,8 @@ import {
   TrendingUp,
   Truck,
   User,
+  UserCircle,
+  Users,
 } from 'lucide-react';
 
 export interface SideBarMenuDto {
@@ -25,6 +32,8 @@ export interface SideBarMenuDto {
   icon: any; // React component
   url: string;
   class?: string;
+  /** Section heading the item is listed under; items without one go into a trailing unlabelled section. */
+  group?: string;
   submenu?: SideBarSubMenuDto[];
   isActive?: boolean;
   role: string[];
@@ -57,6 +66,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Shop',
     icon: ShoppingBag,
     url: '/dashboard',
+    group: 'Shop',
     isActive: false,
     role: [Roles.USER],
   },
@@ -65,14 +75,16 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Dashboard',
     icon: LayoutDashboard,
     url: '/admin',
+    group: 'Overview',
     isActive: false,
     role: [Roles.ADMIN],
   },
   {
     id: 'catalog-setup',
     title: 'Catalog Setup',
-    icon: User,
+    icon: Settings2,
     url: '',
+    group: 'Catalog',
     role: [Roles.ADMIN],
     isActive: true,
     submenu: [
@@ -91,16 +103,6 @@ export const SideBarMenu: SideBarMenuDto[] = [
         url: '/admin/categories/',
         role: [Roles.ADMIN],
         isActive: false,
-        // subsubmenu: [
-        //   {
-        //     id: "SendNewsletter2",
-        //     title: "Send Newsletter",
-        //     icon: FolderTree,
-        //     url: "/send-newsletter",
-        //     role: [Roles.ADMIN],
-        //     isActive: false,
-        //   }
-        // ]
       },
       {
         id: 'attributes',
@@ -121,12 +123,11 @@ export const SideBarMenu: SideBarMenuDto[] = [
       {
         id: 'master-entries',
         title: 'Option Values',
-        icon: Tags,
+        icon: ListChecks,
         url: '/admin/master-entries/',
         role: [Roles.ADMIN],
         isActive: false,
       },
-
       {
         id: 'suppliers',
         title: 'Suppliers',
@@ -140,15 +141,16 @@ export const SideBarMenu: SideBarMenuDto[] = [
   {
     id: 'products-group',
     title: 'Products',
-    icon: User,
+    icon: Package,
     url: '',
+    group: 'Catalog',
     role: [Roles.ADMIN],
     isActive: true,
     submenu: [
       {
         id: 'Add-Product',
         title: 'Add Product',
-        icon: Package,
+        icon: PackagePlus,
         url: '/admin/products/add/',
         role: [Roles.ADMIN],
         isActive: false,
@@ -161,7 +163,6 @@ export const SideBarMenu: SideBarMenuDto[] = [
         role: [Roles.ADMIN],
         isActive: false,
       },
-
       {
         id: 'product-variants',
         title: 'Variants',
@@ -185,39 +186,8 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Orders',
     icon: ShoppingBag,
     url: '/admin/orders/',
+    group: 'Sales',
     role: [Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'reviews',
-    title: 'Reviews',
-    icon: Star,
-    url: '/admin/reviews/',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'wishlists',
-    title: 'Customer Wishlists',
-    icon: Heart,
-    url: '/admin/wishlist/',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'products',
-    title: 'Products',
-    icon: Package,
-    url: '/dashboard/products/',
-    role: [Roles.STAFF],
-    isActive: false,
-  },
-  {
-    id: 'orders',
-    title: 'Orders',
-    icon: ShoppingBag,
-    url: '/dashboard/orders/',
-    role: [Roles.STAFF],
     isActive: false,
   },
   {
@@ -225,6 +195,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'POS (Sell)',
     icon: Receipt,
     url: '/admin/purchase/',
+    group: 'Sales',
     role: [Roles.ADMIN],
     isActive: false,
   },
@@ -233,7 +204,80 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Cart',
     icon: ShoppingCart,
     url: '/admin/cart',
+    group: 'Sales',
     role: [Roles.ADMIN],
+    isActive: false,
+  },
+  // {
+  //   id: 'checkout',
+  //   title: 'Checkout',
+  //   icon: CreditCard,
+  //   url: '/admin/checkout',
+  //   group: 'Sales',
+  //   role: [Roles.ADMIN],
+  //   isActive: false,
+  // },
+  {
+    id: 'stock',
+    title: 'Stock',
+    icon: Boxes,
+    url: '',
+    group: 'Inventory',
+    role: [Roles.ADMIN],
+    isActive: true,
+    submenu: [
+      {
+        id: 'add-stock',
+        title: 'Add Stock',
+        icon: PackagePlus,
+        url: '/admin/stock-purchase/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'purchases-history',
+        title: 'Purchase History',
+        icon: History,
+        url: '/admin/stock-purchase/history',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+    ],
+  },
+  {
+    id: 'reviews',
+    title: 'Reviews',
+    icon: Star,
+    url: '/admin/reviews/',
+    group: 'Customers',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'wishlists',
+    title: 'Customer Wishlists',
+    icon: Heart,
+    url: '/admin/wishlist/',
+    group: 'Customers',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'products',
+    title: 'Products',
+    icon: Package,
+    url: '/dashboard/products/',
+    group: 'Shop',
+    role: [Roles.STAFF],
+    isActive: false,
+  },
+  {
+    id: 'orders',
+    title: 'Orders',
+    icon: ShoppingBag,
+    url: '/dashboard/orders/',
+    group: 'Shop',
+    role: [Roles.STAFF],
     isActive: false,
   },
   {
@@ -241,6 +285,16 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Cart',
     icon: ShoppingCart,
     url: '/dashboard/cart',
+    group: 'Shop',
+    role: [Roles.USER, Roles.STAFF],
+    isActive: false,
+  },
+  {
+    id: 'checkout-dashboard',
+    title: 'Checkout',
+    icon: CreditCard,
+    url: '/dashboard/checkout',
+    group: 'Shop',
     role: [Roles.USER, Roles.STAFF],
     isActive: false,
   },
@@ -249,6 +303,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'My Wishlist',
     icon: Heart,
     url: '/dashboard/wishlist',
+    group: 'My Account',
     role: [Roles.USER, Roles.STAFF],
     isActive: false,
   },
@@ -257,109 +312,41 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'My Reviews',
     icon: Star,
     url: '/dashboard/reviews',
+    group: 'My Account',
     role: [Roles.USER, Roles.STAFF],
     isActive: false,
   },
-  {
-    id: 'checkout',
-    title: 'Checkout',
-    icon: CreditCard,
-    url: '/admin/checkout',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'checkout-dashboard',
-    title: 'Checkout',
-    icon: CreditCard,
-    url: '/dashboard/checkout',
-    role: [Roles.USER, Roles.STAFF],
-    isActive: false,
-  },
-  {
-    id: 'stock',
-    title: 'Stock',
-    icon: Receipt,
-    url: '',
-    role: [Roles.ADMIN],
-    isActive: true,
-    submenu: [
-      {
-        id: 'add-stock',
-        title: 'Add Stock',
-        icon: User,
-        url: '/admin/stock-purchase/',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
-      {
-        id: 'purchases-history',
-        title: 'Purchase History',
-        icon: List,
-        url: '/admin/stock-purchase/history',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
-    ],
-  },
-
   {
     id: 'stores',
     title: 'Stores',
     icon: Store,
     url: '/super-admin/stores/',
+    group: 'Administration',
     role: [Roles.SUPER_ADMIN],
     isActive: false,
   },
   {
     id: 'users',
     title: 'Users',
-    icon: User,
+    icon: Users,
     url: '/admin/users/',
+    group: 'Administration',
     role: [Roles.SUPER_ADMIN, Roles.ADMIN],
     isActive: false,
   },
-
-  // {
-  //     id: "newsletter",
-  //     title: "Newsletter",
-  //     icon: User,
-  //     url: "",
-  //     role: [Roles.ADMIN],
-  //     isActive: true,
-  //     submenu: [
-  //         {
-  //             id: "email-sent",
-  //             title: "Email Sent",
-  //             icon: User,
-  //             url: "/admin/email-sent",
-  //             role: [Roles.ADMIN],
-  //             isActive: false,
-  //             subsubmenu: [
-  //                 {
-  //                     id: "SendNewsletter2",
-  //                     title: "Send Newsletter",
-  //                     icon: FolderTree,
-  //                     url: "/send-newsletter",
-  //                     role: [Roles.ADMIN],
-  //                     isActive: false,
-  //                 }
-  //             ]
-  //         },
-  //     ]
-  // },
   {
     id: 'user',
-    title: 'Sidharth Kumar',
-    icon: User,
+    title: 'Profile',
+    icon: UserCircle,
     url: '',
+    group: 'My Account',
     role: [Roles.USER],
     isActive: true,
     submenu: [
       {
         id: 'profile',
-        title: 'Profile',
-        icon: List,
+        title: 'Edit Profile',
+        icon: User,
         url: '/dashboard/edit-profile',
         role: [Roles.USER],
         isActive: false,

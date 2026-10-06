@@ -11,9 +11,11 @@ interface ProfileImageUploaderProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  /** Hide the "paste a URL" field, for compact placements where only the avatar fits. */
+  showUrlInput?: boolean;
 }
 
-export function ProfileImageUploader({ value, onChange, className }: ProfileImageUploaderProps) {
+export function ProfileImageUploader({ value, onChange, className, showUrlInput = true }: ProfileImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -129,6 +131,7 @@ export function ProfileImageUploader({ value, onChange, className }: ProfileImag
       </div>
 
       {/* Manual URL Input Option */}
+      {showUrlInput && (
       <div className="w-full space-y-2">
         <div className="flex items-center gap-2">
           <LinkIcon className="h-4 w-4 text-muted-foreground" />
@@ -142,6 +145,7 @@ export function ProfileImageUploader({ value, onChange, className }: ProfileImag
           className="h-9 text-xs focus-visible:ring-1"
         />
       </div>
+      )}
     </div>
   );
 }

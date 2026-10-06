@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { getRazorpayClient, getRazorpayCredentials } from '../config/razorpay';
 import { TYPES } from '../config/ioc.types';
+import { CartDto } from '@pms/types';
 import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '../dtos/checkout.dto';
 import ClientError from '../exceptions/client-error';
 import NotFoundError from '../exceptions/not-found-error';
@@ -46,32 +47,40 @@ export class CheckoutService implements ICheckoutService {
     return cart;
   }
 
-  private totalsFrom(subtotal: number, adjustments: CheckoutAdjustmentsModel) {
+  /**
+   * Any charge the operator leaves out defaults to what the cart already computed from the
+   * store settings, so a plain checkout is billed exactly as the cart page showed it. The
+   * order table has no platform-fee column, so that fee is booked together with shipping.
+   */
+  private totalsFrom(cart: CartDto, adjustments: CheckoutAdjustmentsModel) {
+    const subtotal = cart.totalAmount;
     const discount = Number(adjustments.discount ?? 0);
-    const tax = Number(adjustments.tax ?? 0);
-    const shippingCost = Number(adjustments.shippingCost ?? 0);
+    const tax = Number(adjustments.tax ?? cart.charges.tax);
+    const shippingCost = Number(adjustments.shippingCost ?? cart.charges.shippingCharge);
+    const platformFee = Number(adjustments.platformFee ?? cart.charges.platformFee);
 
-    for (const [label, value] of [['discount', discount], ['tax', tax], ['shipping cost', shippingCost]] as const) {
+    for (const [label, value] of [['discount', discount], ['tax', tax], ['shipping cost', shippingCost], ['platform fee', platformFee]] as const) {
       if (!Number.isFinite(value) || value < 0) throw new ClientError(`The ${label} must be zero or more.`);
     }
 
-    const grandTotal = subtotal + tax + shippingCost - discount;
+    const grandTotal = Math.round((subtotal + tax + shippingCost + platformFee - discount) * 100) / 100;
     if (grandTotal < 0) {
       throw new ClientError('The discount cannot be larger than the order total.');
     }
 
-    return { discount, tax, shippingCost, grandTotal };
+    return { discount, tax, shippingCost, platformFee, grandTotal };
   }
 
   async getSummary(ctx: CheckoutContext, adjustments: CheckoutAdjustmentsModel): Promise<CheckoutSummaryDto> {
     const cart = await this.requireCart(ctx);
-    const { discount, tax, shippingCost, grandTotal } = this.totalsFrom(cart.totalAmount, adjustments);
+    const { discount, tax, shippingCost, platformFee, grandTotal } = this.totalsFrom(cart, adjustments);
 
     return {
       subtotal: cart.totalAmount,
       discount,
       tax,
       shippingCost,
+      platformFee,
       grandTotal,
       currency: GATEWAY_CURRENCY,
       itemCount: cart.itemCount,
@@ -81,7 +90,7 @@ export class CheckoutService implements ICheckoutService {
 
   async createRazorpayOrder(ctx: CheckoutContext, adjustments: CheckoutAdjustmentsModel): Promise<RazorpayOrderDto> {
     const cart = await this.requireCart(ctx);
-    const { grandTotal } = this.totalsFrom(cart.totalAmount, adjustments);
+    const { grandTotal } = this.totalsFrom(cart, adjustments);
 
     if (grandTotal <= 0) {
       throw new ClientError('The payable amount must be greater than zero. Use direct checkout for a zero-value order.');
@@ -132,7 +141,7 @@ export class CheckoutService implements ICheckoutService {
     }
 
     const cart = await this.requireCart(ctx);
-    const { discount, tax, shippingCost, grandTotal } = this.totalsFrom(cart.totalAmount, model);
+    const { discount, tax, shippingCost, platformFee, grandTotal } = this.totalsFrom(cart, model);
 
     // The signature only proves the response is genuine, not that it matches what
     // this order is worth - so confirm the gateway captured the expected amount.
@@ -150,7 +159,7 @@ export class CheckoutService implements ICheckoutService {
         customerId: model.customerId,
         discount,
         tax,
-        shippingCost,
+        shippingCost: shippingCost + platformFee,
         notes: model.notes ?? null,
         // Paid up front, so the order does not sit in PENDING awaiting money.
         status: OrderStatus.CONFIRMED,
@@ -180,14 +189,14 @@ export class CheckoutService implements ICheckoutService {
 
   async checkoutDirect(ctx: CheckoutContext, model: DirectCheckoutModel): Promise<CheckoutResultDto> {
     const cart = await this.requireCart(ctx);
-    const { discount, tax, shippingCost } = this.totalsFrom(cart.totalAmount, model);
+    const { discount, tax, shippingCost, platformFee } = this.totalsFrom(cart, model);
 
     const order = await this.orderService.create(
       {
         customerId: model.customerId,
         discount,
         tax,
-        shippingCost,
+        shippingCost: shippingCost + platformFee,
         notes: model.notes ?? null,
         // No money has moved, so the order stays PENDING until it is settled.
         status: OrderStatus.PENDING,

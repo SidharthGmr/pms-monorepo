@@ -35,6 +35,7 @@ export interface CheckoutSummaryDto {
   discount: number;
   tax: number;
   shippingCost: number;
+  platformFee: number;
   grandTotal: number;
   currency: string;
   itemCount: number;

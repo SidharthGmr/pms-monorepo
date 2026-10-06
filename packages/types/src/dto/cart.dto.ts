@@ -17,6 +17,24 @@ export interface CartItemDto {
   updatedAt: Date | string | null;
 }
 
+/**
+ * What is added on top of the subtotal. Computed on the server from the store-wide charge
+ * settings so the cart page, checkout and order all agree.
+ */
+export interface CartChargesDto {
+  subtotal: number;
+  /** Percentage of the subtotal charged as tax. */
+  taxRate: number;
+  tax: number;
+  platformFee: number;
+  /** Shipping actually charged: 0 once the subtotal reaches `freeShippingAbove`. */
+  shippingCharge: number;
+  /** Subtotal at which shipping becomes free; null when it never does. */
+  freeShippingAbove: number | null;
+  shippingWaived: boolean;
+  grandTotal: number;
+}
+
 export interface CartDto {
   id: number;
   storeId: number;
@@ -31,4 +49,5 @@ export interface CartDto {
   itemCount: number;
   totalQuantity: number;
   totalAmount: number;
+  charges: CartChargesDto;
 }

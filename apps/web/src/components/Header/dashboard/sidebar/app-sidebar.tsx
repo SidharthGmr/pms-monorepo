@@ -1,43 +1,67 @@
 'use client';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInput, SidebarRail, useSidebar } from '@/components/ui/sidebar';
 import config from '@/config';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { Search, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const logo = '/logo-full.svg';
-  const icon = '/logo.svg';
+const LOGO = '/logo-full.svg';
+const ICON = '/logo.svg';
 
-  //const { state, open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar } = useSidebar();
-  const { open } = useSidebar();
+// Collapses to an icon rail on desktop (Ctrl/Cmd+B) and becomes a sheet on phones. The search box
+// filters the menu as you type, which matters once the catalog sections get long.
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { open, isMobile } = useSidebar();
+  const { currentUser } = useGetCurrentUser();
+  const [query, setQuery] = React.useState('');
+
+  const expanded = open || isMobile;
+  const storeCode = currentUser?.storeCode;
 
   return (
-    <Sidebar collapsible="icon" {...props} className="p-2 rounded-lg ">
-      <div className="text-end absolute -end-5 top-5 m-1 z-20 block md:hidden">
-        <SidebarTrigger className=" bg-primary rounded-full  h-8 w-8  text-white" />
-      </div>
-      <SidebarHeader className=''>
-        <div className="flex items-center justify-center">
-          <Link href="/" className="inline-block" title={`${config.appName}`}>
-            {open ? (
-              <Image src={logo} width={180} height={50} alt={config.appName} className="dark:grayscale h-[50px] w-[160px] object-contain" />
-            ) : (
-              <Image src={icon} width={32} height={32} alt={config.appName} className="dark:grayscale h-8 w-8 object-contain" />
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="gap-3 border-b border-sidebar-border px-3 py-3 group-data-[collapsible=icon]:px-2">
+        <Link href="/" title={config.appName} className="flex h-9 items-center justify-center rounded-lg outline-none ring-sidebar-ring focus-visible:ring-2">
+          {expanded ? (
+            <Image src={LOGO} width={160} height={40} alt={config.appName} priority className="h-8 w-auto max-w-[150px] object-contain dark:grayscale" />
+          ) : (
+            <Image src={ICON} width={32} height={32} alt={config.appName} priority className="h-7 w-7 object-contain dark:grayscale" />
+          )}
+        </Link>
+
+        {expanded && (
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <SidebarInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search menu" aria-label="Search menu" className="h-8 rounded-lg border-sidebar-border pl-8 pr-7 text-xs" />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
             )}
-          </Link>
-        </div>
+          </div>
+        )}
       </SidebarHeader>
-      <SidebarContent className=''>
-        <ScrollArea className="h-svh block pe-2 group-data-[collapsible=icon]:pe-0">
-          <NavMain />
-        </ScrollArea>
+
+      <SidebarContent className="gap-0 py-1 [scrollbar-width:thin]">
+        <NavMain query={query} />
       </SidebarContent>
-      <SidebarFooter className="">
+
+      <SidebarFooter className="border-t border-sidebar-border p-2">
+        {expanded && storeCode && (
+          <p className="truncate px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/50" title={`Store ${storeCode}`}>
+            Store · <span className="font-mono normal-case tracking-normal">{storeCode}</span>
+          </p>
+        )}
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

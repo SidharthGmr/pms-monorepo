@@ -2,95 +2,103 @@
 
 import { useMemo, useState } from 'react';
 
-import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useLogout from '@/hooks/use-logout';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 
-import { SidebarGroup, SidebarMenu } from '@/components/ui/sidebar';
-import { Skeleton } from '@/components/ui/skeleton';
+import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuSkeleton } from '@/components/ui/sidebar';
 
 import CheckUserStatus from '@/components/account/check-user-status';
-import { SideBarMenu } from '@/data/sidebarMenu';
+import { SideBarMenu, SideBarMenuDto } from '@/data/sidebarMenu';
+import { SearchX } from 'lucide-react';
 import { SidebarItemRenderer } from './SidebarItem';
 
-type SidebarRole = string;
+interface NavMainProps {
+  /** Text typed into the sidebar search; empty shows the full menu. */
+  query?: string;
+}
 
-// const dashboardMenu = [
-//   {
-//     id: 'adminDashboard',
-//     title: 'Dashboard',
-//     url: '/admin/',
-//     icon: MdOutlineDashboard,
-//     role: [Roles.ADMIN],
-//   },
-//   {
-//     id: 'userDashboard',
-//     title: 'Dashboard',
-//     url: '/dashboard/',
-//     icon: MdOutlineDashboard,
-//     role: [Roles.USER],
-//   },
-// ];
+const UNGROUPED = '';
 
 function SidebarSkeleton() {
   return (
-    <div className="space-y-2 p-4">
-      {Array.from({ length: 7 }).map((_, index) => (
-        <Skeleton key={index} className="h-12 w-full rounded-md" />
-      ))}
-    </div>
+    <SidebarGroup>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <SidebarMenuSkeleton key={index} showIcon />
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 }
 
-export function NavMain() {
-  const { currentUser } = useGetCurrentUser();
+// Items are filtered by role, then by the search text, then bucketed under their `group` label in
+// the order the groups first appear in the menu data.
+export function NavMain({ query = '' }: NavMainProps) {
+  const { currentUser, status } = useGetCurrentUser();
   const logout = useLogout();
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const userId = currentUser?.usersId ?? '';
-  const { isLoading } = useGetUserById(userId);
-
-  const userRoles = useMemo<SidebarRole[]>(() => {
+  const userRoles = useMemo<string[]>(() => {
     const role = currentUser?.role;
-
     if (!role) return [];
-
-    if (Array.isArray(role)) {
-      return role.filter(Boolean);
-    }
-
-    return [role];
+    return Array.isArray(role) ? role.filter(Boolean) : [role];
   }, [currentUser?.role]);
 
-  const menuItems = useMemo(() => {
-    const allMenuItems = [...SideBarMenu];
+  const q = query.trim().toLowerCase();
 
-    return allMenuItems.filter((item) => item.role?.some((role) => userRoles.includes(role)));
-  }, [userRoles]);
+  const sections = useMemo(() => {
+    const visible = SideBarMenu.filter((item) => item.role?.some((role) => userRoles.includes(role)));
 
-  if (isLoading) {
-    return <SidebarSkeleton />;
+    const matches = (title: string) => !q || title.toLowerCase().includes(q);
+    const searched: SideBarMenuDto[] = visible.flatMap((item) => {
+      if (!item.submenu?.length) return matches(item.title) ? [item] : [];
+      if (matches(item.title)) return [item];
+      const children = item.submenu.filter((child) => matches(child.title));
+      return children.length ? [{ ...item, submenu: children }] : [];
+    });
+
+    const order: string[] = [];
+    const buckets = new Map<string, SideBarMenuDto[]>();
+    for (const item of searched) {
+      const key = item.group ?? UNGROUPED;
+      if (!buckets.has(key)) {
+        buckets.set(key, []);
+        order.push(key);
+      }
+      buckets.get(key)!.push(item);
+    }
+    // Unlabelled items always sit at the bottom.
+    order.sort((a, b) => (a === UNGROUPED ? 1 : b === UNGROUPED ? -1 : 0));
+    return order.map((key) => ({ label: key, items: buckets.get(key)! }));
+  }, [userRoles, q]);
+
+  if (status === 'loading') return <SidebarSkeleton />;
+
+  if (sections.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-sidebar-foreground/60">
+        <SearchX className="h-6 w-6" />
+        <p className="text-xs">No menu item matches &ldquo;{query.trim()}&rdquo;.</p>
+      </div>
+    );
   }
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarMenu>
-          {menuItems.map((item, index) => (
-            <SidebarItemRenderer key={item.id} index={index} openIndex={openIndex} setOpenIndex={setOpenIndex} item={item} />
-          ))}
-
-          {/* <SidebarMenuSubItem>
-            <SidebarMenuButton asChild tooltip="Logout">
-              <button type="button" onClick={logout} className="flex w-full cursor-pointer items-center gap-2">
-                <TbLogout />
-                <span>Log out</span>
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuSubItem> */}
-        </SidebarMenu>
-      </SidebarGroup>
+      {sections.map((section) => (
+        <SidebarGroup key={section.label || 'other'} className="py-1.5">
+          {section.label && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {section.items.map((item) => (
+                <SidebarItemRenderer key={item.id} item={item} isOpen={openId === item.id} onToggle={(next) => setOpenId(next ? item.id : null)} forceOpen={q.length > 0} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
 
       <CheckUserStatus logout={logout} />
     </>

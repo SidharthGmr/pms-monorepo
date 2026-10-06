@@ -27,7 +27,8 @@ export interface CheckoutSummaryDto {
   subtotal: number;
   discount: number;
   tax: number;
-  shippingCost: number
+  shippingCost: number;
+  platformFee: number;
   grandTotal: number;
   currency: string;
   itemCount: number;

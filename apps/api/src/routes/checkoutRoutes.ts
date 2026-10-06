@@ -47,6 +47,11 @@ const checkoutController = container.get<CheckoutController>(TYPES.CheckoutContr
  *         schema:
  *           type: number
  *         required: false
+ *       - in: query
+ *         name: platformFee
+ *         schema:
+ *           type: number
+ *         required: false
  *     responses:
  *       200:
  *         description: Checkout summary fetched successfully
@@ -84,6 +89,8 @@ checkoutRouter.get('/summary', authenticateToken, asyncHandler(checkoutControlle
  *               tax:
  *                 type: number
  *               shippingCost:
+ *                 type: number
+ *               platformFee:
  *                 type: number
  *     responses:
  *       201:
@@ -135,6 +142,8 @@ checkoutRouter.post('/razorpay/orders', authenticateToken, asyncHandler(checkout
  *                 type: number
  *               shippingCost:
  *                 type: number
+ *               platformFee:
+ *                 type: number
  *               notes:
  *                 type: string
  *     responses:
@@ -177,6 +186,8 @@ checkoutRouter.post('/razorpay/payments/verify', authenticateToken, asyncHandler
  *               tax:
  *                 type: number
  *               shippingCost:
+ *                 type: number
+ *               platformFee:
  *                 type: number
  *               notes:
  *                 type: string

@@ -1,20 +1,27 @@
 'use client';
 
-import Logo from '@/components/common/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
+import config from '@/config';
+import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useLogout from '@/hooks/use-logout';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { UserDto } from '@pms/types';
+import { LogOut, Store, UserRound } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BreadCrumb } from '../breadcrumb';
 import { CartIndicator } from '../cart-indicator';
+import { GlobalSearch } from '../global-search';
+import { QuickCreate } from '../quick-create';
 import { ModeToggle } from './sidebar/thememode';
-import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
-import useGetCurrentUser from '@/hooks/useGetCurrentUser';
-import { UserDto } from '@pms/types';
+
+const ICON = '/logo.svg';
 
 export default function HeaderDashboard() {
   const { currentUser } = useGetCurrentUser();
@@ -32,67 +39,91 @@ export default function HeaderDashboard() {
   const name = userData?.name || currentUser.name || '';
   const email = userData?.email || currentUser.email || '';
   const profileImageUrl = userData?.profileImageUrl || '';
+  const role = userData?.role || currentUser.role || '';
+  const storeCode = userData?.storeCode || currentUser.storeCode || '';
+  const profileHref = pathname.startsWith('/admin') ? '/admin/profile' : '/dashboard/profile';
 
   return (
-    <>
-      <header className="sticky top-0 z-20 w-full  border-b border-b-slate-200/50 shadow-sm">
-        <Card className="!p-0 bg-card shadow-none rounded-0">
-          <div className="flex justify-between items-center px-4 py-2">
-            <div className="hidden xl:flex items-center justify-between gap-5">
-              <SidebarTrigger className="   h-4 w-4  " />
-              <BreadCrumb />
-            </div>
-            <div className="flex items-center justify-end gap-4">
-              <CartIndicator />
-              <div>
-                <ModeToggle />
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger className={` flex justify-center  overflow-hidden items-center relative bg-blue size-12 rounded-full`}>
-                  <Avatar className=" w-[30px] h-[30px]  ring-1 ring-primary ring-offset-[2px] ring-offset-background">
-                    {!isError && profileImageUrl && <AvatarImage src={profileImageUrl} className="object-cover" alt={name} />}
-                    <AvatarFallback className="uppercase bg-primary text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border/70 bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4">
+      <SidebarTrigger className="-ml-1 h-8 w-8 rounded-lg" />
+
+      <Link href="/" className="flex items-center md:hidden" title={config.appName}>
+        <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain dark:grayscale" />
+      </Link>
+
+      <Separator orientation="vertical" className="hidden h-5 md:block" />
+      <div className="hidden min-w-0 md:block">
+        <BreadCrumb />
+      </div>
+
+      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        <GlobalSearch />
+        <QuickCreate />
+        <Separator orientation="vertical" className="hidden h-5 sm:block" />
+        <CartIndicator />
+        <ModeToggle />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-9 gap-2 rounded-full px-1 pr-1 md:pr-2.5" aria-label="Account menu">
+              <Avatar className="h-7 w-7 ring-1 ring-border">
+                {!isError && profileImageUrl && <AvatarImage src={profileImageUrl} className="object-cover" alt={name} />}
+                <AvatarFallback className="bg-primary text-[11px] font-semibold uppercase text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>
+              </Avatar>
+              <span className="hidden max-w-[120px] truncate text-left text-sm font-medium md:block">{name.split(' ')[0]}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={8} className="w-64 rounded-lg">
+            <DropdownMenuLabel className="p-2 font-normal">
+              {isLoading ? (
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3 w-36" />
+                </div>
+              ) : isError ? (
+                <span className="text-sm text-destructive">Failed to load profile</span>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-9 w-9">
+                    {profileImageUrl && <AvatarImage src={profileImageUrl} className="object-cover" alt={name} />}
+                    <AvatarFallback className="bg-primary text-xs font-semibold uppercase text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>
                   </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <div className="p-3 border-b">
-                    {isLoading ? (
-                      <Skeleton className="h-4 w-28" />
-                    ) : isError ? (
-                      <span className="text-sm text-destructive">Failed to load profile</span>
-                    ) : (
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-sm">Hey, {name.length > 12 ? `${name.substring(0, 12)}...` : name}</span>
-                        {email && <span className="text-xs text-muted-foreground">{email}</span>}
-                      </div>
-                    )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{name}</p>
+                    {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {role && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{role}</span>}
+                      {storeCode && <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{storeCode}</span>}
+                    </div>
                   </div>
-
-                  <DropdownMenuItem asChild>
-                    <Link href={pathname.startsWith('/admin') ? '/admin/profile' : '/dashboard/profile'} className="w-full cursor-pointer">
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={async () => {
-                      await logout();
-                    }}
-                  >
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <div className="block xl:hidden">
-                <Logo width={100} height={50} className="dark:grayscale w-[100px] h-[50px]" />
-              </div>
-
-              <div className="block xl:hidden">
-                <SidebarTrigger className="" />
-              </div>
-            </div>
-          </div>
-        </Card>
-      </header>
-    </>
+                </div>
+              )}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href={profileHref}>
+                <UserRound className="h-4 w-4" />
+                My profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/">
+                <Store className="h-4 w-4" />
+                View storefront
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={async () => {
+                await logout();
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
   );
 }

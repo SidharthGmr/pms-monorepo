@@ -83,6 +83,12 @@ export default function CartPage() {
   const unpriced = items.filter((item) => item.unitPrice === null).length;
   const updatedAt = cart?.updatedAt ?? cart?.createdAt;
 
+  // Server-computed from the store's charge settings; checkout starts from the same figures.
+  const charges = cart?.charges;
+  const subtotal = cart?.totalAmount ?? 0;
+  const estimatedTotal = charges?.grandTotal ?? subtotal;
+  const untilFreeShipping = charges && charges.freeShippingAbove !== null && !charges.shippingWaived ? Math.max(0, charges.freeShippingAbove - subtotal) : null;
+
   if (isError) {
     return (
       <Card className="mx-auto max-w-6xl py-16 text-center">
@@ -216,17 +222,43 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Subtotal</dt>
-                <dd className="font-medium tabular-nums">{money(cart?.totalAmount)}</dd>
+                <dd className="font-medium tabular-nums">{money(subtotal)}</dd>
               </div>
+              {charges && charges.taxRate > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Tax ({charges.taxRate}%)</dt>
+                  <dd className="font-medium tabular-nums">{money(charges.tax)}</dd>
+                </div>
+              )}
+              {charges && charges.platformFee > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Platform fee</dt>
+                  <dd className="font-medium tabular-nums">{money(charges.platformFee)}</dd>
+                </div>
+              )}
+              {charges && (charges.shippingCharge > 0 || charges.shippingWaived) && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Shipping</dt>
+                  <dd className={cn('font-medium tabular-nums', charges.shippingWaived && 'text-emerald-600 dark:text-emerald-400')}>
+                    {charges.shippingWaived ? 'Free' : money(charges.shippingCharge)}
+                  </dd>
+                </div>
+              )}
             </dl>
 
             <Separator className="my-3" />
 
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-semibold">Estimated total</span>
-              <span className="text-2xl font-bold tabular-nums text-primary">{money(cart?.totalAmount)}</span>
+              <span className="text-2xl font-bold tabular-nums text-primary">{money(estimatedTotal)}</span>
             </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Taxes and delivery are worked out at checkout.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {untilFreeShipping !== null && untilFreeShipping > 0
+                ? `Add ${money(untilFreeShipping)} more for free shipping.`
+                : charges?.shippingWaived
+                  ? 'Free shipping applied to this order.'
+                  : 'Tax, platform fee and shipping are included. Discounts are applied at checkout.'}
+            </p>
 
             {unpriced > 0 && (
               <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">

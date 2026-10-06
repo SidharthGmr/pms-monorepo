@@ -65,6 +65,7 @@ export class OrderRepository implements IOrderRepository {
         items: {
           include: {
             product: true,
+            variant: { select: { id: true, name: true, sku: true, images: true } },
           },
         },
       },

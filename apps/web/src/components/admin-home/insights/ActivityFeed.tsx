@@ -24,12 +24,12 @@ type FeedItem = {
 };
 
 const ORDER_STATUS_STYLE: Record<string, string> = {
-  [OrderStatus.Pending]: 'bg-amber-100 text-amber-700',
-  [OrderStatus.Confirmed]: 'bg-sky-100 text-sky-700',
-  [OrderStatus.Shipped]: 'bg-indigo-100 text-indigo-700',
-  [OrderStatus.Delivered]: 'bg-emerald-100 text-emerald-700',
-  [OrderStatus.Cancelled]: 'bg-rose-100 text-rose-700',
-  [OrderStatus.Returned]: 'bg-zinc-100 text-zinc-700',
+  [OrderStatus.Pending]: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  [OrderStatus.Confirmed]: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
+  [OrderStatus.Shipped]: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
+  [OrderStatus.Delivered]: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  [OrderStatus.Cancelled]: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
+  [OrderStatus.Returned]: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300',
 };
 
 const dayLabel = (d: Date) => (isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'EEE, d MMM'));
@@ -112,7 +112,7 @@ export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
                 <span
                   className={cn(
                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-background shadow-sm',
-                    isOrder ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                    isOrder ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                   )}
                   aria-hidden
                 >
@@ -129,11 +129,11 @@ export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
                     {isOrder ? 'Sale to' : 'Stock from'} <span className="text-foreground/80">{item.subtitle}</span> · {formatDistanceToNow(item.at, { addSuffix: true })}
                   </p>
                 </div>
-                <span className={cn('shrink-0 text-sm font-semibold tabular-nums', isOrder ? 'text-emerald-600' : 'text-amber-600')}>
+                <span className={cn('shrink-0 text-sm font-semibold tabular-nums', isOrder ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
                   {isOrder ? '+' : '−'}
                   {formatMoney(item.amount)}
                 </span>
-                <ArrowRight className="h-4 w-4 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                <ArrowRight className="hidden h-4 w-4 shrink-0 -translate-x-1 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 sm:block" />
               </Link>
             </li>
           </Fragment>

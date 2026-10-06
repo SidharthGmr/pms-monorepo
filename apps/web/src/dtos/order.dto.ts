@@ -20,9 +20,11 @@ export interface OrderDto {
   updatedAt: Date | null;
   items?: OrderItemDto[];
   customer?: {
-    firstName: string;
-    lastName: string;
-    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string | null;
   };
   store?: {
     name: string;

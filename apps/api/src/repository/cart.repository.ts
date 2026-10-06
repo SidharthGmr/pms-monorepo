@@ -1,6 +1,7 @@
 import { CartDto, CartItemDto } from '@pms/types';
 import { CartStatus, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
+import { computeCartCharges } from '../utils/cart-charges';
 import { CartOwner, ICartRepository } from './interfaces/icart.repository';
 
 /** An untouched cart expires after this long. Every write pushes the deadline back. */
@@ -73,6 +74,7 @@ function toCartDto(cart: CartWithItems): CartDto {
     itemCount: items.length,
     totalQuantity: items.reduce((sum, i) => sum + i.quantity, 0),
     totalAmount: toMoney(totalAmount),
+    charges: computeCartCharges(totalAmount),
   };
 }
 
