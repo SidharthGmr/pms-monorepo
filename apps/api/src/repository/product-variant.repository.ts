@@ -84,6 +84,7 @@ export class ProductVariantRepository implements IProductVariantRepository {
 
     if (filters) {
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
+      if (filters.sku) where.sku = { equals: filters.sku, mode: 'insensitive' };
       if (filters.productId !== undefined) where.productId = filters.productId;
       if (filters.productIds?.length) where.productId = { in: filters.productIds };
       if (filters.isActive !== undefined) where.isActive = filters.isActive;

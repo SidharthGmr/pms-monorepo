@@ -46,6 +46,10 @@ const productVariantController = container.get<ProductVariantController>(TYPES.P
  *           type: string
  *         description: Matches SKU, variant name, barcode or product name
  *       - in: query
+ *         name: sku
+ *         schema:
+ *           type: string
+ *       - in: query
  *         name: productId
  *         schema:
  *           type: integer
@@ -135,6 +139,10 @@ productVariantRouter.get('/', authenticateToken, asyncHandler(productVariantCont
  *         schema:
  *           type: string
  *         description: Matches SKU, variant name, barcode or product name
+ *       - in: query
+ *         name: sku
+ *         schema:
+ *           type: string
  *       - in: query
  *         name: categoryId
  *         schema:

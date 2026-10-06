@@ -49,6 +49,7 @@ export default function VariantCard({ variant }: VariantCardProps) {
   const attributes = attributesOf(variant);
   const image = imageFor(variant);
   const title = variant.product?.name ?? variant.sku ?? 'Product';
+  const detailHref = `/products/${encodeURIComponent(variant.sku)}`;
   const subtitle = attributes.length === 0 ? variant.name : null;
 
   const { currentUser } = useGetCurrentUser();
@@ -79,23 +80,25 @@ export default function VariantCard({ variant }: VariantCardProps) {
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 !p-0 shadow-none transition-all duration-300 hover:border-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
       <div className="relative h-40 overflow-hidden bg-muted/40">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt={title}
-            loading="lazy"
-            className={cn(
-              'h-full w-full object-contain   p-4 transition-transform duration-500 ease-out group-hover:scale-105',
-              soldOut && 'opacity-35 grayscale'
-            )}
-          />
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-muted-foreground/25">
-            <ImageOff className="h-7 w-7" />
-            <span className="text-[10px] font-medium uppercase tracking-wide">No image</span>
-          </div>
-        )}
+        <Link href={detailHref} aria-label={`View ${title}`} className="block h-full w-full">
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={image}
+              alt={title}
+              loading="lazy"
+              className={cn(
+                'h-full w-full object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-105',
+                soldOut && 'opacity-35 grayscale'
+              )}
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-muted-foreground/25">
+              <ImageOff className="h-7 w-7" />
+              <span className="text-[10px] font-medium uppercase tracking-wide">No image</span>
+            </div>
+          )}
+        </Link>
 
         {soldOut ? (
           <Badge variant="zinc" className="absolute left-3 top-3 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm">
@@ -131,7 +134,9 @@ export default function VariantCard({ variant }: VariantCardProps) {
         )} */}
 
         <CardTitle className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight" title={title}>
-          {title}
+          <Link href={detailHref} className="underline-offset-2 hover:underline">
+            {title}
+          </Link>
         </CardTitle>
 
         {/* Values only - "size:"/"color:" doubles the width of every chip on a narrow card,
