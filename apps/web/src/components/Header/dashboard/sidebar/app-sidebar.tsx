@@ -2,7 +2,6 @@
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInput, SidebarRail, useSidebar } from '@/components/ui/sidebar';
 import config from '@/config';
-import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { Search, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,11 +16,9 @@ const ICON = '/logo.svg';
 // filters the menu as you type, which matters once the catalog sections get long.
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { open, isMobile } = useSidebar();
-  const { currentUser } = useGetCurrentUser();
   const [query, setQuery] = React.useState('');
 
   const expanded = open || isMobile;
-  const storeCode = currentUser?.storeCode;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -57,11 +54,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
-        {expanded && storeCode && (
-          <p className="truncate px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-sidebar-foreground/50" title={`Store ${storeCode}`}>
-            Store · <span className="font-mono normal-case tracking-normal">{storeCode}</span>
-          </p>
-        )}
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

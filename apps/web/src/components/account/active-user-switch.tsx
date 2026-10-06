@@ -25,7 +25,9 @@ export default function ActiveUserSwitch() {
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
         <span className="truncate font-semibold">{currentUser.name}</span>
-        <span className="truncate text-xs">{currentUser.email}</span>
+        <span className="truncate font-mono text-[11px] text-sidebar-foreground/70" title={currentUser.storeCode ? `Store ${currentUser.storeCode}` : currentUser.email}>
+          {currentUser.storeCode || currentUser.email}
+        </span>
       </div>
     </>
   );

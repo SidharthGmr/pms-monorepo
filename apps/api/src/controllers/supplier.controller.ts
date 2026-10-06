@@ -22,6 +22,8 @@ export class SupplierController {
         showAllRecords: req.query['showAllRecords'] !== undefined ? req.query['showAllRecords'] === 'true' : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
+        sortBy: req.query['sortBy'] ? String(req.query['sortBy']) : undefined,
+        sortDirection: String(req.query['sortDirection'] ?? '').toUpperCase() === 'DESC' ? 'DESC' : req.query['sortDirection'] ? 'ASC' : undefined,
         storeCode: req.user?.storeCode || undefined,
       }).filter(([, v]) => v !== undefined)
     );

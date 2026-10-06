@@ -77,6 +77,16 @@ const supplierController = container.get<SupplierController>(TYPES.SupplierContr
  *           format: date-time
  *         required: false
  *         description: Only suppliers created on or before this date (optional)
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [displayOrder, name, status, createdAt, updatedAt]
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
  *     responses:
  *       200:
  *         description: Suppliers fetched successfully

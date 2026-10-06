@@ -2,17 +2,21 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ColumnDef, Table as TanstackTable, flexRender } from '@tanstack/react-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface CustomDataTableProps<TData, TValue> {
   table: TanstackTable<TData>;
   columns: ColumnDef<TData, TValue>[];
   isLoading?: boolean;
+  /** Drops the table's own border and corner radius, for tables placed inside a card. */
+  flush?: boolean;
+  emptyMessage?: React.ReactNode;
 }
 
-export function CustomDataTable<TData, TValue>({ table, columns, isLoading }: CustomDataTableProps<TData, TValue>) {
+export function CustomDataTable<TData, TValue>({ table, columns, isLoading, flush = false, emptyMessage = 'No results.' }: CustomDataTableProps<TData, TValue>) {
   return (
     <>
-      <div className="grid w-full [&>div]:border [&>div]:rounded">
+      <div className={cn('grid w-full', flush ? '[&_thead]:bg-muted/40' : '[&>div]:border [&>div]:rounded')}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -51,7 +55,7 @@ export function CustomDataTable<TData, TValue>({ table, columns, isLoading }: Cu
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  {emptyMessage}
                 </TableCell>
               </TableRow>
             )}

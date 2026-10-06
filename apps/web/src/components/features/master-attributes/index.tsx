@@ -2,7 +2,7 @@
 import { KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ListChecks, Pencil, Ruler, Trash2 } from 'lucide-react';
+import { ListChecks, Pencil, Plus, Ruler, Trash2, X } from 'lucide-react';
 import { MasterAttributeDto } from '@/dtos/master-entry.dto';
 import { MasterAttributeFilterParams } from '@/params/master-entry.params';
 import { useDeleteMasterAttribute, useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
@@ -18,10 +18,11 @@ import { CustomDataTable } from '@/components/Table/data-table';
 import ConfirmBox from '@/components/common/confirm-box';
 import CardAction from '@/components/common/card-action';
 import ListPagination from '@/components/common/list-pagination';
-import { PageHeader } from '@/components/common/page-header';
+import ListPageHeader from '@/components/common/list-page-header';
+import { readStoredView, storeView } from '@/components/common/view-switch';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageMasterAttribute from './add-edit';
@@ -41,23 +42,7 @@ const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3';
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant), which puts a 20px inset at desktop widths.
 const FLUSH_CARD = 'p-0 md:p-0';
 
-// Remembered per browser so the layout choice sticks between visits. Wrapped because storage can be blocked.
 const VIEW_STORAGE_KEY = 'master-attributes.view';
-const readStoredView = (): ListView | null => {
-  try {
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    return stored === 'table' || stored === 'grid' ? stored : null;
-  } catch {
-    return null;
-  }
-};
-const storeView = (view: ListView) => {
-  try {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, view);
-  } catch {
-    // Storage blocked: the choice just lasts for this page load.
-  }
-};
 
 export default function MasterAttributeList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -69,12 +54,12 @@ export default function MasterAttributeList() {
   // Cards by default. The stored preference is applied after mount so server and first client render agree.
   const [view, setView] = useState<ListView>('grid');
   useEffect(() => {
-    const stored = readStoredView();
+    const stored = readStoredView(VIEW_STORAGE_KEY);
     if (stored) setView(stored);
   }, []);
   const changeView = (next: ListView) => {
     setView(next);
-    storeView(next);
+    storeView(VIEW_STORAGE_KEY, next);
   };
 
   // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
@@ -160,31 +145,38 @@ export default function MasterAttributeList() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-4">
-        <PageHeader
-          title="Master Attributes"
-          description={
-            listQuery.isPending
-              ? 'Groups of reusable values — Size, Color, Weight — used across the app'
-              : `${total} ${total === 1 ? 'attribute' : 'attributes'} · groups of reusable values used across the app`
-          }
-          variant="add"
-          actionText={showAddPanel ? 'Close' : 'Add Attribute'}
-          buttonVariant={showAddPanel ? 'outline' : 'default'}
-          onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
-        />
-        <AddMasterAttributePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
-        <Separator />
-        <MasterAttributeFilter
-          value={filter}
-          onChange={updateFilter}
-          onReset={resetFilter}
-          view={view}
-          onViewChange={changeView}
-          total={listQuery.isPending ? undefined : total}
-          loading={listQuery.isFetching}
-        />
-      </Card>
+      <ListPageHeader
+        icon={Ruler}
+        title="Variant Options"
+        description={
+          listQuery.isPending
+            ? 'Groups of reusable values such as Size, Color and Weight'
+            : `${total} ${total === 1 ? 'option group' : 'option groups'} · reusable values such as Size, Color and Weight`
+        }
+        actions={
+          <Button
+            type="button"
+            variant={showAddPanel ? 'outline' : 'default'}
+            className="h-9 gap-1.5"
+            onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
+          >
+            {showAddPanel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {showAddPanel ? 'Close' : 'Add attribute'}
+          </Button>
+        }
+      />
+
+      <AddMasterAttributePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
+
+      <MasterAttributeFilter
+        value={filter}
+        onChange={updateFilter}
+        onReset={resetFilter}
+        view={view}
+        onViewChange={changeView}
+        total={listQuery.isPending ? undefined : total}
+        loading={listQuery.isFetching}
+      />
 
       <Card size="sm">
         <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
@@ -197,7 +189,18 @@ export default function MasterAttributeList() {
         </Card>
       ) : view === 'table' ? (
         <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
-          <CustomDataTable columns={columns} table={table} isLoading={showSkeleton} />
+          <CustomDataTable
+            columns={columns}
+            table={table}
+            isLoading={showSkeleton}
+            flush
+            emptyMessage={
+              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                <Ruler className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No attributes match these filters.' : 'No attributes yet.'}</span>
+              </div>
+            }
+          />
         </Card>
       ) : showSkeleton ? (
         <div className={GRID} aria-busy="true" aria-label="Loading attributes">
@@ -225,7 +228,7 @@ export default function MasterAttributeList() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No attributes match these filters' : 'No attributes yet'}</p>
             <p className="text-xs text-muted-foreground">
-              {isFiltered ? 'Try a different search or status.' : 'Use "Add Attribute" above to create the first one, e.g. Size or Color.'}
+              {isFiltered ? 'Try a different search or status.' : 'Use "Add attribute" above to create the first one, e.g. Size or Color.'}
             </p>
           </div>
         </Card>

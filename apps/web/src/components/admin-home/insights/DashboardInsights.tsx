@@ -485,14 +485,21 @@ function PeoplePanel({ summary, loading }: { summary?: DashboardSummaryDto; load
 
   if (loading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-border/70">
         {[0, 1].map((col) => (
-          <div key={col} className="space-y-2">
-            <Skeleton className="h-3 w-24" />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <Skeleton className="h-3.5 flex-1" />
+          <div key={col} className={cn('space-y-3', col === 1 && 'sm:pl-6')}>
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-3 w-10" />
+            </div>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 w-1/2" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+                <Skeleton className="h-3 w-14" />
               </div>
             ))}
           </div>
@@ -502,39 +509,84 @@ function PeoplePanel({ summary, loading }: { summary?: DashboardSummaryDto; load
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
-      <PeopleList title="New customers" emptyText="No customers yet." people={customers.map((c) => ({ id: c.id, name: c.name, sub: c.email, when: c.createdAt, active: c.isActive }))} />
+    <div className="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-border/70">
+      <PeopleList
+        title="New customers"
+        total={summary?.customerTotal}
+        href="/admin/users?role=USER"
+        emptyText="No customers yet. They appear here as soon as someone registers or places an order."
+        people={customers.map((c) => ({ id: c.id, name: c.name, sub: c.email || c.phone || '', when: c.createdAt, active: c.isActive, badge: c.isActive ? null : 'Inactive' }))}
+      />
       <PeopleList
         title="Team"
-        emptyText="No staff added yet."
+        total={summary?.staffTotal}
+        href="/admin/users?role=STAFF"
+        emptyText="No staff added yet. Add team members from Users."
+        className="sm:pl-6"
         people={staff.map((s) => ({
           id: s.id,
           name: s.user?.name || `Staff #${s.id}`,
           sub: [s.position, s.department].filter(Boolean).join(' · ') || s.user?.email || '',
           when: s.createdAt,
           active: s.isActive,
+          badge: s.isActive ? 'Active' : 'Inactive',
         }))}
       />
     </div>
   );
 }
 
-function PeopleList({ title, emptyText, people }: { title: string; emptyText: string; people: { id: number; name: string; sub: string; when: string; active: boolean }[] }) {
+interface Person {
+  id: number;
+  name: string;
+  sub: string;
+  when: string;
+  active: boolean;
+  badge: string | null;
+}
+
+// One column of the People panel: heading with the store-wide total, then compact rows that
+// link to the user list. The newest person is marked so the list reads as a feed.
+function PeopleList({ title, total, href, emptyText, people, className }: { title: string; total?: number; href: string; emptyText: string; people: Person[]; className?: string }) {
   return (
-    <div className="min-w-0">
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
+    <div className={cn('min-w-0', className)}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}
+          {total !== undefined && <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">{formatCount(total)}</span>}
+        </h3>
+        <Link href={href} className="text-[11px] font-medium text-primary hover:underline">
+          View
+        </Link>
+      </div>
+
       {people.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{emptyText}</p>
+        <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-3 py-3 text-xs text-muted-foreground">
+          <Users className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {emptyText}
+        </div>
       ) : (
-        <ul className="space-y-1">
-          {people.map((p) => (
-            <li key={p.id} className="flex items-center gap-2.5 rounded-md px-1 py-1">
-              <Initials name={p.name} active={p.active} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">{p.name}</p>
-                <p className="truncate text-[11px] text-muted-foreground">{p.sub || '—'}</p>
-              </div>
-              <span className="hidden shrink-0 text-[10px] text-muted-foreground sm:block">{p.when ? formatDistanceToNow(new Date(p.when), { addSuffix: true }) : ''}</span>
+        <ul className="-mx-2">
+          {people.map((p, index) => (
+            <li key={p.id}>
+              <Link href={`/admin/users?search=${encodeURIComponent(p.name)}`} className="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50">
+                <Initials name={p.name} active={p.active} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-sm font-medium leading-tight">
+                    <span className="truncate group-hover:underline">{p.name}</span>
+                    {index === 0 && <span className="shrink-0 rounded bg-primary/10 px-1 text-[9px] font-semibold uppercase tracking-wide text-primary">New</span>}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">{p.sub || '—'}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  {p.badge && (
+                    <span className={cn('block text-[10px] font-semibold', p.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>{p.badge}</span>
+                  )}
+                  <span className="block text-[10px] text-muted-foreground" title={p.when ? new Date(p.when).toLocaleString('en-IN') : ''}>
+                    {p.when ? formatDistanceToNow(new Date(p.when), { addSuffix: true }) : ''}
+                  </span>
+                </div>
+              </Link>
             </li>
           ))}
         </ul>

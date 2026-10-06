@@ -1,122 +1,114 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Plus, Truck } from 'lucide-react';
 import { SupplierDto } from '@/dtos/supplier.dto';
-import { useGetAllSuppliers, useDeleteSupplier } from '@/hooks/service-hooks/useSupplierService';
 import { SupplierFilterParams } from '@/params/supplier.params';
+import { useDeleteSupplier, useGetAllSuppliers } from '@/hooks/service-hooks/useSupplierService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
-import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
-import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { CustomDataTable } from '../../Table/data-table';
-import { DataTablePagination } from '../../Table/data-table-pagination';
-import ConfirmBox from '../../common/confirm-box';
-import { toast } from '../../ui/use-toast';
+import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import useModalShowHide from '@/hooks/use-modal-show-hide';
-import { useSupplierColumns } from './columns';
-import SupplierListFilter from './filter';
-import ManageSupplier from './add-edit';
 import config from '@/config';
+import { cn } from '@/lib/utils';
+import { CustomDataTable } from '@/components/Table/data-table';
+import ConfirmBox from '@/components/common/confirm-box';
+import ListPageHeader from '@/components/common/list-page-header';
+import ListPagination from '@/components/common/list-pagination';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { toast } from '@/components/ui/use-toast';
+import ManageSupplier from './add-edit';
+import { useSupplierColumns } from './columns';
+import SupplierFilter, { DEFAULT_SUPPLIER_FILTER, SortDirection, SupplierFilterValue } from './filter';
+
+// `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
+const FLUSH_CARD = 'p-0 md:p-0';
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
+const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
 
 export default function SupplierList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const searchParams = useSearchParams();
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  const [data, setData] = useState<SupplierDto[]>([]);
-  const [recordCount, setRecordCount] = useState<number>(0);
+  // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
+  const [filter, setFilter] = useState<SupplierFilterValue>(() => {
+    const from = searchParams.get('startDate');
+    const to = searchParams.get('endDate');
+    return {
+      search: searchParams.get('search') ?? DEFAULT_SUPPLIER_FILTER.search,
+      status: searchParams.get('status') ?? DEFAULT_SUPPLIER_FILTER.status,
+      dateRange: from || to ? { from: from ? new Date(from) : undefined, to: to ? new Date(to) : undefined } : undefined,
+      sortBy: searchParams.get('sortBy') ?? DEFAULT_SUPPLIER_FILTER.sortBy,
+      sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'DESC' ? 'DESC' : 'ASC',
+    };
+  });
+  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get('recordPerPage')) || config.recordPerPage);
+
+  const params = useMemo<SupplierFilterParams>(
+    () => ({
+      search: filter.search || undefined,
+      status: filter.status || undefined,
+      startDate: filter.dateRange?.from ? startOfDay(filter.dateRange.from) : undefined,
+      endDate: filter.dateRange?.to ? endOfDay(filter.dateRange.to) : undefined,
+      sortBy: filter.sortBy,
+      sortDirection: filter.sortDirection,
+      page,
+      recordPerPage: pageSize,
+    }),
+    [filter, page, pageSize]
+  );
+
+  const listQuery = useGetAllSuppliers(params);
+  const deleteMutation = useDeleteSupplier();
+
+  const result = listQuery.data?.data?.data;
+  const suppliers: SupplierDto[] = useMemo(() => result?.data ?? [], [result]);
+  const total = result?.totalRecord ?? 0;
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
+  // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.
   const columns = useSupplierColumns(
     (id) => openEditModal(id),
     (id) => openDeleteModal(id)
   );
-
-  const searchParams = useSearchParams();
-
-  // `search` (not `q`) is the key the API reads.
-  const [filterParams, setFilterParams] = useState<SupplierFilterParams>({
-    search: searchParams.get('search') || '',
-    status: searchParams.get('status') || '',
-    page: +(searchParams.get('page') || 1),
-    recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-    startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!).toISOString() : undefined,
-    endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!).toISOString() : undefined,
-    sortBy: searchParams.get('sortBy') || 'createdon',
-    sortDirection: searchParams.get('sortDirection') || 'desc',
-  });
-
-  const getAllSuppliersResponse = useGetAllSuppliers(filterParams);
-  const deleteSupplierMutation = useDeleteSupplier();
-
-  useEffect(() => {
-    if (getAllSuppliersResponse.status === 'success' && getAllSuppliersResponse.data?.data?.data) {
-      const result = getAllSuppliersResponse.data.data.data;
-      setData(result.data ?? []);
-      setRecordCount(result.totalRecord ?? 0);
-    }
-  }, [getAllSuppliersResponse.status, getAllSuppliersResponse.data]);
-
-  const { sorting, onSortingChange, field, order } = useTanstackTableSorting<SupplierDto>(
-    filterParams.sortBy ?? '',
-    filterParams.sortDirection ?? '',
-    columns
-  );
-
-  const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
-
   const table = useCustomDataTable({
     columns,
-    data,
+    data: suppliers,
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
-    pageCount: Math.ceil((recordCount || 0) / (filterParams.recordPerPage || 1)),
-    pagination,
-    sorting,
-    onPaginationChange: onPaginationChange,
-    onSortingChange: onSortingChange,
+    pageCount: Math.max(1, Math.ceil(total / Math.max(pageSize, 1))),
+    pagination: { pageIndex: page - 1, pageSize },
+    sorting: [{ id: filter.sortBy, desc: filter.sortDirection === 'DESC' }],
   });
 
-  useEffect(() => {
-    setFilterParams((oldValue) => {
-      return {
-        ...oldValue,
-        page: pagination.pageIndex + 1,
-        recordPerPage: pagination.pageSize,
-      };
-    });
-  }, [pagination]);
+  // Any change to what is being listed sends the user back to page 1, otherwise a narrower result set can leave them on an empty page.
+  const updateFilter = (patch: Partial<SupplierFilterValue>) => {
+    setFilter((current) => ({ ...current, ...patch }));
+    setPage(1);
+  };
 
-  useEffect(() => {
-    setFilterParams((oldValue) => {
-      return {
-        ...oldValue,
-        sortBy: field,
-        sortDirection: order,
-      };
-    });
-  }, [field, order]);
+  const resetFilter = () => {
+    setFilter(DEFAULT_SUPPLIER_FILTER);
+    setPage(1);
+  };
 
-  const resetForm = () => {
-    setFilterParams((oldValue) => {
-      return {
-        ...oldValue,
-        search: '',
-        status: '',
-        startDate: undefined,
-        endDate: undefined,
-        page: 1,
-      };
-    });
+  const changePageSize = (size: number) => {
+    setPageSize(size);
+    setPage(1);
   };
 
   const handleDelete = async (id: number) => {
-    const response = await deleteSupplierMutation.mutateAsync(id);
-    if (response && response.status === 204) {
-      toast({ variant: 'success', title: 'Supplier deleted successfully' });
+    const response = await deleteMutation.mutateAsync(id);
+    if (response && (response.status === 204 || response.status === 200)) {
+      toast({ variant: 'success', title: 'Supplier deleted' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -124,59 +116,69 @@ export default function SupplierList() {
     closeDeleteModal(true);
   };
 
-  if (getAllSuppliersResponse.isError) {
-    return <div className="text-center py-10 text-destructive">Error loading suppliers</div>;
-  }
+  const isFiltered = filter.search !== '' || filter.status !== '' || !!filter.dateRange;
+  const showSkeleton = listQuery.isPending;
 
   return (
-    <>
-      <div className="space-y-4">
-        <SupplierListFilter
-          table={table}
-          resetForm={resetForm}
-          onTextChange={(value) => {
-            setFilterParams((oldValue) => ({ ...oldValue, search: value || '', page: 1 }));
-          }}
-          onStatusChange={(value) => {
-            setFilterParams((oldValue) => ({ ...oldValue, status: value || '', page: 1 }));
-          }}
-          onStartDateChanged={(value) => {
-            // Widen to the whole day so a same-day range still matches.
-            const selectedDate = value ? new Date(value) : undefined;
-            selectedDate?.setHours(0, 0, 0, 0);
-            setFilterParams((oldValue) => ({ ...oldValue, startDate: selectedDate?.toISOString(), page: 1 }));
-          }}
-          onEndDateChanged={(value) => {
-            const selectedDate = value ? new Date(value) : undefined;
-            selectedDate?.setHours(23, 59, 59, 999);
-            setFilterParams((oldValue) => ({ ...oldValue, endDate: selectedDate?.toISOString(), page: 1 }));
-          }}
-        />
-        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllSuppliersResponse.isLoading} />
-        <div className="rounded-md border">
-          <CustomDataTable columns={columns} table={table} isLoading={getAllSuppliersResponse.isLoading} />
-        </div>
-        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllSuppliersResponse.isLoading} />
-      </div>
-      {showEditModal && editId && (
-        <ManageSupplier
-          id={+editId}
-          isOpen={showEditModal}
-          onClose={(refresh) => {
-            closeEditModal(refresh);
-          }}
-        />
+    <div className="space-y-4">
+      <ListPageHeader
+        icon={Truck}
+        title="Suppliers"
+        description={listQuery.isPending ? 'Who you buy stock from and how to reach them' : `${total} ${total === 1 ? 'supplier' : 'suppliers'} · who you buy stock from and how to reach them`}
+        actions={
+          <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add supplier
+          </Button>
+        }
+      />
+
+      <SupplierFilter value={filter} onChange={updateFilter} onReset={resetFilter} total={listQuery.isPending ? undefined : total} loading={listQuery.isFetching} />
+
+      <Card size="sm">
+        <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+      </Card>
+
+      {listQuery.isError ? (
+        <Card className="py-16 text-center">
+          <p className="text-sm font-semibold text-destructive">Could not load suppliers</p>
+          <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+        </Card>
+      ) : (
+        <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
+          <CustomDataTable
+            columns={columns}
+            table={table}
+            isLoading={showSkeleton}
+            flush
+            emptyMessage={
+              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                <Truck className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No suppliers match these filters.' : 'No suppliers yet. Use "Add supplier" above to create the first one.'}</span>
+              </div>
+            }
+          />
+        </Card>
       )}
+
+      {total > pageSize && (
+        <Card size="sm">
+          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+        </Card>
+      )}
+
+      {showAddModal && <ManageSupplier isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
+      {showEditModal && editId && <ManageSupplier id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
       {showDeleteModal && deleteId && (
         <ConfirmBox
           isOpen={showDeleteModal}
           onClose={() => closeDeleteModal(false)}
           onSubmit={() => handleDelete(+deleteId)}
-          heading="Delete Supplier"
-          loading={deleteSupplierMutation.isPending}
-          bodyText="Are you sure you want to delete this supplier? This action cannot be undone."
+          heading="Delete supplier"
+          loading={deleteMutation.isPending}
+          bodyText="Delete this supplier? Purchase history that references it is kept, but it will no longer be offered when receiving stock."
         />
       )}
-    </>
+    </div>
   );
 }

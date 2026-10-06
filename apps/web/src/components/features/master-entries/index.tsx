@@ -2,7 +2,7 @@
 import { KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ListChecks, Pencil, Trash2 } from 'lucide-react';
+import { ListChecks, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { MasterEntryDto } from '@/dtos/master-entry.dto';
 import { MasterEntryFilterParams } from '@/params/master-entry.params';
 import { useDeleteMasterEntry, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
@@ -18,11 +18,11 @@ import { CustomDataTable } from '@/components/Table/data-table';
 import ConfirmBox from '@/components/common/confirm-box';
 import CardAction from '@/components/common/card-action';
 import ListPagination from '@/components/common/list-pagination';
-import { PageHeader } from '@/components/common/page-header';
+import ListPageHeader from '@/components/common/list-page-header';
 import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageMasterEntry from './add-edit';
@@ -148,33 +148,54 @@ export default function MasterEntryList() {
   const isFiltered = filter.search !== '' || filter.status !== '' || filter.attributeId !== undefined;
   const showSkeleton = listQuery.isPending;
 
+  // When the list is narrowed to one attribute every row shares it, so the header can name it.
+  const scopedAttribute = filter.attributeId !== undefined ? entries[0]?.attribute : undefined;
+  const description = listQuery.isPending
+    ? 'The options behind each attribute, such as sizes, colours and weights'
+    : scopedAttribute
+      ? `${total} ${total === 1 ? 'value' : 'values'} for ${scopedAttribute.name} (${scopedAttribute.code})`
+      : `${total} ${total === 1 ? 'value' : 'values'} · the options behind each attribute`;
+
   return (
     <div className="space-y-4">
-      <Card className="space-y-4">
-        <PageHeader
-          title="Master Entries"
-          description={
-            listQuery.isPending
-              ? 'Values behind each attribute — sizes, colours, weights'
-              : `${total} ${total === 1 ? 'value' : 'values'} · the options behind each attribute`
-          }
-          variant="add"
-          actionText={showAddPanel ? 'Close' : 'Add Value'}
-          buttonVariant={showAddPanel ? 'outline' : 'default'}
-          onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
-        />
-        <AddMasterEntryPanel ref={addPanelRef} isOpen={showAddPanel} defaultAttributeId={filter.attributeId} onClose={() => setShowAddPanel(false)} />
-        <Separator />
-        <MasterEntryFilter
-          value={filter}
-          onChange={updateFilter}
-          onReset={resetFilter}
-          view={view}
-          onViewChange={changeView}
-          total={listQuery.isPending ? undefined : total}
-          loading={listQuery.isFetching}
-        />
-      </Card>
+      <ListPageHeader
+        icon={ListChecks}
+        title="Option Values"
+        description={description}
+        actions={
+          <>
+            {scopedAttribute && (
+              <Button asChild type="button" variant="outline" className="h-9 gap-1.5">
+                <Link href="/admin/master-attributes">
+                  <ListChecks className="h-4 w-4" />
+                  All attributes
+                </Link>
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant={showAddPanel ? 'outline' : 'default'}
+              className="h-9 gap-1.5"
+              onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
+            >
+              {showAddPanel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {showAddPanel ? 'Close' : 'Add value'}
+            </Button>
+          </>
+        }
+      />
+
+      <AddMasterEntryPanel ref={addPanelRef} isOpen={showAddPanel} defaultAttributeId={filter.attributeId} onClose={() => setShowAddPanel(false)} />
+
+      <MasterEntryFilter
+        value={filter}
+        onChange={updateFilter}
+        onReset={resetFilter}
+        view={view}
+        onViewChange={changeView}
+        total={listQuery.isPending ? undefined : total}
+        loading={listQuery.isFetching}
+      />
 
       <Card size="sm">
         <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
@@ -187,7 +208,18 @@ export default function MasterEntryList() {
         </Card>
       ) : view === 'table' ? (
         <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
-          <CustomDataTable columns={columns} table={table} isLoading={showSkeleton} />
+          <CustomDataTable
+            columns={columns}
+            table={table}
+            isLoading={showSkeleton}
+            flush
+            emptyMessage={
+              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                <ListChecks className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No values match these filters.' : 'No values yet.'}</span>
+              </div>
+            }
+          />
         </Card>
       ) : showSkeleton ? (
         <div className={GRID} aria-busy="true" aria-label="Loading values">
@@ -215,7 +247,7 @@ export default function MasterEntryList() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No values match these filters' : 'No values yet'}</p>
             <p className="text-xs text-muted-foreground">
-              {isFiltered ? 'Try a different search, status or attribute.' : 'Use "Add Value" above to create the first one, e.g. Small, Medium, Large.'}
+              {isFiltered ? 'Try a different search, status or attribute.' : 'Use "Add value" above to create the first one, e.g. Small, Medium, Large.'}
             </p>
           </div>
         </Card>

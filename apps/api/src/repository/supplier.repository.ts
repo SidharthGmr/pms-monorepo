@@ -5,6 +5,8 @@ import { ListResponseDto } from "../dtos/list-response.dto";
 import { SupplierFilterParams } from "../params/supplier.params";
 import { ISupplierRepository } from "./interfaces/isupplier.repository";
 
+const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
+
 export class SupplierRepository implements ISupplierRepository {
     async findAll(
         filters?: SupplierFilterParams,
@@ -44,6 +46,9 @@ export class SupplierRepository implements ISupplierRepository {
                     ...(filters.endDate != null && { lte: filters.endDate }),
                 };
             }
+
+            if (filters.sortBy && SORTABLE_COLUMNS.has(filters.sortBy)) sortBy = filters.sortBy;
+            if (filters.sortDirection) sortOrder = filters.sortDirection === 'DESC' ? 'desc' : 'asc';
         }
 
         const showAll = filters?.showAllRecords === true;

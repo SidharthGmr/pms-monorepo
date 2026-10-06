@@ -1,7 +1,7 @@
 'use client';
-import { KeyboardEvent, useMemo, useState } from 'react';
+import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CornerDownRight, FolderTree, ImageOff, Pencil, Trash2 } from 'lucide-react';
+import { CornerDownRight, FolderTree, ImageOff, Pencil, Plus, Trash2 } from 'lucide-react';
 import { CategoryFilterParams, CategoryResponseDto, Status } from '@pms/types';
 import { useDeleteCategory, useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -16,11 +16,15 @@ import CardAction from '@/components/common/card-action';
 import ListPagination from '@/components/common/list-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PageHeader } from '@/components/common/page-header';
 import { toast } from '@/components/ui/use-toast';
+import ListPageHeader from '@/components/common/list-page-header';
+import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
+import { CustomDataTable } from '@/components/Table/data-table';
+import { useCustomDataTable } from '@/hooks/use-custom-table';
 import ManageCategory from './add-edit';
+import { useCategoryColumns } from './columns';
 import CategoryFilter, { CategoryFilterValue, DEFAULT_CATEGORY_FILTER, SortDirection } from './filter';
 
 const STATUS_BADGE: Record<Status, 'green' | 'orange' | 'destructive'> = {
@@ -37,6 +41,8 @@ const FLUSH_CARD = 'p-0 md:p-0';
 // Same params object the add/edit dialog uses for its parent dropdown, so both share one cache entry.
 const ALL_CATEGORIES_PARAMS: CategoryFilterParams = { showAllRecords: true };
 
+const VIEW_STORAGE_KEY = 'categories.view';
+
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
 
@@ -44,6 +50,16 @@ export default function CategoryList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
+  // Cards are the default view; the stored preference is applied after mount so server and first client render agree.
+  const [view, setView] = useState<ListView>('grid');
+  useEffect(() => {
+    const stored = readStoredView(VIEW_STORAGE_KEY);
+    if (stored) setView(stored);
+  }, []);
+  const changeView = (next: ListView) => {
+    setView(next);
+    storeView(VIEW_STORAGE_KEY, next);
+  };
 
   // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
   const [filter, setFilter] = useState<CategoryFilterValue>(() => {
@@ -94,6 +110,24 @@ export default function CategoryList() {
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
+  // The table view reuses the column layout. Paging and sorting are already applied by the API,
+  // so the table is told it is manual and simply renders the page it is given.
+  const columns = useCategoryColumns(
+    parentNames,
+    (id) => openEditModal(id),
+    (id) => openDeleteModal(id)
+  );
+  const table = useCustomDataTable({
+    columns,
+    data: categories,
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: Math.max(1, Math.ceil(total / Math.max(pageSize, 1))),
+    pagination: { pageIndex: page - 1, pageSize },
+    sorting: [{ id: filter.sortBy, desc: filter.sortDirection === 'DESC' }],
+  });
+
   // Any change to what is being listed sends the user back to page 1, otherwise a narrower result set can leave them on an empty page.
   const updateFilter = (patch: Partial<CategoryFilterValue>) => {
     setFilter((current) => ({ ...current, ...patch }));
@@ -135,17 +169,27 @@ export default function CategoryList() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-4">
-        <PageHeader
-          title="Categories"
-          description={listQuery.isPending ? 'Manage product categories' : `${total} ${total === 1 ? 'category' : 'categories'} in your store`}
-          variant="add"
-          actionText="Add Category"
-          onClick={() => setShowAddModal(true)}
-        />
-        <Separator />
-        <CategoryFilter value={filter} onChange={updateFilter} onReset={resetFilter} total={listQuery.isPending ? undefined : total} loading={listQuery.isFetching} />
-      </Card>
+      <ListPageHeader
+        icon={FolderTree}
+        title="Categories"
+        description={listQuery.isPending ? 'Manage product categories' : `${total} ${total === 1 ? 'category' : 'categories'} in your store`}
+        actions={
+          <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add category
+          </Button>
+        }
+      />
+
+      <CategoryFilter
+        value={filter}
+        onChange={updateFilter}
+        onReset={resetFilter}
+        view={view}
+        onViewChange={changeView}
+        total={listQuery.isPending ? undefined : total}
+        loading={listQuery.isFetching}
+      />
 
       <Card size="sm">
         <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
@@ -155,6 +199,21 @@ export default function CategoryList() {
         <Card className="py-16 text-center">
           <p className="text-sm font-semibold text-destructive">Could not load categories</p>
           <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+        </Card>
+      ) : view === 'table' ? (
+        <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
+          <CustomDataTable
+            columns={columns}
+            table={table}
+            isLoading={showSkeleton}
+            flush
+            emptyMessage={
+              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                <FolderTree className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No categories match these filters.' : 'No categories yet.'}</span>
+              </div>
+            }
+          />
         </Card>
       ) : showSkeleton ? (
         <div className={GRID} aria-busy="true" aria-label="Loading categories">
@@ -176,7 +235,7 @@ export default function CategoryList() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No categories match these filters' : 'No categories yet'}</p>
             <p className="text-xs text-muted-foreground">
-              {isFiltered ? 'Try a different search, status or date range.' : 'Use "Add Category" above to create the first one.'}
+              {isFiltered ? 'Try a different search, status or date range.' : 'Use "Add category" above to create the first one.'}
             </p>
           </div>
         </Card>

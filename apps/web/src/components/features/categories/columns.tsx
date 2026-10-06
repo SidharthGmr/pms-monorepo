@@ -2,8 +2,8 @@
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, formatDistanceToNow } from 'date-fns';
-import { ImageOff, Pencil, Trash2 } from 'lucide-react';
-import { BrandNameDto } from '@pms/types';
+import { CornerDownRight, ImageOff, Pencil, Trash2 } from 'lucide-react';
+import { CategoryResponseDto } from '@pms/types';
 import { Button } from '@/components/ui/button';
 import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
@@ -27,34 +27,45 @@ function When({ value }: { value?: Date | string | null }) {
   );
 }
 
-// Table layout for the brand list. Sorting is driven by the page's Sort control, not the headers.
-export const useBrandNameColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
-  useMemo<ColumnDef<BrandNameDto>[]>(
+// Table layout for the category list. Sorting is driven by the page's Sort control, not the headers.
+// `parentNames` resolves parentId -> name so sub-categories can show where they sit.
+export const useCategoryColumns = (parentNames: Map<number, string>, editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
+  useMemo<ColumnDef<CategoryResponseDto>[]>(
     () => [
       {
         id: 'name',
         accessorKey: 'name',
         enableSorting: false,
-        header: () => <span className={HEADER}>Brand</span>,
+        header: () => <span className={HEADER}>Category</span>,
         cell: ({ row }) => {
-          const brand = row.original;
-          const logo = brand.images?.[0];
-          const trashed = brand.status === StatusValues.Trash;
+          const category = row.original;
+          const image = category.images?.[0];
+          const deleted = category.deletedAt != null;
+          const parent = category.parentId != null ? (parentNames.get(category.parentId) ?? 'Sub-category') : null;
           return (
             <div className="flex items-center gap-3">
-              <span className={cn('flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40', trashed && 'grayscale')}>
-                {logo ? (
+              <span className={cn('flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40', deleted && 'grayscale')}>
+                {image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logo} alt="" loading="lazy" className="h-full w-full object-contain p-1" />
+                  <img src={image} alt="" loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <ImageOff className="h-4 w-4 text-muted-foreground/40" />
                 )}
               </span>
               <div className="min-w-0">
-                <button type="button" onClick={() => editRecord(brand.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={brand.name}>
-                  {brand.name}
+                <button type="button" onClick={() => editRecord(category.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={category.name}>
+                  {category.name}
                 </button>
-                <p className="text-[11px] text-muted-foreground">ID {brand.id}</p>
+                <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  {parent ? (
+                    <>
+                      <CornerDownRight className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{parent}</span>
+                    </>
+                  ) : (
+                    'Top level'
+                  )}
+                </p>
               </div>
             </div>
           );
@@ -67,11 +78,12 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
         enableSorting: false,
         header: () => <span className={HEADER}>Status</span>,
         cell: ({ row }) => {
-          const tone = STATUS_TONE[row.original.status] ?? { dot: 'bg-muted-foreground', text: 'text-muted-foreground' };
+          const deleted = row.original.deletedAt != null;
+          const tone = deleted ? STATUS_TONE[StatusValues.Trash] : (STATUS_TONE[row.original.status] ?? { dot: 'bg-muted-foreground', text: 'text-muted-foreground' });
           return (
             <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', tone.text)}>
               <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-              {row.original.status}
+              {deleted ? 'Deleted' : row.original.status}
             </span>
           );
         },
@@ -115,13 +127,15 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => editRecord(row.original.id)} aria-label={`Edit ${row.original.name}`} title="Edit">
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteRecord(row.original.id)} aria-label={`Delete ${row.original.name}`} title="Delete">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {row.original.deletedAt == null && (
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteRecord(row.original.id)} aria-label={`Delete ${row.original.name}`} title="Delete">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         ),
         meta: { thClassName: 'w-24 pr-4', tdClassName: 'pr-4' },
       },
     ],
-    [editRecord, deleteRecord]
+    [parentNames, editRecord, deleteRecord]
   );

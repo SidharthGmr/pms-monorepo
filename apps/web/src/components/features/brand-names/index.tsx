@@ -1,7 +1,7 @@
 'use client';
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ImageOff, Pencil, Tag, Trash2 } from 'lucide-react';
+import { ImageOff, Pencil, Plus, Tag, Trash2, X } from 'lucide-react';
 import { BrandNameDto, BrandNameFilterParams, Status } from '@pms/types';
 import { useDeleteBrandName, useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -13,7 +13,6 @@ import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
 import ConfirmBox from '@/components/common/confirm-box';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageBrandName from './add-edit';
@@ -26,7 +25,8 @@ import { ListView, readStoredView, storeView } from '@/components/common/view-sw
 import BrandNameFilter, { BrandNameFilterValue, DEFAULT_BRAND_NAME_FILTER, SortDirection } from './filter';
 import ListPagination from '@/components/common/list-pagination';
 import CardAction from '@/components/common/card-action';
-import { PageHeader } from '@/components/common/page-header';
+import { Button } from '@/components/ui/button';
+import ListPageHeader from '@/components/common/list-page-header';
 
 const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
 
@@ -133,27 +133,34 @@ export default function BrandName() {
 
   return (
     <div className="space-y-4">
-      <Card className="space-y-2">
-        <PageHeader
-          title="Brand Names"
-          description={listQuery.isPending ? 'Manage product brands' : `${total} ${total === 1 ? 'brand' : 'brands'} in your store`}
-          variant="add"
-          actionText={showAddPanel ? 'Close' : 'Add New Brand'}
-          buttonVariant={showAddPanel ? 'outline' : 'default'}
-          onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
-        />
-        <AddBrandNamePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
-        <Separator />
-        <BrandNameFilter
-          value={filter}
-          onChange={updateFilter}
-          onReset={resetFilter}
-          view={view}
-          onViewChange={changeView}
-          total={listQuery.isPending ? undefined : total}
-          loading={listQuery.isFetching}
-        />
-      </Card>
+      <ListPageHeader
+        icon={Tag}
+        title="Brand Names"
+        description={listQuery.isPending ? 'Manage product brands' : `${total} ${total === 1 ? 'brand' : 'brands'} in your store`}
+        actions={
+          <Button
+            type="button"
+            variant={showAddPanel ? 'outline' : 'default'}
+            className="h-9 gap-1.5"
+            onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
+          >
+            {showAddPanel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {showAddPanel ? 'Close' : 'Add brand'}
+          </Button>
+        }
+      />
+
+      <AddBrandNamePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
+
+      <BrandNameFilter
+        value={filter}
+        onChange={updateFilter}
+        onReset={resetFilter}
+        view={view}
+        onViewChange={changeView}
+        total={listQuery.isPending ? undefined : total}
+        loading={listQuery.isFetching}
+      />
 
       <Card size="sm">
         <ListPagination
@@ -173,7 +180,18 @@ export default function BrandName() {
         </Card>
       ) : view === 'table' ? (
         <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
-          <CustomDataTable columns={columns} table={table} isLoading={showSkeleton} />
+          <CustomDataTable
+            columns={columns}
+            table={table}
+            isLoading={showSkeleton}
+            flush
+            emptyMessage={
+              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                <Tag className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No brands match these filters.' : 'No brands yet.'}</span>
+              </div>
+            }
+          />
         </Card>
       ) : showSkeleton ? (
         <div className={GRID} aria-busy="true" aria-label="Loading brands">
@@ -195,7 +213,7 @@ export default function BrandName() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No brands match these filters' : 'No brands yet'}</p>
             <p className="text-xs text-muted-foreground">
-              {isFiltered ? 'Try a different search or status.' : 'Use "Add New Brand" above to create the first one.'}
+              {isFiltered ? 'Try a different search or status.' : 'Use "Add brand" above to create the first one.'}
             </p>
           </div>
         </Card>

@@ -4,25 +4,24 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { UserDto } from '@pms/types';
 import { useRoleRedirect } from '@/hooks/use-role-base-redirection';
 import { LoginModel } from '@/models/login.model';
 import LoginSchema from '@/schema/LoginSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Lock, Mail } from 'lucide-react';
+import { UserDto } from '@pms/types';
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { getSession, signIn, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
-import { CardDescription } from '../ui/card';
 
 export default function LoginModule() {
   const { data: session, status } = useSession();
   const { redirectToRoleBasedDashboard } = useRoleRedirect();
   const router = useRouter();
   const [showLoader, setShowLoader] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginModel>({
     resolver: yupResolver(LoginSchema),
@@ -117,17 +116,22 @@ export default function LoginModule() {
   };
 
   return (
-    <div className="">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Welcome back</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">Sign in with your work email to open your store.</p>
+      </div>
+
       <Form {...form}>
-        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-6">
+        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email Address*</FormLabel>
+                <FormLabel className="text-sm font-medium">Email address</FormLabel>
                 <FormControl>
-                  <Input placeholder="name@example.com" icon={Mail} {...field} className="" />
+                  <Input type="email" placeholder="name@company.com" autoComplete="email" inputMode="email" icon={Mail} className="h-11" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -139,45 +143,51 @@ export default function LoginModule() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password*</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-sm font-medium">Password</FormLabel>
+                  <Link href="/recover-password" className="text-xs font-medium text-primary underline-offset-4 hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
                 <FormControl>
-                  <Input type="password" placeholder="Enter your password" icon={Lock} {...field} className="" />
+                  <div className="relative">
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="Your password" autoComplete="current-password" icon={Lock} className="h-11 pr-11" {...field} />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
+                      className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Checkbox />
-              Remember me
-            </label>
-            <Link href="/recover-password" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-              Forgot Password?
-            </Link>
-          </div>
+          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox />
+            Keep me signed in on this device
+          </label>
 
-          <Button
-            type="submit"
-            icon={FaArrowUpRightFromSquare}
-            iconPlacement="right"
-            className="w-full transition-all duration-300 hover:scale-[1.02]"
-            loading={showLoader}
-          >
-            {showLoader ? 'Signing in...' : 'Sign In'}
+          <Button type="submit" size="lg" className="h-11 w-full gap-2 text-base" loading={showLoader} disabled={showLoader}>
+            {showLoader ? 'Signing in…' : 'Sign in'}
+            {!showLoader && <ArrowRight className="h-4 w-4" />}
           </Button>
         </form>
       </Form>
 
-      <div className="my-4 text-center">
-        <CardDescription>
-          Don&apos;t have an account?
-          <Link href="/sign-up" className="font-medium text-blue-500 hover:text-blue-400 transition-colors ms-1">
-            Sign up now
-          </Link>
-        </CardDescription>
-      </div>
+      <p className="text-center text-sm text-muted-foreground">
+        New to the store?{' '}
+        <Link href="/sign-up" className="font-semibold text-primary underline-offset-4 hover:underline">
+          Create an account
+        </Link>
+      </p>
+
+      <p className="text-center text-[11px] leading-relaxed text-muted-foreground">By signing in you agree to our terms of service and privacy policy.</p>
     </div>
   );
 }
