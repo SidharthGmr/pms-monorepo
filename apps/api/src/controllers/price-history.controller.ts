@@ -28,6 +28,10 @@ export class PriceHistoryController {
           req.query['changeDirection'] === 'increase' || req.query['changeDirection'] === 'decrease'
             ? (req.query['changeDirection'] as 'increase' | 'decrease')
             : undefined,
+        state:
+          req.query['state'] === 'live' || req.query['state'] === 'scheduled' || req.query['state'] === 'ended'
+            ? (req.query['state'] as 'live' | 'scheduled' | 'ended')
+            : undefined,
         startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
         endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
         // Never client-supplied: the tenant always comes from the token.

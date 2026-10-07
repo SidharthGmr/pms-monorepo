@@ -355,7 +355,7 @@ export default function ManageProduct({ id }: ManageProductProps) {
                     </Link>
                   </Button>
                   <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-                    <Link href={`/admin/price-histories?productId=${id}`}>
+                    <Link href={`/admin/product-variants/price-histories?productId=${id}`}>
                       <History className="h-4 w-4" />
                       Price history
                     </Link>

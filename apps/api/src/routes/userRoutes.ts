@@ -117,6 +117,18 @@ const usersController = container.get<UserController>(TYPES.UserController);
  *          type: boolean
  *          required: false
  *          description: Filter users by active status
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [name, email, role, status, isActive, lastLoginAt, createdAt, updatedAt]
+ *         required: false
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *         required: false
  *     responses:
  *       200:
  *         description: List of all users

@@ -1,13 +1,24 @@
-import { Status, Role } from "@prisma/client";
+import { Status, Role, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
 import { UpdateUserDto, UserDto } from "../dtos/user.dto";
+import { ListResponseDto } from "../dtos/list-response.dto";
 import { IUserRepository } from "./interfaces/iuser.repository";
 import { UserFilterParams } from "../params/user.params";
 import { toUserDto, userProfileInclude } from "./user-profile.mapper";
 
+const SORTABLE_COLUMNS = new Set(['name', 'email', 'role', 'status', 'isActive', 'lastLoginAt', 'createdAt', 'updatedAt']);
+
 export class UserRepository implements IUserRepository {
-  async findAll(filters: UserFilterParams): Promise<UserDto[]> {
-    const where: any = { NOT: { status: Status.Trash } };
+  async findAll(filters: UserFilterParams): Promise<ListResponseDto<UserDto>> {
+    const where: Prisma.usersWhereInput = {};
+
+    // Trashed accounts stay hidden unless they are what was asked for.
+    if (filters.status !== undefined) {
+      where.status = filters.status;
+    } else {
+      where.NOT = { status: Status.Trash };
+    }
+
     if (filters.storeCode) {
       where.storeCode = filters.storeCode;
     }
@@ -16,15 +27,56 @@ export class UserRepository implements IUserRepository {
       where.role = filters.role;
     }
 
-    const records = await prisma.users.findMany({
-      where,
-      include: userProfileInclude,
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
 
-    return records.map(toUserDto);
+    if (filters.email) {
+      where.email = filters.email;
+    }
+
+    if (filters.userId) {
+      where.userId = filters.userId;
+    }
+
+    if (filters.phone) {
+      where.phone = filters.phone;
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { email: { contains: filters.search, mode: 'insensitive' } },
+        { phone: { contains: filters.search, mode: 'insensitive' } },
+        { UserProfile: { userName: { contains: filters.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (filters.startDate != null || filters.endDate != null) {
+      where.createdAt = {
+        ...(filters.startDate != null && { gte: new Date(filters.startDate) }),
+        ...(filters.endDate != null && { lte: new Date(filters.endDate) }),
+      };
+    }
+
+    const sortBy = filters.sortBy && SORTABLE_COLUMNS.has(filters.sortBy) ? filters.sortBy : 'createdAt';
+    const sortOrder: Prisma.SortOrder = String(filters.sortDirection).toUpperCase() === 'ASC' ? 'asc' : 'desc';
+
+    const page = filters.page ?? 1;
+    const limit = filters.recordPerPage ?? 10;
+    const showAll = filters.showAllRecords === true;
+
+    const [records, totalRecord] = await Promise.all([
+      prisma.users.findMany({
+        where,
+        include: userProfileInclude,
+        orderBy: { [sortBy]: sortOrder },
+        ...(showAll ? {} : { skip: (page - 1) * limit, take: limit }),
+      }),
+      prisma.users.count({ where }),
+    ]);
+
+    return { totalRecord, data: records.map(toUserDto) };
   }
 
   async findById(userId: string): Promise<UserDto | null> {

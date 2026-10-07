@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Truck } from 'lucide-react';
 import { SupplierDto } from '@/dtos/supplier.dto';
@@ -16,15 +16,20 @@ import { CustomDataTable } from '@/components/Table/data-table';
 import ConfirmBox from '@/components/common/confirm-box';
 import ListPageHeader from '@/components/common/list-page-header';
 import ListPagination from '@/components/common/list-pagination';
+import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageSupplier from './add-edit';
+import SupplierCard from './supplier-card';
 import { useSupplierColumns } from './columns';
 import SupplierFilter, { DEFAULT_SUPPLIER_FILTER, SortDirection, SupplierFilterValue } from './filter';
 
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
 const FLUSH_CARD = 'p-0 md:p-0';
+const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
+const VIEW_STORAGE_KEY = 'suppliers.view';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
@@ -33,6 +38,18 @@ export default function SupplierList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Cards are the default view; the stored preference is applied after mount so server and first client render agree.
+  const [view, setView] = useState<ListView>('grid');
+  useEffect(() => {
+    const stored = readStoredView(VIEW_STORAGE_KEY);
+    if (stored) setView(stored);
+  }, []);
+
+  const changeView = (next: ListView) => {
+    setView(next);
+    storeView(VIEW_STORAGE_KEY, next);
+  };
 
   // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
   const [filter, setFilter] = useState<SupplierFilterValue>(() => {
@@ -133,7 +150,15 @@ export default function SupplierList() {
         }
       />
 
-      <SupplierFilter value={filter} onChange={updateFilter} onReset={resetFilter} total={listQuery.isPending ? undefined : total} loading={listQuery.isFetching} />
+      <SupplierFilter
+        value={filter}
+        onChange={updateFilter}
+        onReset={resetFilter}
+        view={view}
+        onViewChange={changeView}
+        total={listQuery.isPending ? undefined : total}
+        loading={listQuery.isFetching}
+      />
 
       <Card size="sm">
         <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
@@ -144,7 +169,7 @@ export default function SupplierList() {
           <p className="text-sm font-semibold text-destructive">Could not load suppliers</p>
           <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
         </Card>
-      ) : (
+      ) : view === 'table' ? (
         <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
           <CustomDataTable
             columns={columns}
@@ -159,6 +184,35 @@ export default function SupplierList() {
             }
           />
         </Card>
+      ) : showSkeleton ? (
+        <div className={GRID} aria-busy="true" aria-label="Loading suppliers">
+          {Array.from({ length: Math.min(pageSize, 12) }).map((_, i) => (
+            <Card key={i} className={cn(FLUSH_CARD, 'overflow-hidden border')}>
+              <Skeleton className="h-20 w-full rounded-none" />
+              <div className="space-y-2 p-4">
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : suppliers.length === 0 ? (
+        <Card className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+          <div className="rounded-full bg-muted p-4 text-muted-foreground">
+            <Truck className="h-7 w-7" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{isFiltered ? 'No suppliers match these filters' : 'No suppliers yet'}</p>
+            <p className="text-xs text-muted-foreground">{isFiltered ? 'Try a different search, status or date range.' : 'Use "Add supplier" above to create the first one.'}</p>
+          </div>
+        </Card>
+      ) : (
+        <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
+          {suppliers.map((supplier) => (
+            <SupplierCard key={supplier.id} supplier={supplier} onEdit={() => openEditModal(supplier.id)} onDelete={() => openDeleteModal(supplier.id)} />
+          ))}
+        </div>
       )}
 
       {total > pageSize && (

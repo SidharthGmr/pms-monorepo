@@ -129,7 +129,7 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
           <div className="flex w-full gap-2 sm:w-auto">
             {/* Price changes belong on the ledger screen, not on this form. */}
             <Button asChild variant="outline" className="flex-1 sm:flex-initial">
-              <Link href={`/admin/price-histories?productId=${productId}`}>
+              <Link href={`/admin/product-variants/price-histories?productId=${productId}`}>
                 <History className="mr-2 h-4 w-4" />
                 Price History
               </Link>

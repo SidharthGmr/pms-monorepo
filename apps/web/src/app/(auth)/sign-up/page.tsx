@@ -1,9 +1,16 @@
+import AuthLayout from '@/components/account/auth-layout';
 import RegisterModule from '@/components/account/register';
-import AuthStaticLayout from '@/components/layout/authSimpleSlider';
-export default function Page() {
+import config from '@/config';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: `Create your account - ${config.appName}`,
+};
+
+export default function SignUpPage() {
   return (
-    <>
-      <AuthStaticLayout formComponent={<RegisterModule />} title="Create your account" />
-    </>
+    <AuthLayout contentClassName="max-w-[520px]">
+      <RegisterModule />
+    </AuthLayout>
   );
 }

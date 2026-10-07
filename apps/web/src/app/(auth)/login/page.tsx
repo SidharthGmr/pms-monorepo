@@ -1,5 +1,5 @@
+import AuthLayout from '@/components/account/auth-layout';
 import LoginModule from '@/components/account/login';
-import LoginLayout from '@/components/account/login-layout';
 import config from '@/config';
 import { Metadata } from 'next';
 
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <LoginLayout>
+    <AuthLayout>
       <LoginModule />
-    </LoginLayout>
+    </AuthLayout>
   );
 }

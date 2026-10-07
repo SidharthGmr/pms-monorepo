@@ -12,6 +12,8 @@ export interface PriceHistoryFilterParams extends Omit<PageFilterParams, 'startD
   maxPrice?: number;
   /** Only rows that raised or lowered the price against the same variant's previous one. */
   changeDirection?: 'increase' | 'decrease';
+  /** `live` is the price being charged now, `scheduled` has not started, `ended` was superseded. */
+  state?: 'live' | 'scheduled' | 'ended';
   startDate?: string;
   endDate?: string;
 }

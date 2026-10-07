@@ -18,4 +18,17 @@ export const isScheduled = (effectiveFrom?: string | null): boolean => {
   return new Date(effectiveFrom).getTime() > Date.now();
 };
 
+export type PriceState = 'live' | 'scheduled' | 'ended';
+
+/**
+ * Where a row sits against now. `isCurrent` is the API-maintained answer; the dates are only a
+ * fallback for rows fetched before the column existed.
+ */
+export const priceState = (row: { effectiveFrom?: string | null; effectiveTo?: string | null; isCurrent?: boolean }): PriceState => {
+  if (isScheduled(row.effectiveFrom)) return 'scheduled';
+  if (row.isCurrent) return 'live';
+  if (row.isCurrent === undefined && row.effectiveTo == null) return 'live';
+  return 'ended';
+};
+
 export const formatPercent = (value?: number | null): string => (value === null || value === undefined ? '—' : `${value.toFixed(1)}%`);

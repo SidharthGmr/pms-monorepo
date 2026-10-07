@@ -1,25 +1,24 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
+import { cn } from '@/lib/utils';
 import { CreateUserModel } from '@/models/user.model';
-import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import SignupSchema from '@/schema/userSchema';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Lock, Mail, Phone, User } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowRight, Eye, EyeOff, Lock, Mail, Phone, Store, User, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
-import { CardDescription } from '../ui/card';
-import { Switch } from '../ui/switch';
+import { AUTH_CONTROL, AUTH_FIELD, AUTH_FIELD_INVALID, AUTH_LABEL, AuthAltAction, AuthCard, AuthCardHeader, AuthDivider, AuthFootnote } from './auth-ui';
 
 export default function RegisterModule() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -71,112 +70,138 @@ export default function RegisterModule() {
   };
 
   return (
-    <Form {...form}>
-      <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
+    <AuthCard>
+      <AuthCardHeader eyebrow="Get started" title="Create your account" description="A few details and your store workspace is ready to use." icon={UserPlus} />
+
+      <Form {...form}>
+        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="mt-6 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField
+              control={control}
+              name="firstName"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel className={AUTH_LABEL}>First name</FormLabel>
+                  <FormControl>
+                    <div className={cn(AUTH_FIELD, fieldState.invalid && AUTH_FIELD_INVALID)}>
+                      <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <input type="text" placeholder="John" autoComplete="given-name" className={AUTH_CONTROL} {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="lastName"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel className={AUTH_LABEL}>Last name</FormLabel>
+                  <FormControl>
+                    <div className={cn(AUTH_FIELD, fieldState.invalid && AUTH_FIELD_INVALID)}>
+                      <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <input type="text" placeholder="Doe" autoComplete="family-name" className={AUTH_CONTROL} {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <FormField
             control={control}
-            name="firstName"
-            render={({ field }) => (
+            name="email"
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>First Name*</FormLabel>
+                <FormLabel className={AUTH_LABEL}>Business email</FormLabel>
                 <FormControl>
-                  <Input placeholder="John" icon={User} {...field} />
+                  <div className={cn(AUTH_FIELD, fieldState.invalid && AUTH_FIELD_INVALID)}>
+                    <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input type="email" placeholder="name@company.com" autoComplete="email" inputMode="email" className={AUTH_CONTROL} {...field} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={control}
-            name="lastName"
-            render={({ field }) => (
+            name="phone"
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>Last Name*</FormLabel>
+                <FormLabel className={AUTH_LABEL}>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" icon={User} {...field} />
+                  <div className={cn(AUTH_FIELD, fieldState.invalid && AUTH_FIELD_INVALID)}>
+                    <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input type="tel" placeholder="(555) 000-0000" autoComplete="tel" inputMode="tel" className={AUTH_CONTROL} {...field} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <FormField
-          control={control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Business Email*</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="name@company.com" icon={Mail} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={control}
+            name="password"
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel className={AUTH_LABEL}>Password</FormLabel>
+                <FormControl>
+                  <div className={cn(AUTH_FIELD, 'pr-1.5', fieldState.invalid && AUTH_FIELD_INVALID)}>
+                    <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input type={showPassword ? 'text' : 'password'} placeholder="Create a password" autoComplete="new-password" className={AUTH_CONTROL} {...field} />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone*</FormLabel>
-              <FormControl>
-                <Input type="text" placeholder="(555) 000-0000" icon={Phone} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={control}
+            name="isRegisterbyShop"
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-3 rounded-xl border bg-muted/30 px-3 py-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Store className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <FormLabel className="!mt-0 text-sm font-semibold">Register as a shop</FormLabel>
+                  <p className="text-xs text-muted-foreground">Turn this on to open your own store instead of joining one.</p>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password*</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="Create a password" icon={Lock} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <Button type="submit" size="lg" className="h-11 w-full gap-2 rounded-xl text-base shadow-lg shadow-primary/25" loading={isLoading} disabled={isLoading}>
+            {isLoading ? 'Creating account…' : 'Create account'}
+            {!isLoading && <ArrowRight className="h-4 w-4" />}
+          </Button>
+        </form>
+      </Form>
 
-        <FormField
-          control={form.control}
-          name="isRegisterbyShop"
-          render={({ field }) => (
-            <FormItem className="flex items-center justify-between rounded-md border bg-background px-3 py-2.5">
-              <FormLabel className="!mt-0 font-medium">Register as Shop</FormLabel>
-              <FormControl>
-                <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <AuthDivider label="Already registered" />
 
-        <Button
-          type="submit"
-          icon={FaArrowUpRightFromSquare}
-          iconPlacement="right"
-          className="w-full transition-all duration-300 hover:scale-[1.02]"
-          loading={isLoading}
-        >
-          {isLoading ? 'Creating account...' : 'Create Account'}
-        </Button>
+      <AuthAltAction href="/login">Sign in instead</AuthAltAction>
 
-        <div className="text-center">
-          <CardDescription>
-            Already have an account?
-            <Link href="/login" className="font-medium text-primary hover:text-primary/80 transition-colors ms-1">
-              Log in now
-            </Link>
-          </CardDescription>
-        </div>
-      </form>
-    </Form>
+      <AuthFootnote>By creating an account you agree to our terms of service and privacy policy.</AuthFootnote>
+    </AuthCard>
   );
 }

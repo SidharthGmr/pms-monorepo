@@ -24,6 +24,7 @@ export interface PriceHistoryVariantDto {
 export interface PriceHistoryDto {
   id: number;
   variantId: number;
+  productId: number;
   storeCode: string;
   /** Prisma exposes these as `Decimal`; the API contract is plain numbers. */
   sellingPrice: number;
@@ -34,6 +35,11 @@ export interface PriceHistoryDto {
   effectiveFrom: Date;
   /** Null while this is the row in force; set when a later price supersedes it. */
   effectiveTo: Date | null;
+  /**
+   * True on the single row per variant in force right now. Derived from the dates above, which
+   * stay the source of truth - read this instead of comparing `effectiveFrom`/`effectiveTo`.
+   */
+  isCurrent: boolean;
   reason: string | null;
   /**
    * The price this row replaced for the same variant, or null when it is the variant's

@@ -20,10 +20,22 @@ export interface PriceHistoryVariantDto {
 export interface PriceHistoryDto {
   id: number;
   variantId: number;
+  productId: number;
+  storeCode: string;
   sellingPrice: number;
+  /** The promotional amount for this period; charged only while the variant's `isOffer` is on. */
+  offerPrice: number | null;
   costPrice: number | null;
+  compareAtPrice: number | null;
   /** ISO string over the wire. */
   effectiveFrom: string;
+  /** Null while this is the row in force; set when a later price supersedes it. */
+  effectiveTo: string | null;
+  /**
+   * True on the single row per variant in force right now. Maintained by the API from the dates,
+   * so the client never has to compare `effectiveFrom`/`effectiveTo` itself.
+   */
+  isCurrent: boolean;
   reason: string | null;
   /** The price this row replaced, resolved by the API. Null on a variant's first price. */
   previousPrice: number | null;

@@ -1,147 +1,107 @@
 'use client';
+
+import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
 import { SelectSearch } from '@/components/common/select-search';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ListView } from '@/components/common/view-switch';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
-import { Cross2Icon } from '@radix-ui/react-icons';
-import { Table } from '@tanstack/react-table';
-import { useEffect, useMemo, useState } from 'react';
-import { useDebounce } from 'use-debounce';
+import { useMemo } from 'react';
 
-interface ProductVariantFilterProps<TData> {
-  table: Table<TData>;
-  /** Set when arriving from a product screen via ?productId=. */
-  initialProductId?: number;
-  onTextChange?: (q: string) => void;
-  onProductChange?: (productId: number | undefined) => void;
-  onCategoryChange?: (categoryId: number | undefined) => void;
-  onActiveChange?: (isActive: boolean | undefined) => void;
-  resetForm?: () => void;
+export type { SortDirection };
+
+/** `null` means both: the API only filters when `isActive` is sent. */
+export type ActiveFilter = 'active' | 'retired' | null;
+
+export interface VariantFilterValue {
+  search: string;
+  productId?: number;
+  categoryId?: number;
+  active: ActiveFilter;
+  sortBy: string;
+  sortDirection: SortDirection;
 }
 
-const ACTIVE_ITEMS = [
-  { label: 'Active only', value: 'true' },
-  { label: 'Retired only', value: 'false' },
+export const DEFAULT_VARIANT_FILTER: VariantFilterValue = {
+  search: '',
+  productId: undefined,
+  categoryId: undefined,
+  active: null,
+  sortBy: 'createdAt',
+  sortDirection: 'DESC',
+};
+
+const ACTIVE_OPTIONS: StatusOption<ActiveFilter>[] = [
+  { label: 'All', value: null },
+  { label: 'Active', value: 'active', dot: 'bg-emerald-500' },
+  { label: 'Retired', value: 'retired', dot: 'bg-zinc-400' },
 ];
 
-export default function ProductVariantFilter<TData>({
-  table,
-  initialProductId,
-  onTextChange,
-  onProductChange,
-  onCategoryChange,
-  onActiveChange,
-  resetForm,
-}: ProductVariantFilterProps<TData>) {
-  const [searchedText, setSearchedText] = useState('');
-  const [searchedValue] = useDebounce(searchedText, 600);
-  const [productId, setProductId] = useState<number | undefined>(initialProductId);
-  const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
-  const [active, setActive] = useState<string | undefined>(undefined);
-  const [isFiltered, setIsFiltered] = useState(false);
+// Mirrors SORTABLE_COLUMNS in product-variant.repository.ts - anything else falls back to createdAt.
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'createdAt', label: 'Date added' },
+  { value: 'name', label: 'Name' },
+  { value: 'sku', label: 'SKU' },
+  { value: 'id', label: 'Id' },
+];
 
+interface ProductVariantFilterProps {
+  value: VariantFilterValue;
+  onChange: (patch: Partial<VariantFilterValue>) => void;
+  onReset: () => void;
+  view: ListView;
+  onViewChange: (view: ListView) => void;
+  /** Total matching records, shown beside the active select. */
+  total?: number;
+  loading?: boolean;
+}
+
+// Variant wiring of the shared ListToolbar: product and category selects ride in the leading slot.
+export default function ProductVariantFilter({ value, onChange, onReset, view, onViewChange, total, loading }: ProductVariantFilterProps) {
   // `showAllRecords` matters here - without it these lists stop at the first ten records.
   const { data: productsResponse } = useGetAllProducts({ showAllRecords: true });
   const { data: categoriesResponse } = useGetAllCategories({ showAllRecords: true });
 
-  const productItems = useMemo(
-    () => (productsResponse?.data?.data?.data ?? []).map((product) => ({ label: product.name, value: product.id })),
-    [productsResponse]
-  );
+  const productItems = useMemo(() => (productsResponse?.data?.data?.data ?? []).map((product) => ({ label: product.name, value: product.id })), [productsResponse]);
+  const categoryItems = useMemo(() => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })), [categoriesResponse]);
 
-  const categoryItems = useMemo(
-    () => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })),
-    [categoriesResponse]
-  );
-
-  useEffect(() => {
-    onTextChange?.(searchedValue);
-    table.setPageIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchedValue]);
-
-  useEffect(() => {
-    setIsFiltered(!!searchedText || productId !== undefined || categoryId !== undefined || active !== undefined);
-  }, [searchedText, productId, categoryId, active]);
-
-  const resetFilter = () => {
-    setSearchedText('');
-    setProductId(undefined);
-    setCategoryId(undefined);
-    setActive(undefined);
-    setIsFiltered(false);
-    table.setPageIndex(0);
-    resetForm?.();
-  };
+  const isFiltered = value.search !== '' || value.productId !== undefined || value.categoryId !== undefined || value.active !== null;
 
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
-      <Input
-        placeholder="Search SKU, barcode or product..."
-        value={searchedText}
-        onChange={(e) => setSearchedText(e.target.value)}
-        className="bg-background"
-      />
-      <div>
-        <SelectSearch
-          value={productId}
-          placeholder="Filter by product"
-          items={productItems}
-          valueType="number"
-          onChange={(value) => {
-            const next = value === '' || value === undefined ? undefined : +value;
-            setProductId(next);
-            onProductChange?.(next);
-            table.setPageIndex(0);
-          }}
-          buttonClass="bg-background w-full"
-          containerName="variant-product-filter"
-        />
-      </div>
-      <div>
-        <SelectSearch
-          value={categoryId}
-          placeholder="Filter by category"
-          items={categoryItems}
-          valueType="number"
-          onChange={(value) => {
-            const next = value === '' || value === undefined ? undefined : +value;
-            setCategoryId(next);
-            onCategoryChange?.(next);
-            table.setPageIndex(0);
-          }}
-          buttonClass="bg-background w-full"
-          containerName="variant-category-filter"
-        />
-      </div>
-      <div>
-        <SelectSearch
-          value={active}
-          placeholder="Any status"
-          items={ACTIVE_ITEMS}
-          valueType="string"
-          disableSearch
-          onChange={(value) => {
-            const next = value === '' || value === undefined ? undefined : String(value);
-            setActive(next);
-            onActiveChange?.(next === undefined ? undefined : next === 'true');
-            table.setPageIndex(0);
-          }}
-          buttonClass="bg-background w-full"
-          containerName="variant-active-filter"
-        />
-      </div>
-      <div className="place-content-center">
-        {isFiltered && (
-          <div className="flex justify-start">
-            <Button variant="destructive" onClick={resetFilter} className="h-8 px-2 lg:px-3">
-              Reset
-              <Cross2Icon className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+    <ListToolbar<ActiveFilter>
+      search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search name, SKU or barcode…' }}
+      status={{ value: value.active, onChange: (active) => onChange({ active }), options: ACTIVE_OPTIONS, total, loading }}
+      sort={{
+        value: value.sortBy,
+        onChange: (sortBy) => onChange({ sortBy }),
+        options: SORT_OPTIONS,
+        direction: value.sortDirection,
+        onDirectionChange: (sortDirection) => onChange({ sortDirection }),
+      }}
+      view={{ value: view, onChange: onViewChange, iconOnly: true }}
+      isFiltered={isFiltered}
+      onReset={onReset}
+      leading={
+        <>
+          <SelectSearch
+            value={value.productId}
+            placeholder="All products"
+            items={productItems}
+            valueType="number"
+            onChange={(next) => onChange({ productId: next === '' || next === undefined ? undefined : +next })}
+            buttonClass="h-9 bg-background sm:w-44"
+            containerName="variant-product-filter"
+          />
+          <SelectSearch
+            value={value.categoryId}
+            placeholder="All categories"
+            items={categoryItems}
+            valueType="number"
+            onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
+            buttonClass="h-9 bg-background sm:w-44"
+            containerName="variant-category-filter"
+          />
+        </>
+      }
+    />
   );
 }

@@ -1,15 +1,20 @@
 'use client';
-import { PageHeader } from '@/components/common/page-header';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 import EachUserDetails from '.';
 
 export default function EachUserWrapper({ userId }: { userId: string }) {
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <PageHeader title="User Details" description="Account, contact and profile details for this user." variant="back" />
-      <Card>
-        <EachUserDetails userId={userId} />
-      </Card>
+    <div className="mx-auto w-full max-w-7xl space-y-4">
+      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 gap-1 text-muted-foreground hover:text-foreground">
+        <Link href="/admin/users">
+          <ChevronLeft className="h-4 w-4" />
+          Back to users
+        </Link>
+      </Button>
+
+      <EachUserDetails userId={userId} />
     </div>
   );
 }

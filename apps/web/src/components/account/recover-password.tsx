@@ -1,19 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import Link from 'next/link';
-import { Mail, MailCheck } from 'lucide-react';
-import { FaArrowUpRightFromSquare } from 'react-icons/fa6';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
-import { CardDescription } from '@/components/ui/card';
+import { useForgotPassword } from '@/hooks/service-hooks/useAccountService';
+import { cn } from '@/lib/utils';
 import ForgotPasswordModel from '@/models/ForgotPasswordModel';
 import ForgotPasswordSchema from '@/schema/ForgotPasswordSchema';
-import { useForgotPassword } from '@/hooks/service-hooks/useAccountService';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { ArrowRight, KeyRound, Mail, MailCheck } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { AUTH_CONTROL, AUTH_FIELD, AUTH_FIELD_INVALID, AUTH_LABEL, AuthAltAction, AuthCard, AuthCardHeader, AuthDivider, AuthFootnote } from './auth-ui';
 
 export default function RecoverPasswordModule() {
   const [isLoading, setIsLoading] = useState(false);
@@ -54,64 +52,73 @@ export default function RecoverPasswordModule() {
     }
   };
 
+  // The link is sent whether or not the address is registered, so this screen never confirms an account exists.
   if (sent) {
     return (
-      <div className="space-y-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <MailCheck className="h-8 w-8 text-primary" />
+      <AuthCard className="text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <MailCheck className="h-7 w-7" />
+        </span>
+        <h1 className="mt-5 text-2xl font-bold tracking-tight">Check your email</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          If an account exists for <span className="font-semibold text-foreground">{sentEmail}</span>, a reset link is on its way. It expires in one hour.
+        </p>
+
+        <div className="mt-6 rounded-xl border bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
+          Nothing in your inbox after a minute? Check the spam folder, then send the link again.
         </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold">Check your email</h2>
-          <p className="text-sm text-muted-foreground">
-            If an account exists for <span className="font-medium text-foreground">{sentEmail}</span>, a password reset link is on
-            its way. The link expires in 1 hour.
-          </p>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <Button type="button" variant="outline" className="h-11 rounded-xl" onClick={() => setSent(false)}>
+            Use another email
+          </Button>
+          <Button type="button" className="h-11 rounded-xl shadow-lg shadow-primary/25" loading={isLoading} disabled={isLoading} onClick={() => submitData({ email: sentEmail })}>
+            {isLoading ? 'Sending…' : 'Resend link'}
+          </Button>
         </div>
-        <Button asChild variant="outline" className="w-full">
-          <Link href="/login">Back to Sign in</Link>
-        </Button>
-      </div>
+
+        <AuthDivider label="Done here" />
+
+        <AuthAltAction href="/login">Back to sign in</AuthAltAction>
+      </AuthCard>
     );
   }
 
   return (
-    <div>
+    <AuthCard>
+      <AuthCardHeader eyebrow="Account recovery" title="Forgot your password?" description="Give us the email on your account and we'll send a link to set a new password." icon={KeyRound} />
+
       <Form {...form}>
-        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-6">
+        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="mt-6 space-y-4">
           <FormField
             control={control}
             name="email"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>Email Address*</FormLabel>
+                <FormLabel className={AUTH_LABEL}>Email address</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="name@example.com" icon={Mail} {...field} />
+                  <div className={cn(AUTH_FIELD, fieldState.invalid && AUTH_FIELD_INVALID)}>
+                    <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input type="email" placeholder="name@company.com" autoComplete="email" inputMode="email" className={AUTH_CONTROL} {...field} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <Button
-            type="submit"
-            icon={FaArrowUpRightFromSquare}
-            iconPlacement="right"
-            className="w-full transition-all duration-300 hover:scale-[1.02]"
-            loading={isLoading}
-          >
-            {isLoading ? 'Sending...' : 'Send reset link'}
+          <Button type="submit" size="lg" className="h-11 w-full gap-2 rounded-xl text-base shadow-lg shadow-primary/25" loading={isLoading} disabled={isLoading}>
+            {isLoading ? 'Sending…' : 'Send reset link'}
+            {!isLoading && <ArrowRight className="h-4 w-4" />}
           </Button>
         </form>
       </Form>
 
-      <div className="my-4 text-center">
-        <CardDescription>
-          Remember your password?
-          <Link href="/login" className="font-medium text-primary hover:text-primary/80 transition-colors ms-1">
-            Sign in
-          </Link>
-        </CardDescription>
-      </div>
-    </div>
+      <AuthDivider label="Remembered it" />
+
+      <AuthAltAction href="/login">Back to sign in</AuthAltAction>
+
+      <AuthFootnote>For your security the link works once and expires in one hour.</AuthFootnote>
+    </AuthCard>
   );
 }

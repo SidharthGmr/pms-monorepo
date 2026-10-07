@@ -2,14 +2,15 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { AUTH_CONTROL, AUTH_FIELD, AUTH_FIELD_INVALID, AUTH_LABEL, AuthAltAction, AuthCard, AuthCardHeader, AuthDivider, AuthFootnote } from './auth-ui';
 import { toast } from '@/components/ui/use-toast';
 import { useRoleRedirect } from '@/hooks/use-role-base-redirection';
+import { cn } from '@/lib/utils';
 import { LoginModel } from '@/models/login.model';
 import LoginSchema from '@/schema/LoginSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { UserDto } from '@pms/types';
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { getSession, signIn, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -116,22 +117,22 @@ export default function LoginModule() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Welcome back</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">Sign in with your work email to open your store.</p>
-      </div>
+    <AuthCard>
+      <AuthCardHeader eyebrow="Welcome back" title="Sign in to your store" description="Use the work email your store admin invited you with." icon={ShieldCheck} />
 
       <Form {...form}>
-        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4">
+        <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="mt-6 space-y-4">
           <FormField
             control={form.control}
             name="email"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium">Email address</FormLabel>
+                <FormLabel className={AUTH_LABEL}>Email address</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="name@company.com" autoComplete="email" inputMode="email" icon={Mail} className="h-11" {...field} />
+                  <div className={cn(AUTH_FIELD, fieldState.invalid && AUTH_FIELD_INVALID)}>
+                    <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input type="email" placeholder="name@company.com" autoComplete="email" inputMode="email" className={AUTH_CONTROL} {...field} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -141,23 +142,24 @@ export default function LoginModule() {
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium">Password</FormLabel>
+                <div className="flex items-center justify-between gap-2">
+                  <FormLabel className={AUTH_LABEL}>Password</FormLabel>
                   <Link href="/recover-password" className="text-xs font-medium text-primary underline-offset-4 hover:underline">
-                    Forgot password?
+                    Forgot?
                   </Link>
                 </div>
                 <FormControl>
-                  <div className="relative">
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="Your password" autoComplete="current-password" icon={Lock} className="h-11 pr-11" {...field} />
+                  <div className={cn(AUTH_FIELD, 'pr-1.5', fieldState.invalid && AUTH_FIELD_INVALID)}>
+                    <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" autoComplete="current-password" className={AUTH_CONTROL} {...field} />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                       aria-pressed={showPassword}
-                      className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -168,26 +170,23 @@ export default function LoginModule() {
             )}
           />
 
-          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+          <label className="flex w-fit cursor-pointer items-center gap-2 pt-0.5 text-sm text-muted-foreground">
             <Checkbox />
-            Keep me signed in on this device
+            Keep me signed in
           </label>
 
-          <Button type="submit" size="lg" className="h-11 w-full gap-2 text-base" loading={showLoader} disabled={showLoader}>
+          <Button type="submit" size="lg" className="h-11 w-full gap-2 rounded-xl text-base shadow-lg shadow-primary/25" loading={showLoader} disabled={showLoader}>
             {showLoader ? 'Signing in…' : 'Sign in'}
             {!showLoader && <ArrowRight className="h-4 w-4" />}
           </Button>
         </form>
       </Form>
 
-      <p className="text-center text-sm text-muted-foreground">
-        New to the store?{' '}
-        <Link href="/sign-up" className="font-semibold text-primary underline-offset-4 hover:underline">
-          Create an account
-        </Link>
-      </p>
+      <AuthDivider label="New here" />
 
-      <p className="text-center text-[11px] leading-relaxed text-muted-foreground">By signing in you agree to our terms of service and privacy policy.</p>
-    </div>
+      <AuthAltAction href="/sign-up">Create an account</AuthAltAction>
+
+      <AuthFootnote>Sessions are encrypted. By signing in you agree to our terms of service and privacy policy.</AuthFootnote>
+    </AuthCard>
   );
 }

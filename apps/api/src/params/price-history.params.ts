@@ -15,6 +15,11 @@ export interface PriceHistoryFilterParams extends PageFilterParams {
    * one. A variant's first-ever price is neither, so it is excluded by both.
    */
   changeDirection?: 'increase' | 'decrease';
+  /**
+   * Where each row sits against now: `live` is the price being charged, `scheduled` has not
+   * started, `ended` has been superseded.
+   */
+  state?: 'live' | 'scheduled' | 'ended';
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }

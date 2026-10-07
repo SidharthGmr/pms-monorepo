@@ -2,6 +2,7 @@
 import { DateRange } from 'react-day-picker';
 import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
 import { DateRangePicker } from '@/components/common/date-range-picker';
+import { ListView } from '@/components/common/view-switch';
 import { StatusValues } from '@/enums/status-values.enum';
 
 export type { SortDirection };
@@ -43,13 +44,15 @@ interface SupplierFilterProps {
   value: SupplierFilterValue;
   onChange: (patch: Partial<SupplierFilterValue>) => void;
   onReset: () => void;
+  view: ListView;
+  onViewChange: (view: ListView) => void;
   /** Total matching records, shown beside the status select. */
   total?: number;
   loading?: boolean;
 }
 
 // Supplier-specific wiring of the shared ListToolbar: the date range rides in the leading slot.
-export default function SupplierFilter({ value, onChange, onReset, total, loading }: SupplierFilterProps) {
+export default function SupplierFilter({ value, onChange, onReset, view, onViewChange, total, loading }: SupplierFilterProps) {
   const isFiltered =
     value.search !== DEFAULT_SUPPLIER_FILTER.search ||
     value.status !== DEFAULT_SUPPLIER_FILTER.status ||
@@ -79,6 +82,7 @@ export default function SupplierFilter({ value, onChange, onReset, total, loadin
         direction: value.sortDirection,
         onDirectionChange: (sortDirection) => onChange({ sortDirection }),
       }}
+      view={{ value: view, onChange: onViewChange, iconOnly: true }}
       isFiltered={isFiltered}
       onReset={onReset}
     />

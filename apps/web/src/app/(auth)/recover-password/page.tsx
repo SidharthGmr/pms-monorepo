@@ -1,14 +1,16 @@
+import AuthLayout from '@/components/account/auth-layout';
 import RecoverPasswordModule from '@/components/account/recover-password';
-import AuthStaticLayout from '@/components/layout/authSimpleSlider';
+import config from '@/config';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: `Forgot password - ${config.appName}`,
+};
 
 export default function RecoverPasswordPage() {
   return (
-    <>
-      <AuthStaticLayout
-        formComponent={<RecoverPasswordModule />}
-        title="Forgot password"
-        description="Enter your email and we'll send you a link to reset your password."
-      />
-    </>
+    <AuthLayout>
+      <RecoverPasswordModule />
+    </AuthLayout>
   );
 }

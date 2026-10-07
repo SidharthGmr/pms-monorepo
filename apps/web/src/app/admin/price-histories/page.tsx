@@ -1,15 +1,16 @@
-import PriceHistoryListingWrapper from '@/components/features/price-histories/listing-wrapper';
-import config from '@/config';
-import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: `Price History - ${config.appName}`,
-};
+interface PriceHistoriesPageProps {
+  searchParams: Record<string, string | string[] | undefined>;
+}
 
-export default function PriceHistoriesPage() {
-  return (
-    <div className="grid gap-5">
-      <PriceHistoryListingWrapper />
-    </div>
-  );
+// The ledger moved under /admin/product-variants so the sidebar keeps the Variants section
+// active; this route only forwards old links there with their filters intact.
+export default function PriceHistoriesPage({ searchParams }: PriceHistoriesPageProps) {
+  const query = new URLSearchParams();
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (typeof value === 'string' && value !== '') query.set(key, value);
+  });
+  const suffix = query.toString();
+  redirect(`/admin/product-variants/price-histories${suffix ? `?${suffix}` : ''}`);
 }

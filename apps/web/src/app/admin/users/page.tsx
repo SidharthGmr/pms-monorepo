@@ -3,13 +3,9 @@ import config from '@/config';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: `Users List - ${config.appName}`,
+  title: `Users - ${config.appName}`,
 };
 
 export default function UsersPage() {
-  return (
-    <div className="grid gap-5">
-      <GetAllUsersListingWrapper />
-    </div>
-  );
+  return <GetAllUsersListingWrapper />;
 }

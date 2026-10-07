@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function SuppliersPage() {
   return (
-    <div className="">
+    <div>
       <SupplierListingWrapper />
     </div>
   );

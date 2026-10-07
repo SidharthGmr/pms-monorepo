@@ -28,7 +28,11 @@ export class UserController {
         userId: req.query.userId as string | undefined,
         phone: req.query.phone as string | undefined,
         role: req.query.role ? (req.query.role as Role) : undefined,
-
+        isActive: req.query['isActive'] !== undefined ? req.query['isActive'] === 'true' : undefined,
+        startDate: req.query['startDate'] as string | undefined,
+        endDate: req.query['endDate'] as string | undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortDirection: req.query['sortDirection'] as string | undefined,
       }).filter(([, value]) => value !== undefined && value !== "")
     ) as UserFilterParams;
 
@@ -48,22 +52,11 @@ export class UserController {
     }
 
     const users = await this.unitOfService.User.getAll(filters);
-    if (!users) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-        data: null
-      });
-    }
 
-    const totalRecord = users.length;
     const response: CustomResponse<ListResponseDto<UserDto>> = {
       success: true,
       message: "User fetched successfully",
-      data: {
-        totalRecord: totalRecord,
-        data: users,
-      },
+      data: users,
     };
 
     return res.status(200).json(response);

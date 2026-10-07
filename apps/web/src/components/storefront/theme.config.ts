@@ -20,19 +20,19 @@ export const BRAND = {
 } as const;
 
 export const NAV_LINKS = [
-  { label: 'Home', href: '#top' },
-  { label: 'Shop', href: '#all-products' },
-  { label: 'Popular', href: '#popular' },
+  { label: 'Home', href: '/' },
+  { label: 'Shop', href: '/products' },
+  { label: 'Featured', href: '#featured' },
   { label: 'New arrivals', href: '#new-arrivals' },
   { label: 'Blog', href: '#blog' },
   { label: 'About us', href: '#footer' },
 ] as const;
 
 export const HERO = {
-  badge: 'Flat 20% discount',
+  badge: 'New season, new stock',
   headline: ['Everything you need,', 'in stock and ready to ship'],
-  body: 'Browse the full catalogue with live prices and real stock counts on every SKU.',
-  cta: { label: 'Shop now', href: '#all-products' },
+  body: 'Browse the full catalogue with live prices and real stock counts on every SKU - what you see is what is on the shelf.',
+  cta: { label: 'Shop now', href: '/products' },
 } as const;
 
 export const TRUST_ITEMS: ReadonlyArray<{ icon: LucideIcon; label: string }> = [
@@ -87,9 +87,9 @@ export const TESTIMONIALS = [
 
 export const WIDE_PROMO = {
   eyebrow: 'Discount up to 40% off',
-  title: 'Flagship phones, everyday prices',
+  title: 'Flagship picks, everyday prices',
   body: 'Live stock, transparent pricing and a full history behind every change.',
-  cta: { label: 'Shop the deals', href: '#all-products' },
+  cta: { label: 'Shop the deals', href: '/products' },
 } as const;
 
 export const BLOG_POSTS = [

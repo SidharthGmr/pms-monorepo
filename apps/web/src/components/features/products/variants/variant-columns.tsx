@@ -24,7 +24,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
               variant="default"
               icon={<History className="h-4 w-4" />}
               tooltip="Price history for this variant"
-              href={`/admin/price-histories?productId=${row.original.productId}&variantId=${row.original.id}`}
+              href={`/admin/product-variants/price-histories?productId=${row.original.productId}&variantId=${row.original.id}`}
             />
           </div>
         ),

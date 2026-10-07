@@ -33,7 +33,9 @@ function toDto(row: PriceHistoryWithVariant, previousPrice: number | null = null
   return {
     id: row.id,
     variantId: row.variantId,
+    productId: row.productId,
     storeCode: row.storeCode,
+    isCurrent: row.isCurrent,
     sellingPrice: row.sellingPrice.toNumber(),
     offerPrice: row.offerPrice?.toNumber() ?? null,
     costPrice: row.costPrice?.toNumber() ?? null,
@@ -98,6 +100,65 @@ async function idsByChangeDirection(
 
 const toNumber = (value: Prisma.Decimal | null | undefined): number | null => value?.toNumber() ?? null;
 
+/**
+ * `isCurrent` is a cache of the same rule the cart and orders price through: the latest row that
+ * has started and has not been superseded. The dates stay the source of truth, so this recomputes
+ * the flag from them for the given variants and writes only what actually drifted - a staged price
+ * becomes current the moment its date passes, and nothing is running to notice that on its own.
+ */
+async function syncCurrentFlags(variantIds: number[], tx: Prisma.TransactionClient = prisma): Promise<Set<number>> {
+  const ids = [...new Set(variantIds)].filter((id) => Number.isFinite(id));
+  if (ids.length === 0) return new Set();
+
+  const now = new Date();
+  const rows = await tx.priceHistory.findMany({
+    where: { variantId: { in: ids } },
+    orderBy: EFFECTIVE_ORDER,
+    select: { id: true, variantId: true, isCurrent: true, effectiveFrom: true, effectiveTo: true, deletedAt: true },
+  });
+
+  // Rows arrive newest-first, so the first one per variant that is in force is the current one.
+  const settled = new Set<number>();
+  const current = new Set<number>();
+  for (const row of rows) {
+    if (settled.has(row.variantId)) continue;
+    if (row.deletedAt !== null || row.effectiveFrom > now) continue;
+    if (row.effectiveTo !== null && row.effectiveTo <= now) continue;
+    settled.add(row.variantId);
+    current.add(row.id);
+  }
+
+  const toSet = rows.filter((row) => current.has(row.id) && !row.isCurrent).map((row) => row.id);
+  const toClear = rows.filter((row) => row.isCurrent && !current.has(row.id)).map((row) => row.id);
+
+  if (toSet.length > 0) await tx.priceHistory.updateMany({ where: { id: { in: toSet } }, data: { isCurrent: true } });
+  if (toClear.length > 0) await tx.priceHistory.updateMany({ where: { id: { in: toClear } }, data: { isCurrent: false } });
+
+  return current;
+}
+
+/**
+ * Closes each row at the moment the next one starts. Only rows that are still open or that run
+ * past their successor are touched, so a row deliberately time-boxed to end early keeps its gap.
+ */
+async function stitchChain(variantId: number, tx: Prisma.TransactionClient): Promise<void> {
+  const rows = await tx.priceHistory.findMany({
+    where: { variantId, deletedAt: null },
+    orderBy: [{ effectiveFrom: 'asc' }, { id: 'asc' }],
+    select: { id: true, effectiveFrom: true, effectiveTo: true },
+  });
+
+  for (let index = 0; index < rows.length - 1; index++) {
+    const row = rows[index];
+    const next = rows[index + 1];
+    if (!row || !next) continue;
+    const overlapsNext = row.effectiveTo === null || row.effectiveTo > next.effectiveFrom;
+    if (overlapsNext) {
+      await tx.priceHistory.update({ where: { id: row.id }, data: { effectiveTo: next.effectiveFrom } });
+    }
+  }
+}
+
 export class PriceHistoryRepository implements IPriceHistoryRepository {
   async findAll(filters?: PriceHistoryFilterParams): Promise<ListResponseDto<PriceHistoryDto>> {
     let page = 1;
@@ -138,6 +199,15 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
           ...(filters.endDate != null && { lte: filters.endDate }),
         };
       }
+
+      // `live` reads the flag, which is indexed; the other two are pure date questions.
+      if (filters.state === 'live') {
+        where.isCurrent = true;
+      } else if (filters.state === 'scheduled') {
+        where.effectiveFrom = { ...(where.effectiveFrom as Prisma.DateTimeFilter), gt: new Date() };
+      } else if (filters.state === 'ended') {
+        where.effectiveTo = { lte: new Date() };
+      }
     }
 
     if (Object.keys(variantWhere).length > 0) where.variant = variantWhere;
@@ -165,8 +235,16 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       prisma.priceHistory.count({ where }),
     ]);
 
-    const previous = await previousPricesFor(data.map((row) => row.id));
-    return { totalRecord: total, data: data.map((row) => toDto(row, previous.get(row.id) ?? null)) };
+    // A staged price becomes current the moment its date passes, which no write is there to
+    // notice, so the flag is brought up to date for the variants on this page before they go out.
+    const [previous, current] = await Promise.all([
+      previousPricesFor(data.map((row) => row.id)),
+      syncCurrentFlags(data.map((row) => row.variantId)),
+    ]);
+    return {
+      totalRecord: total,
+      data: data.map((row) => toDto({ ...row, isCurrent: current.has(row.id) }, previous.get(row.id) ?? null)),
+    };
   }
 
   // `tx` matters when the caller is inside a transaction: a read on the global client
@@ -191,8 +269,11 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       prisma.priceHistory.count({ where }),
     ]);
 
-    const previous = await previousPricesFor(data.map((row) => row.id));
-    return { totalRecord: total, data: data.map((row) => toDto(row, previous.get(row.id) ?? null)) };
+    const [previous, current] = await Promise.all([previousPricesFor(data.map((row) => row.id)), syncCurrentFlags([variantId])]);
+    return {
+      totalRecord: total,
+      data: data.map((row) => toDto({ ...row, isCurrent: current.has(row.id) }, previous.get(row.id) ?? null)),
+    };
   }
 
   async getEffectiveOnMany(variantIds: number[], date: Date, tx: Prisma.TransactionClient = prisma): Promise<Map<number, PriceHistoryDto>> {
@@ -261,6 +342,10 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
    */
   async create(data: CreatePriceHistoryModel, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto> {
     const effectiveFrom = data.effectiveFrom ?? new Date();
+    // `productId` is denormalised onto the row, so it is read off the variant rather than trusted
+    // from the caller - a price can only ever belong to its variant's product.
+    const variant = await tx.productVariant.findUnique({ where: { id: data.variantId }, select: { productId: true } });
+    if (!variant) throw new Error(`Variant ${data.variantId} not found`);
 
     await tx.priceHistory.updateMany({
       where: { variantId: data.variantId, effectiveTo: null, effectiveFrom: { lte: effectiveFrom }, deletedAt: null },
@@ -270,6 +355,7 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
     const created = await tx.priceHistory.create({
       data: {
         variantId: data.variantId,
+        productId: variant.productId,
         storeCode: data.storeCode,
         sellingPrice: data.sellingPrice,
         offerPrice: data.offerPrice ?? null,
@@ -284,30 +370,66 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       },
       include: priceHistoryInclude,
     });
-    return toDto(created);
+
+    await syncCurrentFlags([data.variantId], tx);
+    return toDto({ ...created, isCurrent: created.effectiveFrom <= new Date() && created.effectiveTo === null });
   }
 
+  /**
+   * Corrects a row in place - it does not append. Moving its dates re-stitches the rows either
+   * side, so the ledger cannot end up with two prices in force at once.
+   */
   async update(id: number, data: UpdatePriceHistoryModel, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto> {
-    const updated = await tx.priceHistory.update({
-      where: { id },
-      data: {
-        ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
-        ...(data.offerPrice !== undefined && { offerPrice: data.offerPrice }),
-        ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
-        ...(data.compareAtPrice !== undefined && { compareAtPrice: data.compareAtPrice }),
-        ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo }),
-        ...(data.effectiveFrom !== undefined && { effectiveFrom: data.effectiveFrom }),
-        ...(data.reason !== undefined && { reason: data.reason || null }),
-        ...(data.updatedById !== undefined && { updatedById: data.updatedById }),
-      },
-      include: priceHistoryInclude,
-    });
-    return toDto(updated);
+    const run = async (client: Prisma.TransactionClient): Promise<PriceHistoryDto> => {
+      const updated = await client.priceHistory.update({
+        where: { id },
+        data: {
+          ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
+          ...(data.offerPrice !== undefined && { offerPrice: data.offerPrice }),
+          ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
+          ...(data.compareAtPrice !== undefined && { compareAtPrice: data.compareAtPrice }),
+          ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo }),
+          ...(data.effectiveFrom !== undefined && { effectiveFrom: data.effectiveFrom }),
+          ...(data.reason !== undefined && { reason: data.reason || null }),
+          ...(data.updatedById !== undefined && { updatedById: data.updatedById }),
+        },
+        include: priceHistoryInclude,
+      });
+
+      if (data.effectiveFrom !== undefined || data.effectiveTo !== undefined) {
+        await stitchChain(updated.variantId, client);
+      }
+      await syncCurrentFlags([updated.variantId], client);
+
+      const fresh = await client.priceHistory.findUnique({ where: { id }, include: priceHistoryInclude });
+      return toDto(fresh ?? updated);
+    };
+
+    return tx === prisma ? prisma.$transaction((client) => run(client)) : run(tx);
   }
 
+  /**
+   * Removing a row hands its end date back to the row before it, so the period it covered is not
+   * left unpriced - without that the variant silently has no price between the two neighbours.
+   */
   async delete(id: number, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto> {
-    const deleted = await tx.priceHistory.delete({ where: { id }, include: priceHistoryInclude });
-    return toDto(deleted);
+    const run = async (client: Prisma.TransactionClient): Promise<PriceHistoryDto> => {
+      const deleted = await client.priceHistory.delete({ where: { id }, include: priceHistoryInclude });
+
+      const previous = await client.priceHistory.findFirst({
+        where: { variantId: deleted.variantId, deletedAt: null, effectiveFrom: { lte: deleted.effectiveFrom } },
+        orderBy: EFFECTIVE_ORDER,
+        select: { id: true },
+      });
+      if (previous) {
+        await client.priceHistory.update({ where: { id: previous.id }, data: { effectiveTo: deleted.effectiveTo } });
+      }
+
+      await syncCurrentFlags([deleted.variantId], client);
+      return toDto(deleted);
+    };
+
+    return tx === prisma ? prisma.$transaction((client) => run(client)) : run(tx);
   }
 
   async getVariantScope(variantId: number, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryVariantScopeDto | null> {

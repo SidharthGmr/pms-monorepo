@@ -89,6 +89,11 @@ const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
  *           format: date-time
  *         description: Filters on effectiveFrom
  *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *           enum: [live, scheduled, ended]
+ *       - in: query
  *         name: sortBy
  *         schema:
  *           type: string

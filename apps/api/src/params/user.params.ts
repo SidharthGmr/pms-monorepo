@@ -7,4 +7,7 @@ export interface UserFilterParams extends PageFilterParams {
   status?: Status;
   role?: Role;
   phone?: string;
+  /** One of SORTABLE_COLUMNS in user.repository.ts; anything else falls back to createdAt. */
+  sortBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
 }

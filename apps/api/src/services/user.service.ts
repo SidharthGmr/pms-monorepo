@@ -7,6 +7,7 @@ import type { IDateTimeService } from "./interfaces/idatetime.service";
 import type { IUserService } from "./interfaces/Iuser.service";
 import { UserFilterParams } from "../params/user.params";
 import type { UserWithProfile } from "../repository/user-profile.mapper";
+import { ListResponseDto } from "../dtos/list-response.dto";
 
 @injectable()
 export class UserService implements IUserService {
@@ -17,12 +18,8 @@ export class UserService implements IUserService {
   ) { }
 
 
-  async getAll(filters: UserFilterParams): Promise<UserDto[] | null> {
-    const userList = await this.unitOfWork.User.findAll(filters);
-    if (!userList || userList.length === 0) {
-      throw new Error("No user found");
-    }
-    return userList;
+  async getAll(filters: UserFilterParams): Promise<ListResponseDto<UserDto>> {
+    return this.unitOfWork.User.findAll(filters);
   }
 
   async getUserById(userId: string): Promise<UserDto | null> {

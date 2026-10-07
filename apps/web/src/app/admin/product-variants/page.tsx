@@ -7,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ProductVariantsPage() {
-  return (
-    <div className="grid gap-5">
-      <ProductVariantListingWrapper />
-    </div>
-  );
+  return <ProductVariantListingWrapper />;
 }

@@ -116,7 +116,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="Full name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -129,7 +129,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="Username" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -142,7 +142,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="Phone number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -189,7 +189,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="City" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -202,7 +202,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="State" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -215,7 +215,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Country</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="Country" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -228,7 +228,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem>
                       <FormLabel>Pincode</FormLabel>
                       <FormControl>
-                        <Input placeholder="Emi Offer Price*" {...field} />
+                        <Input placeholder="Pincode" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -241,7 +241,7 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                     <FormItem className="md:col-span-2">
                       <FormLabel>Bio</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Emi Offer Price*" className="resize-none" {...field} />
+                        <Textarea placeholder="Short bio" className="resize-none" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

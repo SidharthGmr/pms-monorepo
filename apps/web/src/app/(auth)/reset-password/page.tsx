@@ -1,21 +1,19 @@
-import { Suspense } from 'react';
-import { Metadata } from 'next';
-import config from '@/config';
+import AuthLayout from '@/components/account/auth-layout';
 import ResetPasswordModule from '@/components/account/reset-password';
-import AuthStaticLayout from '@/components/layout/authSimpleSlider';
+import config from '@/config';
+import { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
-  title: `Reset Password - ${config.appName}`,
+  title: `Reset password - ${config.appName}`,
 };
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" />}>
-      <AuthStaticLayout
-        formComponent={<ResetPasswordModule />}
-        title="Reset password"
-        description="Choose a new password for your account."
-      />
+    <Suspense fallback={<div className="min-h-svh" />}>
+      <AuthLayout>
+        <ResetPasswordModule />
+      </AuthLayout>
     </Suspense>
   );
 }

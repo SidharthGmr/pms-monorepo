@@ -1,9 +1,10 @@
 import { Role } from "@prisma/client";
 import { UpdateUserDto, UserDto } from "../../dtos/user.dto";
+import { ListResponseDto } from "../../dtos/list-response.dto";
 import { UserFilterParams } from "../../params/user.params";
 
 export interface IUserRepository {
-  findAll(filters: UserFilterParams): Promise<UserDto[]>;
+  findAll(filters: UserFilterParams): Promise<ListResponseDto<UserDto>>;
   findById(id: string): Promise<UserDto | null>;
   findByEmail(email: string): Promise<UserDto | null>;
   findByPhone(phone: string): Promise<UserDto | null>;

@@ -1,10 +1,11 @@
 import { Role, Status } from "@prisma/client";
 import { UpdateUserDto, UserDto } from "../../dtos/user.dto";
+import { ListResponseDto } from "../../dtos/list-response.dto";
 import { CreateUserModel } from "../../models/user.model";
 import { UserFilterParams } from "../../params/user.params";
 
 export interface IUserService {
-  getAll(filters: UserFilterParams): Promise<UserDto[] | null>;
+  getAll(filters: UserFilterParams): Promise<ListResponseDto<UserDto>>;
   getUserById(userId: string): Promise<UserDto | null>;
   getByEmail(email: string, includePassword?: boolean): Promise<UserDto | null>;
   update(userId: string, updatedData: UpdateUserDto): Promise<UserDto | null>;
