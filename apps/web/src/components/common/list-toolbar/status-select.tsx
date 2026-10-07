@@ -30,33 +30,15 @@ interface StatusSelectProps<T extends string | null> {
 
 // A select whose options carry a coloured dot. Values may be null (for "All"), which Radix's
 // Select cannot hold, so options are keyed by label internally.
-export default function StatusSelect<T extends string | null>({
-  value,
-  onChange,
-  options,
-  total,
-  loading,
-  className,
-  ariaLabel = 'Filter by status',
-}: StatusSelectProps<T>) {
+// `total`/`loading` stay in the props so pages can keep passing them, but the count pill is no
+// longer rendered - the heading above the list already carries the live count.
+export default function StatusSelect<T extends string | null>({ value, onChange, options, className, ariaLabel = 'Filter by status' }: StatusSelectProps<T>) {
   const active = options.find((option) => option.value === value) ?? options[0];
 
   return (
     <Select value={active.label} onValueChange={(label) => onChange((options.find((option) => option.label === label) ?? options[0]).value)}>
       <SelectTrigger className={cn('h-9 [&>span]:min-w-0', className)} aria-label={ariaLabel}>
         <SelectValue />
-        <span className="flex min-w-0 flex-nowrap items-center gap-2 whitespace-nowrap [&>span]:truncate">
-          {total !== undefined && (
-            <span
-              className={cn(
-                'shrink-0 rounded-full bg-primary/10 px-1.5 text-[11px] font-semibold leading-5 tabular-nums text-primary',
-                loading && 'opacity-60'
-              )}
-            >
-              {total}
-            </span>
-          )}
-        </span>
       </SelectTrigger>
       <SelectContent>
         {options.map((option) => (

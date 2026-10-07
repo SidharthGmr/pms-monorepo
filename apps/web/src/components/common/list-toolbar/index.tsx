@@ -167,14 +167,14 @@ export function SearchBox({ value, onChange, placeholder = 'Search…', debounce
 
   return (
     <div className={cn('relative sm:w-72', className)}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
       <Input placeholder={placeholder} value={text} onChange={(e) => setText(e.target.value)} aria-label={placeholder} className="h-9 pl-9 pr-8" />
       {text && (
         <button
           type="button"
           onClick={() => setText('')}
           aria-label="Clear search"
-          className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="absolute right-2 top-1/2 z-10 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
         </button>

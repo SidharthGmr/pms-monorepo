@@ -1,8 +1,9 @@
 'use client';
-import { KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ListChecks, Pencil, Plus, Ruler, Trash2, X } from 'lucide-react';
+import { ListChecks, Pencil, Plus, Ruler, Trash2 } from 'lucide-react';
+import { Status } from '@pms/types';
 import { MasterAttributeDto } from '@/dtos/master-entry.dto';
 import { MasterAttributeFilterParams } from '@/params/master-entry.params';
 import { useDeleteMasterAttribute, useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
@@ -26,8 +27,6 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageMasterAttribute from './add-edit';
-import AddMasterAttributePanel from './add-edit/inline-panel';
-import { MasterAttributeFormHandle } from './add-edit/form';
 import { useMasterAttributeColumns } from './columns';
 import MasterAttributeFilter, { DEFAULT_MASTER_ATTRIBUTE_FILTER, ListView, MasterAttributeFilterValue, SortDirection } from './filter';
 
@@ -48,8 +47,7 @@ export default function MasterAttributeList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
   // Add opens an inline panel above the search bar; Edit still uses the dialog.
-  const [showAddPanel, setShowAddPanel] = useState(false);
-  const addPanelRef = useRef<MasterAttributeFormHandle>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Cards by default. The stored preference is applied after mount so server and first client render agree.
   const [view, setView] = useState<ListView>('grid');
@@ -65,7 +63,7 @@ export default function MasterAttributeList() {
   // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
   const [filter, setFilter] = useState<MasterAttributeFilterValue>(() => ({
     search: searchParams.get('search') ?? DEFAULT_MASTER_ATTRIBUTE_FILTER.search,
-    status: searchParams.get('status') ?? DEFAULT_MASTER_ATTRIBUTE_FILTER.status,
+    status: (searchParams.get('status') as Status) || DEFAULT_MASTER_ATTRIBUTE_FILTER.status,
     sortBy: searchParams.get('sortBy') ?? DEFAULT_MASTER_ATTRIBUTE_FILTER.sortBy,
     sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
   }));
@@ -75,7 +73,7 @@ export default function MasterAttributeList() {
   const params = useMemo<MasterAttributeFilterParams>(
     () => ({
       search: filter.search,
-      status: filter.status,
+      status: filter.status ?? undefined,
       sortBy: filter.sortBy,
       sortDirection: filter.sortDirection,
       page,
@@ -140,7 +138,7 @@ export default function MasterAttributeList() {
 
   const formatDate = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
 
-  const isFiltered = filter.search !== '' || filter.status !== '';
+  const isFiltered = filter.search !== '' || filter.status !== null;
   const showSkeleton = listQuery.isPending;
 
   return (
@@ -154,19 +152,12 @@ export default function MasterAttributeList() {
             : `${total} ${total === 1 ? 'option group' : 'option groups'} · reusable values such as Size, Color and Weight`
         }
         actions={
-          <Button
-            type="button"
-            variant={showAddPanel ? 'outline' : 'default'}
-            className="h-9 gap-1.5"
-            onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
-          >
-            {showAddPanel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {showAddPanel ? 'Close' : 'Add attribute'}
+          <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add attribute
           </Button>
         }
       />
-
-      <AddMasterAttributePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
 
       <MasterAttributeFilter
         value={filter}
@@ -252,6 +243,7 @@ export default function MasterAttributeList() {
         </Card>
       )}
 
+      {showAddModal && <ManageMasterAttribute isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
       {showEditModal && editId && <ManageMasterAttribute id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
       {showDeleteModal && deleteId && (
         <ConfirmBox

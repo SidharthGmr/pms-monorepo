@@ -10,7 +10,7 @@ interface ManageMasterEntryProps {
   onClose: (refresh: boolean) => void;
 }
 
-// The dialog is used for Edit. Adding happens in the inline panel above the list (see ./inline-panel.tsx).
+// One dialog for Add and Edit: no id creates, an id edits.
 // Escape and the X go through the form's dirty check; clicking outside does nothing so a stray click cannot discard edits.
 export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onClose }: ManageMasterEntryProps) {
   const formRef = useRef<MasterEntryFormHandle>(null);
@@ -18,7 +18,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && formRef.current?.requestClose()}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={(e) => e.preventDefault()}>
-        <MasterEntryForm ref={formRef} id={id} defaultAttributeId={defaultAttributeId} variant="dialog" onClose={onClose} />
+        <MasterEntryForm ref={formRef} id={id} defaultAttributeId={defaultAttributeId} onClose={onClose} />
       </DialogContent>
     </Dialog>
   );

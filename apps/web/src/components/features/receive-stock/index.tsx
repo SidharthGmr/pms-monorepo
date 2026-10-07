@@ -506,7 +506,7 @@ export default function ReceiveStockPage() {
         </form>
       </Form>
 
-      {showAddSupplier && <ManageSupplier isOpen={showAddSupplier} onClose={() => setShowAddSupplier(false)} required={false} />}
+      {showAddSupplier && <ManageSupplier isOpen={showAddSupplier} onClose={() => setShowAddSupplier(false)} />}
 
       <ConfirmBox
         isOpen={showResetConfirm}

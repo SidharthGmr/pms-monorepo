@@ -1,8 +1,9 @@
 'use client';
 import { useMemo } from 'react';
-import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
+import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
 import { SelectSearch } from '@/components/common/select-search';
 import { ListView } from '@/components/common/view-switch';
+import { Status } from '@pms/types';
 import { StatusValues } from '@/enums/status-values.enum';
 import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
 
@@ -10,8 +11,8 @@ export type { SortDirection };
 
 export interface MasterEntryFilterValue {
   search: string;
-  /** `''` means every live status, which is what the API does when status is omitted. */
-  status: string;
+  /** `null` means "everything except Trash", which is what the API does when status is omitted - same as brands and categories. */
+  status: Status | null;
   attributeId?: number;
   sortBy: string;
   sortDirection: SortDirection;
@@ -19,17 +20,11 @@ export interface MasterEntryFilterValue {
 
 export const DEFAULT_MASTER_ENTRY_FILTER: MasterEntryFilterValue = {
   search: '',
-  status: '',
+  status: null,
   attributeId: undefined,
   sortBy: 'createdAt',
   sortDirection: 'DESC',
 };
-
-const STATUS_OPTIONS: StatusOption<string>[] = [
-  { label: 'All', value: '' },
-  { label: 'Published', value: StatusValues.Published, dot: 'bg-emerald-500' },
-  { label: 'Draft', value: StatusValues.Draft, dot: 'bg-amber-500' },
-];
 
 // Mirrors SORTABLE_COLUMNS in master-entry.repository.ts - anything else falls back to createdAt server-side.
 const SORT_OPTIONS: SortOption[] = [
@@ -68,9 +63,9 @@ export default function MasterEntryFilter({ value, onChange, onReset, view, onVi
     value.sortDirection !== DEFAULT_MASTER_ENTRY_FILTER.sortDirection;
 
   return (
-    <ListToolbar<string>
+    <ListToolbar<Status | null>
       search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search by label or value…' }}
-      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_OPTIONS, total, loading }}
+      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
       leading={
         <div className="sm:w-56">
           <SelectSearch

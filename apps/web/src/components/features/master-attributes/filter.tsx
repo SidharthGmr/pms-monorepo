@@ -1,32 +1,24 @@
 'use client';
-import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
+import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
 import { ListView } from '@/components/common/view-switch';
-import { StatusValues } from '@/enums/status-values.enum';
+import { Status } from '@pms/types';
 
 export type { SortDirection, ListView };
 
 export interface MasterAttributeFilterValue {
   search: string;
-  /** `''` means every live status, which is what the API does when status is omitted. */
-  status: string;
+  /** `null` means "everything except Trash", which is what the API does when status is omitted - same as brands and categories. */
+  status: Status | null;
   sortBy: string;
   sortDirection: SortDirection;
 }
 
 export const DEFAULT_MASTER_ATTRIBUTE_FILTER: MasterAttributeFilterValue = {
   search: '',
-  status: '',
+  status: null,
   sortBy: 'createdAt',
   sortDirection: 'DESC',
 };
-
-// Trash is listed so a deleted attribute can be found and restored by editing its status.
-const STATUS_OPTIONS: StatusOption<string>[] = [
-  { label: 'All', value: '' },
-  { label: 'Published', value: StatusValues.Published, dot: 'bg-emerald-500' },
-  { label: 'Draft', value: StatusValues.Draft, dot: 'bg-amber-500' },
-  { label: 'Trash', value: StatusValues.Trash, dot: 'bg-rose-500' },
-];
 
 // Mirrors SORTABLE_COLUMNS in master-attribute.repository.ts - anything else falls back to createdAt server-side.
 const SORT_OPTIONS: SortOption[] = [
@@ -58,9 +50,9 @@ export default function MasterAttributeFilter({ value, onChange, onReset, view, 
     value.sortDirection !== DEFAULT_MASTER_ATTRIBUTE_FILTER.sortDirection;
 
   return (
-    <ListToolbar<string>
+    <ListToolbar<Status | null>
       search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search by name or code…' }}
-      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_OPTIONS, total, loading }}
+      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
       sort={{
         value: value.sortBy,
         onChange: (sortBy) => onChange({ sortBy }),

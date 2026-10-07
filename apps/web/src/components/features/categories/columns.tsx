@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, formatDistanceToNow } from 'date-fns';
-import { CornerDownRight, ImageOff, Pencil, Trash2 } from 'lucide-react';
+import { Eye, CornerDownRight, ImageOff, Pencil, Trash2 } from 'lucide-react';
 import { CategoryResponseDto } from '@pms/types';
 import { Button } from '@/components/ui/button';
 import { StatusValues } from '@/enums/status-values.enum';
@@ -29,7 +29,7 @@ function When({ value }: { value?: Date | string | null }) {
 
 // Table layout for the category list. Sorting is driven by the page's Sort control, not the headers.
 // `parentNames` resolves parentId -> name so sub-categories can show where they sit.
-export const useCategoryColumns = (parentNames: Map<number, string>, editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
+export const useCategoryColumns = (parentNames: Map<number, string>, editRecord: (id: number) => void, deleteRecord: (id: number) => void, viewRecord?: (id: number) => void) =>
   useMemo<ColumnDef<CategoryResponseDto>[]>(
     () => [
       {
@@ -53,7 +53,7 @@ export const useCategoryColumns = (parentNames: Map<number, string>, editRecord:
                 )}
               </span>
               <div className="min-w-0">
-                <button type="button" onClick={() => editRecord(category.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={category.name}>
+                <button type="button" onClick={() => (viewRecord ?? editRecord)(category.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={category.name}>
                   {category.name}
                 </button>
                 <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -124,6 +124,11 @@ export const useCategoryColumns = (parentNames: Map<number, string>, editRecord:
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-0.5">
+            {viewRecord && (
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => viewRecord(row.original.id)} aria-label={`View ${row.original.name}`} title="View">
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => editRecord(row.original.id)} aria-label={`Edit ${row.original.name}`} title="Edit">
               <Pencil className="h-4 w-4" />
             </Button>
@@ -134,8 +139,8 @@ export const useCategoryColumns = (parentNames: Map<number, string>, editRecord:
             )}
           </div>
         ),
-        meta: { thClassName: 'w-24 pr-4', tdClassName: 'pr-4' },
+        meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
       },
     ],
-    [parentNames, editRecord, deleteRecord]
+    [parentNames, editRecord, deleteRecord, viewRecord]
   );

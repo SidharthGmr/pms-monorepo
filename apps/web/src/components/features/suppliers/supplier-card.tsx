@@ -6,7 +6,7 @@ import { SupplierDto } from '@/dtos/supplier.dto';
 import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { Mail, MapPin, Pencil, Phone, Trash2, UserRound } from 'lucide-react';
+import { Eye, Mail, MapPin, Pencil, Phone, Trash2, UserRound } from 'lucide-react';
 
 const STATUS_TONE: Record<string, { dot: string; text: string }> = {
   [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
@@ -33,19 +33,21 @@ const initials = (name: string) =>
 
 interface SupplierCardProps {
   supplier: SupplierDto;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
 // Card layout for the suppliers grid: who they are up top, how to reach them in the middle,
 // display order and when they were added along the footer.
-export default function SupplierCard({ supplier, onEdit, onDelete }: SupplierCardProps) {
+export default function SupplierCard({ supplier, onView, onEdit, onDelete }: SupplierCardProps) {
   const tone = STATUS_TONE[supplier.status];
   const avatarTone = TONES[supplier.name.length % TONES.length];
 
   return (
     <Card className="group relative !p-0 overflow-hidden transition-shadow hover:shadow-md">
       <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        <CardAction label={`View ${supplier.name}`} icon={Eye} onClick={onView} className="hover:bg-primary hover:text-primary-foreground" />
         <CardAction label={`Edit ${supplier.name}`} icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
         <CardAction label={`Delete ${supplier.name}`} icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />
       </div>
@@ -53,7 +55,7 @@ export default function SupplierCard({ supplier, onEdit, onDelete }: SupplierCar
       <div className="flex items-start gap-3 border-b bg-muted/30 p-4">
         <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-bold', avatarTone)}>{initials(supplier.name)}</span>
         <div className="min-w-0 flex-1 pr-14">
-          <button type="button" onClick={onEdit} className="block w-full truncate text-left text-sm font-semibold hover:underline" title={supplier.name}>
+          <button type="button" onClick={onView} className="block w-full truncate text-left text-sm font-semibold hover:underline" title={supplier.name}>
             {supplier.name}
           </button>
           <span className={cn('mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium', tone?.text ?? 'text-muted-foreground')}>

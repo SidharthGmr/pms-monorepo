@@ -1,16 +1,16 @@
 'use client';
 import { DateRange } from 'react-day-picker';
-import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
+import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { ListView } from '@/components/common/view-switch';
-import { StatusValues } from '@/enums/status-values.enum';
+import { Status } from '@pms/types';
 
 export type { SortDirection };
 
 export interface SupplierFilterValue {
   search: string;
-  /** `''` means every live status, which is what the API does when status is omitted. */
-  status: string;
+  /** `null` means "everything except Trash", which is what the API does when status is omitted - same as brands and categories. */
+  status: Status | null;
   /** Filters on `createdAt`. */
   dateRange: DateRange | undefined;
   sortBy: string;
@@ -19,17 +19,11 @@ export interface SupplierFilterValue {
 
 export const DEFAULT_SUPPLIER_FILTER: SupplierFilterValue = {
   search: '',
-  status: '',
+  status: null,
   dateRange: undefined,
   sortBy: 'displayOrder',
   sortDirection: 'ASC',
 };
-
-const STATUS_OPTIONS: StatusOption<string>[] = [
-  { label: 'All', value: '' },
-  { label: 'Published', value: StatusValues.Published, dot: 'bg-emerald-500' },
-  { label: 'Draft', value: StatusValues.Draft, dot: 'bg-amber-500' },
-];
 
 // Mirrors SORTABLE_COLUMNS in supplier.repository.ts - anything else falls back to displayOrder server-side.
 const SORT_OPTIONS: SortOption[] = [
@@ -61,9 +55,9 @@ export default function SupplierFilter({ value, onChange, onReset, view, onViewC
     value.sortDirection !== DEFAULT_SUPPLIER_FILTER.sortDirection;
 
   return (
-    <ListToolbar<string>
+    <ListToolbar<Status | null>
       search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search name, contact, email, phone…' }}
-      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_OPTIONS, total, loading }}
+      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
       leading={
         <DateRangePicker
           key={value.dateRange ? 'range' : 'empty'}

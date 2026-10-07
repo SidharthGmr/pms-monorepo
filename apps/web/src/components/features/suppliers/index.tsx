@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Truck } from 'lucide-react';
+import { Status } from '@pms/types';
 import { SupplierDto } from '@/dtos/supplier.dto';
 import { SupplierFilterParams } from '@/params/supplier.params';
 import { useDeleteSupplier, useGetAllSuppliers } from '@/hooks/service-hooks/useSupplierService';
@@ -57,7 +58,7 @@ export default function SupplierList() {
     const to = searchParams.get('endDate');
     return {
       search: searchParams.get('search') ?? DEFAULT_SUPPLIER_FILTER.search,
-      status: searchParams.get('status') ?? DEFAULT_SUPPLIER_FILTER.status,
+      status: (searchParams.get('status') as Status) || DEFAULT_SUPPLIER_FILTER.status,
       dateRange: from || to ? { from: from ? new Date(from) : undefined, to: to ? new Date(to) : undefined } : undefined,
       sortBy: searchParams.get('sortBy') ?? DEFAULT_SUPPLIER_FILTER.sortBy,
       sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'DESC' ? 'DESC' : 'ASC',
@@ -69,7 +70,7 @@ export default function SupplierList() {
   const params = useMemo<SupplierFilterParams>(
     () => ({
       search: filter.search || undefined,
-      status: filter.status || undefined,
+      status: filter.status ?? undefined,
       startDate: filter.dateRange?.from ? startOfDay(filter.dateRange.from) : undefined,
       endDate: filter.dateRange?.to ? endOfDay(filter.dateRange.to) : undefined,
       sortBy: filter.sortBy,
@@ -88,12 +89,14 @@ export default function SupplierList() {
   const total = result?.totalRecord ?? 0;
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
+  const { showModal: showViewModal, openModal: openViewModal, closeModal: closeViewModal, uniqueId: viewId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
   // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.
   const columns = useSupplierColumns(
     (id) => openEditModal(id),
-    (id) => openDeleteModal(id)
+    (id) => openDeleteModal(id),
+    (id) => openViewModal(id)
   );
   const table = useCustomDataTable({
     columns,
@@ -133,7 +136,7 @@ export default function SupplierList() {
     closeDeleteModal(true);
   };
 
-  const isFiltered = filter.search !== '' || filter.status !== '' || !!filter.dateRange;
+  const isFiltered = filter.search !== '' || filter.status !== null || !!filter.dateRange;
   const showSkeleton = listQuery.isPending;
 
   return (
@@ -210,7 +213,7 @@ export default function SupplierList() {
       ) : (
         <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
           {suppliers.map((supplier) => (
-            <SupplierCard key={supplier.id} supplier={supplier} onEdit={() => openEditModal(supplier.id)} onDelete={() => openDeleteModal(supplier.id)} />
+            <SupplierCard key={supplier.id} supplier={supplier} onView={() => openViewModal(supplier.id)} onEdit={() => openEditModal(supplier.id)} onDelete={() => openDeleteModal(supplier.id)} />
           ))}
         </div>
       )}
@@ -222,6 +225,7 @@ export default function SupplierList() {
       )}
 
       {showAddModal && <ManageSupplier isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
+      {showViewModal && viewId && <ManageSupplier id={+viewId} isOpen={showViewModal} mode="view" onClose={(refresh) => closeViewModal(refresh)} />}
       {showEditModal && editId && <ManageSupplier id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
       {showDeleteModal && deleteId && (
         <ConfirmBox

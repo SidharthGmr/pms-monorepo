@@ -1,7 +1,7 @@
 'use client';
-import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ImageOff, Pencil, Plus, Tag, Trash2, X } from 'lucide-react';
+import { Eye, ImageOff, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 import { BrandNameDto, BrandNameFilterParams, Status } from '@pms/types';
 import { useDeleteBrandName, useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -16,8 +16,6 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageBrandName from './add-edit';
-import AddBrandNamePanel from './add-edit/inline-panel';
-import { BrandNameFormHandle } from './add-edit/form';
 import { useBrandNameColumns } from './columns';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { CustomDataTable } from '@/components/Table/data-table';
@@ -40,8 +38,7 @@ export default function BrandName() {
   const searchParams = useSearchParams();
   // Add opens an inline panel above the search bar; Edit still uses the dialog. Cards are the
   // default view; the stored preference is applied after mount so server and first client render agree.
-  const [showAddPanel, setShowAddPanel] = useState(false);
-  const addPanelRef = useRef<BrandNameFormHandle>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [view, setView] = useState<ListView>('grid');
   useEffect(() => {
     const stored = readStoredView(VIEW_STORAGE_KEY);
@@ -82,13 +79,15 @@ export default function BrandName() {
   const total = result?.totalRecord ?? 0;
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
+  const { showModal: showViewModal, openModal: openViewModal, closeModal: closeViewModal, uniqueId: viewId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
   // The table view reuses the column layout. Paging and sorting are already applied by the API,
   // so the table is told it is manual and simply renders the page it is given.
   const columns = useBrandNameColumns(
     (id) => openEditModal(id),
-    (id) => openDeleteModal(id)
+    (id) => openDeleteModal(id),
+    (id) => openViewModal(id)
   );
   const table = useCustomDataTable({
     columns,
@@ -138,19 +137,12 @@ export default function BrandName() {
         title="Brand Names"
         description={listQuery.isPending ? 'Manage product brands' : `${total} ${total === 1 ? 'brand' : 'brands'} in your store`}
         actions={
-          <Button
-            type="button"
-            variant={showAddPanel ? 'outline' : 'default'}
-            className="h-9 gap-1.5"
-            onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
-          >
-            {showAddPanel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {showAddPanel ? 'Close' : 'Add brand'}
+          <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
+            Add brand
           </Button>
         }
       />
-
-      <AddBrandNamePanel ref={addPanelRef} isOpen={showAddPanel} onClose={() => setShowAddPanel(false)} />
 
       <BrandNameFilter
         value={filter}
@@ -223,6 +215,7 @@ export default function BrandName() {
             <BrandCard
               key={brand.id}
               brand={brand}
+              onView={() => openViewModal(brand.id)}
               onEdit={() => openEditModal(brand.id)}
               onDelete={() => openDeleteModal(brand.id)}
             />
@@ -243,6 +236,8 @@ export default function BrandName() {
         </Card>
       )}
 
+      {showAddModal && <ManageBrandName isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
+      {showViewModal && viewId && <ManageBrandName id={+viewId} isOpen={showViewModal} mode="view" onClose={(refresh) => closeViewModal(refresh)} />}
       {showEditModal && editId && <ManageBrandName id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
       {showDeleteModal && deleteId && (
         <ConfirmBox
@@ -260,20 +255,22 @@ export default function BrandName() {
 
 interface BrandCardProps {
   brand: BrandNameDto;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function BrandCard({ brand, onEdit, onDelete }: BrandCardProps) {
+function BrandCard({ brand, onView, onEdit, onDelete }: BrandCardProps) {
   const logo = brand.images?.[0];
   const isTrashed = brand.status === StatusValues.Trash;
 
-  // The whole card opens the editor; the overlay buttons stop propagation so delete never falls through to edit.
+  // The whole card opens the read-only view; the overlay buttons stop propagation so edit and
+  // delete never fall through to it.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onEdit();
+      onView();
     }
   };
 
@@ -281,9 +278,9 @@ function BrandCard({ brand, onEdit, onDelete }: BrandCardProps) {
     <Card
       role="button"
       tabIndex={0}
-      onClick={onEdit}
+      onClick={onView}
       onKeyDown={onKeyDown}
-      aria-label={`Edit ${brand.name}`}
+      aria-label={`View ${brand.name}`}
       className={cn(
         FLUSH_CARD,
         'group relative flex cursor-pointer flex-col overflow-hidden border transition-all duration-200',
@@ -317,6 +314,7 @@ function BrandCard({ brand, onEdit, onDelete }: BrandCardProps) {
         </Badge> */}
 
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+          <CardAction label="View brand" icon={Eye} onClick={onView} className="hover:bg-primary hover:text-primary-foreground" />
           <CardAction label="Edit brand" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
           <CardAction label="Delete brand" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />
         </div>

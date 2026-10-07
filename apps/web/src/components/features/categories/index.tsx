@@ -1,7 +1,7 @@
 'use client';
 import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CornerDownRight, FolderTree, ImageOff, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Eye, CornerDownRight, FolderTree, ImageOff, Pencil, Plus, Trash2 } from 'lucide-react';
 import { CategoryFilterParams, CategoryResponseDto, Status } from '@pms/types';
 import { useDeleteCategory, useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -108,6 +108,7 @@ export default function CategoryList() {
   }, [allCategoriesQuery.data]);
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
+  const { showModal: showViewModal, openModal: openViewModal, closeModal: closeViewModal, uniqueId: viewId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
   // The table view reuses the column layout. Paging and sorting are already applied by the API,
@@ -115,7 +116,8 @@ export default function CategoryList() {
   const columns = useCategoryColumns(
     parentNames,
     (id) => openEditModal(id),
-    (id) => openDeleteModal(id)
+    (id) => openDeleteModal(id),
+    (id) => openViewModal(id)
   );
   const table = useCustomDataTable({
     columns,
@@ -247,6 +249,7 @@ export default function CategoryList() {
               category={category}
               parentName={category.parentId != null ? parentNames.get(category.parentId) : undefined}
               formatDate={formatDate}
+              onView={() => openViewModal(category.id)}
               onEdit={() => openEditModal(category.id)}
               onDelete={() => openDeleteModal(category.id)}
             />
@@ -260,6 +263,18 @@ export default function CategoryList() {
         </Card>
       )}
 
+      {showViewModal && viewId && (
+        <ManageCategory
+          id={+viewId}
+          isOpen={showViewModal}
+          mode="view"
+          parentName={(() => {
+            const category = categories.find((item) => item.id === +viewId!);
+            return category?.parentId != null ? parentNames.get(category.parentId) : undefined;
+          })()}
+          onClose={(refresh) => closeViewModal(refresh)}
+        />
+      )}
       {showEditModal && editId && <ManageCategory id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
       {showAddModal && <ManageCategory isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
 
@@ -283,11 +298,12 @@ interface CategoryCardProps {
   category: CategoryResponseDto;
   parentName?: string;
   formatDate: (value: CategoryResponseDto['createdAt']) => string;
+  onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function CategoryCard({ category, parentName, formatDate, onEdit, onDelete }: CategoryCardProps) {
+function CategoryCard({ category, parentName, formatDate, onView, onEdit, onDelete }: CategoryCardProps) {
   const image = category.images?.[0];
   const isDeleted = category.deletedAt != null;
 
@@ -296,7 +312,7 @@ function CategoryCard({ category, parentName, formatDate, onEdit, onDelete }: Ca
     if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onEdit();
+      onView();
     }
   };
 
@@ -304,9 +320,9 @@ function CategoryCard({ category, parentName, formatDate, onEdit, onDelete }: Ca
     <Card
       role="button"
       tabIndex={0}
-      onClick={onEdit}
+      onClick={onView}
       onKeyDown={onKeyDown}
-      aria-label={`Edit ${category.name}`}
+      aria-label={`View ${category.name}`}
       className={cn(
         FLUSH_CARD,
         'group relative flex cursor-pointer flex-col overflow-hidden border transition-all duration-200',
@@ -330,6 +346,7 @@ function CategoryCard({ category, parentName, formatDate, onEdit, onDelete }: Ca
         </Badge>
 
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+          <CardAction label="View category" icon={Eye} onClick={onView} className="hover:bg-primary hover:text-primary-foreground" />
           <CardAction label="Edit category" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
           {!isDeleted && <CardAction label="Delete category" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />}
         </div>

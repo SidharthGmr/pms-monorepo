@@ -98,7 +98,8 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5 }: Pr
         className="hidden"
       />
 
-      {/* Dropzone */}
+      {/* Dropzone - empty state only; with images present the grid below is the drop target. */}
+      {value.length === 0 && (
       <div
         role="button"
         tabIndex={0}
@@ -126,10 +127,19 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5 }: Pr
           <p className="text-xs text-muted-foreground">PNG, JPG, WEBP or GIF · up to {maxSizeMb}MB each</p>
         </div>
       </div>
+      )}
 
       {/* Previews */}
       {value.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={onDrop}
+          className={cn('grid grid-cols-3 gap-3 rounded-xl sm:grid-cols-4 md:grid-cols-5', isDragging && 'outline-dashed outline-2 outline-primary/60')}
+        >
           {value.map((url, index) => (
             <div
               key={`${url}-${index}`}
@@ -174,8 +184,8 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5 }: Pr
             onClick={() => !isUploading && fileInputRef.current?.click()}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
           >
-            <ImagePlus className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Add more</span>
+            {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+            <span className="text-[10px] font-medium">{isUploading ? 'Uploading…' : 'Add more'}</span>
           </button>
         </div>
       )}

@@ -1,108 +1,79 @@
 'use client';
-
-import { Cross2Icon } from '@radix-ui/react-icons';
-import { Table } from '@tanstack/react-table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useDebounce } from 'use-debounce';
-import { SelectSearch } from '../../common/select-search';
-import useFilterHook from '@/hooks/use-filter-hook';
-import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/common/date-range-picker';
-import { StatusValues } from '@/enums/status-values.enum';
-import { useEffect, useState } from 'react';
+import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
+import { ListView } from '@/components/common/view-switch';
+import { Status } from '@pms/types';
+import { DateRange } from 'react-day-picker';
 
-// Trash is listed so a deleted attribute can be found and restored by editing its status.
-const ATTRIBUTE_STATUS_OPTIONS = [
-  { label: 'Published', value: StatusValues.Published },
-  { label: 'Draft', value: StatusValues.Draft },
-  { label: 'Trash', value: StatusValues.Trash },
-];
+export type { SortDirection };
 
-interface AttributeListFilterProps<TData> {
-  table: Table<TData>;
-  onTextChange?: (q: string) => void;
-  onStatusChange?: (value: string) => void;
-  resetForm?: () => void;
-  onStartDateChanged?: (date: Date | undefined) => void;
-  onEndDateChanged?: (date: Date | undefined) => void;
+export interface AttributeFilterValue {
+  search: string;
+  /** `null` means every live status. */
+  status: Status | null;
+  /** Filters on `createdAt`. */
+  dateRange: DateRange | undefined;
+  sortBy: string;
+  sortDirection: SortDirection;
 }
 
-export default function AttributeListFilter<TData>({
-  table,
-  onTextChange,
-  onStatusChange,
-  resetForm,
-  onStartDateChanged,
-  onEndDateChanged,
-}: AttributeListFilterProps<TData>) {
-  const [searchedText, setSearchedText] = useState('');
-  const [searchedValue] = useDebounce(searchedText, 1000);
-  const [isFiltered, setIsFiltered] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+export const DEFAULT_ATTRIBUTE_FILTER: AttributeFilterValue = {
+  search: '',
+  status: null,
+  dateRange: undefined,
+  sortBy: 'createdAt',
+  sortDirection: 'DESC',
+};
 
-  useEffect(() => {
-    if (onTextChange) {
-      onTextChange(searchedValue);
-    }
-    table.setPageIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchedValue]);
+// Mirrors SORTABLE_COLUMNS in attribute.repository.ts - anything else falls back to createdAt.
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'createdAt', label: 'Date added' },
+  { value: 'name', label: 'Name' },
+  { value: 'unit', label: 'Unit' },
+  { value: 'displayOrder', label: 'Display order' },
+  { value: 'status', label: 'Status' },
+  { value: 'updatedAt', label: 'Last updated' },
+];
 
-  useEffect(() => {
-    onStartDateChanged?.(dateRange?.from);
-    onEndDateChanged?.(dateRange?.to);
-  }, [dateRange]);
+interface AttributeFilterProps {
+  value: AttributeFilterValue;
+  onChange: (patch: Partial<AttributeFilterValue>) => void;
+  onReset: () => void;
+  view: ListView;
+  onViewChange: (view: ListView) => void;
+  total?: number;
+  loading?: boolean;
+}
 
-  const {
-    data: statusDatas,
-    selectedValue: status,
-    setSelectedValue: setStatus,
-    onValueChange: onStatusValueChange,
-    isFiltered: isStatusFiltered,
-    setIsFiltered: setIsStatusFiltered,
-  } = useFilterHook({
-    inputData: ATTRIBUTE_STATUS_OPTIONS,
-    dataMapper: (el) => ({
-      label: el.label,
-      value: el.value,
-    }),
-    onChange: onStatusChange,
-  });
-
-  const resetFilter = () => {
-    setSearchedText('');
-    setStatus('');
-    setIsStatusFiltered(false);
-    setIsFiltered(false);
-    setDateRange(undefined);
-    table.setPageIndex(0);
-    resetForm?.();
-  };
-
-  useEffect(() => {
-    const isDateRangeFiltered = !!(dateRange?.from || dateRange?.to);
-    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered);
-  }, [isStatusFiltered, searchedText, dateRange]);
+// Attribute wiring of the shared ListToolbar: the date range rides in the leading slot.
+export default function AttributeFilter({ value, onChange, onReset, view, onViewChange, total, loading }: AttributeFilterProps) {
+  const isFiltered = value.search !== '' || value.status !== null || !!(value.dateRange?.from || value.dateRange?.to);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
-      <Input placeholder="Search by name..." value={searchedText} onChange={(e) => setSearchedText(e.target.value)} />
-      <div className="overflow-hidden">
-        <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
-      </div>
-      <SelectSearch value={status} placeholder="Filter by status" items={statusDatas} onChange={onStatusValueChange} buttonClass="" disableSearch />
-
-      <div className="place-content-center">
-        {isFiltered && (
-          <div className="flex justify-start">
-            <Button variant="destructive" onClick={resetFilter} className="h-8 px-2 lg:px-3">
-              Reset
-              <Cross2Icon className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+    <ListToolbar<Status | null>
+      search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search attributes…' }}
+      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
+      sort={{
+        value: value.sortBy,
+        onChange: (sortBy) => onChange({ sortBy }),
+        options: SORT_OPTIONS,
+        direction: value.sortDirection,
+        onDirectionChange: (sortDirection) => onChange({ sortDirection }),
+      }}
+      view={{ value: view, onChange: onViewChange, iconOnly: true }}
+      isFiltered={isFiltered}
+      onReset={onReset}
+      leading={
+        <DateRangePicker
+          key={value.dateRange ? 'range' : 'empty'}
+          mode="range"
+          value={value.dateRange}
+          selected={value.dateRange}
+          onSelect={(dateRange) => onChange({ dateRange })}
+          numberOfMonthsToShow={2}
+          placeholder="Date added"
+        />
+      }
+    />
   );
 }

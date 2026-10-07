@@ -9,7 +9,7 @@ interface ManageMasterAttributeProps {
   onClose: (refresh: boolean) => void;
 }
 
-// The dialog is used for Edit. Adding happens in the inline panel above the list (see ./inline-panel.tsx).
+// One dialog for Add and Edit: no id creates, an id edits.
 export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMasterAttributeProps) {
   const formRef = useRef<MasterAttributeFormHandle>(null);
 
@@ -17,7 +17,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
     // Escape and the X go through the form's dirty check; clicking outside does nothing so a stray click cannot discard edits.
     <Dialog open={isOpen} onOpenChange={(open) => !open && formRef.current?.requestClose()}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={(e) => e.preventDefault()}>
-        <MasterAttributeForm ref={formRef} id={id} variant="dialog" onClose={onClose} />
+        <MasterAttributeForm ref={formRef} id={id} onClose={onClose} />
       </DialogContent>
     </Dialog>
   );

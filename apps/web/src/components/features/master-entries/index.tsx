@@ -1,8 +1,9 @@
 'use client';
-import { KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ListChecks, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Status } from '@pms/types';
 import { MasterEntryDto } from '@/dtos/master-entry.dto';
 import { MasterEntryFilterParams } from '@/params/master-entry.params';
 import { useDeleteMasterEntry, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
@@ -26,8 +27,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageMasterEntry from './add-edit';
-import { HEX_COLOR, MasterEntryFormHandle } from './add-edit/form';
-import AddMasterEntryPanel from './add-edit/inline-panel';
+import { HEX_COLOR } from './add-edit/form';
 import { useMasterEntryColumns } from './columns';
 import MasterEntryFilter, { DEFAULT_MASTER_ENTRY_FILTER, MasterEntryFilterValue, SortDirection } from './filter';
 
@@ -51,10 +51,8 @@ export default function MasterEntryList() {
   // The attributes screen deep-links here with ?attributeId=..., which both filters the list and pre-selects the group when adding.
   const initialAttributeId = searchParams.get('attributeId') ? +searchParams.get('attributeId')! : undefined;
 
-  // Add opens an inline panel above the search bar; Edit still uses the dialog. Cards are the
-  // default view; the stored preference is applied after mount so server and first client render agree.
-  const [showAddPanel, setShowAddPanel] = useState(false);
-  const addPanelRef = useRef<MasterEntryFormHandle>(null);
+  // Cards are the default view; the stored preference is applied after mount so server and first client render agree.
+  const [showAddModal, setShowAddModal] = useState(false);
   const [view, setView] = useState<ListView>('grid');
   useEffect(() => {
     const stored = readStoredView(VIEW_STORAGE_KEY);
@@ -68,7 +66,7 @@ export default function MasterEntryList() {
   // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
   const [filter, setFilter] = useState<MasterEntryFilterValue>(() => ({
     search: searchParams.get('search') ?? DEFAULT_MASTER_ENTRY_FILTER.search,
-    status: searchParams.get('status') ?? DEFAULT_MASTER_ENTRY_FILTER.status,
+    status: (searchParams.get('status') as Status) || DEFAULT_MASTER_ENTRY_FILTER.status,
     attributeId: initialAttributeId,
     sortBy: searchParams.get('sortBy') ?? DEFAULT_MASTER_ENTRY_FILTER.sortBy,
     sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
@@ -79,7 +77,7 @@ export default function MasterEntryList() {
   const params = useMemo<MasterEntryFilterParams>(
     () => ({
       search: filter.search,
-      status: filter.status,
+      status: filter.status ?? undefined,
       attributeId: filter.attributeId,
       sortBy: filter.sortBy,
       sortDirection: filter.sortDirection,
@@ -145,7 +143,7 @@ export default function MasterEntryList() {
 
   const formatDate = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
 
-  const isFiltered = filter.search !== '' || filter.status !== '' || filter.attributeId !== undefined;
+  const isFiltered = filter.search !== '' || filter.status !== null || filter.attributeId !== undefined;
   const showSkeleton = listQuery.isPending;
 
   // When the list is narrowed to one attribute every row shares it, so the header can name it.
@@ -172,20 +170,14 @@ export default function MasterEntryList() {
                 </Link>
               </Button>
             )}
-            <Button
-              type="button"
-              variant={showAddPanel ? 'outline' : 'default'}
-              className="h-9 gap-1.5"
-              onClick={() => (showAddPanel ? addPanelRef.current?.requestClose() : setShowAddPanel(true))}
-            >
-              {showAddPanel ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {showAddPanel ? 'Close' : 'Add value'}
+            <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4" />
+              Add value
             </Button>
           </>
         }
       />
 
-      <AddMasterEntryPanel ref={addPanelRef} isOpen={showAddPanel} defaultAttributeId={filter.attributeId} onClose={() => setShowAddPanel(false)} />
 
       <MasterEntryFilter
         value={filter}
@@ -265,6 +257,7 @@ export default function MasterEntryList() {
         </Card>
       )}
 
+      {showAddModal && <ManageMasterEntry defaultAttributeId={filter.attributeId} isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
       {showEditModal && editId && <ManageMasterEntry id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
       {showDeleteModal && deleteId && (
         <ConfirmBox

@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, formatDistanceToNow } from 'date-fns';
-import { ImageOff, Pencil, Trash2 } from 'lucide-react';
+import { Eye, ImageOff, Pencil, Trash2 } from 'lucide-react';
 import { BrandNameDto } from '@pms/types';
 import { Button } from '@/components/ui/button';
 import { StatusValues } from '@/enums/status-values.enum';
@@ -28,9 +28,21 @@ function When({ value }: { value?: Date | string | null }) {
 }
 
 // Table layout for the brand list. Sorting is driven by the page's Sort control, not the headers.
-export const useBrandNameColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
+export const useBrandNameColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void, viewRecord?: (id: number) => void) =>
   useMemo<ColumnDef<BrandNameDto>[]>(
     () => [
+      {
+        id: 'displayOrder',
+        accessorKey: 'displayOrder',
+        enableSorting: false,
+        header: () => <span className={HEADER}>Order</span>,
+        cell: ({ row }) => (
+          <span className="inline-flex min-w-7 justify-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums">
+            {row.original.displayOrder ?? '—'}
+          </span>
+        ),
+        meta: { sortingKey: 'displayOrder', thClassName: 'text-center', tdClassName: 'text-center' },
+      },
       {
         id: 'name',
         accessorKey: 'name',
@@ -42,7 +54,12 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
           const trashed = brand.status === StatusValues.Trash;
           return (
             <div className="flex items-center gap-3">
-              <span className={cn('flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40', trashed && 'grayscale')}>
+              <span
+                className={cn(
+                  'flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40',
+                  trashed && 'grayscale'
+                )}
+              >
                 {logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={logo} alt="" loading="lazy" className="h-full w-full object-contain p-1" />
@@ -51,7 +68,12 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
                 )}
               </span>
               <div className="min-w-0">
-                <button type="button" onClick={() => editRecord(brand.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={brand.name}>
+                <button
+                  type="button"
+                  onClick={() => (viewRecord ?? editRecord)(brand.id)}
+                  className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline"
+                  title={brand.name}
+                >
                   {brand.name}
                 </button>
                 <p className="text-[11px] text-muted-foreground">ID {brand.id}</p>
@@ -77,16 +99,7 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
         },
         meta: { sortingKey: 'status' },
       },
-      {
-        id: 'displayOrder',
-        accessorKey: 'displayOrder',
-        enableSorting: false,
-        header: () => <span className={HEADER}>Order</span>,
-        cell: ({ row }) => (
-          <span className="inline-flex min-w-7 justify-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums">{row.original.displayOrder ?? '—'}</span>
-        ),
-        meta: { sortingKey: 'displayOrder', thClassName: 'text-center', tdClassName: 'text-center' },
-      },
+
       {
         id: 'createdAt',
         accessorKey: 'createdAt',
@@ -94,13 +107,15 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
         header: () => <span className={HEADER}>Added / Updated</span>,
         cell: ({ row }) => (
           <div className="flex flex-col gap-0.5 whitespace-nowrap">
+            {row.original.updatedAt && (
+              <span className="text-xs">
+                <span className="text-muted-foreground/70">Updated </span>
+                <When value={row.original.updatedAt} />
+              </span>
+            )}
             <span className="text-xs">
               <span className="text-muted-foreground/70">Added </span>
               <When value={row.original.createdAt} />
-            </span>
-            <span className="text-xs">
-              <span className="text-muted-foreground/70">Updated </span>
-              <When value={row.original.updatedAt} />
             </span>
           </div>
         ),
@@ -112,16 +127,45 @@ export const useBrandNameColumns = (editRecord: (id: number) => void, deleteReco
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-0.5">
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => editRecord(row.original.id)} aria-label={`Edit ${row.original.name}`} title="Edit">
+            {viewRecord && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                onClick={() => viewRecord(row.original.id)}
+                aria-label={`View ${row.original.name}`}
+                title="View"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              onClick={() => editRecord(row.original.id)}
+              aria-label={`Edit ${row.original.name}`}
+              title="Edit"
+            >
               <Pencil className="h-4 w-4" />
             </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteRecord(row.original.id)} aria-label={`Delete ${row.original.name}`} title="Delete">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              onClick={() => deleteRecord(row.original.id)}
+              aria-label={`Delete ${row.original.name}`}
+              title="Delete"
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         ),
-        meta: { thClassName: 'w-24 pr-4', tdClassName: 'pr-4' },
+        meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
       },
     ],
-    [editRecord, deleteRecord]
+    [editRecord, deleteRecord, viewRecord]
   );
