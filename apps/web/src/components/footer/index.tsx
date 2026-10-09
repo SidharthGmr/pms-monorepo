@@ -36,14 +36,14 @@ export function Footer() {
       <div className="container mx-auto px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-12 lg:gap-8 mb-16">
           <div className="xl:col-span-4">
-            <Link href="/" className="inline-block mb-6" title="shotMail">
+            <Link href="/" className="inline-block mb-6" title="Stocklivo">
               <div className="text-2xl font-bold text-white tracking-tight">
-                shot<span className="text-blue-500">Mail</span>
+                Stock<span className="text-blue-500">livo</span>
               </div>
             </Link>
             <CardDescription>
-              At shotMail, we believe powerful communication should be simple. We saw teams struggling with clunky interfaces and fragmented data that
-              held back their growth.
+              Your online store. Every product tracked. Stocklivo keeps the catalogue, the price history and the stock on the shelf in one place, so
+              what a customer sees is what you actually have.
             </CardDescription>
 
             <div className="flex gap-4">
@@ -79,7 +79,7 @@ export function Footer() {
 
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-sm text-gray-500">
-            <p>&copy; {new Date().getFullYear()} shotMail. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Stocklivo. All rights reserved.</p>
           </div>
 
           <div className="flex items-center gap-8 text-sm font-medium">

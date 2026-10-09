@@ -31,9 +31,7 @@ import {
   Phone,
   Receipt,
   ShoppingBag,
-  Store,
   Truck,
-  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -148,7 +146,8 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-5">
         {/* The document itself. */}
         <section className={cn(SURFACE, 'min-w-0 overflow-hidden lg:col-span-2')}>
-          <div className="flex flex-col gap-4 border-b border-border/70 bg-gradient-to-r from-primary/[0.07] via-primary/[0.03] to-transparent p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+          <div className="border-b border-border/70 bg-gradient-to-r from-primary/[0.07] via-primary/[0.03] to-transparent">
+            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
             <div className="flex min-w-0 items-center gap-3.5">
               <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex">
                 <Receipt className="h-5 w-5" />
@@ -170,85 +169,127 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
                 {items.length} {items.length === 1 ? 'product' : 'products'} · {totalQuantity} qty
               </p>
             </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 border-t border-border/50 px-4 py-2.5 sm:px-5">
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background/60" onClick={generatePdf} disabled={isGeneratingPdf}>
+                <Download className={cn('h-3.5 w-3.5', isGeneratingPdf && 'animate-bounce')} />
+                {isGeneratingPdf ? 'Generating…' : 'PDF'}
+              </Button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background/60">
+                    <FileText className="h-3.5 w-3.5" />
+                    Bill
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="flex max-h-[92vh] max-w-[900px] flex-col gap-0 p-0" onInteractOutside={(e) => e.preventDefault()}>
+                  <DialogHeader className="flex flex-row items-center justify-between space-y-0 border-b px-5 py-3.5 pr-14 text-left">
+                    <div className="min-w-0">
+                      <DialogTitle className="text-base">Invoice {order.orderNumber}</DialogTitle>
+                      <p className="text-xs text-muted-foreground">A4 preview of what downloads.</p>
+                    </div>
+                    <Button size="sm" className="h-9 gap-1.5" onClick={generatePdf} disabled={isGeneratingPdf}>
+                      <Download className={cn('h-4 w-4', isGeneratingPdf && 'animate-bounce')} />
+                      {isGeneratingPdf ? 'Generating…' : 'Download PDF'}
+                    </Button>
+                  </DialogHeader>
+
+                  {/* The sheet is 794px wide; the wrapper scales it down so the whole width is visible
+                      without a horizontal scrollbar, and reserves the height the scaling gives back. */}
+                  <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 p-5">
+                    <div className="mx-auto w-[794px] origin-top scale-[0.95] shadow-lg">
+                      <BillReceipt order={order} />
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <OrderWhatsApp order={order} />
+
+              {/* Without a host-supplied handler the page opens the edit dialog itself, so the
+                  action is reachable from the order's own URL and not only from the list. */}
+              <Button size="sm" className="ml-auto h-8 gap-1.5" onClick={() => (onEdit ? onEdit(order.id) : setShowEdit(true))}>
+                <Edit2 className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+            </div>
           </div>
 
           {/* Who it is from and who it is for, the way an invoice opens. */}
           <div className="grid grid-cols-1 gap-px bg-border/70 sm:grid-cols-2">
-            <div className="bg-card p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-2">
-                <p className={LABEL}>From</p>
-                <Store className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <div className="bg-card px-4 py-3.5 sm:px-5">
+              <p className={LABEL}>From</p>
+              <div className="mt-1.5 flex items-baseline gap-2">
+                <p className="min-w-0 truncate text-sm font-bold" title={storeName}>
+                  {storeName}
+                </p>
+                <CopyInline label="Store code" value={order.storeCode} copied={copiedId === 'store'} onCopy={() => copyToClipboard(order.storeCode, 'store')} />
               </div>
-              <p className="mt-2 truncate text-sm font-bold" title={storeName}>
-                {storeName}
-              </p>
-              <CopyInline label="Store code" value={order.storeCode} copied={copiedId === 'store'} onCopy={() => copyToClipboard(order.storeCode, 'store')} />
-              <ul className="mt-2.5 space-y-1.5 text-xs text-muted-foreground">
-                {order.store?.address && (
-                  <li className="flex items-start gap-2">
-                    <Store className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span className="leading-relaxed">{order.store.address}</span>
-                  </li>
-                )}
-                {order.store?.phone && (
-                  <li className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`tel:${order.store.phone}`} className="truncate hover:text-foreground hover:underline">
-                      {order.store.phone}
-                    </a>
-                  </li>
-                )}
-                {order.store?.email && (
-                  <li className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`mailto:${order.store.email}`} className="truncate hover:text-foreground hover:underline">
-                      {order.store.email}
-                    </a>
-                  </li>
-                )}
-              </ul>
+              {(order.store?.address || order.store?.phone || order.store?.email) && (
+                <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+                  {order.store?.address && <li className="leading-relaxed">{order.store.address}</li>}
+                  {(order.store?.phone || order.store?.email) && (
+                    <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {order.store?.phone && (
+                        <a href={`tel:${order.store.phone}`} className="inline-flex items-center gap-1.5 hover:text-foreground hover:underline">
+                          <Phone className="h-3 w-3 shrink-0" />
+                          {order.store.phone}
+                        </a>
+                      )}
+                      {order.store?.email && (
+                        <a href={`mailto:${order.store.email}`} className="inline-flex min-w-0 items-center gap-1.5 truncate hover:text-foreground hover:underline">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          {order.store.email}
+                        </a>
+                      )}
+                    </li>
+                  )}
+                </ul>
+              )}
             </div>
 
-            <div className="bg-card p-4 sm:p-5">
+            <div className="bg-card px-4 py-3.5 sm:px-5">
               <div className="flex items-center justify-between gap-2">
                 <p className={LABEL}>Bill to</p>
-                <User className="h-3.5 w-3.5 text-muted-foreground/60" />
-              </div>
-              <div className="mt-2 flex items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold uppercase text-primary">{customerName.slice(0, 2)}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold" title={customerName}>
-                    {customerName}
-                  </p>
-                  <CopyInline label="Customer ID" value={order.customerId} copied={copiedId === 'cust'} onCopy={() => copyToClipboard(order.customerId, 'cust')} />
-                </div>
-              </div>
-              <ul className="mt-2.5 space-y-1.5 text-xs text-muted-foreground">
-                {order.customer?.email && (
-                  <li className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`mailto:${order.customer.email}`} className="truncate hover:text-foreground hover:underline">
-                      {order.customer.email}
-                    </a>
-                  </li>
-                )}
-                {order.customer?.phone && (
-                  <li className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`tel:${order.customer.phone}`} className="truncate hover:text-foreground hover:underline">
-                      {order.customer.phone}
-                    </a>
-                  </li>
-                )}
-              </ul>
-              {customerSearch && (
-                <Button asChild variant="outline" size="sm" className="mt-3 h-8 gap-1.5 text-xs">
-                  <Link href={`/admin/orders?search=${encodeURIComponent(customerSearch)}`}>
-                    <ShoppingBag className="h-3.5 w-3.5" />
+                {customerSearch && (
+                  <Link
+                    href={`/admin/orders?search=${encodeURIComponent(customerSearch)}`}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  >
+                    <ShoppingBag className="h-3 w-3" />
                     Their other orders
                   </Link>
-                </Button>
-              )}
+                )}
+              </div>
+              <div className="mt-1.5 flex items-center gap-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold uppercase text-primary">{customerName.slice(0, 2)}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p className="min-w-0 truncate text-sm font-bold" title={customerName}>
+                      {customerName}
+                    </p>
+                    <CopyInline label="Customer ID" value={order.customerId} copied={copiedId === 'cust'} onCopy={() => copyToClipboard(order.customerId, 'cust')} />
+                  </div>
+                  {(order.customer?.email || order.customer?.phone) && (
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      {order.customer?.email && (
+                        <a href={`mailto:${order.customer.email}`} className="inline-flex min-w-0 items-center gap-1.5 truncate hover:text-foreground hover:underline">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          {order.customer.email}
+                        </a>
+                      )}
+                      {order.customer?.phone && (
+                        <a href={`tel:${order.customer.phone}`} className="inline-flex items-center gap-1.5 hover:text-foreground hover:underline">
+                          <Phone className="h-3 w-3 shrink-0" />
+                          {order.customer.phone}
+                        </a>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -383,50 +424,6 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
               </ol>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 border-t border-border/70 bg-muted/30 px-4 py-3 sm:px-5">
-              <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={generatePdf} disabled={isGeneratingPdf}>
-                <Download className={cn('h-4 w-4', isGeneratingPdf && 'animate-bounce')} />
-                {isGeneratingPdf ? 'Generating…' : 'PDF'}
-              </Button>
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 gap-1.5">
-                    <FileText className="h-4 w-4" />
-                    Bill
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="flex max-h-[92vh] max-w-[900px] flex-col gap-0 p-0" onInteractOutside={(e) => e.preventDefault()}>
-                  <DialogHeader className="flex flex-row items-center justify-between space-y-0 border-b px-5 py-3.5 pr-14 text-left">
-                    <div className="min-w-0">
-                      <DialogTitle className="text-base">Invoice {order.orderNumber}</DialogTitle>
-                      <p className="text-xs text-muted-foreground">A4 preview of what downloads.</p>
-                    </div>
-                    <Button size="sm" className="h-9 gap-1.5" onClick={generatePdf} disabled={isGeneratingPdf}>
-                      <Download className={cn('h-4 w-4', isGeneratingPdf && 'animate-bounce')} />
-                      {isGeneratingPdf ? 'Generating…' : 'Download PDF'}
-                    </Button>
-                  </DialogHeader>
-
-                  {/* The sheet is 794px wide; the wrapper scales it down so the whole width is visible
-                      without a horizontal scrollbar, and reserves the height the scaling gives back. */}
-                  <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 p-5">
-                    <div className="mx-auto w-[794px] origin-top scale-[0.95] shadow-lg">
-                      <BillReceipt order={order} />
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <OrderWhatsApp order={order} />
-
-              {/* Without a host-supplied handler the page opens the edit dialog itself, so the
-                  action is reachable from the order's own URL and not only from the list. */}
-              <Button size="sm" className="h-9 gap-1.5" onClick={() => (onEdit ? onEdit(order.id) : setShowEdit(true))}>
-                <Edit2 className="h-4 w-4" />
-                Edit
-              </Button>
-            </div>
           </section>
 
           <section className={cn(SURFACE, 'p-4 sm:p-5')}>

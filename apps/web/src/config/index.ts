@@ -8,7 +8,7 @@
  * server-only code and must never be given the NEXT_PUBLIC_ prefix.
  */
 const config = {
-  appName: process.env.NEXT_PUBLIC_APP_NAME || 'PMS',
+  appName: process.env.NEXT_PUBLIC_APP_NAME || 'Stocklivo',
   appDescription: process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Product & Inventory Management System',
   appUrl: process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || '',
   // Two names have been used for this in .env files; accept either so an existing

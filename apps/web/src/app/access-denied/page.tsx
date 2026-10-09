@@ -14,7 +14,7 @@ export default async function AccessDeniedPage() {
         <div className="w-full max-w-xl items-center">
           <div className="flex justify-center mb-4">
             <Link href="/">
-              <Image src={`${config.cdnUrl}/images/logo.svg`} alt={`${config.appName}`} width="220" height="0" className="m-auto h-auto" priority />
+              <Image src={`${config.cdnUrl}/images/logo-full.png`} alt={`${config.appName}`} width="220" height="0" className="m-auto h-auto" priority />
             </Link>
           </div>
           <div className="col flex flex-col justify-center items-center mt-2">

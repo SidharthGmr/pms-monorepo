@@ -38,9 +38,9 @@ const STATUS_OPTIONS: StatusOption<OrderStatus | null>[] = [
 
 // Mirrors SORTABLE_COLUMNS in order.repository.ts - anything else falls back to createdAt.
 const SORT_OPTIONS: SortOption[] = [
-  { value: 'createdAt', label: 'Date placed' },
-  { value: 'orderNumber', label: 'Order number' },
-  { value: 'grandTotal', label: 'Order total' },
+  { value: 'createdAt', label: 'Issue date' },
+  { value: 'orderNumber', label: 'Invoice number' },
+  { value: 'grandTotal', label: 'Amount' },
   { value: 'status', label: 'Status' },
   { value: 'updatedAt', label: 'Last updated' },
 ];
@@ -61,7 +61,7 @@ export default function OrderListFilter({ value, onChange, onReset, view, onView
 
   return (
     <ListToolbar<OrderStatus | null>
-      search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search order no., customer…' }}
+      search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search invoice no., customer…' }}
       status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_OPTIONS, total, loading }}
       sort={{
         value: value.sortBy,
@@ -81,7 +81,7 @@ export default function OrderListFilter({ value, onChange, onReset, view, onView
           selected={value.dateRange}
           onSelect={(dateRange) => onChange({ dateRange })}
           numberOfMonthsToShow={2}
-          placeholder="Date placed"
+          placeholder="Issue date"
         />
       }
     />

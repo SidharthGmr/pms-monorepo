@@ -7,12 +7,14 @@ import ClientError from "../exceptions/client-error";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
 import { CreateOrderModel } from "../models/order.model";
+import { notifyAdminOfNewOrder } from "../utils/email/order-notification";
+import logger from "../utils/logger";
 import { OrderFilterParams } from "../params/order.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
 import { payablePrice } from "../utils/variant-pricing";
 import { IOrderService } from "./interfaces/Iorder.service";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Role } from "@prisma/client";
 
 @injectable()
 export class OrderService implements IOrderService {
@@ -36,7 +38,7 @@ export class OrderService implements IOrderService {
   // however many lines the order has. The database is remote, and the earlier one-query-per-line
   // version timed out on carts of only a few items.
   async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto> {
-    return this.unitOfWork.transaction(async (transactionClient) => {
+    const order = await this.unitOfWork.transaction(async (transactionClient) => {
       const orderDate = data.orderDate ? new Date(data.orderDate) : new Date();
       const items = data.items ?? [];
       const variantIds = [...new Set(items.map((item) => item.variantId))];
@@ -155,6 +157,30 @@ export class OrderService implements IOrderService {
 
       return order;
     });
+
+    // Fired only after the transaction has committed, and never awaited: the admin's copy of
+    // the order must not be able to slow a sale down or roll one back.
+    void this.notifyAdmin(order.id);
+
+    return order;
+  }
+
+  private async notifyAdmin(orderId: number): Promise<void> {
+    try {
+      const order = await this.unitOfWork.Order.findById(orderId);
+      if (!order) return;
+
+      // Stores rarely have their own inbox on file, so the store's admin user stands in for it.
+      let fallbackRecipient: string | undefined;
+      if (!(order as { store?: { email?: string | null } }).store?.email) {
+        const admins = await this.unitOfWork.User.findAll({ storeCode: order.storeCode, role: Role.ADMIN, recordPerPage: 5 });
+        fallbackRecipient = (admins.data ?? []).find((admin) => !!admin.email)?.email ?? undefined;
+      }
+
+      await notifyAdminOfNewOrder(order, fallbackRecipient);
+    } catch (error) {
+      logger.error('order notification failed', { orderId, error: (error as Error)?.message });
+    }
   }
 
   async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {

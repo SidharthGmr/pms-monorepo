@@ -10,8 +10,8 @@ import { BadgeCheck, RotateCcw, Tag, Truck, type LucideIcon } from 'lucide-react
  */
 
 export const BRAND = {
-  name: 'eKarobar',
-  tagline: 'A modern storefront to browse products, check live stock and prices, and order with ease.',
+  name: 'Stocklivo',
+  tagline: 'Your online store. Every product tracked.',
   utilityMessage: 'Free shipping on every prepaid order',
   phone: '+91 0123 456 789',
   email: 'demo@example.com',

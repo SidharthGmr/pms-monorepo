@@ -9,8 +9,8 @@ import * as React from 'react';
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 
-const LOGO = '/logo-full.svg';
-const ICON = '/logo.svg';
+const LOGO = '/logo-full.png';
+const ICON = '/logo.png';
 
 // Collapses to an icon rail on desktop (Ctrl/Cmd+B) and becomes a sheet on phones. The menu
 // search only renders in the phone sheet - on desktop the top bar's Ctrl+K palette covers it.
@@ -25,9 +25,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="gap-3 border-b border-sidebar-border px-3 py-3 group-data-[collapsible=icon]:px-2">
         <Link href="/" title={config.appName} className="flex h-9 items-center justify-center rounded-lg outline-none ring-sidebar-ring focus-visible:ring-2">
           {expanded ? (
-            <Image src={LOGO} width={160} height={40} alt={config.appName} priority className="h-8 w-auto max-w-[150px] object-contain dark:grayscale" />
+            <Image src={LOGO} width={160} height={40} alt={config.appName} priority className="h-8 w-auto max-w-[150px] object-contain" />
           ) : (
-            <Image src={ICON} width={32} height={32} alt={config.appName} priority className="h-7 w-7 object-contain dark:grayscale" />
+            <Image src={ICON} width={32} height={32} alt={config.appName} priority className="h-7 w-7 object-contain" />
           )}
         </Link>
 

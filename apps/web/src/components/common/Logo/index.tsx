@@ -9,13 +9,13 @@ type LogoProps = Omit<ImageProps, 'src' | 'alt'> & {
 };
 
 export default function Logo({ logoType = 'logo', width = logoType === 'icon' ? 80 : 100, height = 0, className = 'm-0 h-auto', ...props }: LogoProps) {
-  const [logoPath, setLogoPath] = useState<string>(`${config.cdnUrl}/images/logo.svg`);
+  const [logoPath, setLogoPath] = useState<string>(`${config.cdnUrl}/images/logo.png`);
 
   useEffect(() => {
     if (logoType === 'logo') {
-      setLogoPath(`${config.cdnUrl}/images/logo-full.svg`);
+      setLogoPath(`${config.cdnUrl}/images/logo-full.png`);
     } else if (logoType === 'icon') {
-      setLogoPath(`${config.cdnUrl}/images/logo.svg`);
+      setLogoPath(`${config.cdnUrl}/images/logo.png`);
     }
   }, [logoType]);
 

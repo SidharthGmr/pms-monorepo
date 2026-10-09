@@ -13,8 +13,8 @@ export function Footer() {
             <CardDescription className="text-foreground text-sm">
                 <RiCopyrightLine className="me-1 inline align-text-bottom" />
                 {new Date().getFullYear()} | Powered by
-                <Link href="#!" className="inline-block hover:underline ps-1" title="ShotMail" target="_blank" rel="noopener noreferrer">
-                    ShotMail
+                <Link href="#!" className="inline-block hover:underline ps-1" title="Stocklivo" target="_blank" rel="noopener noreferrer">
+                    Stocklivo
                 </Link>
             </CardDescription>
         </footer>

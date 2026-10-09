@@ -13,7 +13,7 @@ const quicksand = Quicksand({
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_APP_NAME,
-  description: process.env.NEXT_PUBLIC_APP_NAME,
+  description: 'Your online store. Every product tracked.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

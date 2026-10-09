@@ -21,7 +21,7 @@ import { GlobalSearch } from '../global-search';
 import { QuickCreate } from '../quick-create';
 import { ModeToggle } from './sidebar/thememode';
 
-const ICON = '/logo.svg';
+const ICON = '/logo.png';
 
 export default function HeaderDashboard() {
   const { currentUser } = useGetCurrentUser();
@@ -49,7 +49,7 @@ export default function HeaderDashboard() {
       <SidebarTrigger className="-ml-1 hidden h-8 w-8 rounded-lg lg:flex" />
 
       <Link href="/" className="flex items-center lg:hidden" title={config.appName}>
-        <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain dark:grayscale" />
+        <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain" />
       </Link>
 
       <Separator orientation="vertical" className="hidden h-5 md:block" />

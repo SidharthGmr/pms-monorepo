@@ -52,7 +52,9 @@ const schema = z.object({
 
   // Public base URL of the web UI, used to build links inside emails.
   APP_PUBLIC_URL: z.string().url().optional(),
-  APP_NAME: z.string().default('PMS'),
+  APP_NAME: z.string().default('Stocklivo'),
+  // Fallback inbox for new-order notifications when the store has no email on file.
+  ADMIN_NOTIFY_EMAIL: z.preprocess((raw) => (raw === '' ? undefined : raw), z.string().email().optional()),
 
   // Swagger is a full map of the API surface; off by default in production.
   ENABLE_API_DOCS: booleanish(process.env.NODE_ENV !== 'production'),

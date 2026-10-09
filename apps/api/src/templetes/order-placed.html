@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>New order {{orderNumber}}</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+            <tr>
+              <td style="height:4px;background-color:#0f172a;font-size:0;line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 8px 32px;">
+                <p style="margin:0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-weight:bold;">{{appName}} &middot; {{storeName}}</p>
+                <h1 style="margin:6px 0 0 0;font-size:20px;color:#0f172a;">New order placed</h1>
+                <p style="margin:6px 0 0 0;font-size:13px;color:#64748b;">
+                  <span style="font-family:Consolas,Menlo,monospace;font-weight:bold;color:#0f172a;">{{orderNumber}}</span>
+                  &middot; {{placedAt}} &middot; Status: <strong>{{status}}</strong>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0 32px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border-radius:8px;">
+                  <tr>
+                    <td style="padding:14px 16px;">
+                      <p style="margin:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#94a3b8;font-weight:bold;">Customer</p>
+                      <p style="margin:4px 0 0 0;font-size:14px;color:#0f172a;font-weight:bold;">{{customerName}}</p>
+                      <p style="margin:2px 0 0 0;font-size:12px;color:#64748b;">{{customerContact}}</p>
+                    </td>
+                    <td align="right" style="padding:14px 16px;vertical-align:top;">
+                      <p style="margin:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#94a3b8;font-weight:bold;">Order total</p>
+                      <p style="margin:4px 0 0 0;font-size:20px;color:#0f172a;font-weight:bold;">{{grandTotal}}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 0 32px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="padding:8px 0;border-bottom:2px solid #0f172a;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;font-weight:bold;">Item</td>
+                    <td align="center" style="padding:8px 0;border-bottom:2px solid #0f172a;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;font-weight:bold;width:48px;">Qty</td>
+                    <td align="right" style="padding:8px 0;border-bottom:2px solid #0f172a;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;font-weight:bold;width:110px;">Amount</td>
+                  </tr>
+                  {{itemsRows}}
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 32px 0 32px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td></td>
+                    <td width="240">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;color:#334155;">
+                        <tr>
+                          <td style="padding:3px 0;">Subtotal</td>
+                          <td align="right" style="padding:3px 0;font-weight:bold;color:#0f172a;">{{subtotal}}</td>
+                        </tr>
+                        {{adjustmentRows}}
+                        <tr>
+                          <td style="padding:8px 0 0 0;border-top:1px solid #e2e8f0;font-weight:bold;color:#0f172a;">Grand total</td>
+                          <td align="right" style="padding:8px 0 0 0;border-top:1px solid #e2e8f0;font-weight:bold;font-size:16px;color:#0f172a;">{{grandTotal}}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {{notesBlock}}
+            <tr>
+              <td align="center" style="padding:24px 32px 28px 32px;">
+                <a href="{{orderUrl}}" style="display:inline-block;background-color:#0f172a;color:#ffffff;text-decoration:none;font-size:13px;font-weight:bold;padding:11px 28px;border-radius:8px;">Open this order</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+                <p style="margin:0;font-size:11px;color:#94a3b8;">You are receiving this because a new order was placed at {{storeName}}. Sent automatically by {{appName}}.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

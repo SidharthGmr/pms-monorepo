@@ -17,7 +17,7 @@ import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { cn } from '@/lib/utils';
 import { OrderFilterParams } from '@/params/order.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ShoppingBag } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ManageOrder from './add-edit';
@@ -133,7 +133,7 @@ export default function OrderList({ onCountChange }: OrderListProps) {
   const handleDelete = async (id: number) => {
     const response = await deleteMutation.mutateAsync(id);
     if (response && (response.status === 200 || response.status === 204)) {
-      toast({ variant: 'success', title: 'Order deleted successfully' });
+      toast({ variant: 'success', title: 'Invoice deleted successfully' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -162,7 +162,7 @@ export default function OrderList({ onCountChange }: OrderListProps) {
 
       {listQuery.isError ? (
         <Card className="py-16 text-center">
-          <p className="text-sm font-semibold text-destructive">Could not load orders</p>
+          <p className="text-sm font-semibold text-destructive">Could not load invoices</p>
           <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
         </Card>
       ) : view === 'table' ? (
@@ -174,8 +174,8 @@ export default function OrderList({ onCountChange }: OrderListProps) {
             flush
             emptyMessage={
               <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
-                <ShoppingBag className="h-6 w-6 text-muted-foreground/40" />
-                <span className="text-sm">{isFiltered ? 'No orders match these filters.' : 'No orders yet. Use "Add order" above to record the first one.'}</span>
+                <Receipt className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No invoices match these filters.' : 'No invoices yet. Use "New invoice" above to raise the first one.'}</span>
               </div>
             }
           />
@@ -195,11 +195,11 @@ export default function OrderList({ onCountChange }: OrderListProps) {
       ) : orders.length === 0 ? (
         <Card className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
           <div className="rounded-full bg-muted p-4 text-muted-foreground">
-            <ShoppingBag className="h-7 w-7" />
+            <Receipt className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold">{isFiltered ? 'No orders match these filters' : 'No orders yet'}</p>
-            <p className="text-xs text-muted-foreground">{isFiltered ? 'Try a different search, status or date range.' : 'Use "Add order" above to record the first one.'}</p>
+            <p className="text-sm font-semibold">{isFiltered ? 'No invoices match these filters' : 'No invoices yet'}</p>
+            <p className="text-xs text-muted-foreground">{isFiltered ? 'Try a different search, status or date range.' : 'Use "New invoice" above to raise the first one.'}</p>
           </div>
         </Card>
       ) : (
@@ -222,9 +222,9 @@ export default function OrderList({ onCountChange }: OrderListProps) {
           isOpen={showDeleteModal}
           onClose={() => closeDeleteModal(false)}
           onSubmit={() => handleDelete(+deleteId)}
-          heading="Delete order"
+          heading="Delete invoice"
           loading={deleteMutation.isPending}
-          bodyText="Delete this order? This cannot be undone."
+          bodyText="Delete this invoice? This cannot be undone."
         />
       )}
     </div>
