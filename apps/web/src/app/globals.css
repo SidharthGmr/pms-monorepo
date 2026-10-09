@@ -9,10 +9,10 @@
     --foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --primary: 205.98 53.14% 46.86%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 215.38 54.93% 13.92%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --primary: 214.4 85.4% 18.8%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 170.4 91.2% 35.7%;
+    --secondary-foreground: 214.4 85.4% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
     --input: 214.3 31.8% 91.4%;
@@ -23,13 +23,13 @@
     --border: 214.3 31.8% 91.4%;
     --destructive: 0 100% 50%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 215 20.2% 65.1%;
+    --ring: 214.4 70% 45%;
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary: 214.4 85.4% 18.8%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
@@ -54,7 +54,7 @@
     --storefront-surface-border: 217.2 32.6% 17.5%;
     --storefront-promo-1: var(--primary);
     --storefront-promo-1-foreground: var(--primary-foreground);
-    --storefront-promo-2: 200.4 98% 39.4%;
+    --storefront-promo-2: 170.4 91.2% 35.7%;
     --storefront-promo-2-foreground: 0 0% 100%;
     --storefront-promo-3: 346.8 77.2% 49.8%;
     --storefront-promo-3-foreground: 0 0% 100%;
@@ -67,10 +67,10 @@
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
-    --primary: 150 41.9% 51.4%;
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 0 0% 100%;
-    --secondary-foreground: 0 0% 98%;
+    --primary: 213 65% 58%;
+    --primary-foreground: 214.4 85% 10%;
+    --secondary: 170.4 80% 42%;
+    --secondary-foreground: 170 90% 8%;
     --muted: 0 0% 15%;
     --muted-foreground: 240 5% 64.9%;
     --accent: 12 6.5% 15.1%;
@@ -79,13 +79,13 @@
     --destructive-foreground: 0 85.7% 97.3%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 142.4 71.8% 29.2%;
+    --ring: 213 65% 58%;
     --radius: 0.5rem;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary: 213 65% 58%;
+    --sidebar-primary-foreground: 214.4 85% 10%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
@@ -111,7 +111,7 @@
     --storefront-surface-border: 240 3.7% 15.9%;
     --storefront-promo-1: var(--primary);
     --storefront-promo-1-foreground: var(--primary-foreground);
-    --storefront-promo-2: 201.3 96.3% 32.2%;
+    --storefront-promo-2: 170.4 80% 38%;
     --storefront-promo-2-foreground: 0 0% 100%;
     --storefront-promo-3: 345.3 82.7% 40.8%;
     --storefront-promo-3-foreground: 0 0% 100%;

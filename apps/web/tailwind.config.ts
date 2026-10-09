@@ -15,6 +15,9 @@ const config = {
   		}
   	},
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-outfit)', 'var(--font-jakarta)', 'sans-serif']
+  		},
   		colors: {
   			violet: {
                     ...colors.violet,
