@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function ProductsPage() {
   return (
-    <div className="grid gap-5">
+    <>
       <ProductListingWrapper />
-    </div>
+    </>
   );
 }

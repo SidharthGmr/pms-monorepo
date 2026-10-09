@@ -8,13 +8,13 @@ export interface PageFilterParams {
 }
 
 export interface ProductFilterParams extends PageFilterParams {
-    categoryId?: string | null;
-    brandNameId?: string | null;
+    categoryId?: number | string | null;
+    brandNameId?: number | string | null;
     status?: string | null;
     storeCode?: string | null;
     /** Only real columns are honoured by the API; price and stock are derived, not stored. */
     sortBy?: string;
-    sortDirection?: 'asc' | 'desc';
+    sortDirection?: 'asc' | 'desc' | 'ASC' | 'DESC';
 }
 
 export interface ProductAttributeFilterParams extends PageFilterParams {

@@ -1,24 +1,22 @@
-import { PageHeader } from '@/components/common/page-header';
-import ProductVariants from '@/components/features/products/variants';
+import VariantPage from '@/components/features/product-variants/variant-page';
 import config from '@/config';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: `Product Variants - ${config.appName}`,
+  title: `Variant - ${config.appName}`,
 };
 
-interface ProductVariantsPageProps {
+interface VariantViewPageProps {
   params: {
-    id: number;
+    id: string;
   };
 }
 
-export default function ProductVariantsPage({ params }: ProductVariantsPageProps) {
-  const { id } = params;
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Edit Variant" description="Update this variant's details, images, price and stock." variant="back" />
-      <ProductVariants productId={id} />
-    </div>
-  );
+// One variant by its own id. Route params arrive as strings, so the id has to be converted
+// before it is handed over - a string never passes Number.isFinite, and the detail query is
+// disabled for id 0, which leaves the page on its skeleton forever.
+export default function VariantViewPage({ params }: VariantViewPageProps) {
+  const id = Number(params.id);
+
+  return <VariantPage id={Number.isFinite(id) ? id : 0} />;
 }

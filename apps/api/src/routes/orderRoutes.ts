@@ -32,6 +32,55 @@ const orderController = container.get<OrderController>(TYPES.OrderController);
  *           type: string
  *         required: true
  *         description: Enter Client Id
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED, RETURNED]
+ *       - in: query
+ *         name: customerId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: storeId
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [orderNumber, grandTotal, status, createdAt, updatedAt, id]
+ *       - in: query
+ *         name: sortDirection
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: showAllRecords
+ *         schema:
+ *           type: boolean
  *     responses:
  *       200:
  *         description: Orders fetched successfully

@@ -1,82 +1,91 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ProductDto } from '@/dtos/product.dto';
-import { ProductPricing } from '@/hooks/useProductPricing';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Row } from '@tanstack/react-table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ProductResponseDto } from '@pms/types';
 import { useQueryClient } from '@tanstack/react-query';
+import { Boxes, Eye, History, MoreHorizontal, PackagePlus, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import AddStockModal from './add-stock-modal';
 import StockHistoryModal from './stock-history-modal';
 
-interface ProductListRowActionsProps<TData> {
-  row: Row<TData>;
-  deleteRecord: (id: number) => void;
-  pricing?: ProductPricing;
+interface ProductRowActionsProps {
+  product: ProductResponseDto;
+  onView: () => void;
+  /** When given, Edit opens the form where the list is instead of navigating to the product. */
+  onEdit?: () => void;
+  onDelete: () => void;
 }
 
-export default function ProductListRowActions<TData>({ row, deleteRecord, pricing }: ProductListRowActionsProps<TData>) {
+// View and Edit sit inline; stock movements and the destructive delete live behind the "…" menu.
+export default function ProductRowActions({ product, onView, onEdit, onDelete }: ProductRowActionsProps) {
   const queryClient = useQueryClient();
-  const item = row.original as ProductDto;
   const [isAddStockOpen, setIsAddStockOpen] = useState(false);
   const [isStockHistoryOpen, setIsStockHistoryOpen] = useState(false);
 
-  // The cart snapshots a price from the product's effective variant, so a
-  // product with no price cannot be added at all.
-  const isPriced = pricing?.sellingPrice != null;
-
   return (
     <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex h-3 w-8 p-0 data-[state=open]:bg-muted">
-            <DotsHorizontalIcon className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+      <div className="flex items-center justify-end gap-0.5">
+        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onView} aria-label={`View ${product.name}`} title="View">
+          <Eye className="h-4 w-4" />
+        </Button>
+        {onEdit ? (
+          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onEdit} aria-label={`Edit ${product.name}`} title="Edit">
+            <Pencil className="h-4 w-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[160px]">
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href={`/admin/products/${item?.id}`}>Edit</Link>
-          </DropdownMenuItem>
-          {isPriced && (
-            <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAddStockOpen(true)}>
-              Add Stock
+        ) : (
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" aria-label={`Edit ${product.name}`} title="Edit">
+            <Link href={`/admin/products/${product.id}?edit=1`}>
+              <Pencil className="h-4 w-4" />
+            </Link>
+          </Button>
+        )}
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground data-[state=open]:bg-muted" aria-label={`More actions for ${product.name}`} title="More">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/admin/products/${product.id}/variants`}>
+                <Boxes className="mr-2 h-4 w-4" />
+                Variants
+              </Link>
             </DropdownMenuItem>
-          )}
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setIsStockHistoryOpen(true)}>
-            Stock History
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href={`/admin/products/variants/${item?.id}`}>Variants</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={() => deleteRecord(item.id)}>
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setIsAddStockOpen(true)}>
+              <PackagePlus className="mr-2 h-4 w-4" />
+              Add stock
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setIsStockHistoryOpen(true)}>
+              <History className="mr-2 h-4 w-4" />
+              Stock history
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive" onClick={onDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {isAddStockOpen && (
         <AddStockModal
-          productId={item.id}
-          productName={item.name}
+          productId={product.id}
+          productName={product.name}
           isOpen={isAddStockOpen}
           onClose={() => setIsAddStockOpen(false)}
           onSuccess={() => {
-            // The modal does not refresh anything itself. Invalidating the list
-            // query updates the stock column in place; the previous wiring did a
-            // full window.location.reload().
             queryClient.invalidateQueries({ queryKey: ['ProductService.getAll'] });
-            queryClient.invalidateQueries({ queryKey: ['ProductService.getStockHistory', item.id] });
+            queryClient.invalidateQueries({ queryKey: ['ProductService.getStockHistory', product.id] });
             setIsAddStockOpen(false);
           }}
         />
       )}
 
       {isStockHistoryOpen && (
-        <StockHistoryModal productId={item.id} productName={item.name} isOpen={isStockHistoryOpen} onClose={() => setIsStockHistoryOpen(false)} />
+        <StockHistoryModal productId={product.id} productName={product.name} isOpen={isStockHistoryOpen} onClose={() => setIsStockHistoryOpen(false)} />
       )}
     </>
   );

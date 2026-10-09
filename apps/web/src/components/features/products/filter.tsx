@@ -1,172 +1,128 @@
 'use client';
-
-import { Cross2Icon } from '@radix-ui/react-icons';
-import { Table } from '@tanstack/react-table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useDebounce } from 'use-debounce';
-import { SelectSearch } from '../../common/select-search';
-import useFilterHook from '@/hooks/use-filter-hook';
-import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/common/date-range-picker';
-import StatusData from '@/data/status.data';
-import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
+import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
+import { SelectSearch } from '@/components/common/select-search';
+import { ListView } from '@/components/common/view-switch';
 import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
-import { useEffect, useMemo, useState } from 'react';
-interface ProductListFilterProps<TData> {
-  table: Table<TData>;
-  onTextChange?: (q: string) => void;
-  onStatusChange?: (value: string) => void;
-  onCategoryTypeChange?: (selectedValues: string) => void;
-  onBrandNameChange?: (selectedValues: string) => void;
-  resetForm?: () => void;
-  onStartDateChanged?: (date: Date | undefined) => void;
-  onEndDateChanged?: (date: Date | undefined) => void;
-  showStatus?: boolean;
-  showDateRange?: boolean;
+import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
+import { Status } from '@pms/types';
+import { useMemo } from 'react';
+import { DateRange } from 'react-day-picker';
+
+export type { SortDirection };
+
+export interface ProductFilterValue {
+  search: string;
+  /** `null` means "everything except Trash", which is what the API does when status is omitted - same as brands and categories. */
+  status: Status | null;
+  categoryId?: number;
+  brandNameId?: number;
+  /** Filters on `createdAt`. */
+  dateRange: DateRange | undefined;
+  sortBy: string;
+  sortDirection: SortDirection;
 }
 
-export default function ProductListFilter<TData>({
-  table,
-  onTextChange,
-  onStatusChange,
-  onCategoryTypeChange,
-  onBrandNameChange,
-  resetForm,
-  onStartDateChanged,
-  onEndDateChanged,
-  showStatus = true,
-  showDateRange = true,
-}: ProductListFilterProps<TData>) {
-  const [searchedText, setSearchedText] = useState('');
-  const [searchedValue] = useDebounce(searchedText, 1000);
-  const [isFiltered, setIsFiltered] = useState(false);
+export const DEFAULT_PRODUCT_FILTER: ProductFilterValue = {
+  search: '',
+  status: null,
+  categoryId: undefined,
+  brandNameId: undefined,
+  dateRange: undefined,
+  sortBy: 'createdAt',
+  sortDirection: 'DESC',
+};
 
-  useEffect(() => {
-    if (onTextChange) {
-      onTextChange(searchedValue);
-    }
-    table.setPageIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchedValue]);
+// Mirrors SORTABLE_COLUMNS in product.repository.ts - anything else falls back to createdAt.
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'createdAt', label: 'Date added' },
+  { value: 'name', label: 'Name' },
+  { value: 'displayOrder', label: 'Display order' },
+  { value: 'updatedAt', label: 'Last updated' },
+  { value: 'id', label: 'Id' },
+];
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+interface ProductListFilterProps {
+  value: ProductFilterValue;
+  onChange: (patch: Partial<ProductFilterValue>) => void;
+  onReset: () => void;
+  view: ListView;
+  onViewChange: (view: ListView) => void;
+  /** Total matching records, shown beside the status select. */
+  total?: number;
+  loading?: boolean;
+}
 
-  useEffect(() => {
-    onStartDateChanged?.(dateRange?.from);
-    onEndDateChanged?.(dateRange?.to);
-  }, [dateRange]);
-
-  // `showAllRecords` matters: without it these lists stop at the API's default ten records,
-  // so a category or brand created eleventh could never be filtered on.
+// Product wiring of the shared ListToolbar: category and brand selects ride in the leading
+// slot, the created-date range in the trailing one.
+export default function ProductListFilter({ value, onChange, onReset, view, onViewChange, total, loading }: ProductListFilterProps) {
+  // `showAllRecords` matters here - without it these lists stop at the first ten records.
   const { data: categoriesResponse } = useGetAllCategories({ showAllRecords: true });
-  const categoriesInputData = useMemo(() => categoriesResponse?.data.data?.data || [], [categoriesResponse]);
-
   const { data: brandNamesResponse } = useGetAllBrandNames({ showAllRecords: true });
-  const brandNamesInputData = useMemo(() => brandNamesResponse?.data.data?.data || [], [brandNamesResponse]);
 
-  const {
-    data: categoryTypes,
-    selectedValue: category,
-    setSelectedValue: setCategoryType,
-    onValueChange: onCategoryTypeValueChange,
-    isFiltered: isCategoryTypeFiltered,
-    setIsFiltered: setIsCategoryTypeFiltered,
-  } = useFilterHook({
-    inputData: categoriesInputData, // ✅ stable reference
-    dataMapper: (e) => ({
-      label: e.name || '',
-      value: e.id?.toString() || '',
-    }),
-    onChange: (value) => {
-      if (value) onCategoryTypeChange?.(value);
-    },
-  });
+  const categoryItems = useMemo(
+    () => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })),
+    [categoriesResponse]
+  );
+  const brandItems = useMemo(
+    () => (brandNamesResponse?.data?.data?.data ?? []).map((brand) => ({ label: brand.name, value: brand.id })),
+    [brandNamesResponse]
+  );
 
-  const {
-    data: brandNameTypes,
-    selectedValue: brandName,
-    setSelectedValue: setBrandNameType,
-    onValueChange: onBrandNameValueChange,
-    isFiltered: isBrandNameFiltered,
-    setIsFiltered: setIsBrandNameFiltered,
-  } = useFilterHook({
-    inputData: brandNamesInputData,
-    dataMapper: (e) => ({
-      label: e.name || '',
-      value: e.id?.toString() || '',
-    }),
-    onChange: (value) => {
-      if (value) onBrandNameChange?.(value);
-    },
-  });
-
-  const {
-    data: statusDatas,
-    selectedValue: status,
-    setSelectedValue: setStatus,
-    onValueChange: onStatusValueChange,
-    isFiltered: isStatusFiltered,
-    setIsFiltered: setIsStatusFiltered,
-  } = useFilterHook({
-    inputData: StatusData,
-    dataMapper: (el) => ({
-      label: el.label,
-      value: el.value,
-    }),
-    onChange: onStatusChange,
-  });
-
-  const resetFilter = () => {
-    setSearchedText('');
-    setCategoryType(0);
-    setIsCategoryTypeFiltered(false);
-    setBrandNameType(0);
-    setIsBrandNameFiltered(false);
-    setStatus('');
-    setIsStatusFiltered(false);
-    setIsFiltered(false);
-    setDateRange(undefined);
-    table.setPageIndex(0);
-    resetForm?.();
-  };
-
-  useEffect(() => {
-    const isDateRangeFiltered = dateRange?.from || dateRange?.to ? true : false;
-    setIsFiltered(isStatusFiltered || !!searchedText || isDateRangeFiltered || isCategoryTypeFiltered || isBrandNameFiltered);
-  }, [isStatusFiltered, searchedText, dateRange, isCategoryTypeFiltered, isBrandNameFiltered]);
+  const isFiltered =
+    value.search !== '' ||
+    value.status !== null ||
+    value.categoryId !== undefined ||
+    value.brandNameId !== undefined ||
+    !!(value.dateRange?.from || value.dateRange?.to);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-2">
-      <Input placeholder="Search by name or SKU..." value={searchedText} onChange={(e) => setSearchedText(e.target.value)} />
-      <SelectSearch
-        value={category}
-        placeholder="Filter by Category Type"
-        items={categoryTypes}
-        onChange={onCategoryTypeValueChange}
-        buttonClass=""
-        disableSearch={true}
-      />
-      <SelectSearch value={brandName} placeholder="Filter by Brand Name" items={brandNameTypes} onChange={onBrandNameValueChange} buttonClass="" />
-      {showDateRange && (
-        <div className="overflo w-hidden">
-          <DateRangePicker mode="range" value={dateRange} selected={dateRange} onSelect={setDateRange} numberOfMonthsToShow={2} />
-        </div>
-      )}
-      {showStatus && (
-        <SelectSearch value={status} placeholder="Filter by status" items={statusDatas} onChange={onStatusValueChange} buttonClass="" disableSearch />
-      )}
-
-      <div className="place-content-center">
-        {isFiltered && (
-          <div className="flex justify-start">
-            <Button variant="destructive" onClick={resetFilter} className="h-8 px-2 lg:px-3">
-              Reset
-              <Cross2Icon className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+    <ListToolbar<Status | null>
+      search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search name, slug or SKU…' }}
+      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
+      sort={{
+        value: value.sortBy,
+        onChange: (sortBy) => onChange({ sortBy }),
+        options: SORT_OPTIONS,
+        direction: value.sortDirection,
+        onDirectionChange: (sortDirection) => onChange({ sortDirection }),
+      }}
+      view={{ value: view, onChange: onViewChange, iconOnly: true }}
+      isFiltered={isFiltered}
+      onReset={onReset}
+      leading={
+        <>
+          <SelectSearch
+            value={value.categoryId}
+            placeholder="All categories"
+            items={categoryItems}
+            valueType="number"
+            onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
+            buttonClass="h-9 bg-background sm:w-44"
+            containerName="product-category-filter"
+          />
+          <SelectSearch
+            value={value.brandNameId}
+            placeholder="All brands"
+            items={brandItems}
+            valueType="number"
+            onChange={(next) => onChange({ brandNameId: next === '' || next === undefined ? undefined : +next })}
+            buttonClass="h-9 bg-background sm:w-44"
+            containerName="product-brand-filter"
+          />
+        </>
+      }
+      trailing={
+        <DateRangePicker
+          key={value.dateRange ? 'range' : 'empty'}
+          mode="range"
+          value={value.dateRange}
+          selected={value.dateRange}
+          onSelect={(dateRange) => onChange({ dateRange })}
+          numberOfMonthsToShow={2}
+          placeholder="Date added"
+        />
+      }
+    />
   );
 }

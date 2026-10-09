@@ -1,92 +1,138 @@
 'use client';
+import ConfirmBox from '@/components/common/confirm-box';
+import ListPagination from '@/components/common/list-pagination';
+import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
+import { CustomDataTable } from '@/components/Table/data-table';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { OrderDto } from '@/dtos/order.dto';
+import { OrderStatus } from '@/enums/order-status.enum';
 import { useDeleteOrder, useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
-import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
-import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { PageFilterParams } from '@/params/page.params';
+import { cn } from '@/lib/utils';
+import { OrderFilterParams } from '@/params/order.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { CustomDataTable } from '../../Table/data-table';
-import { DataTablePagination } from '../../Table/data-table-pagination';
-import ConfirmBox from '../../common/confirm-box';
-import { toast } from '../../ui/use-toast';
+import { ShoppingBag } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import ManageOrder from './add-edit';
 import { useOrderColumns } from './columns';
-import OrderListFilter from './filter';
+import OrderListFilter, { DEFAULT_ORDER_FILTER, OrderFilterValue, SortDirection } from './filter';
+import OrderCard from './order-card';
 
-export default function OrderList() {
+// `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
+const FLUSH_CARD = 'p-0 md:p-0';
+const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
+const VIEW_STORAGE_KEY = 'orders.view';
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
+const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
+
+interface OrderListProps {
+  onCountChange?: (total: number) => void;
+}
+
+export default function OrderList({ onCountChange }: OrderListProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
-
-  const [data, setData] = useState<OrderDto[]>([]);
-  const [recordCount, setRecordCount] = useState<number>(0);
   const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Cards are the default view; the stored preference is applied after mount so server and first client render agree.
+  const [view, setView] = useState<ListView>('grid');
+  useEffect(() => {
+    const stored = readStoredView(VIEW_STORAGE_KEY);
+    if (stored) setView(stored);
+  }, []);
+
+  const changeView = (next: ListView) => {
+    setView(next);
+    storeView(VIEW_STORAGE_KEY, next);
+  };
+
+  // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
+  const [filter, setFilter] = useState<OrderFilterValue>(() => {
+    const from = searchParams.get('startDate');
+    const to = searchParams.get('endDate');
+    return {
+      search: searchParams.get('search') ?? DEFAULT_ORDER_FILTER.search,
+      status: (searchParams.get('status') as OrderStatus) || DEFAULT_ORDER_FILTER.status,
+      dateRange: from || to ? { from: from ? new Date(from) : undefined, to: to ? new Date(to) : undefined } : undefined,
+      sortBy: searchParams.get('sortBy') ?? DEFAULT_ORDER_FILTER.sortBy,
+      sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
+    };
+  });
+  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
+  const [pageSize, setPageSize] = useState(() => Number(searchParams.get('recordPerPage')) || config.recordPerPage);
+
+  const params = useMemo<OrderFilterParams>(
+    () => ({
+      search: filter.search || undefined,
+      status: filter.status ?? undefined,
+      startDate: filter.dateRange?.from ? startOfDay(filter.dateRange.from) : undefined,
+      endDate: filter.dateRange?.to ? endOfDay(filter.dateRange.to) : undefined,
+      sortBy: filter.sortBy,
+      sortDirection: filter.sortDirection,
+      page,
+      recordPerPage: pageSize,
+    }),
+    [filter, page, pageSize]
+  );
+
+  const listQuery = useGetAllOrders(params);
+  const deleteMutation = useDeleteOrder();
+
+  const result = listQuery.data?.data?.data;
+  const orders: OrderDto[] = useMemo(() => result?.data ?? [], [result]);
+  const total = result?.totalRecord ?? 0;
+
+  useEffect(() => {
+    onCountChange?.(total);
+  }, [total, onCountChange]);
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
-  const [filterParams, setFilterParams] = useState<PageFilterParams>({
-    search: searchParams.get('search') || '',
-    page: +(searchParams.get('page') || 1),
-    recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
-  });
+  // An order carries its items, bill and timeline, which is more than a dialog can hold, so
+  // viewing one opens its own page.
+  const openView = useCallback((id: number) => router.push(`/admin/orders/${id}`), [router]);
 
-  const columns = useOrderColumns(
-    (id) => openEditModal(id),
-    (id) => openDeleteModal(id)
-  );
-
-  const getAllOrdersResponse = useGetAllOrders(filterParams);
-  const deleteOrderMutation = useDeleteOrder();
-
-  useEffect(() => {
-    if (getAllOrdersResponse.isSuccess && getAllOrdersResponse.data?.data?.data) {
-      setData(getAllOrdersResponse.data.data.data.data ?? []);
-      setRecordCount(getAllOrdersResponse.data.data.data.totalRecord ?? 0);
-    }
-  }, [getAllOrdersResponse.isSuccess, getAllOrdersResponse.data]);
-
-  const { sorting, onSortingChange } = useTanstackTableSorting<OrderDto>('', 'desc', columns);
-
-  const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
-
+  // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.
+  const columns = useOrderColumns((id) => openEditModal(id), (id) => openDeleteModal(id), openView);
   const table = useCustomDataTable({
     columns,
-    data,
+    data: orders,
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
-    pageCount: Math.ceil((recordCount || 0) / (filterParams.recordPerPage || 1)),
-    pagination,
-    sorting,
-    onPaginationChange,
-    onSortingChange,
+    pageCount: Math.max(1, Math.ceil(total / Math.max(pageSize, 1))),
+    pagination: { pageIndex: page - 1, pageSize },
+    sorting: [{ id: filter.sortBy, desc: filter.sortDirection === 'DESC' }],
   });
 
-  useEffect(() => {
-    setFilterParams((prev) => ({
-      ...prev,
-      page: pagination.pageIndex + 1,
-      recordPerPage: pagination.pageSize,
-    }));
-  }, [pagination]);
+  // Any change to what is being listed sends the user back to page 1, otherwise a narrower result set can leave them on an empty page.
+  const updateFilter = (patch: Partial<OrderFilterValue>) => {
+    setFilter((current) => ({ ...current, ...patch }));
+    setPage(1);
+  };
 
-  const resetForm = () => {
-    setFilterParams({
-      search: undefined,
-      page: 1,
-      recordPerPage: config.recordPerPage,
-    });
+  const resetFilter = () => {
+    setFilter(DEFAULT_ORDER_FILTER);
+    setPage(1);
+  };
+
+  const changePageSize = (size: number) => {
+    setPageSize(size);
+    setPage(1);
   };
 
   const handleDelete = async (id: number) => {
-    const response = await deleteOrderMutation.mutateAsync(id);
-    if (response && response.status === 204) {
+    const response = await deleteMutation.mutateAsync(id);
+    if (response && (response.status === 200 || response.status === 204)) {
       toast({ variant: 'success', title: 'Order deleted successfully' });
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
@@ -95,48 +141,92 @@ export default function OrderList() {
     closeDeleteModal(true);
   };
 
-  if (getAllOrdersResponse.isError) {
-    return <div className="text-center py-10 text-destructive">Error loading orders</div>;
-  }
+  const isFiltered = filter.search !== '' || filter.status !== null || !!filter.dateRange;
+  const showSkeleton = listQuery.isPending;
 
   return (
-    <>
-      <div className="space-y-4">
-        <OrderListFilter
-          table={table}
-          resetForm={resetForm}
-          onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || undefined, page: 1 }))}
-        />
+    <div className="space-y-4">
+      <OrderListFilter
+        value={filter}
+        onChange={updateFilter}
+        onReset={resetFilter}
+        view={view}
+        onViewChange={changeView}
+        total={listQuery.isPending ? undefined : total}
+        loading={listQuery.isFetching}
+      />
 
-        <div className="rounded-md border">
-          <CustomDataTable columns={columns} table={table} isLoading={getAllOrdersResponse.isLoading} />
+      <Card size="sm">
+        <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+      </Card>
+
+      {listQuery.isError ? (
+        <Card className="py-16 text-center">
+          <p className="text-sm font-semibold text-destructive">Could not load orders</p>
+          <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+        </Card>
+      ) : view === 'table' ? (
+        <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
+          <CustomDataTable
+            columns={columns}
+            table={table}
+            isLoading={showSkeleton}
+            flush
+            emptyMessage={
+              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                <ShoppingBag className="h-6 w-6 text-muted-foreground/40" />
+                <span className="text-sm">{isFiltered ? 'No orders match these filters.' : 'No orders yet. Use "Add order" above to record the first one.'}</span>
+              </div>
+            }
+          />
+        </Card>
+      ) : showSkeleton ? (
+        <div className={GRID} aria-busy="true" aria-label="Loading orders">
+          {Array.from({ length: Math.min(pageSize, 12) }).map((_, index) => (
+            <Card key={index} className={cn(FLUSH_CARD, 'overflow-hidden border')}>
+              <div className="space-y-2 p-4">
+                <Skeleton className="h-3.5 w-2/3" />
+                <Skeleton className="h-2.5 w-1/3" />
+                <Skeleton className="h-6 w-1/2" />
+              </div>
+            </Card>
+          ))}
         </div>
-
-        <DataTablePagination table={table} totalRecord={recordCount} loading={getAllOrdersResponse.isLoading} />
-      </div>
-
-      {showEditModal && (
-        <ManageOrder
-          id={+(editId ?? 0)}
-          isOpen={showEditModal}
-          onClose={(refresh) => {
-            closeEditModal(refresh);
-            if (refresh) getAllOrdersResponse.refetch();
-          }}
-        />
+      ) : orders.length === 0 ? (
+        <Card className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+          <div className="rounded-full bg-muted p-4 text-muted-foreground">
+            <ShoppingBag className="h-7 w-7" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{isFiltered ? 'No orders match these filters' : 'No orders yet'}</p>
+            <p className="text-xs text-muted-foreground">{isFiltered ? 'Try a different search, status or date range.' : 'Use "Add order" above to record the first one.'}</p>
+          </div>
+        </Card>
+      ) : (
+        <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} onView={() => openView(order.id)} onEdit={() => openEditModal(order.id)} onDelete={() => openDeleteModal(order.id)} />
+          ))}
+        </div>
       )}
 
-      {showDeleteModal && (
+      {total > pageSize && (
+        <Card size="sm">
+          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+        </Card>
+      )}
+
+      {showEditModal && editId && <ManageOrder id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
+      {showDeleteModal && deleteId && (
         <ConfirmBox
           isOpen={showDeleteModal}
           onClose={() => closeDeleteModal(false)}
-          onSubmit={() => handleDelete(+(deleteId ?? 0))}
-          bodyText="Are you sure you want to delete this order?"
-          noButtonText="Cancel"
-          yesButtonText="Delete"
-          loading={deleteOrderMutation.isPending}
+          onSubmit={() => handleDelete(+deleteId)}
+          heading="Delete order"
+          loading={deleteMutation.isPending}
+          bodyText="Delete this order? This cannot be undone."
         />
       )}
-    </>
+    </div>
   );
 }

@@ -12,8 +12,8 @@ import { NavUser } from './nav-user';
 const LOGO = '/logo-full.svg';
 const ICON = '/logo.svg';
 
-// Collapses to an icon rail on desktop (Ctrl/Cmd+B) and becomes a sheet on phones. The search box
-// filters the menu as you type, which matters once the catalog sections get long.
+// Collapses to an icon rail on desktop (Ctrl/Cmd+B) and becomes a sheet on phones. The menu
+// search only renders in the phone sheet - on desktop the top bar's Ctrl+K palette covers it.
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { open, isMobile } = useSidebar();
   const [query, setQuery] = React.useState('');
@@ -31,7 +31,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           )}
         </Link>
 
-        {expanded && (
+        {isMobile && (
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <SidebarInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search menu" aria-label="Search menu" className="h-8 rounded-lg border-sidebar-border pl-8 pr-7 text-xs" />

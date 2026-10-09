@@ -63,6 +63,8 @@ const useUpdateOrder = () => {
     onSettled: (response) => {
       if (response && response.status === 200) {
         queryClient.invalidateQueries({ queryKey: ['OrderService.getAll'] });
+        // The order's own page reads getById, so an edit made there has to refresh it too.
+        queryClient.invalidateQueries({ queryKey: ['OrderService.getById'] });
       }
     },
     onError: (error) => error,

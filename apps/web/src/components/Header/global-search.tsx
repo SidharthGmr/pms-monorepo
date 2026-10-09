@@ -82,7 +82,7 @@ export function GlobalSearch() {
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="h-9 w-9 justify-start gap-2 rounded-lg px-0 text-muted-foreground md:w-56 md:px-3 lg:w-64"
+        className="hidden h-9 w-9 justify-start gap-2 rounded-lg px-0 text-muted-foreground sm:inline-flex md:w-56 md:px-3 lg:w-64"
         aria-label="Search pages and actions"
       >
         <Search className="h-4 w-4 shrink-0" />

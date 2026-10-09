@@ -25,9 +25,15 @@ const attributesOf = (variant: ProductVariantListItemDto): { key: string; value:
   return Object.entries(attributes).map(([key, value]) => ({ key, value: String(value) }));
 };
 
+interface VariantViewProps {
+  id: number;
+  /** When given, Edit opens the form on this page instead of navigating to it. */
+  onEdit?: () => void;
+}
+
 // Read-only view of one SKU, opened from the list in its own tab so the list is never lost.
-// Everything here comes from the detail endpoint; editing stays on its own page.
-export default function VariantView({ id }: { id: number }) {
+// Everything here comes from the detail endpoint.
+export default function VariantView({ id, onEdit }: VariantViewProps) {
   const { data, isPending, isError } = useGetProductVariantById(id);
   const variant = data?.data?.data as ProductVariantListItemDto | undefined;
 
@@ -98,12 +104,19 @@ export default function VariantView({ id }: { id: number }) {
                 Price history
               </Link>
             </Button>
-            <Button asChild type="button" size="sm" className="h-9 gap-1.5">
-              <Link href={`/admin/product-variants/${variant.id}`}>
+            {onEdit ? (
+              <Button type="button" size="sm" className="h-9 gap-1.5" onClick={onEdit}>
                 <Pencil className="h-3.5 w-3.5" />
                 Edit variant
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button asChild type="button" size="sm" className="h-9 gap-1.5">
+                <Link href={`/admin/product-variants/${variant.id}`}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit variant
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

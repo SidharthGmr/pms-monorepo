@@ -2,6 +2,7 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
+import { ListResponseDto } from "../dtos/list-response.dto";
 import ClientError from "../exceptions/client-error";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
@@ -17,7 +18,7 @@ import { OrderStatus } from "@prisma/client";
 export class OrderService implements IOrderService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
 
-  async getAll(filters?: OrderFilterParams): Promise<OrderDto[]> {
+  async getAll(filters?: OrderFilterParams): Promise<ListResponseDto<OrderDto>> {
     return this.unitOfWork.Order.findAll(filters);
   }
 

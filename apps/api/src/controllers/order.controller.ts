@@ -28,11 +28,19 @@ export class OrderController {
         storeCode: req.user?.storeCode || undefined,
         storeId: req.query['storeId'] ? parseInt(req.query['storeId'] as string, 10) : undefined,
         status: req.query['status'] as OrderStatus | undefined,
+        search: req.query['search'] as string | undefined,
+        startDate: req.query['startDate'] ? new Date(req.query['startDate'] as string) : undefined,
+        endDate: req.query['endDate'] ? new Date(req.query['endDate'] as string) : undefined,
+        page: req.query['page'] ? parseInt(req.query['page'] as string, 10) : undefined,
+        recordPerPage: req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string, 10) : undefined,
+        showAllRecords: req.query['showAllRecords'] === 'true' ? true : undefined,
+        sortBy: req.query['sortBy'] as string | undefined,
+        sortDirection: req.query['sortDirection'] ? ((req.query['sortDirection'] as string).toLowerCase() === 'asc' ? 'asc' : 'desc') : undefined,
       }).filter(([, v]) => v !== undefined)
     );
 
     const orders = await this.unitOfService.Order.getAll(filters);
-    return res.status(200).json({ success: true, message: "Orders fetched successfully", data: { totalRecord: orders.length, data: orders } });
+    return res.status(200).json({ success: true, message: "Orders fetched successfully", data: orders });
   };
 
   getByCustomerId = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<OrderDto>>>> => {

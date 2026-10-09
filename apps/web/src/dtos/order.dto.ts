@@ -26,8 +26,12 @@ export interface OrderDto {
     email?: string;
     phone?: string | null;
   };
+  /** The API joins the whole store row, so the bill can print real contact details. */
   store?: {
     name: string;
     code: string;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
   };
 }

@@ -1,9 +1,12 @@
 'use client';
 import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import ConfirmBox from '@/components/common/confirm-box';
 import { SelectSearch } from '@/components/common/select-search';
+import StatusCards from '@/components/common/status-cards';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
@@ -14,49 +17,43 @@ import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduct } from '@/hooks/service-hooks/useProductService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
-import { CreateProductModel } from '@/models/product.model';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
+import { CreateProductModel } from '@/models/product.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFields } from '@pms/types';
-import { ArrowLeft, Boxes, Check, Eye, EyeOff, FolderTree, History, ImageIcon, Layers, Link2, Package, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ChevronDown, History, Layers, Link2, Package, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 interface ManageProductProps {
   id: number;
+  /** Set when the form is shown inside the product page, so Cancel returns to the details instead of the list. */
+  onCancel?: () => void;
+  /** Set when the form is shown inside the product page, so a save returns to the details instead of the list. */
+  onSaved?: () => void;
+  /** What the inline back link says, since the form is hosted by both the product page and the list. */
+  backLabel?: string;
 }
-
-const SURFACE = 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm';
 
 // `productFields` carries price/cost/stock; the API turns them into the product's
 // initial ProductVariant and opening stock movement.
 const productFormSchema = productFields;
 
-const STATUS_OPTIONS = [
-  {
-    value: StatusValues.Published,
-    label: 'Published',
-    hint: 'Listed in the store once it has an active variant.',
-    icon: Eye,
-    active: 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20',
-    iconActive: 'bg-emerald-500 text-white',
-    iconIdle: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-    check: 'bg-emerald-500',
-  },
-  {
-    value: StatusValues.Draft,
-    label: 'Draft',
-    hint: 'Hidden from the store until you publish it.',
-    icon: EyeOff,
-    active: 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20',
-    iconActive: 'bg-amber-500 text-white',
-    iconIdle: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    check: 'bg-amber-500',
-  },
-];
+const DEFAULT_VALUES: CreateProductModel = {
+  parentId: undefined,
+  categoryId: 0,
+  brandNameId: undefined,
+  attributeId: undefined,
+  name: '',
+  slug: '',
+  description: '',
+  displayOrder: undefined,
+  images: [],
+  status: StatusValues.Published,
+};
 
 const generateSlug = (name: string) =>
   name
@@ -66,10 +63,11 @@ const generateSlug = (name: string) =>
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
 
-export default function ManageProduct({ id }: ManageProductProps) {
+export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back to details' }: ManageProductProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const router = useRouter();
   const isEdit = !!id && id > 0;
+  const isInline = !!onCancel;
 
   // `showAllRecords` matters: without it these lists stop at the API's default ten records,
   // and a category created eleventh simply cannot be picked.
@@ -80,24 +78,16 @@ export default function ManageProduct({ id }: ManageProductProps) {
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
-  const { data: productResponse, isLoading: isFetching } = useGetProductById(id ?? 0, isEdit);
+  const { data: productResponse, isLoading: isFetching, isError: fetchFailed } = useGetProductById(id ?? 0, isEdit);
 
   // The slug follows the name until the user edits it by hand; the refresh button re-links them.
   const [slugTouched, setSlugTouched] = useState(false);
+  const [optionalOpen, setOptionalOpen] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const form = useForm<CreateProductModel>({
     resolver: zodResolver(productFormSchema),
-    defaultValues: {
-      parentId: undefined,
-      categoryId: 0,
-      brandNameId: undefined,
-      attributeId: undefined,
-      name: '',
-      slug: '',
-      description: '',
-      displayOrder: 0,
-      status: StatusValues.Published,
-    },
+    defaultValues: DEFAULT_VALUES,
   });
 
   const {
@@ -141,77 +131,183 @@ export default function ManageProduct({ id }: ManageProductProps) {
       reset(model);
       if (isEdit) {
         toast({ variant: 'success', title: 'Product updated successfully' });
-        router.push('/admin/products');
+        if (onSaved) onSaved();
+        else router.push('/admin/products');
         return;
       }
 
-      // A product with no variant cannot be sold, so creating one hands straight over to
-      // the variant screen rather than dropping the user back on the list to find it.
       const newId = Number((response.data as { data?: { id?: number } })?.data?.id);
       toast({
         variant: 'success',
         title: 'Product created',
         description: <span>Now add its first variant so it can be sold.</span>,
       });
-      router.push(newId > 0 ? `/admin/products/variants/${newId}?new=1` : '/admin/products');
+      router.push(newId > 0 ? `/admin/products/${newId}/variants?new=1` : '/admin/products');
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
     }
   };
 
+  // Several fields live behind the disclosure; if one of them blocks the save, it must unfold
+  // so the message is visible instead of the form refusing silently.
+  const onSubmit = handleSubmit(submitData, (errors) => {
+    if (errors.description || errors.images || errors.brandNameId || errors.attributeId || errors.parentId || errors.displayOrder)
+      setOptionalOpen(true);
+  });
+
   const isSaving = createProduct.isPending || updateProduct.isPending;
-  const isLoading = isSaving || isFetching;
   useUnsavedChangesWarning(isDirty && !isSaving);
 
-  const categoryItems = useMemo(() => getAllCategories?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [], [getAllCategories.data]);
-  const brandItems = useMemo(() => getAllBrandNames?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [], [getAllBrandNames.data]);
-  const attributeItems = useMemo(() => (getAllAttributes?.data?.data?.data?.data ?? []).map((item) => ({ value: item.id, label: item.name })), [getAllAttributes.data]);
+  const leave = () => {
+    if (onCancel) onCancel();
+    else router.push('/admin/products');
+  };
+
+  const handleCancel = () => {
+    if (isDirty && !isSaving) {
+      setShowLeaveConfirm(true);
+      return;
+    }
+    leave();
+  };
+
+  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
+  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      onSubmit();
+    }
+  };
+
+  const categoryItems = useMemo(
+    () => getAllCategories?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [],
+    [getAllCategories.data]
+  );
+  const brandItems = useMemo(
+    () => getAllBrandNames?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [],
+    [getAllBrandNames.data]
+  );
+  const attributeItems = useMemo(
+    () => (getAllAttributes?.data?.data?.data?.data ?? []).map((item) => ({ value: item.id, label: item.name })),
+    [getAllAttributes.data]
+  );
   // A product cannot be its own parent.
   const parentItems = useMemo(
     () => (getAllProducts?.data?.data?.data?.data ?? []).filter((item) => item.id !== id).map((item) => ({ value: item.id, label: item.name })),
     [getAllProducts.data, id]
   );
 
-  const name = form.watch('name') ?? '';
   const images = form.watch('images') ?? [];
+  const description = form.watch('description') ?? '';
+  const brandNameId = form.watch('brandNameId');
+  const displayOrder = form.watch('displayOrder');
 
   // Number input change → number | undefined (empty string clears the field).
   const numberChange = (raw: string) => (raw === '' ? undefined : +raw);
 
   const productName = isEdit ? productResponse?.data?.data?.name : undefined;
+  const thumbnail = productResponse?.data?.data?.images?.[0];
+  const showSkeleton = isEdit && isFetching;
+
+  // Keeps the stored values visible while the section is closed.
+  const optionalSummary = [
+    images.length > 0 ? `${images.length} ${images.length === 1 ? 'image' : 'images'}` : null,
+    brandNameId ? (brandItems.find((item) => item.value === brandNameId)?.label ?? 'brand set') : null,
+    description.trim() ? 'description' : null,
+    displayOrder != null && String(displayOrder) !== '' ? `order ${displayOrder}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <Form {...form}>
-      <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4 sm:space-y-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          {isInline ? (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              {backLabel}
+            </button>
+          ) : (
             <Link href="/admin/products" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-3.5 w-3.5" />
               Products
             </Link>
-            <div className="mt-1 flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          )}
+          <div className="mt-1 flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
+              {thumbnail ? (
+                // Product images come from arbitrary CDNs; next/image would need each host in
+                // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={thumbnail} alt="" className="h-full w-full object-cover" />
+              ) : (
                 <Package className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
+              )}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
                 <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{isEdit ? productName || 'Edit product' : 'New product'}</h1>
-                <p className="text-sm text-muted-foreground">{isEdit ? 'Update the details customers see. Price and stock live on the variants.' : 'Describe the product first; price, stock and options come next.'}</p>
+                {isEdit && (
+                  <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                    Editing
+                  </span>
+                )}
               </div>
+              <p className="text-sm text-muted-foreground">
+                <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+                <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+              </p>
             </div>
           </div>
-          {!isEdit && <Steps />}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 sm:gap-5">
-          <div className="min-w-0 space-y-4 lg:col-span-2 sm:space-y-5">
-            <Section icon={Package} title="Basics" hint="The name and web address of the product.">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {isEdit && !isInline && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
+              <Link href={`/admin/products/${id}/variants`}>
+                <Layers className="h-4 w-4" />
+                Variants &amp; stock
+              </Link>
+            </Button>
+            <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
+              <Link href={`/admin/product-variants/price-histories?productId=${id}`}>
+                <History className="h-4 w-4" />
+                Price history
+              </Link>
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm">
+        {showSkeleton ? (
+          <div className="space-y-4 px-5 py-5" aria-busy="true" aria-label="Loading product">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : fetchFailed ? (
+          <div className="px-6 py-10 text-center">
+            <p className="text-sm font-semibold text-destructive">Could not load this product</p>
+            <p className="mt-1 text-xs text-muted-foreground">It may have been deleted. Go back and refresh the list.</p>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form autoComplete="off" onSubmit={onSubmit} onKeyDown={onFormKeyDown} className="flex flex-col">
+              <div className="space-y-5 px-5 py-5">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem>
                       <FormLabel>Product name *</FormLabel>
                       <FormControl>
                         <Input
@@ -234,8 +330,11 @@ export default function ManageProduct({ id }: ManageProductProps) {
                   control={form.control}
                   name="slug"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Slug *</FormLabel>
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Slug *</FormLabel>
+                        <span className="truncate font-mono text-[11px] text-muted-foreground">/products/{field.value || 'slug'}</span>
+                      </div>
                       <FormControl>
                         <div className="relative">
                           <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
@@ -262,32 +361,11 @@ export default function ManageProduct({ id }: ManageProductProps) {
                           </button>
                         </div>
                       </FormControl>
-                      <FormDescription className="text-xs">
-                        Used in the storefront address: /products/<span className="font-mono">{field.value || 'slug'}</span>
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea rows={5} placeholder="What it is, what it is made of, who it is for…" className="resize-y" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </Section>
-
-            <Section icon={FolderTree} title="Organisation" hint="Where the product sits in the catalog.">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="categoryId"
@@ -295,211 +373,210 @@ export default function ManageProduct({ id }: ManageProductProps) {
                     <FormItem>
                       <FormLabel>Category *</FormLabel>
                       <FormControl>
-                        <SelectSearch buttonClass="h-10 w-full" placeholder="Select category" items={categoryItems} value={field.value ?? ''} onChange={(value) => field.onChange(value ? Number(value) : undefined)} />
+                        <SelectSearch
+                          buttonClass="h-10 w-full"
+                          placeholder="Select category"
+                          items={categoryItems}
+                          value={field.value ?? ''}
+                          onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="brandNameId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Brand</FormLabel>
-                      <FormControl>
-                        <SelectSearch buttonClass="h-10 w-full" placeholder="Select brand (optional)" items={brandItems} value={field.value ?? ''} onChange={(value) => field.onChange(value ? Number(value) : undefined)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="attributeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Attribute</FormLabel>
-                      <FormControl>
-                        <SelectSearch buttonClass="h-10 w-full" placeholder="Select attribute (optional)" items={attributeItems} value={field.value ?? ''} onChange={(value) => field.onChange(value ? Number(value) : undefined)} />
-                      </FormControl>
-                      <FormDescription className="text-xs">A descriptive property such as Material or Fit.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="parentId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Parent product</FormLabel>
-                      <FormControl>
-                        <SelectSearch buttonClass="h-10 w-full" placeholder="None" items={parentItems} value={field.value ?? ''} onChange={(value) => field.onChange(value ? Number(value) : undefined)} />
-                      </FormControl>
-                      <FormDescription className="text-xs">Only for products that belong under another one.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </Section>
 
-            {isEdit && (
-              <Section icon={Boxes} title="Pricing & inventory" hint="Price and stock are held per variant, so they are managed on the variant screens.">
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-                    <Link href={`/admin/products/variants/${id}`}>
-                      <Layers className="h-4 w-4" />
-                      Variants &amp; stock
-                    </Link>
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status *</FormLabel>
+                      <FormControl>
+                        <StatusCards value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <section className="overflow-hidden rounded-xl border">
+                  <button
+                    type="button"
+                    onClick={() => setOptionalOpen((open) => !open)}
+                    aria-expanded={optionalOpen}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                  >
+                    <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Images, brand &amp; more</span>
+                    {!optionalOpen && optionalSummary && (
+                      <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>
+                    )}
+                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Optional
+                    </span>
+                    <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', optionalOpen && 'rotate-180')} />
+                  </button>
+
+                  {optionalOpen && (
+                    <div className="space-y-5 border-t px-4 py-4">
+                      <FormField
+                        control={form.control}
+                        name="images"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Images</FormLabel>
+                            <FormControl>
+                              <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                rows={4}
+                                placeholder="What it is, what it is made of, who it is for…"
+                                className="resize-y"
+                                {...field}
+                                value={field.value ?? ''}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="brandNameId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Brand</FormLabel>
+                              <FormControl>
+                                <SelectSearch
+                                  buttonClass="h-10 w-full"
+                                  placeholder="Select brand"
+                                  items={brandItems}
+                                  value={field.value ?? ''}
+                                  onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="attributeId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Attribute</FormLabel>
+                              <FormControl>
+                                <SelectSearch
+                                  buttonClass="h-10 w-full"
+                                  placeholder="Select attribute"
+                                  items={attributeItems}
+                                  value={field.value ?? ''}
+                                  onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="parentId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Parent product</FormLabel>
+                              <FormControl>
+                                <SelectSearch
+                                  buttonClass="h-10 w-full"
+                                  placeholder="None"
+                                  items={parentItems}
+                                  value={field.value ?? ''}
+                                  onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="displayOrder"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Display order</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  className="h-10"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={(e) => field.onChange(numberChange(e.target.value))}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t bg-muted/30 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p
+                  className={cn(
+                    'hidden items-center gap-1.5 text-xs sm:flex',
+                    isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'
+                  )}
+                >
+                  {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
+                  {isDirty ? 'Unsaved changes' : 'No changes yet'}
+                </p>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                  <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
+                    Cancel
                   </Button>
-                  <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-                    <Link href={`/admin/product-variants/price-histories?productId=${id}`}>
-                      <History className="h-4 w-4" />
-                      Price history
-                    </Link>
+                  <Button type="submit" className="gap-1.5" loading={isSaving}>
+                    {isEdit ? 'Save changes' : 'Create & add variants'}
+                    {!isEdit && !isSaving && <Layers className="h-4 w-4" />}
                   </Button>
                 </div>
-              </Section>
-            )}
-          </div>
-
-          <aside className="min-w-0 space-y-4 sm:space-y-5">
-            <Section icon={ImageIcon} title="Media" hint="The first image is the thumbnail.">
-              <FormField
-                control={form.control}
-                name="images"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <ProductImageUploader value={field.value || []} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {images.length > 0 && (
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  {images.length} {images.length === 1 ? 'image' : 'images'} · drag to reorder, the first one leads.
-                </p>
-              )}
-            </Section>
-
-            <Section icon={Eye} title="Visibility" hint="Whether and where it shows.">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status *</FormLabel>
-                    <FormControl>
-                      <div className="grid gap-2" role="radiogroup" aria-label="Status">
-                        {STATUS_OPTIONS.map(({ icon: Icon, ...option }) => {
-                          const active = field.value === option.value;
-                          return (
-                            <button
-                              key={option.value}
-                              type="button"
-                              role="radio"
-                              aria-checked={active}
-                              onClick={() => field.onChange(option.value)}
-                              className={cn(
-                                'relative flex items-center gap-3 rounded-lg border bg-background px-3 py-2.5 text-left transition-all',
-                                'hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                                active ? option.active : 'border-input hover:border-muted-foreground/40'
-                              )}
-                            >
-                              <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', active ? option.iconActive : option.iconIdle)}>
-                                <Icon className="h-4 w-4" />
-                              </span>
-                              <span className="min-w-0 flex-1 pr-5">
-                                <span className="block text-sm font-semibold leading-tight">{option.label}</span>
-                                <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{option.hint}</span>
-                              </span>
-                              <span aria-hidden className={cn('absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full text-white transition-all', active ? cn(option.check, 'scale-100 opacity-100') : 'scale-50 opacity-0')}>
-                                <Check className="h-3 w-3" strokeWidth={3} />
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="displayOrder"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>Display order</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" className="h-10 sm:max-w-[160px]" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(numberChange(e.target.value))} />
-                    </FormControl>
-                    <FormDescription className="text-xs">Lower numbers appear first in the store.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </Section>
-          </aside>
-        </div>
-
-        <div className="sticky bottom-0 z-30 -mx-3 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-4 lg:-mx-6">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-            <p className={cn('hidden items-center gap-1.5 text-xs sm:flex', isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
-              {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
-              {isDirty ? 'Unsaved changes' : name ? `Editing “${name}”` : 'Fill in the details to continue'}
-            </p>
-            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-              <Button type="button" variant="outline" className="h-9" onClick={() => router.push('/admin/products')} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type="submit" className="h-9 gap-1.5" loading={isLoading}>
-                {isEdit ? 'Save changes' : 'Create & add variants'}
-                {!isEdit && !isLoading && <Layers className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </form>
-    </Form>
-  );
-}
-
-// Creating a product is a two-step job: it is not sellable until it has a variant.
-function Steps() {
-  return (
-    <ol className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-      <li className="flex items-center gap-2 text-foreground">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">1</span>
-        Product details
-      </li>
-      <span className="h-px w-6 bg-border" aria-hidden />
-      <li className="flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full border bg-background text-[11px] font-bold">2</span>
-        Variants &amp; pricing
-      </li>
-    </ol>
-  );
-}
-
-function Section({ icon: Icon, title, hint, children }: { icon: React.ElementType; title: string; hint?: string; children: ReactNode }) {
-  return (
-    <section className={SURFACE}>
-      <div className="flex items-center gap-2.5 border-b border-border/70 px-4 py-3 sm:px-5">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold leading-tight">{title}</h2>
-          {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
-        </div>
+              </div>
+            </form>
+          </Form>
+        )}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
-    </section>
+
+      <ConfirmBox
+        isOpen={showLeaveConfirm}
+        onClose={() => setShowLeaveConfirm(false)}
+        onSubmit={() => {
+          setShowLeaveConfirm(false);
+          leave();
+        }}
+        heading="Discard changes?"
+        bodyText="This product has unsaved changes. Leaving now will lose them."
+        noButtonText="Keep editing"
+        yesButtonText="Discard"
+      />
+    </div>
   );
 }

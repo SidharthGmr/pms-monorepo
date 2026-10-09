@@ -20,7 +20,7 @@ const asDate = (value: Date | string | null | undefined) => (value ? new Date(va
 
 export const imageFor = (variant: ProductVariantListItemDto): string | undefined => variant.images?.[0] ?? variant.product?.images?.[0];
 
-export const viewHrefFor = (variant: ProductVariantListItemDto) => `/admin/product-variants/view/${variant.id}`;
+export const viewHrefFor = (variant: ProductVariantListItemDto) => `/admin/products/variants/${variant.id}`;
 
 export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListItemDto) => void) => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -85,7 +85,9 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
                 <span className="text-sm font-semibold tabular-nums">{money(live ? Number(offerPrice) : Number(sellingPrice))}</span>
                 {live && <span className="text-xs tabular-nums text-muted-foreground line-through">{money(Number(sellingPrice))}</span>}
                 {live && savings > 0 && (
-                  <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{savings}% off</span>
+                  <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                    {savings}% off
+                  </span>
                 )}
               </div>
               {!isOffer && offerPrice != null && <span className="text-[11px] text-muted-foreground">Offer {money(Number(offerPrice))} staged</span>}
@@ -99,7 +101,9 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         enableSorting: false,
         header: () => <span className={HEADER}>Cost</span>,
         cell: ({ row }) => (
-          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">{row.original.costPrice != null ? money(Number(row.original.costPrice)) : '—'}</span>
+          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+            {row.original.costPrice != null ? money(Number(row.original.costPrice)) : '—'}
+          </span>
         ),
         meta: { thClassName: 'hidden md:table-cell', tdClassName: 'hidden md:table-cell' },
       },
@@ -109,14 +113,19 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         header: () => <span className={HEADER}>Margin</span>,
         cell: ({ row }) => {
           const { sellingPrice, costPrice } = row.original;
-          if (sellingPrice == null || costPrice == null || Number(sellingPrice) === 0) return <span className="text-xs text-muted-foreground/60">—</span>;
+          if (sellingPrice == null || costPrice == null || Number(sellingPrice) === 0)
+            return <span className="text-xs text-muted-foreground/60">—</span>;
 
           const margin = ((Number(sellingPrice) - Number(costPrice)) / Number(sellingPrice)) * 100;
           return (
             <span
               className={cn(
                 'text-sm font-semibold tabular-nums',
-                margin < 0 ? 'text-rose-600 dark:text-rose-400' : margin < 15 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                margin < 0
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : margin < 15
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
               )}
             >
               {margin.toFixed(1)}%
@@ -137,7 +146,13 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
 
           return (
             <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className={cn('text-sm tabular-nums', low && 'font-semibold text-amber-600 dark:text-amber-400', stock === 0 && 'text-rose-600 dark:text-rose-400')}>
+              <span
+                className={cn(
+                  'text-sm tabular-nums',
+                  low && 'font-semibold text-amber-600 dark:text-amber-400',
+                  stock === 0 && 'text-rose-600 dark:text-rose-400'
+                )}
+              >
                 {stock}
               </span>
               {low && (
@@ -186,7 +201,12 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         enableSorting: false,
         header: () => <span className={HEADER}>Status</span>,
         cell: ({ row }) => (
-          <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', row.original.isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground')}>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 text-xs font-medium',
+              row.original.isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'
+            )}
+          >
             <span className={cn('h-1.5 w-1.5 rounded-full', row.original.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50')} />
             {row.original.isActive ? 'Active' : 'Retired'}
           </span>

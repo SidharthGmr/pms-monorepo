@@ -80,7 +80,7 @@ export default function ProductVariantList({ onCountChange }: ProductVariantList
     onCountChange?.(total);
   }, [total, onCountChange]);
 
-  const openEditor = (variant: ProductVariantListItemDto) => router.push(`/admin/product-variants/${variant.id}`);
+  const openEditor = (variant: ProductVariantListItemDto) => router.push(`/admin/products/variants/${variant.id}?edit=1`);
   const openPriceHistory = (variant: ProductVariantListItemDto) => router.push(`/admin/product-variants/price-histories?productId=${variant.product?.id}&variantId=${variant.id}`);
 
   // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.

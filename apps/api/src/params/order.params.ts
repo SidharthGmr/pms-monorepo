@@ -6,4 +6,7 @@ export interface OrderFilterParams extends PageFilterParams {
   storeCode?: string;
   storeId?: number;
   status?: OrderStatus;
+  /** Only real columns are honoured; anything else falls back to createdAt. */
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }

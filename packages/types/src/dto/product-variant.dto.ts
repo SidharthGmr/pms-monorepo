@@ -1,6 +1,6 @@
-
 export type JsonObject = { [key: string]: JsonValue | undefined };
-export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+export type JsonValue =
+  string | number | boolean | null | JsonObject | JsonValue[];
 
 export interface ProductVariantResponseDto {
   id: number;
@@ -9,8 +9,8 @@ export interface ProductVariantResponseDto {
   barcode: string | null;
   attributes: JsonValue;
   images: string[];
-  rating: number | null,
-  ratingCount: number | null,
+  rating: number | null;
+  ratingCount: number | null;
   stockQuantity: number;
   sellingPrice: number | null;
   offerPrice: number | null;
@@ -33,9 +33,7 @@ export interface ProductVariantListItemDto extends ProductVariantResponseDto {
     name: string;
     slug: string;
     categoryId: number;
-    /** Fallback when the variant has no photo of its own. */
     images: string[];
-    /** Storefront cards label the card with this. */
     category?: { name: string; images: string[] } | null;
   };
 }
