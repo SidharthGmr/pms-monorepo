@@ -3,7 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Heart, LayoutGrid, Menu, Search, ShoppingBag, Store } from 'lucide-react';
+import { Heart, LayoutGrid, Menu, Search, ShoppingBag } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
@@ -24,11 +25,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Store className="h-5 w-5" />
-          </span>
-          <span className="text-xl font-bold tracking-tight">{BRAND.name}</span>
+        {/* The header sits on `background`, which inverts with the theme, so the dark cut of the
+            logo is swapped in there - the navy wordmark would be unreadable otherwise. The mark
+            alone carries the brand on phones, where the lockup would eat the search bar. */}
+        <Link href="/" className="flex shrink-0 items-center" title={BRAND.name}>
+          <Image src="/logo-full.png" alt={BRAND.name} width={960} height={223} priority className="hidden h-9 w-auto object-contain sm:block dark:sm:hidden" />
+          <Image src="/logo-full-light.png" alt={BRAND.name} width={960} height={223} priority className="hidden h-9 w-auto object-contain dark:sm:block" />
+          <Image src="/logo.png" alt={BRAND.name} width={512} height={512} priority className="h-9 w-9 object-contain sm:hidden dark:hidden" />
+          <Image src="/logo-light.png" alt={BRAND.name} width={512} height={512} priority className="hidden h-9 w-9 object-contain dark:block dark:sm:hidden" />
         </Link>
 
         <form onSubmit={submitSearch} className="relative mx-auto hidden w-full max-w-xl md:block" role="search">

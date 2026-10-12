@@ -45,8 +45,8 @@
     --storefront-hero-foreground: 0 0% 100%;
     --storefront-hero-cta: 0 0% 100%;
     --storefront-hero-cta-foreground: var(--primary);
-    --storefront-accent: var(--primary);
-    --storefront-accent-foreground: var(--primary-foreground);
+    --storefront-accent: var(--secondary);
+    --storefront-accent-foreground: var(--secondary-foreground);
     --storefront-surface: 222.2 47.4% 11.2%;
     --storefront-surface-heading: 0 0% 100%;
     --storefront-surface-foreground: 212.7 26.8% 83.9%;
@@ -102,8 +102,8 @@
     --storefront-hero-foreground: 0 0% 100%;
     --storefront-hero-cta: 0 0% 100%;
     --storefront-hero-cta-foreground: var(--primary);
-    --storefront-accent: var(--primary);
-    --storefront-accent-foreground: var(--primary-foreground);
+    --storefront-accent: var(--secondary);
+    --storefront-accent-foreground: var(--secondary-foreground);
     --storefront-surface: 24 9.8% 10%;
     --storefront-surface-heading: 0 0% 98%;
     --storefront-surface-foreground: 0 0% 85%;
@@ -156,8 +156,8 @@
     --storefront-hero-foreground: 0 0% 100%;
     --storefront-hero-cta: 0 0% 100%;
     --storefront-hero-cta-foreground: var(--primary);
-    --storefront-accent: var(--primary);
-    --storefront-accent-foreground: var(--primary-foreground);
+    --storefront-accent: var(--secondary);
+    --storefront-accent-foreground: var(--secondary-foreground);
     --storefront-surface: 222.2 47.4% 11.2%;
     --storefront-surface-heading: 0 0% 100%;
     --storefront-surface-foreground: 212.7 26.8% 83.9%;
@@ -210,8 +210,8 @@
     --storefront-hero-foreground: 0 0% 100%;
     --storefront-hero-cta: 0 0% 100%;
     --storefront-hero-cta-foreground: var(--primary);
-    --storefront-accent: var(--primary);
-    --storefront-accent-foreground: var(--primary-foreground);
+    --storefront-accent: var(--secondary);
+    --storefront-accent-foreground: var(--secondary-foreground);
     --storefront-surface: 222.2 47.4% 11.2%;
     --storefront-surface-heading: 0 0% 100%;
     --storefront-surface-foreground: 212.7 26.8% 83.9%;
@@ -325,13 +325,17 @@
     background: rgba(148, 163, 184, 0.95);
   }
 
+  /* Headings inherit their colour: `body` already sets `text-foreground`, so light pages are
+     unchanged, while a heading inside a dark section takes that section's colour instead of
+     being forced back to near-black. */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    @apply text-foreground font-normal;
+    @apply font-normal;
+    color: inherit;
   }
 
   h1 {
@@ -339,11 +343,11 @@
   }
 
   h2 {
-    @apply text-sm lg:text-lg text-primary;
+    @apply text-sm lg:text-lg;
   }
 
   h3 {
-    @apply text-sm lg:text-lg text-primary;
+    @apply text-sm lg:text-lg;
   }
 
   h4 {
@@ -396,6 +400,16 @@
     @apply border-border;
 
 
+  }
+
+  /* Drives the step timer on the storefront showcase. */
+  @keyframes showcase-progress {
+    from {
+      width: 0%;
+    }
+    to {
+      width: 100%;
+    }
   }
 
   body {

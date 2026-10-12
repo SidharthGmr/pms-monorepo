@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
-import { ArrowRight, BadgeCheck, PackageOpen, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowRight, PackageOpen, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { HERO } from '../theme.config';
@@ -20,7 +20,6 @@ export default function Hero() {
   const { data, isLoading } = useGetAllPublicProductVariants({ page: 1, recordPerPage: COLLAGE_SIZE, sortBy: 'createdAt', sortDirection: 'DESC' });
 
   const variants = useMemo(() => data?.data?.data?.data ?? [], [data]);
-  const total = data?.data?.data?.totalRecord ?? 0;
 
   return (
     <section className="relative isolate overflow-hidden bg-gradient-to-br from-storefront-hero-from to-storefront-hero-to text-storefront-hero-foreground">
@@ -38,7 +37,7 @@ export default function Hero() {
             {HERO.badge}
           </span>
 
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-storefront-hero-foreground sm:text-4xl lg:text-5xl">
             {HERO.headline.map((line) => (
               <span key={line} className="block">
                 {line}
@@ -61,21 +60,6 @@ export default function Hero() {
               </Button>
             </a>
           </div>
-
-          <dl className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-white/20 pt-5 text-sm">
-            <div>
-              <dt className="text-[11px] uppercase tracking-wider text-storefront-hero-foreground/70">Products live</dt>
-              <dd className="text-xl font-extrabold tabular-nums">{isLoading ? '—' : total}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] uppercase tracking-wider text-storefront-hero-foreground/70">Stock counts</dt>
-              <dd className="text-xl font-extrabold">Real-time</dd>
-            </div>
-            <div className="flex items-center gap-1.5 font-semibold">
-              <BadgeCheck className="h-4 w-4" />
-              100% genuine
-            </div>
-          </dl>
         </div>
 
         <div className="hidden items-center justify-center gap-4 sm:flex lg:justify-end">

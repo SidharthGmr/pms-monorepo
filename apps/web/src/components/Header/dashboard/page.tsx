@@ -22,6 +22,7 @@ import { QuickCreate } from '../quick-create';
 import { ModeToggle } from './sidebar/thememode';
 
 const ICON = '/logo.png';
+const ICON_LIGHT = '/logo-light.png';
 
 export default function HeaderDashboard() {
   const { currentUser } = useGetCurrentUser();
@@ -49,7 +50,8 @@ export default function HeaderDashboard() {
       <SidebarTrigger className="-ml-1 hidden h-8 w-8 rounded-lg lg:flex" />
 
       <Link href="/" className="flex items-center lg:hidden" title={config.appName}>
-        <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain" />
+        <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain dark:hidden" />
+        <Image src={ICON_LIGHT} width={28} height={28} alt={config.appName} className="hidden h-7 w-7 object-contain dark:block" />
       </Link>
 
       <Separator orientation="vertical" className="hidden h-5 md:block" />

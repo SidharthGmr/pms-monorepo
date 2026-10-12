@@ -1,4 +1,6 @@
-import { Headphones, Mail, MapPin, Phone, Store } from 'lucide-react';
+import { Headphones, Mail, MapPin, Phone } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { BRAND, FOOTER_COLUMNS } from '../theme.config';
 
 export default function Footer() {
@@ -7,12 +9,11 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
           <div className="col-span-2 space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <Store className="h-5 w-5" />
-              </span>
-              <span className="text-lg font-bold text-storefront-surface-heading">{BRAND.name}</span>
-            </div>
+            {/* The light cut of the logo: the standard one is navy and teal, and the navy half
+                would disappear into this surface. */}
+            <Link href="/" className="inline-block" title={BRAND.name}>
+              <Image src="/logo-full-light.png" alt={BRAND.name} width={960} height={223} className="h-9 w-auto object-contain" />
+            </Link>
             <p className="max-w-xs text-sm leading-relaxed text-storefront-surface-muted">{BRAND.tagline}</p>
             <address className="space-y-2 text-sm not-italic text-storefront-surface-muted">
               <p className="flex items-center gap-2">

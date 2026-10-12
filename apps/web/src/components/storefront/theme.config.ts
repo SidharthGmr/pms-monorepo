@@ -67,29 +67,34 @@ export const PROMO_TILES = [
   },
 ] as const;
 
+/** Placeholder copy until reviews are wired to the API - `rating` is out of 5. */
 export const TESTIMONIALS = [
   {
     quote: 'Reliable product, consistently delivers. Ordering was simple and it arrived ahead of the estimate.',
     name: 'Stefanie Rashford',
     role: 'Founder',
+    rating: 5,
   },
   {
     quote: 'Excellent product, A+ customer service. The team answered every question before I bought.',
     name: 'Augusta Wind',
     role: 'Web Designer',
+    rating: 5,
   },
   {
     quote: 'Impressive quality, durable and reliable. Exactly what was described on the listing.',
     name: 'Reema Ghurde',
     role: 'Manager',
+    rating: 4,
   },
 ] as const;
 
 export const WIDE_PROMO = {
-  eyebrow: 'Discount up to 40% off',
+  eyebrow: 'Live stock, live prices',
   title: 'Flagship picks, everyday prices',
-  body: 'Live stock, transparent pricing and a full history behind every change.',
-  cta: { label: 'Shop the deals', href: '/products' },
+  body: 'What the page shows is what is on the shelf. Prices are the ones being charged right now, and every change before them is still on record.',
+  points: ['Real stock counts', 'Dated price history', '100% genuine products'],
+  cta: { label: 'Shop the catalogue', href: '/products' },
 } as const;
 
 export const BLOG_POSTS = [
@@ -113,9 +118,12 @@ export const BLOG_POSTS = [
 export const BRANDS = ['EVM', 'HUAWEI', 'CONNECT', 'HACKETT', 'RIYAN', 'VERCELLI'] as const;
 
 export const NEWSLETTER = {
-  headline: 'Join our newsletter for ₹100 off',
-  placeholder: 'Email address',
+  eyebrow: 'Stay in stock',
+  headline: 'New arrivals, straight to your inbox',
+  body: 'One email when fresh stock lands or a price drops. Nothing else.',
+  placeholder: 'you@example.com',
   cta: 'Subscribe',
+  note: 'No spam. Unsubscribe whenever you like.',
 } as const;
 
 export const FOOTER_COLUMNS = [
