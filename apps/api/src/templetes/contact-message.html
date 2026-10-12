@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New contact message</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+          <tr>
+            <td style="background-color:#0f172a;padding:20px 28px;">
+              <p style="margin:0;color:#ffffff;font-size:18px;font-weight:bold;">{{appName}}</p>
+              <p style="margin:4px 0 0;color:#94a3b8;font-size:13px;">New message from the contact form</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <p style="margin:0 0 4px;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Subject</p>
+              <p style="margin:0 0 20px;color:#0f172a;font-size:17px;font-weight:bold;">{{subject}}</p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                <tr>
+                  <td style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;font-size:12px;">From</span><br/>
+                    <span style="color:#0f172a;font-size:14px;font-weight:bold;">{{name}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;font-size:12px;">Email</span><br/>
+                    <span style="color:#0f172a;font-size:14px;">{{email}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;font-size:12px;">Phone</span><br/>
+                    <span style="color:#0f172a;font-size:14px;">{{phone}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px;">
+                    <span style="color:#64748b;font-size:12px;">Received</span><br/>
+                    <span style="color:#0f172a;font-size:14px;">{{receivedAt}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:24px 0 6px;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Message</p>
+              <p style="margin:0;color:#334155;font-size:14px;line-height:1.7;">{{messageBody}}</p>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+                <tr>
+                  <td style="border-radius:8px;background-color:#08ae93;">
+                    <a href="{{replyTo}}" style="display:inline-block;padding:11px 22px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">Reply to {{name}}</a>
+                  </td>
+                  <td style="padding-left:12px;">
+                    <a href="{{adminUrl}}" style="display:inline-block;padding:11px 10px;color:#0f172a;font-size:14px;text-decoration:underline;">Open in admin</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">You are receiving this because a visitor used the contact form on {{appName}}.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

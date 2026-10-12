@@ -27,6 +27,8 @@ import { IWishlistService } from "./interfaces/Iwishlist.service";
 import { IMasterAttributeService } from "./interfaces/Imaster-attribute.service";
 import { IMasterEntryService } from "./interfaces/Imaster-entry.service";
 import { IPriceHistoryService } from "./interfaces/Iprice-history.service";
+import { IContactMessageService } from "./interfaces/Icontact-message.service";
+import { ISubscriberService } from "./interfaces/Isubscriber.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -55,6 +57,8 @@ export default class UnitOfService implements IUnitOfService {
   public MasterAttribute: IMasterAttributeService;
   public MasterEntry: IMasterEntryService;
   public PriceHistory: IPriceHistoryService;
+  public ContactMessage: IContactMessageService;
+  public Subscriber: ISubscriberService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -83,6 +87,8 @@ export default class UnitOfService implements IUnitOfService {
     masterAttribute = container.get<IMasterAttributeService>(TYPES.IMasterAttributeService),
     masterEntry = container.get<IMasterEntryService>(TYPES.IMasterEntryService),
     priceHistory = container.get<IPriceHistoryService>(TYPES.IPriceHistoryService),
+    contactMessage = container.get<IContactMessageService>(TYPES.IContactMessageService),
+    subscriber = container.get<ISubscriberService>(TYPES.ISubscriberService),
   ) {
     this.User = user;
     this.Account = account;
@@ -110,5 +116,7 @@ export default class UnitOfService implements IUnitOfService {
     this.MasterAttribute = masterAttribute;
     this.MasterEntry = masterEntry;
     this.PriceHistory = priceHistory;
+    this.ContactMessage = contactMessage;
+    this.Subscriber = subscriber;
   }
 }

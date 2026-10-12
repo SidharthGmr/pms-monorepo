@@ -24,6 +24,8 @@ import { IWishlistRepository } from "./iwishlist.repository";
 import { IMasterAttributeRepository } from "./imaster-attribute.repository";
 import { IMasterEntryRepository } from "./imaster-entry.repository";
 import { IPriceHistoryRepository } from "./iprice-history.repository";
+import { IContactMessageRepository } from "./icontact-message.repository";
+import { ISubscriberRepository } from "./isubscriber.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -51,6 +53,8 @@ export default interface IUnitOfWork {
   MasterAttribute: IMasterAttributeRepository;
   MasterEntry: IMasterEntryRepository;
   PriceHistory: IPriceHistoryRepository;
+  ContactMessage: IContactMessageRepository;
+  Subscriber: ISubscriberRepository;
 
   /**
    * Executes a set of operations within a database transaction.

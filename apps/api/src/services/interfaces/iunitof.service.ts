@@ -24,6 +24,8 @@ import { IWishlistService } from "./Iwishlist.service";
 import { IMasterAttributeService } from "./Imaster-attribute.service";
 import { IMasterEntryService } from "./Imaster-entry.service";
 import { IPriceHistoryService } from "./Iprice-history.service";
+import { IContactMessageService } from "./Icontact-message.service";
+import { ISubscriberService } from "./Isubscriber.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -52,4 +54,6 @@ export default interface IUnitOfService {
   MasterAttribute: IMasterAttributeService;
   MasterEntry: IMasterEntryService;
   PriceHistory: IPriceHistoryService;
+  ContactMessage: IContactMessageService;
+  Subscriber: ISubscriberService;
 }

@@ -174,6 +174,8 @@ model store {
   variantRatings   VariantRating[]
   masterAttributes MasterAttribute[]
   masterEntries    MasterEntry[]
+  contactMessages  ContactMessage[]
+  subscribers      Subscriber[]
 }
 
 model category {
@@ -747,10 +749,49 @@ enum PaymentMethod {
   ONLINE
 }
 
+// Messages from the public contact form. storeCode is optional because the storefront has no
+// store context; a null row is site-wide and shows up in every store's admin list.
+model ContactMessage {
+  id        Int                  @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    ContactMessageStatus @default(NEW)
+  storeCode String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime?
+  store     store?               @relation(fields: [storeCode], references: [code])
+
+  @@index([status])
+  @@index([storeCode])
+  @@index([createdAt])
+}
+
+// Newsletter signups from the storefront. Resubscribing clears unsubscribedAt on the same row,
+// so one address is one row forever and the unique key can hold.
+model Subscriber {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  storeCode      String?
+  createdAt      DateTime  @default(now())
+  unsubscribedAt DateTime?
+  store          store?    @relation(fields: [storeCode], references: [code])
+
+  @@index([createdAt])
+}
+
 enum Status {
   Published
   Draft
   Trash
+}
+
+enum ContactMessageStatus {
+  NEW
+  READ
+  RESOLVED
 }
 
 enum OrderStatus {

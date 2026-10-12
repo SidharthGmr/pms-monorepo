@@ -1,6 +1,8 @@
 import { Roles } from '@/enums/roles.enum';
 import {
   Boxes,
+  Inbox,
+  MailPlus,
   CreditCard,
   FolderTree,
   Heart,
@@ -242,6 +244,24 @@ export const SideBarMenu: SideBarMenuDto[] = [
         isActive: false,
       },
     ],
+  },
+  {
+    id: 'contact-messages',
+    title: 'Contact Messages',
+    icon: Inbox,
+    url: '/admin/contact-messages/',
+    group: 'Customers',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'subscribers',
+    title: 'Subscribers',
+    icon: MailPlus,
+    url: '/admin/subscribers/',
+    group: 'Customers',
+    role: [Roles.ADMIN],
+    isActive: false,
   },
   // {
   //   id: 'reviews',

@@ -27,6 +27,8 @@ export const TYPES = {
   IMasterAttributeService: Symbol.for("MasterAttributeService"),
   IMasterEntryService: Symbol.for("MasterEntryService"),
   IPriceHistoryService: Symbol.for("PriceHistoryService"),
+  IContactMessageService: Symbol.for("ContactMessageService"),
+  ISubscriberService: Symbol.for("SubscriberService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -55,6 +57,8 @@ export const TYPES = {
   MasterAttributeController: Symbol.for("MasterAttributeController"),
   MasterEntryController: Symbol.for("MasterEntryController"),
   PriceHistoryController: Symbol.for("PriceHistoryController"),
+  ContactMessageController: Symbol.for("ContactMessageController"),
+  SubscriberController: Symbol.for("SubscriberController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -83,4 +87,6 @@ export const TYPES = {
   IMasterAttributeRepository: Symbol.for("MasterAttributeRepository"),
   IMasterEntryRepository: Symbol.for("MasterEntryRepository"),
   IPriceHistoryRepository: Symbol.for("PriceHistoryRepository"),
+  IContactMessageRepository: Symbol.for("ContactMessageRepository"),
+  ISubscriberRepository: Symbol.for("SubscriberRepository"),
 };

@@ -136,6 +136,16 @@ import { IMasterEntryService } from '../services/interfaces/Imaster-entry.servic
 import { MasterEntryService } from '../services/master-entry.service';
 import { IMasterEntryRepository } from '../repository/interfaces/imaster-entry.repository';
 import { MasterEntryRepository } from '../repository/master-entry.repository';
+import { ContactMessageController } from '../controllers/contact-message.controller';
+import { IContactMessageService } from '../services/interfaces/Icontact-message.service';
+import { ContactMessageService } from '../services/contact-message.service';
+import { IContactMessageRepository } from '../repository/interfaces/icontact-message.repository';
+import { ContactMessageRepository } from '../repository/contact-message.repository';
+import { SubscriberController } from '../controllers/subscriber.controller';
+import { ISubscriberService } from '../services/interfaces/Isubscriber.service';
+import { SubscriberService } from '../services/subscriber.service';
+import { ISubscriberRepository } from '../repository/interfaces/isubscriber.repository';
+import { SubscriberRepository } from '../repository/subscriber.repository';
 import { PriceHistoryController } from '../controllers/price-history.controller';
 import { IPriceHistoryService } from '../services/interfaces/Iprice-history.service';
 import { PriceHistoryService } from '../services/price-history.service';
@@ -170,6 +180,8 @@ container.bind<WishlistController>(TYPES.WishlistController).to(WishlistControll
 container.bind<MasterAttributeController>(TYPES.MasterAttributeController).to(MasterAttributeController);
 container.bind<MasterEntryController>(TYPES.MasterEntryController).to(MasterEntryController);
 container.bind<PriceHistoryController>(TYPES.PriceHistoryController).to(PriceHistoryController);
+container.bind<ContactMessageController>(TYPES.ContactMessageController).to(ContactMessageController);
+container.bind<SubscriberController>(TYPES.SubscriberController).to(SubscriberController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -197,6 +209,8 @@ container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
 container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(MasterAttributeService);
 container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
 container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistoryService);
+container.bind<IContactMessageService>(TYPES.IContactMessageService).to(ContactMessageService);
+container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -223,6 +237,8 @@ container.bind<IWishlistRepository>(TYPES.IWishlistRepository).to(WishlistReposi
 container.bind<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository).to(MasterAttributeRepository);
 container.bind<IMasterEntryRepository>(TYPES.IMasterEntryRepository).to(MasterEntryRepository);
 container.bind<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository).to(PriceHistoryRepository);
+container.bind<IContactMessageRepository>(TYPES.IContactMessageRepository).to(ContactMessageRepository);
+container.bind<ISubscriberRepository>(TYPES.ISubscriberRepository).to(SubscriberRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

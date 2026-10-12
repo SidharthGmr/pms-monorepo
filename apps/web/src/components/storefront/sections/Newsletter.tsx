@@ -1,12 +1,36 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { BellRing, Mail } from 'lucide-react';
+import { container } from '@/config/ioc';
+import { TYPES } from '@/config/types';
 import { NEWSLETTER } from '@/data/theme.config';
+import { useSubscribePublic } from '@/hooks/service-hooks/useSubscriberService';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { BellRing, CheckCircle2, Mail } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 
 // Sits between the light brand strip and the dark footer, so it is a brand-gradient card on a
 // plain section rather than another full-width band - otherwise it would merge into the footer.
 export default function Newsletter() {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const mutation = useSubscribePublic();
+  const [email, setEmail] = useState('');
+  const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError(null);
+
+    const response = await mutation.mutateAsync({ email });
+    if (response && (response.status === 200 || response.status === 201)) {
+      // 200 means the address was already on the list; say so instead of pretending it is new.
+      setDone(response.status === 200 ? 'You are already on the list.' : 'Subscribed - see you in your inbox.');
+    } else {
+      setError(unitOfService.ErrorHandlerService.getErrorMessage(response));
+    }
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-secondary px-6 py-12 text-white shadow-xl sm:px-10 sm:py-14">
@@ -26,8 +50,13 @@ export default function Newsletter() {
           <h2 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl">{NEWSLETTER.headline}</h2>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-white/80">{NEWSLETTER.body}</p>
 
-          {/* No subscribe endpoint yet - the submit is inert until one exists. */}
-          <form className="mx-auto mt-7 w-full max-w-md" onSubmit={(event) => event.preventDefault()}>
+          {done ? (
+            <p className="mx-auto mt-7 flex w-full max-w-md items-center justify-center gap-2 rounded-full bg-white/15 px-5 py-3 text-sm font-semibold text-white backdrop-blur">
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+              {done}
+            </p>
+          ) : (
+          <form className="mx-auto mt-7 w-full max-w-md" onSubmit={submit}>
             {/* One button, positioned twice: from `sm` it is lifted out of flow and sits inside
                 the pill on the right; below that it drops back under the field at full width,
                 where a button tucked into a narrow input would leave no room to type. */}
@@ -38,18 +67,28 @@ export default function Newsletter() {
               <input
                 type="email"
                 required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={mutation.isPending}
                 placeholder={NEWSLETTER.placeholder}
                 aria-label="Email address"
                 className="h-12 w-full rounded-full border-0 bg-white pl-11 pr-4 text-sm text-foreground shadow-sm outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-storefront-accent sm:pr-[8.75rem]"
               />
               <Button
                 type="submit"
+                loading={mutation.isPending}
                 className="mt-2.5 h-12 w-full rounded-full bg-primary px-7 font-bold text-primary-foreground shadow-sm hover:bg-primary/90 sm:absolute sm:right-1.5 sm:top-1.5 sm:mt-0 sm:h-9 sm:w-auto sm:px-6"
               >
                 {NEWSLETTER.cta}
               </Button>
             </div>
+            {error && (
+              <p role="alert" className="mt-2.5 text-xs font-semibold text-rose-100">
+                {error}
+              </p>
+            )}
           </form>
+          )}
 
           <p className="mt-3.5 text-xs text-white/65">{NEWSLETTER.note}</p>
         </div>

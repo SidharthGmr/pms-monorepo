@@ -25,6 +25,8 @@ import wishlistRouter from "./wishlistRoutes";
 import masterAttributeRouter from "./masterAttributeRoutes";
 import masterEntryRouter from "./masterEntryRoutes";
 import priceHistoryRouter from "./priceHistoryRoutes";
+import contactMessageRouter from "./contactMessageRoutes";
+import subscriberRouter from "./subscriberRoutes";
 
 const routes = express.Router();
 
@@ -54,5 +56,7 @@ routes.use("/wishlists", wishlistRouter);
 routes.use("/master-attributes", masterAttributeRouter);
 routes.use("/master-entries", masterEntryRouter);
 routes.use("/price-histories", priceHistoryRouter);
+routes.use("/contact-messages", contactMessageRouter);
+routes.use("/subscribers", subscriberRouter);
 
 export default routes;

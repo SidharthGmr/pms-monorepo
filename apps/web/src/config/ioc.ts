@@ -60,6 +60,10 @@ import MasterEntryService from '@/services/MasterEntryService';
 import IMasterEntryService from '@/services/interfaces/IMasterEntryService';
 import PriceHistoryService from '@/services/PriceHistoryService';
 import IPriceHistoryService from '@/services/interfaces/IPriceHistoryService';
+import ContactMessageService from '@/services/ContactMessageService';
+import IContactMessageService from '@/services/interfaces/IContactMessageService';
+import SubscriberService from '@/services/SubscriberService';
+import ISubscriberService from '@/services/interfaces/ISubscriberService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -94,6 +98,8 @@ container.bind<IWishlistService>(TYPES.IWishlistService).to(WishlistService);
 container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(MasterAttributeService);
 container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
 container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistoryService);
+container.bind<IContactMessageService>(TYPES.IContactMessageService).to(ContactMessageService);
+container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
 
 export { container };
 

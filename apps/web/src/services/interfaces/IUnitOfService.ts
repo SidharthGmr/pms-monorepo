@@ -24,6 +24,8 @@ import IWishlistService from './IWishlistService';
 import IMasterAttributeService from './IMasterAttributeService';
 import IMasterEntryService from './IMasterEntryService';
 import IPriceHistoryService from './IPriceHistoryService';
+import IContactMessageService from './IContactMessageService';
+import ISubscriberService from './ISubscriberService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -54,4 +56,6 @@ export default interface IUnitOfService {
   MasterAttributeService: IMasterAttributeService;
   MasterEntryService: IMasterEntryService;
   PriceHistoryService: IPriceHistoryService;
+  ContactMessageService: IContactMessageService;
+  SubscriberService: ISubscriberService;
 }

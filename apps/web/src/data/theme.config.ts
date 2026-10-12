@@ -17,6 +17,7 @@ export const NAV_LINKS = [
   { label: 'New arrivals', href: '#new-arrivals' },
   { label: 'Blog', href: '#blog' },
   { label: 'About us', href: '/about-us' },
+  { label: 'Contact', href: '/contact-us' },
 ] as const;
 
 export const HERO = {
@@ -176,6 +177,25 @@ export const ABOUT = {
     body: 'Every product below is priced and counted as of right now.',
     primary: { label: 'Shop the catalogue', href: '/products' },
     secondary: { label: 'Read the blog', href: '/#blog' },
+  },
+} as const;
+
+export const CONTACT = {
+  banner: {
+    eyebrow: 'Get in touch',
+    title: 'Contact us',
+    description: 'A question about an order, a product or the stock behind it - write to us and a real person answers.',
+  },
+  form: {
+    title: 'Send us a message',
+    body: 'Fill this in and it lands straight in the shop admin. We reply to the email you give here.',
+    cta: 'Send message',
+    successTitle: 'Message sent',
+    successBody: 'Thanks for writing in. We have your message and will reply to your email shortly.',
+  },
+  aside: {
+    title: 'Other ways to reach us',
+    body: 'Prefer to talk? The desk picks up during store hours, and email is answered every day.',
   },
 } as const;
 

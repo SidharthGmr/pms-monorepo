@@ -28,6 +28,8 @@ import { IWishlistRepository } from "./interfaces/iwishlist.repository";
 import { IMasterAttributeRepository } from "./interfaces/imaster-attribute.repository";
 import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
 import { IPriceHistoryRepository } from "./interfaces/iprice-history.repository";
+import { IContactMessageRepository } from "./interfaces/icontact-message.repository";
+import { ISubscriberRepository } from "./interfaces/isubscriber.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -55,6 +57,8 @@ export default class UnitOfWork implements IUnitOfWork {
   public MasterAttribute: IMasterAttributeRepository;
   public MasterEntry: IMasterEntryRepository;
   public PriceHistory: IPriceHistoryRepository;
+  public ContactMessage: IContactMessageRepository;
+  public Subscriber: ISubscriberRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -82,6 +86,8 @@ export default class UnitOfWork implements IUnitOfWork {
     masterAttribute = container.get<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository),
     masterEntry = container.get<IMasterEntryRepository>(TYPES.IMasterEntryRepository),
     priceHistory = container.get<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository),
+    contactMessage = container.get<IContactMessageRepository>(TYPES.IContactMessageRepository),
+    subscriber = container.get<ISubscriberRepository>(TYPES.ISubscriberRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -108,6 +114,8 @@ export default class UnitOfWork implements IUnitOfWork {
     this.MasterAttribute = masterAttribute;
     this.MasterEntry = masterEntry;
     this.PriceHistory = priceHistory;
+    this.ContactMessage = contactMessage;
+    this.Subscriber = subscriber;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

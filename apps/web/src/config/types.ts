@@ -28,4 +28,6 @@ export const TYPES = {
   IMasterAttributeService: Symbol.for('IMasterAttributeService'),
   IMasterEntryService: Symbol.for('IMasterEntryService'),
   IPriceHistoryService: Symbol.for('IPriceHistoryService'),
+  IContactMessageService: Symbol.for('IContactMessageService'),
+  ISubscriberService: Symbol.for('ISubscriberService'),
 };
