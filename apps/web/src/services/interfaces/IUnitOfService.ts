@@ -25,6 +25,7 @@ import IMasterAttributeService from './IMasterAttributeService';
 import IMasterEntryService from './IMasterEntryService';
 import IPriceHistoryService from './IPriceHistoryService';
 import IContactMessageService from './IContactMessageService';
+import IMediaService from './IMediaService';
 import ISubscriberService from './ISubscriberService';
 import IUserListService from './IUserListService.ts';
 
@@ -57,5 +58,6 @@ export default interface IUnitOfService {
   MasterEntryService: IMasterEntryService;
   PriceHistoryService: IPriceHistoryService;
   ContactMessageService: IContactMessageService;
+  MediaService: IMediaService;
   SubscriberService: ISubscriberService;
 }

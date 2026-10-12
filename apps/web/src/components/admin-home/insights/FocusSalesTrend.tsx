@@ -38,7 +38,7 @@ interface DayBucket {
 export default function FocusSalesTrend({ days = 7 }: { days?: number }) {
   const { data, isLoading, isError } = useGetAllOrders({ page: 1, recordPerPage: FETCH_LIMIT });
   const orders = useMemo(() => (data?.data?.data?.data as OrderDto[] | undefined) ?? [], [data]);
-  const [view, setView] = useState<SalesView>('list');
+  const [view, setView] = useState<SalesView>('chart');
 
   useEffect(() => {
     try {

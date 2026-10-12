@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createPurchaseItemSchema = z.object({
-    productId: z.number().positive(),
+    variantId: z.number().positive(),
     quantity: z.number().positive(),
     costPrice: z.number().nonnegative(),
     totalPrice: z.number().nonnegative()

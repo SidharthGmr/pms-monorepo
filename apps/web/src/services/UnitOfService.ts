@@ -29,6 +29,7 @@ import IMasterAttributeService from './interfaces/IMasterAttributeService';
 import IMasterEntryService from './interfaces/IMasterEntryService';
 import IPriceHistoryService from './interfaces/IPriceHistoryService';
 import IContactMessageService from './interfaces/IContactMessageService';
+import IMediaService from './interfaces/IMediaService';
 import ISubscriberService from './interfaces/ISubscriberService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
@@ -65,6 +66,7 @@ export default class UnitOfService implements IUnitOfService {
   public MasterEntryService: IMasterEntryService;
   public PriceHistoryService: IPriceHistoryService;
   public ContactMessageService: IContactMessageService;
+  public MediaService: IMediaService;
   public SubscriberService: ISubscriberService;
 
   constructor(
@@ -96,6 +98,7 @@ export default class UnitOfService implements IUnitOfService {
     masterEntryService = container.get<IMasterEntryService>(TYPES.IMasterEntryService),
     priceHistoryService = container.get<IPriceHistoryService>(TYPES.IPriceHistoryService),
     contactMessageService = container.get<IContactMessageService>(TYPES.IContactMessageService),
+    mediaService = container.get<IMediaService>(TYPES.IMediaService),
     subscriberService = container.get<ISubscriberService>(TYPES.ISubscriberService),
   ) {
     this.HttpService = httpService;
@@ -126,6 +129,7 @@ export default class UnitOfService implements IUnitOfService {
     this.MasterEntryService = masterEntryService;
     this.PriceHistoryService = priceHistoryService;
     this.ContactMessageService = contactMessageService;
+    this.MediaService = mediaService;
     this.SubscriberService = subscriberService;
   }
 }

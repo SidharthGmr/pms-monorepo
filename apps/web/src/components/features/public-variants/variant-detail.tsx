@@ -22,6 +22,7 @@ import { Check, ImageOff, PackageSearch, PackageX, ShoppingCart } from 'lucide-r
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import ProductWebVariants from '../products/variants/varients-web';
 
 const attributesOf = (variant: ProductVariantListItemDto): { key: string; value: string }[] => {
   const attributes = variant.attributes;
@@ -131,7 +132,12 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
   const cartHref = pathname?.startsWith('/dashboard') ? '/dashboard/cart' : '/admin/cart';
 
   // Sibling variants of the same product (sizes, colours) so the shopper can switch without going back.
-  const { data: siblingResponse } = useGetAllPublicProductVariants({ productId: variant.product.id, showAllRecords: true, sortBy: 'sku', sortDirection: 'ASC' });
+  const { data: siblingResponse } = useGetAllPublicProductVariants({
+    productId: variant.product.id,
+    showAllRecords: true,
+    sortBy: 'sku',
+    sortDirection: 'ASC',
+  });
   const siblings = useMemo(() => siblingResponse?.data?.data?.data ?? [], [siblingResponse]);
 
   const handleAdd = async () => {
@@ -191,12 +197,18 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
               )}
 
               {soldOut ? (
-                <Badge variant="zinc" className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm">
+                <Badge
+                  variant="zinc"
+                  className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                >
                   Sold out
                 </Badge>
               ) : (
                 onOffer && (
-                  <Badge variant="rose" className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm">
+                  <Badge
+                    variant="rose"
+                    className="absolute left-4 top-4 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                  >
                     {discountPercent > 0 ? `${discountPercent}% off` : 'Offer'}
                   </Badge>
                 )
@@ -259,7 +271,9 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
                 {onOffer && (
                   <>
                     <span className="text-sm font-medium text-muted-foreground line-through">{formatPrice(variant.sellingPrice as number)}</span>
-                    <span className="text-sm font-semibold text-rose-600">Save {formatPrice((variant.sellingPrice as number) - (variant.offerPrice as number))}</span>
+                    <span className="text-sm font-semibold text-rose-600">
+                      Save {formatPrice((variant.sellingPrice as number) - (variant.offerPrice as number))}
+                    </span>
                   </>
                 )}
               </div>
@@ -297,7 +311,9 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
                       aria-current={current ? 'page' : undefined}
                       className={cn(
                         'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
-                        current ? 'border-primary bg-primary text-primary-foreground' : 'border-border/70 bg-background hover:border-primary hover:text-primary',
+                        current
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border/70 bg-background hover:border-primary hover:text-primary',
                         sibling.stockQuantity <= 0 && !current && 'text-muted-foreground line-through'
                       )}
                     >
@@ -313,7 +329,12 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
 
           <div className="flex flex-col gap-3 sm:flex-row">
             {inCart ? (
-              <Button asChild variant="outline" size="lg" className="h-12 flex-1 rounded-xl border-green-600/40 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="h-12 flex-1 rounded-xl border-green-600/40 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+              >
                 <Link href={cartHref} aria-label={`${title} is in your cart. View cart`}>
                   <Check className="h-4 w-4" />
                   In cart · {cart.quantityOfVariant(variant.id)}
@@ -362,6 +383,8 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
           </dl>
         </Card>
       </div>
+
+      <ProductWebVariants productId={variant.product.id} excludeId={variant.id} />
     </div>
   );
 }

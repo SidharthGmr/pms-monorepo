@@ -67,7 +67,7 @@ export default function HeaderDashboard() {
         <ModeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-9 gap-2 rounded-full px-1 pr-1 md:pr-2.5" aria-label="Account menu">
+            <Button variant="ghost" className="h-9 gap-2 rounded-full bg-muted/70 px-1 pr-1 hover:bg-muted md:pr-3" aria-label="Account menu">
               <Avatar className="h-7 w-7 ring-1 ring-border">
                 {!isError && profileImageUrl && <AvatarImage src={profileImageUrl} className="object-cover" alt={name} />}
                 <AvatarFallback className="bg-primary text-[11px] font-semibold uppercase text-primary-foreground">{name.slice(0, 2)}</AvatarFallback>

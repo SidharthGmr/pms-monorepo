@@ -10,6 +10,7 @@ export interface ProductVariantFilterParams extends Omit<PageFilterParams, 'star
   brandNameId?: number;
   brandNameIds?: string;
   isActive?: boolean;
+  storeCode?: string;
   isFeatured?: boolean;
   startDate?: string;
   endDate?: string;

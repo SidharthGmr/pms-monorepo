@@ -150,12 +150,27 @@ export class AccountController {
       throw new CustomError('Failed to fetch details', 400);
     }
 
+    // `html` beats `templateName` in the dispatcher, so the old shape here mailed the raw URL
+    // as the entire body and the template never rendered. The link now travels as template data.
+    const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // Email clients need absolute image URLs; the light logo cut reads on the navy masthead.
+    const siteUrl = (process.env.APP_PUBLIC_URL || process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || process.env.JWT_ISSUER || '').replace(/\/$/, '');
+    const expiresIn = String(config.jwt.emailVerifyExpires).replace(/^(\d+)([smhd])$/, (_, n, u) => `${n} ${({ s: 'second', m: 'minute', h: 'hour', d: 'day' } as Record<string, string>)[u]}${n === '1' ? '' : 's'}`);
+
     dispatchEmailAsync({
       userId: signupTokenUpdted.userId,
       to: signupTokenUpdted.email,
-      subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME} 🎉`,
-      templateName: 'welcome',
-      html: `${process.env.JWT_ISSUER}/verify-email?token=${token}`
+      subject: `Verify your email · ${process.env.NEXT_PUBLIC_APP_NAME}`,
+      templateName: 'verify-email',
+      templateData: {
+        appName: process.env.NEXT_PUBLIC_APP_NAME || 'Stocklivo',
+        name: esc(newUser.name || 'there'),
+        verifyUrl: `${process.env.JWT_ISSUER}/verify-email?token=${token}`,
+        siteUrl: siteUrl,
+        logoUrl: `${siteUrl}/logo-full-light.png`,
+        expiresIn,
+        year: String(new Date().getFullYear()),
+      },
     });
 
     // dispatchEmailAsync({

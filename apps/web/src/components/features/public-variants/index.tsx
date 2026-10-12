@@ -84,6 +84,16 @@ export default function PublicVariantList() {
     });
   };
 
+  if (getAllProductVariantsResponse.isFetching && !getAllProductVariantsResponse.isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: pageSize }, (_, i) => (
+          <VariantCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
   if (getAllProductVariantsResponse.isError) {
     return (
       <Card>
@@ -122,27 +132,6 @@ export default function PublicVariantList() {
           />
         </div>
         <div className="w-3/4">
-          {/* <div className="text-sm text-muted-foreground">
-            {getAllProductVariantsResponse.isLoading
-              ? 'Loading…'
-              : totalRecord === 0
-                ? 'No variants'
-                : `${totalRecord} variant${totalRecord === 1 ? '' : 's'}`}
-            {getAllProductVariantsResponse.isFetching && !getAllProductVariantsResponse.isLoading && (
-              <span className="ml-2 text-xs">(updating…)</span>
-            )}
-          </div> */}
-
-          {getAllProductVariantsResponse.isLoading && 'Loading…'}
-          {getAllProductVariantsResponse.isFetching && !getAllProductVariantsResponse.isLoading && (
-            <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                {Array.from({ length: pageSize }, (_, i) => (
-                  <VariantCardSkeleton key={i} />
-                ))}
-              </div>
-            </>
-          )}
           {data.length === 0 ? (
             <Card>
               <div className="flex flex-col items-center gap-3 py-12 text-center">

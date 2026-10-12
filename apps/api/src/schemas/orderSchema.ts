@@ -13,7 +13,7 @@ export const createOrderSchema = z.object({
     // Only the product and quantity are accepted — the unit price and totals
     // are resolved/computed on the server from the product's price history.
     items: z.array(z.object({
-      productId: z.number().int().positive(),
+      variantId: z.number().int().positive(),
       quantity: z.number().int().positive(),
     })).optional(),
   }),

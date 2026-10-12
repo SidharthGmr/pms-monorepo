@@ -18,6 +18,7 @@ export default withAuth(function middleware(req) {
 
   // Role-based page restrictions
   const accessControlMap: Record<string, Roles[]> = {
+    '/superadmin/': [Roles.SUPER_ADMIN],
     '/admin/': [Roles.ADMIN],
     '/dashboard/': [Roles.USER, Roles.STAFF],
   };

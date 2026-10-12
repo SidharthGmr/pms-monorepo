@@ -3,6 +3,7 @@
 import React, { useRef, useState, DragEvent } from 'react';
 import { ImagePlus, Loader2, Star, UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useImageUpload } from '@/hooks/service-hooks/useMediaService';
 import { cn } from '@/lib/utils';
 
 interface ProductImageUploaderProps {
@@ -12,56 +13,25 @@ interface ProductImageUploaderProps {
   maxSizeMb?: number;
 }
 
+// Narrows the OS file picker. Size and MIME are enforced again by useImageUpload, which is
+// what catches a file dragged straight onto the dropzone.
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
 export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5 }: ProductImageUploaderProps) {
-  const [isUploading, setIsUploading] = useState(false);
+  const { uploadUrls, isUploading } = useImageUpload({ maxSizeMb });
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const uploadOne = async (file: File): Promise<string | null> => {
-    if (!ACCEPTED.includes(file.type)) {
-      toast.error(`${file.name}: unsupported file type`);
-      return null;
-    }
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      toast.error(`${file.name}: exceeds ${maxSizeMb}MB`);
-      return null;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetch('/api/admin-media/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (data.success && data.data?.secure_url) {
-      return data.data.secure_url as string;
-    }
-    toast.error(data.message || `Failed to upload ${file.name}`);
-    return null;
-  };
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
     try {
-      const uploaded: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        try {
-          const url = await uploadOne(files[i]);
-          if (url) uploaded.push(url);
-        } catch (err) {
-          console.error(err);
-          toast.error(`Error uploading ${files[i].name}`);
-        }
-      }
+      const uploaded = await uploadUrls(files);
       if (uploaded.length) {
         onChange([...value, ...uploaded]);
         toast.success(`${uploaded.length} image${uploaded.length === 1 ? '' : 's'} uploaded`);
       }
     } finally {
-      setIsUploading(false);
       // Reset so selecting the SAME file again still fires onChange.
       if (fileInputRef.current) fileInputRef.current.value = '';
     }

@@ -5,6 +5,7 @@ import { Camera, Loader2, Trash2, Link as LinkIcon, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useImageUpload } from "@/hooks/service-hooks/useMediaService";
 import { cn } from "@/lib/utils";
 
 interface ProfileImageUploaderProps {
@@ -16,37 +17,15 @@ interface ProfileImageUploaderProps {
 }
 
 export function ProfileImageUploader({ value, onChange, className, showUrlInput = true }: ProfileImageUploaderProps) {
-  const [isUploading, setIsUploading] = useState(false);
+  const { uploadUrl, isUploading } = useImageUpload();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file.");
-      return;
-    }
-
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/admin-media/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.data?.secure_url) {
-        onChange(data.data.secure_url);
-        toast.success("Profile image uploaded successfully");
-      } else {
-        toast.error(data.message || "Failed to upload image");
-      }
-    } catch (error) {
-      console.error("Profile image upload error:", error);
-      toast.error("Error uploading image");
-    } finally {
-      setIsUploading(false);
+    const url = await uploadUrl(file);
+    if (url) {
+      onChange(url);
+      toast.success("Profile image uploaded successfully");
     }
   };
 

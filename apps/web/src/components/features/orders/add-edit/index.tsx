@@ -11,7 +11,7 @@ import { TYPES } from '@/config/types';
 import { OrderStatus } from '@/enums/order-status.enum';
 import { Roles } from '@/enums/roles.enum';
 import { useCreateOrder, useGetOrderById, useUpdateOrder } from '@/hooks/service-hooks/useOrderService';
-import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
+import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { CreateOrderModel } from '@/models/order.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -37,7 +37,7 @@ const OrderSchema = Yup.object({
   items: Yup.array()
     .of(
       Yup.object({
-        productId: Yup.number().typeError('Product is required').required('Product is required'),
+        variantId: Yup.number().typeError('Variant is required').required('Variant is required'),
         quantity: Yup.number().typeError('Quantity is required').min(1, 'Quantity must be at least 1').required('Quantity is required'),
       })
     )
@@ -68,10 +68,10 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
     [customersResponse]
   );
 
-  const { data: productsResponse } = useGetAllProducts();
+  const { data: variantsResponse } = useGetAllPublicProductVariants({ showAllRecords: true });
   const productOptions = useMemo(
-    () => (productsResponse?.data?.data?.data || []).map((p) => ({ label: p.name, value: p.id })),
-    [productsResponse]
+    () => (variantsResponse?.data?.data?.data || []).map((v) => ({ label: v.name ? (v.sku ? `${v.name} (${v.sku})` : v.name) : v.sku, value: v.id })),
+    [variantsResponse]
   );
 
   const form = useForm<OrderFormValues>({
@@ -83,7 +83,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
       shippingCost: 0,
       status: OrderStatus.Pending,
       notes: '',
-      items: [{ productId: undefined as any, quantity: 1 }],
+      items: [{ variantId: undefined as any, quantity: 1 }],
     },
   });
 
@@ -102,8 +102,8 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
         notes: order.notes ?? '',
         items:
           order.items && order.items.length > 0
-            ? order.items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
-            : [{ productId: undefined as any, quantity: 1 }],
+            ? order.items.map((i) => ({ variantId: i.variantId, quantity: i.quantity }))
+            : [{ variantId: undefined as any, quantity: 1 }],
       });
     }
   }, [isEdit, orderResponse, reset]);
@@ -116,7 +116,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
       shippingCost: model.shippingCost,
       status: model.status,
       notes: model.notes,
-      items: (model.items ?? []).map((it) => ({ productId: Number(it.productId), quantity: Number(it.quantity) })),
+      items: (model.items ?? []).map((it) => ({ variantId: Number(it.variantId), quantity: Number(it.quantity) })),
     };
 
     const response = isEdit ? await updateOrder.mutateAsync({ id: id!, model: payload }) : await createOrder.mutateAsync(payload);
@@ -200,7 +200,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                   icon={Plus}
                   iconPlacement="left"
                   className="h-auto p-0 text-xs font-medium"
-                  onClick={() => append({ productId: undefined as any, quantity: 1 })}
+                  onClick={() => append({ variantId: undefined as any, quantity: 1 })}
                 >
                   Add Product
                 </Button>
@@ -212,13 +212,13 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                     <div className="flex-1">
                       <FormField
                         control={control}
-                        name={`items.${index}.productId`}
+                        name={`items.${index}.variantId`}
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
                               <SelectSearch
                                 buttonClass="w-full h-10 font-normal"
-                                placeholder="Select a product"
+                                placeholder="Select a variant"
                                 items={productOptions}
                                 value={field.value ?? ''}
                                 valueType="number"

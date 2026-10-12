@@ -60,6 +60,8 @@ import MasterEntryService from '@/services/MasterEntryService';
 import IMasterEntryService from '@/services/interfaces/IMasterEntryService';
 import PriceHistoryService from '@/services/PriceHistoryService';
 import IPriceHistoryService from '@/services/interfaces/IPriceHistoryService';
+import MediaService from '@/services/MediaService';
+import IMediaService from '@/services/interfaces/IMediaService';
 import ContactMessageService from '@/services/ContactMessageService';
 import IContactMessageService from '@/services/interfaces/IContactMessageService';
 import SubscriberService from '@/services/SubscriberService';
@@ -99,6 +101,7 @@ container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(Master
 container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
 container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistoryService);
 container.bind<IContactMessageService>(TYPES.IContactMessageService).to(ContactMessageService);
+container.bind<IMediaService>(TYPES.IMediaService).to(MediaService);
 container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
 
 export { container };

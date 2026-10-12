@@ -21,6 +21,9 @@ import {
   X,
 } from 'lucide-react';
 import { StatusEnum } from '@pms/types';
+import { container } from '@/config/ioc';
+import { TYPES } from '@/config/types';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import ConfirmBox from '@/components/common/confirm-box';
 import { SelectSearch } from '@/components/common/select-search';
 import ManageSupplier from '@/components/features/suppliers/add-edit';
@@ -69,6 +72,7 @@ export default function ReceiveStockPage() {
   const suppliers = useMemo(() => suppliersData?.data?.data?.data ?? [], [suppliersData]);
   const supplierItems = useMemo(() => suppliers.map((s) => ({ label: s.name, value: String(s.id) })), [suppliers]);
 
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const createPurchase = useCreatePurchase();
 
   const form = useForm<ReceiveStockFormValues>({
@@ -189,7 +193,7 @@ export default function ReceiveStockPage() {
 
       const supplier = suppliers.find((s) => String(s.id) === String(data.supplierId));
 
-      await createPurchase.mutateAsync({
+      const response = await createPurchase.mutateAsync({
         invoiceNumber: data.invoiceNumber || undefined,
         supplierId: data.supplierId || undefined,
         supplierName: supplier?.name || undefined,
@@ -198,6 +202,14 @@ export default function ReceiveStockPage() {
         totalAmount: totalCost,
         items: formattedItems,
       });
+
+      // HttpService resolves 4xx instead of throwing, so without this check a rejected save
+      // still reported "Stock received" and cleared the form.
+      if (!response || (response.status !== 200 && response.status !== 201)) {
+        const message = unitOfService.ErrorHandlerService.getErrorMessage(response);
+        toast({ variant: 'destructive', title: 'Could not receive stock', description: <span>{message}</span> });
+        return;
+      }
 
       toast({
         variant: 'success',

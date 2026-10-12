@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useSession } from "next-auth/react";
-import { Upload, File, Video, Copy, Check, Trash2, ExternalLink, RefreshCw, FolderOpen, User, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { Upload, File, Video, Copy, Check, Trash2, ExternalLink, RefreshCw, FolderOpen, User, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { useDeleteMedia, useGetAllMedia, useImageUpload } from '@/hooks/service-hooks/useMediaService';
+import { PageHeader } from '../page-header';
 
 interface CloudinaryResource {
   public_id: string;
@@ -26,45 +29,39 @@ interface CloudinaryResource {
 export default function AdminMediaDashboard() {
   const { data: session } = useSession();
   const user = session?.user as any;
-  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const [files, setFiles] = useState<CloudinaryResource[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
+
   // Drag & Drop State
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Search and Filter States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFolderFilter, setSelectedFolderFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFolderFilter, setSelectedFolderFilter] = useState('all');
 
-  const fetchMedia = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/admin-media/get-all");
-      const data = await res.json();
-      if (data.success) {
-        setFiles(data.images || []);
-      } else {
-        toast.error(data.message || "Failed to load files");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Error loading media items");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mediaQuery = useGetAllMedia(!!session);
+  const deleteMedia = useDeleteMedia({ silent: true });
+  const { upload } = useImageUpload({ accept: null, maxSizeMb: 20, silent: true });
 
   useEffect(() => {
-    if (session) {
-      fetchMedia();
-    }
-  }, [session, fetchMedia]);
+    if (mediaQuery.data?.images) setFiles(mediaQuery.data.images as CloudinaryResource[]);
+  }, [mediaQuery.data]);
+
+  useEffect(() => {
+    if (mediaQuery.isError) toast.error((mediaQuery.error as Error)?.message || 'Error loading media items');
+  }, [mediaQuery.isError, mediaQuery.error]);
+
+  const isLoading = mediaQuery.isPending || mediaQuery.isFetching;
+
+  const fetchMedia = useCallback(() => {
+    void mediaQuery.refetch();
+  }, [mediaQuery]);
 
   // Drag and drop event handlers
   const handleDragOver = (e: React.DragEvent) => {
@@ -79,7 +76,7 @@ export default function AdminMediaDashboard() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const droppedFiles = Array.from(e.dataTransfer.files);
     if (droppedFiles.length > 0) {
       await uploadMultipleFiles(droppedFiles);
@@ -94,67 +91,48 @@ export default function AdminMediaDashboard() {
   };
 
   const uploadMultipleFiles = async (filesToUpload: File[]) => {
-    setUploadingFiles(prev => [...prev, ...filesToUpload]);
-    
+    setUploadingFiles((prev) => [...prev, ...filesToUpload]);
+
     for (const file of filesToUpload) {
       const formData = new FormData();
-      formData.append("file", file);
-      
-      setUploadProgress(prev => ({ ...prev, [file.name]: 10 }));
-      
+      formData.append('file', file);
+
+      setUploadProgress((prev) => ({ ...prev, [file.name]: 10 }));
+
       try {
-        setUploadProgress(prev => ({ ...prev, [file.name]: 40 }));
-        
-        const res = await fetch("/api/admin-media/upload", {
-          method: "POST",
-          body: formData,
+        const uploaded = await upload(file, {
+          onProgress: (percent) => setUploadProgress((prev) => ({ ...prev, [file.name]: percent })),
         });
-        
-        setUploadProgress(prev => ({ ...prev, [file.name]: 80 }));
-        const data = await res.json();
-        
-        if (data.success) {
+
+        if (uploaded) {
           toast.success(`Uploaded ${file.name} successfully!`);
-          setFiles(prev => [data.data, ...prev]);
+          setFiles((prev) => [uploaded as CloudinaryResource, ...prev]);
         } else {
-          toast.error(data.message || `Failed to upload ${file.name}`);
+          toast.error(`Failed to upload ${file.name}`);
         }
       } catch (err) {
         console.error(err);
         toast.error(`Error uploading ${file.name}`);
       } finally {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           const updated = { ...prev };
           delete updated[file.name];
           return updated;
         });
-        setUploadingFiles(prev => prev.filter(f => f.name !== file.name));
+        setUploadingFiles((prev) => prev.filter((f) => f.name !== file.name));
       }
     }
   };
 
   const handleDelete = async (publicId: string) => {
-    if (!confirm("Are you sure you want to delete this file permanently?")) return;
+    if (!confirm('Are you sure you want to delete this file permanently?')) return;
 
     try {
-      const res = await fetch("/api/admin-media/delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ publicId }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        setFiles(prev => prev.filter(f => f.public_id !== publicId));
-        toast.success("File deleted successfully");
-      } else {
-        toast.error(data.message || "Failed to delete file");
-      }
+      await deleteMedia.mutateAsync(publicId);
+      setFiles((prev) => prev.filter((f) => f.public_id !== publicId));
+      toast.success('File deleted successfully');
     } catch (error) {
-      console.error(error);
-      toast.error("Error deleting file");
+      toast.error((error as Error)?.message || 'Error deleting file');
     }
   };
 
@@ -162,121 +140,63 @@ export default function AdminMediaDashboard() {
     try {
       await navigator.clipboard.writeText(url);
       setCopiedId(id);
-      toast.success("URL copied to clipboard!");
+      toast.success('URL copied to clipboard!');
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
-      toast.error("Failed to copy URL");
+      toast.error('Failed to copy URL');
     }
   };
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB"];
+    const sizes = ['Bytes', 'KB', 'MB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   // Get dynamic folder suffix/owner
   const getFolderOwner = (publicId: string) => {
-    const parts = publicId.split("/");
+    const parts = publicId.split('/');
     if (parts.length > 1) {
       const folderName = parts[parts.length - 2];
-      if (folderName.startsWith("admin_")) {
-        return folderName.replace("admin_", "Admin ID: ");
+      if (folderName.startsWith('admin_')) {
+        return folderName.replace('admin_', 'Admin ID: ');
       }
       return folderName;
     }
-    return "Root";
+    return 'Root';
   };
 
   // Extract all unique folders for super admin filtering
-  const uniqueFolders = Array.from(
-    new Set(files.map(f => f.public_id.split("/").slice(0, -1).join("/")))
-  ).filter(Boolean);
+  const uniqueFolders = Array.from(new Set(files.map((f) => f.public_id.split('/').slice(0, -1).join('/')))).filter(Boolean);
 
   // Filtered files
-  const filteredFiles = files.filter(file => {
-    const fileName = file.public_id.split("/").pop() || "";
-    const matchesSearch = fileName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          file.public_id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (selectedFolderFilter === "all") return matchesSearch;
-    const fileFolder = file.public_id.split("/").slice(0, -1).join("/");
+  const filteredFiles = files.filter((file) => {
+    const fileName = file.public_id.split('/').pop() || '';
+    const matchesSearch =
+      fileName.toLowerCase().includes(searchQuery.toLowerCase()) || file.public_id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (selectedFolderFilter === 'all') return matchesSearch;
+    const fileFolder = file.public_id.split('/').slice(0, -1).join('/');
     return matchesSearch && fileFolder === selectedFolderFilter;
   });
 
   return (
     <div className="space-y-8">
-      {/* Drag & Drop Upload Panel */}
-      <Card 
-        className={`border-2 border-dashed transition-all duration-300 ${
-          isDragging 
-            ? "border-primary bg-primary/5 scale-[1.01]" 
-            : "border-border/60 bg-card hover:border-primary/45"
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <CardContent className="p-8 flex flex-col items-center justify-center text-center cursor-pointer min-h-[220px]" onClick={() => fileInputRef.current?.click()}>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileSelect} 
-            multiple 
-            className="hidden" 
-          />
-          
-          <div className="p-4 bg-muted/40 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
-            <Upload className="h-10 w-10 text-muted-foreground" />
-          </div>
-          
-          <h3 className="text-lg font-semibold tracking-tight mb-1">Drag and Drop Files Here</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mb-4">
-            Support images, videos, and raw documents. Folder creation is automated for your admin profile.
-          </p>
-          <Button variant="secondary" size="sm" type="button">
-            Browse Files
-          </Button>
-
-          {/* Upload Progress List */}
-          {uploadingFiles.length > 0 && (
-            <div className="w-full max-w-md mt-6 space-y-2 border-t pt-4 text-left" onClick={(e) => e.stopPropagation()}>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Uploading Files</h4>
-              {uploadingFiles.map(file => (
-                <div key={file.name} className="flex items-center justify-between text-xs p-2 bg-muted/30 rounded border">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <File className="h-3.5 w-3.5 text-primary animate-pulse" />
-                    <span className="truncate font-medium max-w-[200px]">{file.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">{uploadProgress[file.name] || 0}%</span>
-                    <div className="w-16 bg-muted rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className="bg-primary h-full transition-all duration-300" 
-                        style={{ width: `${uploadProgress[file.name] || 0}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Gallery Section */}
+      <PageHeader title={`File Manager`} description="Manage media uploads and resources with secure dynamic folders." variant="back" />
+
       <Card className="border border-border/50 shadow-sm">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-border/40 gap-4">
-          <div>
+          {/* <div>
             <CardTitle className="text-xl">Media Gallery</CardTitle>
             <CardDescription>
               {isSuperAdmin 
                 ? "Super Admin view: Displaying all uploaded files from all admin folders." 
                 : "Admin view: Displaying files uploaded under your personal folder."}
             </CardDescription>
-          </div>
+          </div> */}
           <div className="flex flex-wrap items-center gap-3">
             {/* Search Input */}
             <div className="relative">
@@ -300,17 +220,22 @@ export default function AdminMediaDashboard() {
                   className="h-9 px-3 py-1 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="all">All Folders</option>
-                  {uniqueFolders.map(folder => (
+                  {uniqueFolders.map((folder) => (
                     <option key={folder} value={folder}>
-                      {folder.replace("pms_admin_uploads/", "")}
+                      {folder.replace('pms_admin_uploads/', '')}
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            <Button variant="outline" size="icon" className="h-9 w-9" onClick={fetchMedia}>
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <Button type="button" className="h-9 gap-1.5" onClick={() => setUploadOpen(true)}>
+              <Upload className="h-4 w-4" />
+              Upload
+            </Button>
+
+            <Button variant="outline" size="icon" className="h-9 w-9" onClick={fetchMedia} aria-label="Refresh">
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </CardHeader>
@@ -326,9 +251,7 @@ export default function AdminMediaDashboard() {
             <div className="flex flex-col items-center justify-center p-12 text-center min-h-[300px]">
               <FolderOpen className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <h3 className="font-semibold text-lg">No Files Found</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                Upload files to see them here, or adjust your search filter criteria.
-              </p>
+              <p className="text-sm text-muted-foreground max-w-sm mt-1">Upload files to see them here, or adjust your search filter criteria.</p>
             </div>
           ) : (
             <div className="overflow-x-auto w-full">
@@ -344,23 +267,18 @@ export default function AdminMediaDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredFiles.map(file => {
-                    const fileName = file.public_id.split("/").pop() || file.public_id;
+                  {filteredFiles.map((file) => {
+                    const fileName = file.public_id.split('/').pop() || file.public_id;
                     const folderOwner = getFolderOwner(file.public_id);
-                    
+
                     return (
                       <tr key={file.public_id} className="hover:bg-muted/20 transition-colors group">
                         {/* Thumbnail */}
                         <td className="p-4">
                           <div className="relative h-12 w-12 rounded border overflow-hidden bg-muted/40 flex items-center justify-center">
-                            {file.resource_type === "image" ? (
-                              <img 
-                                src={file.secure_url} 
-                                alt={fileName} 
-                                className="h-full w-full object-cover" 
-                                loading="lazy"
-                              />
-                            ) : file.resource_type === "video" ? (
+                            {file.resource_type === 'image' ? (
+                              <img src={file.secure_url} alt={fileName} className="h-full w-full object-cover" loading="lazy" />
+                            ) : file.resource_type === 'video' ? (
                               <Video className="h-6 w-6 text-indigo-500" />
                             ) : (
                               <File className="h-6 w-6 text-emerald-500" />
@@ -373,9 +291,7 @@ export default function AdminMediaDashboard() {
                           <div className="font-medium text-foreground truncate max-w-[250px]" title={fileName}>
                             {fileName}
                           </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(file.created_at).toLocaleDateString()}
-                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{new Date(file.created_at).toLocaleDateString()}</div>
                         </td>
 
                         {/* Owner/Folder */}
@@ -388,9 +304,7 @@ export default function AdminMediaDashboard() {
 
                         {/* File details */}
                         <td className="p-4">
-                          <div className="font-medium text-foreground uppercase text-xs">
-                            {file.format}
-                          </div>
+                          <div className="font-medium text-foreground uppercase text-xs">{file.format}</div>
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {formatBytes(file.bytes)}
                             {file.width && file.height && ` • ${file.width}x${file.height}`}
@@ -399,9 +313,9 @@ export default function AdminMediaDashboard() {
 
                         {/* URL Copy */}
                         <td className="p-4">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => copyToClipboard(file.secure_url, file.public_id)}
                             className="h-8 px-2 text-xs font-normal gap-1.5 hover:bg-muted"
                           >
@@ -422,17 +336,17 @@ export default function AdminMediaDashboard() {
                         {/* Action buttons */}
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <a 
-                              href={file.secure_url} 
-                              target="_blank" 
+                            <a
+                              href={file.secure_url}
+                              target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </a>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleDelete(file.public_id)}
                               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
@@ -449,6 +363,64 @@ export default function AdminMediaDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Upload files</DialogTitle>
+            <DialogDescription>Images, videos and documents land in your own admin folder.</DialogDescription>
+          </DialogHeader>
+
+          <Card
+            className={`border-2 border-dashed transition-all duration-300 ${
+              isDragging ? 'border-primary bg-primary/5 scale-[1.01]' : 'border-border/60 bg-card hover:border-primary/45'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <CardContent
+              className="p-8 flex flex-col items-center justify-center text-center cursor-pointer min-h-[220px]"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input type="file" ref={fileInputRef} onChange={handleFileSelect} multiple className="hidden" />
+
+              <div className="p-4 bg-muted/40 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Upload className="h-10 w-10 text-muted-foreground" />
+              </div>
+
+              <h3 className="text-lg font-semibold tracking-tight mb-1">Drag and Drop Files Here</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mb-4">
+                Support images, videos, and raw documents. Folder creation is automated for your admin profile.
+              </p>
+              <Button variant="secondary" size="sm" type="button">
+                Browse Files
+              </Button>
+
+              {/* Upload Progress List */}
+              {uploadingFiles.length > 0 && (
+                <div className="w-full max-w-md mt-6 space-y-2 border-t pt-4 text-left" onClick={(e) => e.stopPropagation()}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Uploading Files</h4>
+                  {uploadingFiles.map((file) => (
+                    <div key={file.name} className="flex items-center justify-between text-xs p-2 bg-muted/30 rounded border">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <File className="h-3.5 w-3.5 text-primary animate-pulse" />
+                        <span className="truncate font-medium max-w-[200px]">{file.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">{uploadProgress[file.name] || 0}%</span>
+                        <div className="w-16 bg-muted rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-primary h-full transition-all duration-300" style={{ width: `${uploadProgress[file.name] || 0}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

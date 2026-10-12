@@ -7,9 +7,9 @@ export interface CreateOrderModel {
   shippingCost: number;
   status: OrderStatus;
   notes?: string;
-  // Only product + quantity — the server resolves unit price and computes totals.
+  // Only variant + quantity — the server derives the product and resolves the price.
   items?: {
-    productId: number;
+    variantId: number;
     quantity: number;
   }[];
 }

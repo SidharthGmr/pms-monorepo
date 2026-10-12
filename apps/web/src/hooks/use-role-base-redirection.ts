@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 export function dashboardPathFor(roles: string[]): string {
   if (roles.includes(Roles.USER) || roles.includes(Roles.STAFF)) return '/dashboard';
   if (roles.includes(Roles.ADMIN)) return '/admin';
-  if (roles.includes(Roles.SUPER_ADMIN)) return '/super-admin';
+  if (roles.includes(Roles.SUPER_ADMIN)) return '/superadmin';
   return '/access-denied';
 }
 
