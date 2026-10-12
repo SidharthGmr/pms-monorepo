@@ -1,6 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateOrderModel, UpdateOrderModel } from '@/models/order.model';
+import { CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel } from '@/models/order.model';
 import { OrderFilterParams } from '@/params/order.params';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -71,6 +71,24 @@ const useUpdateOrder = () => {
   });
 };
 
+type UpdateOrderStatusArgs = { id: number | string; model: UpdateOrderStatusModel };
+
+const useUpdateOrderStatus = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, model }: UpdateOrderStatusArgs) => unitOfService.OrderService.updateStatus(id, model),
+    onSettled: (response) => {
+      if (response && response.status === 200) {
+        queryClient.invalidateQueries({ queryKey: ['OrderService.getAll'] });
+        queryClient.invalidateQueries({ queryKey: ['OrderService.getById'] });
+      }
+    },
+    onError: (error) => error,
+  });
+};
+
 const useDeleteOrder = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const queryClient = useQueryClient();
@@ -90,6 +108,7 @@ export {
   useCreateOrder, useDeleteOrder, useGetAllOrders,
   useGetOrderById,
   useGetOrdersByCustomerId,
-  useUpdateOrder
+  useUpdateOrder,
+  useUpdateOrderStatus
 };
 

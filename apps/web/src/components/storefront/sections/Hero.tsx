@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { ArrowRight, PackageOpen, ShoppingBag, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { HERO } from '../theme.config';
+import { HERO } from '@/data/theme.config';
 
 // The three newest sellable SKUs dress the banner, so it is never a stock photo of something
 // the store does not sell. Undersized stores simply show fewer tiles.
@@ -49,13 +49,20 @@ export default function Hero() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/products">
-              <Button size="lg" className="h-12 gap-2 rounded-full bg-storefront-hero-cta px-8 font-bold text-storefront-hero-cta-foreground shadow-lg hover:bg-storefront-hero-cta/90">
+              <Button
+                size="lg"
+                className="h-12 gap-2 rounded-full bg-storefront-hero-cta px-8 font-bold text-storefront-hero-cta-foreground shadow-lg hover:bg-storefront-hero-cta/90"
+              >
                 {HERO.cta.label}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <a href="#categories">
-              <Button size="lg" variant="outline" className="h-12 rounded-full border-white/40 bg-transparent px-6 font-semibold text-storefront-hero-foreground hover:bg-white/10 hover:text-storefront-hero-foreground">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-white/40 bg-transparent px-6 font-semibold text-storefront-hero-foreground hover:bg-white/10 hover:text-storefront-hero-foreground"
+              >
                 Browse categories
               </Button>
             </a>
@@ -81,21 +88,30 @@ export default function Hero() {
                 <Link
                   key={variant.id}
                   href={`/products/${encodeURIComponent(variant.sku)}`}
-                  className={cn('group w-36 shrink-0 overflow-hidden rounded-2xl bg-white shadow-2xl transition-transform hover:!scale-110 lg:w-44', TILT[index])}
+                  className={cn(
+                    'group w-36 shrink-0 overflow-hidden rounded-2xl bg-white shadow-2xl transition-transform hover:!scale-110 lg:w-44',
+                    TILT[index]
+                  )}
                 >
                   <div className="flex aspect-[4/5] items-center justify-center bg-white p-3">
                     {image ? (
                       // Variant images come from arbitrary CDNs; next/image would need each host in
                       // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={image} alt={variant.product?.name ?? variant.name} className="max-h-full w-auto object-contain transition-transform group-hover:scale-105" />
+                      <img
+                        src={image}
+                        alt={variant.product?.name ?? variant.name}
+                        className="max-h-full w-auto object-contain transition-transform group-hover:scale-105"
+                      />
                     ) : (
                       <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
                     )}
                   </div>
                   <div className="space-y-0.5 border-t px-3 py-2 text-foreground">
                     <p className="truncate text-xs font-semibold">{variant.product?.name ?? variant.name}</p>
-                    <p className="text-sm font-bold tabular-nums text-storefront-hero-cta-foreground">{price != null ? formatPrice(price) : 'Price on request'}</p>
+                    <p className="text-sm font-bold tabular-nums text-storefront-hero-cta-foreground">
+                      {price != null ? formatPrice(price) : 'Price on request'}
+                    </p>
                   </div>
                 </Link>
               );

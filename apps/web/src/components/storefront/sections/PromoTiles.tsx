@@ -1,5 +1,5 @@
 import { ShoppingBag } from 'lucide-react';
-import { PROMO_TILES } from '../theme.config';
+import { PROMO_TILES } from '@/data/theme.config';
 
 export default function PromoTiles() {
   return (

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
-import { WIDE_PROMO } from '../theme.config';
+import { WIDE_PROMO } from '@/data/theme.config';
 
 // A full-width dark panel between two light sections. Its accents come from the storefront
 // accent token, which is the teal half of the brand pair - the navy primary would be reading
@@ -24,7 +24,9 @@ export default function WidePromo() {
               {WIDE_PROMO.eyebrow}
             </span>
 
-            <h3 className="mt-4 max-w-xl text-2xl font-extrabold leading-tight tracking-tight text-storefront-surface-heading sm:text-4xl">{WIDE_PROMO.title}</h3>
+            <h3 className="mt-4 max-w-xl text-2xl font-extrabold leading-tight tracking-tight text-storefront-surface-heading sm:text-4xl">
+              {WIDE_PROMO.title}
+            </h3>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-storefront-surface-muted sm:text-base">{WIDE_PROMO.body}</p>
 
             <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2.5">
@@ -50,7 +52,10 @@ export default function WidePromo() {
               {WIDE_PROMO.cta.label}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <Link href="/products" className="text-xs font-semibold text-storefront-surface-muted underline-offset-4 hover:text-storefront-surface-heading hover:underline">
+            <Link
+              href="/products"
+              className="text-xs font-semibold text-storefront-surface-muted underline-offset-4 hover:text-storefront-surface-heading hover:underline"
+            >
               See what is in stock today
             </Link>
           </div>

@@ -21,6 +21,10 @@ export interface OrderDto {
   items?: OrderItemDto[];
 }
 
+export interface UpdateOrderStatusDto {
+  status: OrderStatus;
+}
+
 export interface UpdateOrderDto {
   totalAmount?: number;
   discount?: number;

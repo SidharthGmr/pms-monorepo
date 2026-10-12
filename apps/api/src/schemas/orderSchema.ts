@@ -19,6 +19,12 @@ export const createOrderSchema = z.object({
   }),
 });
 
+export const updateOrderStatusSchema = z.object({
+  body: z.object({
+    status: OrderStatusEnum,
+  }),
+});
+
 export const updateOrderSchema = z.object({
   body: z.object({
     totalAmount: z.number().nonnegative().optional(),

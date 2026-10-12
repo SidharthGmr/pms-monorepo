@@ -1,6 +1,6 @@
+import { BRAND } from '@/data/theme.config';
 import { Phone } from 'lucide-react';
 import Link from 'next/link';
-import { BRAND } from '../theme.config';
 
 export default function UtilityBar() {
   return (

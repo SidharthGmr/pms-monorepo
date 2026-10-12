@@ -1,4 +1,4 @@
-import { BRANDS } from '../theme.config';
+import { BRANDS } from '@/data/theme.config';
 
 export default function Brands() {
   return (

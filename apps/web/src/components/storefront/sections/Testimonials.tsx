@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Quote, Star } from 'lucide-react';
-import { TESTIMONIALS } from '../theme.config';
+import { TESTIMONIALS } from '@/data/theme.config';
 
 const MAX_STARS = 5;
 
@@ -41,7 +41,9 @@ export default function Testimonials() {
               <blockquote className="relative mt-4 flex-1 text-sm leading-relaxed text-foreground/85">&ldquo;{item.quote}&rdquo;</blockquote>
 
               <figcaption className="mt-5 flex items-center gap-3 border-t border-border/70 pt-4">
-                <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold', TINTS[index % TINTS.length])}>
+                <span
+                  className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold', TINTS[index % TINTS.length])}
+                >
                   {item.name.charAt(0)}
                 </span>
                 <div className="min-w-0">

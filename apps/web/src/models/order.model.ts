@@ -15,3 +15,7 @@ export interface CreateOrderModel {
 }
 
 export interface UpdateOrderModel extends Partial<CreateOrderModel> { }
+
+export interface UpdateOrderStatusModel {
+  status: OrderStatus;
+}

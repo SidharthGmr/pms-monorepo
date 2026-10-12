@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { BellRing, Mail } from 'lucide-react';
-import { NEWSLETTER } from '../theme.config';
+import { NEWSLETTER } from '@/data/theme.config';
 
 // Sits between the light brand strip and the dark footer, so it is a brand-gradient card on a
 // plain section rather than another full-width band - otherwise it would merge into the footer.

@@ -4,7 +4,7 @@ import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import CustomResponse from "../dtos/custom-response";
 import { ListResponseDto } from "../dtos/list-response.dto";
-import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
+import { OrderDto, UpdateOrderDto, UpdateOrderStatusDto } from "../dtos/order.dto";
 import { CreateOrderModel } from "../models/order.model";
 import { OrderFilterParams } from "../params/order.params";
 import IUnitOfService from "../services/interfaces/iunitof.service";
@@ -83,6 +83,15 @@ export class OrderController {
     const body = req.body as UpdateOrderDto;
     const order = await this.unitOfService.Order.update(id, body);
     return res.status(200).json({ success: true, message: "Order updated successfully", data: order });
+  };
+
+  updateStatus = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {
+    const id = parseInt(req.params["id"] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+
+    const { status } = req.body as UpdateOrderStatusDto;
+    const order = await this.unitOfService.Order.updateStatus(id, status, req.user?.storeCode || undefined);
+    return res.status(200).json({ success: true, message: "Order status updated successfully", data: order });
   };
 
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {

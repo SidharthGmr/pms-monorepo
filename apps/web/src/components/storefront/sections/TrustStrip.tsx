@@ -1,4 +1,4 @@
-import { TRUST_ITEMS } from '../theme.config';
+import { TRUST_ITEMS } from '@/data/theme.config';
 
 export default function TrustStrip() {
   return (

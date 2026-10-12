@@ -5,7 +5,11 @@ import { OrderController } from "../controllers/order.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import { validate } from "../middleware/validate";
-import { createOrderSchema, updateOrderSchema } from "../schemas/orderSchema";
+import authorization from "../middleware/authorization.middleware";
+import { createOrderSchema, updateOrderSchema, updateOrderStatusSchema } from "../schemas/orderSchema";
+import { Role } from "@prisma/client";
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 const orderRouter = Router();
 const orderController = container.get<OrderController>(TYPES.OrderController);
@@ -253,6 +257,49 @@ orderRouter.post("/", authenticateToken, validate(createOrderSchema), asyncHandl
  *         description: Order updated successfully
  */
 orderRouter.put("/:id", authenticateToken, validate(updateOrderSchema), asyncHandler(orderController.update));
+
+/**
+ * @swagger
+ * /orders/{id}/status:
+ *   patch:
+ *     summary: Update only an order's status
+ *     tags: [Order]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED, RETURNED]
+ *     responses:
+ *       200:
+ *         description: Order status updated successfully
+ *       400:
+ *         description: Invalid id
+ *       403:
+ *         description: This order belongs to another store
+ *       404:
+ *         description: Order not found
+ */
+orderRouter.patch("/:id/status", authenticateToken, authorization(STAFF_ROLES), validate(updateOrderStatusSchema), asyncHandler(orderController.updateStatus));
 
 /**
  * @swagger

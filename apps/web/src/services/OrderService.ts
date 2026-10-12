@@ -3,7 +3,7 @@ import { TYPES } from '@/config/types';
 import { ListResponseDto } from '@/dtos/list-response.dto';
 import { OrderDto } from '@/dtos/order.dto';
 import Response from '@/dtos/Response';
-import { CreateOrderModel, UpdateOrderModel } from '@/models/order.model';
+import { CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel } from '@/models/order.model';
 import { OrderFilterParams } from '@/params/order.params';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
@@ -46,6 +46,12 @@ export default class OrderService implements IOrderService {
     return this.httpService
       .call()
       .put<OrderDto, AxiosResponse<Response<OrderDto>>>(`/orders/${id}`, model);
+  }
+
+  updateStatus(id: number | string, model: UpdateOrderStatusModel): Promise<AxiosResponse<Response<OrderDto>>> {
+    return this.httpService
+      .call()
+      .patch<OrderDto, AxiosResponse<Response<OrderDto>>>(`/orders/${id}/status`, model);
   }
 
   delete(id: number | string): Promise<AxiosResponse<Response<void>>> {

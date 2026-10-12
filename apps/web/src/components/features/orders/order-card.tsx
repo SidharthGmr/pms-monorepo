@@ -9,6 +9,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { KeyboardEvent } from 'react';
 import { toneFor } from './order-status';
+import OrderStatusMenu from './status-menu';
 
 interface OrderCardProps {
   order: OrderDto;
@@ -87,10 +88,7 @@ export default function OrderCard({ order, onView, onEdit, onDelete }: OrderCard
       </div>
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t bg-muted/30 px-4 py-2.5 text-[11px]">
-        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold', tone.soft, tone.text)}>
-          <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-          {tone.label}
-        </span>
+        <OrderStatusMenu order={order} />
         <span className="truncate tabular-nums text-muted-foreground" title={issued ? formatDistanceToNow(issued, { addSuffix: true }) : undefined}>
           {issued ? format(issued, 'd MMM yyyy') : '—'}
         </span>

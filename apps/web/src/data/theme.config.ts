@@ -1,13 +1,4 @@
-import { BadgeCheck, RotateCcw, Tag, Truck, type LucideIcon } from 'lucide-react';
-
-/**
- * Everything a rebrand touches lives here. Colours are CSS variables in `globals.css`
- * (`--storefront-*`), copy is below - between the two, standing up a new store's skin means
- * editing two files rather than hunting literals through JSX.
- *
- * None of this is CMS-backed yet. Product data comes from the API; the promo tiles,
- * testimonials, blog and brand strip are the blocks to wire to real content next.
- */
+import { BadgeCheck, Boxes, ClipboardList, Headphones, History, Mail, MapPin, Phone, RotateCcw, ShieldCheck, ShoppingBag, Tag, Truck, type LucideIcon } from 'lucide-react';
 
 export const BRAND = {
   name: 'Stocklivo',
@@ -25,7 +16,7 @@ export const NAV_LINKS = [
   { label: 'Featured', href: '#featured' },
   { label: 'New arrivals', href: '#new-arrivals' },
   { label: 'Blog', href: '#blog' },
-  { label: 'About us', href: '#footer' },
+  { label: 'About us', href: '/about-us' },
 ] as const;
 
 export const HERO = {
@@ -97,21 +88,38 @@ export const WIDE_PROMO = {
   cta: { label: 'Shop the catalogue', href: '/products' },
 } as const;
 
+export const BLOG = {
+  eyebrow: 'From the shop floor',
+  title: 'Our latest blog',
+  body: 'Short reads on stock, pricing and getting orders out of the door.',
+  cta: { label: 'All posts', href: '#blog' },
+} as const;
+
+// `href` is the one field to swap when these become real posts; everything else is display copy.
 export const BLOG_POSTS = [
   {
+    category: 'Retail',
     date: 'July 3, 2026',
+    readMinutes: 6,
     title: 'The most innovative things happening with online retail',
-    excerpt: 'How storefronts are changing as inventory, pricing and fulfilment move closer together.',
+    excerpt: 'How storefronts are changing as inventory, pricing and fulfilment move closer together, and what a small shop can borrow from it.',
+    href: '#blog',
   },
   {
-    date: 'July 3, 2026',
+    category: 'Guides',
+    date: 'June 24, 2026',
+    readMinutes: 4,
     title: 'Seven answers to the most frequently asked questions',
     excerpt: 'The questions shoppers ask most often before placing a first order, answered plainly.',
+    href: '#blog',
   },
   {
-    date: 'July 3, 2026',
+    category: 'Suppliers',
+    date: 'June 11, 2026',
+    readMinutes: 5,
     title: 'Meet the people behind the products you buy',
     excerpt: 'A look at the suppliers and makers who keep the shelves stocked week after week.',
+    href: '#blog',
   },
 ] as const;
 
@@ -124,6 +132,51 @@ export const NEWSLETTER = {
   placeholder: 'you@example.com',
   cta: 'Subscribe',
   note: 'No spam. Unsubscribe whenever you like.',
+} as const;
+
+/**
+ * The about page says only what the shop actually does - live counts, dated prices, genuine
+ * stock. No founding dates, headcounts or customer totals, because none of those are facts
+ * this codebase holds.
+ */
+export const ABOUT = {
+  banner: {
+    eyebrow: 'Who we are',
+    title: 'About us',
+    description: 'A shop built around one idea: what the page says is what is on the shelf.',
+  },
+  story: {
+    eyebrow: 'Our story',
+    title: 'A catalogue you can trust at a glance',
+    paragraphs: [
+      'Most online shops show you a product and leave you guessing - is it really in stock, and is this price the one you will actually be charged? We built Stocklivo the other way round. The storefront reads straight from the same inventory the shop floor runs on, so a count on the page is a count on the shelf.',
+      'Every price carries its own history. When a price changes, the old one is closed off and dated rather than overwritten, so an order is always priced by the figure that was in force when it was placed. Nothing is quietly rewritten after the fact.',
+      'The result is a small promise, kept consistently: no phantom stock, no surprise at checkout, and a clear record behind every number you see.',
+    ],
+  },
+  pillars: [
+    { icon: Boxes, title: 'Live stock counts', body: 'Stock moves as orders and deliveries happen, so the number on a product is the number in the building.' },
+    { icon: History, title: 'Dated price history', body: 'Every price change is recorded with the period it applied to. Your order is priced by the one that was live when you placed it.' },
+    { icon: ShieldCheck, title: 'Genuine products', body: 'Stock is received against a supplier invoice before it can be sold, so what ships is what was bought in.' },
+    { icon: RotateCcw, title: 'Returns without a fight', body: 'Seven days to change your mind, and the return lands back on the same record the sale came from.' },
+  ],
+  steps: [
+    { icon: ShoppingBag, title: 'Browse what is really there', body: 'The catalogue lists sellable variants only, each with its current price and stock.' },
+    { icon: ClipboardList, title: 'Place the order', body: 'Prices are locked to the order the moment it is raised, and an invoice is issued against it.' },
+    { icon: Truck, title: 'Track it to the door', body: 'The order moves through confirmed, shipped and delivered, and the stock count moves with it.' },
+  ],
+  contact: [
+    { icon: MapPin, label: 'Visit us', key: 'address' },
+    { icon: Phone, label: 'Call us', key: 'phone' },
+    { icon: Mail, label: 'Email us', key: 'email' },
+    { icon: Headphones, label: 'Support', key: 'supportNote' },
+  ],
+  cta: {
+    title: 'See the catalogue for yourself',
+    body: 'Every product below is priced and counted as of right now.',
+    primary: { label: 'Shop the catalogue', href: '/products' },
+    secondary: { label: 'Read the blog', href: '/#blog' },
+  },
 } as const;
 
 export const FOOTER_COLUMNS = [

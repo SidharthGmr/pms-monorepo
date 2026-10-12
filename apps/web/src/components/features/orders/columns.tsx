@@ -1,13 +1,12 @@
 'use client';
 import { OrderDto } from '@/dtos/order.dto';
 import { formatPrice } from '@/lib/format-price';
-import { cn } from '@/lib/utils';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Receipt } from 'lucide-react';
 import { useMemo } from 'react';
-import { toneFor } from './order-status';
 import { OrderRowActions } from './row-action';
+import OrderStatusMenu from './status-menu';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
@@ -112,15 +111,7 @@ export const useOrderColumns = (editRecord: (id: number) => void, deleteRecord: 
         accessorKey: 'status',
         enableSorting: false,
         header: () => <span className={HEADER}>Status</span>,
-        cell: ({ row }) => {
-          const tone = toneFor(row.original.status);
-          return (
-            <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold', tone.soft, tone.text)}>
-              <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-              {tone.label}
-            </span>
-          );
-        },
+        cell: ({ row }) => <OrderStatusMenu order={row.original} />,
         meta: { sortingKey: 'status' },
       },
       {

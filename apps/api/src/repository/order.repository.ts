@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { OrderStatus, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
 import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
 import { ListResponseDto } from "../dtos/list-response.dto";
@@ -108,6 +108,10 @@ export class OrderRepository implements IOrderRepository {
 
   async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {
     return prisma.order.update({ where: { id }, data });
+  }
+
+  async updateStatus(id: number, status: OrderStatus): Promise<OrderDto> {
+    return prisma.order.update({ where: { id }, data: { status } });
   }
 
   async delete(id: number): Promise<OrderDto> {

@@ -189,6 +189,16 @@ export class OrderService implements IOrderService {
     return this.unitOfWork.Order.update(id, data);
   }
 
+  // The one field a dispatcher moves day to day, so it gets its own path: no totals, no items,
+  // nothing else can ride along with it.
+  async updateStatus(id: number, status: OrderStatus, storeCode?: string): Promise<OrderDto> {
+    const existing = await this.unitOfWork.Order.findById(id);
+    if (!existing) throw new NotFoundError("Order not found");
+    if (storeCode && existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
+    if (existing.status === status) return existing;
+    return this.unitOfWork.Order.updateStatus(id, status);
+  }
+
   async delete(id: number): Promise<OrderDto> {
     const existing = await this.unitOfWork.Order.findById(id);
     if (!existing) throw new NotFoundError("Order not found");
