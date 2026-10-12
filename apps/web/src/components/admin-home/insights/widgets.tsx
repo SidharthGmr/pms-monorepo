@@ -1,5 +1,4 @@
 'use client';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Minus, TrendingDown, TrendingUp } from 'lucide-react';
@@ -56,47 +55,6 @@ export function TrendChip({ delta, inverted = false, label, onDark = false }: Tr
       {up ? '+' : ''}
       {delta}%{label ? <span className={cn('font-normal', onDark ? 'text-primary-foreground/70' : 'text-muted-foreground')}> {label}</span> : null}
     </span>
-  );
-}
-
-interface KpiTileProps {
-  icon: React.ElementType;
-  accent: Accent;
-  label: string;
-  value?: string;
-  delta?: number | null;
-  deltaInverted?: boolean;
-  progress: number;
-  progressLabel: string;
-  href: string;
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-export function KpiTile({ icon: Icon, accent, label, value, delta, deltaInverted, progress, progressLabel, href, className, style }: KpiTileProps) {
-  const a = ACCENT[accent];
-  return (
-    <Link href={href} className={cn('group block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring', className)} style={style}>
-      <div className={cn(SURFACE, 'relative h-full overflow-hidden p-4 transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md')}>
-        <div className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.glow)} aria-hidden />
-        <div className="relative flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            {value === undefined ? <Skeleton className="mt-1.5 h-7 w-28" /> : <p className="mt-1 truncate text-xl font-bold tabular-nums leading-tight sm:text-2xl">{value}</p>}
-          </div>
-          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', a.icon)}>
-            <Icon className="h-4 w-4" />
-          </span>
-        </div>
-        {delta !== undefined && (
-          <div className="relative mt-2">
-            <TrendChip delta={delta} inverted={deltaInverted} label="vs typical day" />
-          </div>
-        )}
-        <Progress value={progress} className={cn('mt-3 h-1.5', a.bar)} />
-        <p className="mt-1.5 truncate text-[11px] text-muted-foreground">{progressLabel}</p>
-      </div>
-    </Link>
   );
 }
 

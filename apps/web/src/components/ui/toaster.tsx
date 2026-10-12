@@ -179,11 +179,11 @@ export function Toaster() {
           : 'bg-primary';
 
         return (
-          <Toast key={id} {...props} className="relative overflow-hidden min-w-[340px] pr-12 flex flex-col items-stretch gap-1">
+          <Toast key={id} {...props} className="relative overflow-hidden w-full pr-10 flex flex-col items-stretch gap-1">
             <ToastChimeTrigger variant={variant} />
-            <div className="flex gap-3.5 items-start w-full">
-              <div className={`p-1.5 rounded-xl bg-slate-500/5 ${iconColor} shrink-0 mt-0.5`}>
-                <Icon className="w-5 h-5" />
+            <div className="flex gap-3 items-start w-full">
+              <div className={`p-1 rounded-lg bg-slate-500/5 ${iconColor} shrink-0 mt-0.5`}>
+                <Icon className="w-4 h-4" />
               </div>
               <div className="grid gap-0.5 flex-1 min-w-0">
                 {title && <ToastTitle className="font-bold text-sm text-foreground leading-snug">{title}</ToastTitle>}
@@ -192,7 +192,7 @@ export function Toaster() {
                 )}
               </div>
             </div>
-            {action && <div className="mt-2 pl-10 w-full flex">{action}</div>}
+            {action && <div className="mt-2 pl-9 w-full flex">{action}</div>}
             <ToastClose className="rounded-full hover:bg-muted p-1 text-muted-foreground/60 transition-colors" />
             
             {/* Countdown Progress Bar */}

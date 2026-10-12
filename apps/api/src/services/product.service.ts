@@ -1,5 +1,7 @@
 
 import { inject, injectable } from "inversify";
+import { ListResponseDto } from "../dtos/list-response.dto";
+import { LowStockItemDto } from "../dtos/low-stock.dto";
 import { TYPES } from "../config/ioc.types";
 import { ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
 import NotFoundError from "../exceptions/not-found-error";
@@ -28,6 +30,10 @@ export class ProductService implements IProductService {
     const product = await this.unitOfWork.Product.findById(id);
     if (!product) throw new NotFoundError("Product not found");
     return product;
+  }
+
+  async getLowStock(storeCode: string, limit?: number): Promise<ListResponseDto<LowStockItemDto>> {
+    return this.unitOfWork.Product.findLowStock(storeCode, limit);
   }
 
   async delete(id: number, userId: string,): Promise<ProductResponseDto> {

@@ -1,4 +1,5 @@
 import { Status } from "@prisma/client";
+import { LowStockItemDto } from "../dtos/low-stock.dto";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
@@ -51,6 +52,17 @@ export class ProductController {
       message: "Products fetched successfully",
       data: { totalRecord: result.totalRecord, data: result.data },
     });
+  };
+
+  getLowStock = async (req: Request, res: Response): Promise<Response<ListResponseDto<LowStockItemDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) {
+      return res.status(400).json(MISSING_STORE_CODE);
+    }
+
+    const limit = req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string, 10) : undefined;
+    const data = await this.unitOfService.Product.getLowStock(storeCode, Number.isFinite(limit as number) ? limit : undefined);
+    return res.status(200).json({ success: true, message: "Low stock products fetched successfully", data });
   };
 
   getById = async (req: Request, res: Response): Promise<Response<CustomResponse<ProductResponseDto>>> => {

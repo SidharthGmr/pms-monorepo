@@ -2,6 +2,7 @@ import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
 import { ProductResponseDto } from '@pms/types';
 import { ListResponseDto } from '../dtos/list-response.dto';
+import { LowStockItemDto } from '../dtos/low-stock.dto';
 import { ProductFilterParams } from '../params/product.params';
 import { IProductRepository } from './interfaces/iproduct.repository';
 
@@ -93,6 +94,49 @@ export class ProductRepository implements IProductRepository {
     return { totalRecord: total, data };
   }
 
+
+  // Stock is not a column: it is the running sum of every stockHistory row for a variant, the
+  // same way the checkout computes availability. Variants are the sellable unit, so the report
+  // lists variants rather than products.
+  async findLowStock(storeCode: string, limit = 20): Promise<ListResponseDto<LowStockItemDto>> {
+    const variants = await prisma.productVariant.findMany({
+      where: { storeCode, deletedAt: null, product: { deletedAt: null } },
+      select: {
+        id: true,
+        productId: true,
+        name: true,
+        sku: true,
+        images: true,
+        lowStockThreshold: true,
+        product: { select: { name: true, images: true } },
+      },
+    });
+
+    if (variants.length === 0) return { totalRecord: 0, data: [] };
+
+    const sums = await prisma.stockHistory.groupBy({
+      by: ['variantId'],
+      where: { variantId: { in: variants.map((variant) => variant.id) } },
+      _sum: { quantity: true },
+    });
+    const stockByVariant = new Map(sums.map((row) => [row.variantId as number, row._sum.quantity ?? 0] as const));
+
+    const low = variants
+      .map((variant) => ({
+        id: variant.id,
+        productId: variant.productId,
+        name: variant.name || variant.product.name,
+        sku: variant.sku,
+        stock: stockByVariant.get(variant.id) ?? 0,
+        lowStockThreshold: variant.lowStockThreshold,
+        images: variant.images?.length ? variant.images : (variant.product.images ?? []),
+      }))
+      .filter((variant) => variant.stock <= variant.lowStockThreshold)
+      // Emptiest first, so whatever is already out of stock leads the list.
+      .sort((a, b) => a.stock - b.stock || a.name.localeCompare(b.name));
+
+    return { totalRecord: low.length, data: low.slice(0, limit) };
+  }
 
   async findById(id: number): Promise<ProductResponseDto | null> {
     const product = await prisma.product.findUnique({ where: { id }, select: productSelect });

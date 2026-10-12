@@ -1,5 +1,6 @@
 'use client';
 
+import StatusBadge from '@/components/common/status-badge';
 import { CustomDataTable } from '@/components/Table/data-table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,12 +26,6 @@ const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 const FLUSH_CARD = 'p-0 md:p-0';
 
 const money = (amount: number) => `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-const STATUS_TONE: Record<string, { dot: string; text: string }> = {
-  [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  [StatusValues.Draft]: { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  [StatusValues.Trash]: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
-};
 
 interface ProductViewProps {
   id: number;
@@ -74,7 +69,6 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
   }
 
   const images = product.images ?? [];
-  const tone = STATUS_TONE[product.status] ?? { dot: 'bg-muted-foreground', text: 'text-muted-foreground' };
   const active = variants.filter((variant) => variant.isActive);
   const stock = variants.reduce((sum, variant) => sum + (variant.stockQuantity ?? 0), 0);
   const priced = active
@@ -95,10 +89,7 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
               <span className="truncate">{product.category?.name ?? '—'}</span>
               {product.brandName?.name && <span className="truncate">· {product.brandName.name}</span>}
               <code className="font-mono text-xs">/{product.slug}</code>
-              <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', tone.text)}>
-                <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-                {product.status}
-              </span>
+              <StatusBadge status={product.status} />
             </div>
           </div>
 

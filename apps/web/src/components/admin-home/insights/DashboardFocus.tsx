@@ -43,7 +43,10 @@ interface LowStockProduct {
 const greetingFor = (hour: number) => (hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening');
 
 // Staggered entrance so the page settles top to bottom instead of popping in at once.
-const enter = (step: number) => ({ className: 'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500', style: { animationDelay: `${step * 60}ms` } });
+const enter = (step: number) => ({
+  className: 'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500',
+  style: { animationDelay: `${step * 60}ms` },
+});
 
 interface DashboardFocusProps {
   /** Rendered beside the page actions, e.g. the Insights / Classic switch. */
@@ -138,7 +141,14 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
         .join(', '),
       cta: { label: 'Check stock', href: '/admin/products' },
     },
-  ].filter(Boolean) as { key: string; tone: 'critical' | 'warning'; icon: React.ElementType; title: string; body: string; cta: { label: string; href: string } }[];
+  ].filter(Boolean) as {
+    key: string;
+    tone: 'critical' | 'warning';
+    icon: React.ElementType;
+    title: string;
+    body: string;
+    cta: { label: string; href: string };
+  }[];
 
   const checking = lowStockQuery.isLoading || pendingQuery.isPending;
 
@@ -156,7 +166,8 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
               <Skeleton className="h-4 w-72" />
             ) : metrics.todayOrders > 0 ? (
               <>
-                <strong className="font-semibold text-foreground">{formatCount(metrics.todayOrders)}</strong> {metrics.todayOrders === 1 ? 'order' : 'orders'} today worth{' '}
+                <strong className="font-semibold text-foreground">{formatCount(metrics.todayOrders)}</strong>{' '}
+                {metrics.todayOrders === 1 ? 'order' : 'orders'} today worth{' '}
                 <strong className="font-semibold text-foreground">{formatMoney(metrics.todaySale)}</strong> —{' '}
                 {metrics.todaySale >= metrics.avgDaySale ? 'ahead of a typical day this month.' : 'behind a typical day this month.'}
               </>
@@ -186,7 +197,9 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
       <section {...enter(1)}>
         <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
           Needs attention
-          {!checking && tasks.length > 0 && <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>}
+          {!checking && tasks.length > 0 && (
+            <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>
+          )}
         </h2>
 
         {checking ? (
@@ -299,11 +312,25 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
       {/* 4. Context: where the week is going, what just happened, what is thin on the shelf. */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4 xl:col-span-2">
-          <Panel {...enter(6)} title="Sales, last 7 days" icon={TrendingUp} hint="Completed orders by day; cancelled and returned are left out." href="/admin/orders" cta="All orders">
+          <Panel
+            {...enter(6)}
+            title="Sales, last 7 days"
+            icon={TrendingUp}
+            hint="Completed orders by day; cancelled and returned are left out."
+            href="/admin/orders"
+            cta="All orders"
+          >
             <FocusSalesTrend days={7} />
           </Panel>
 
-          <Panel {...enter(7)} title="Latest activity" icon={ShoppingBag} hint="Sales and stock purchases, newest first, grouped by day." href="/admin/orders" cta="All orders">
+          <Panel
+            {...enter(7)}
+            title="Latest activity"
+            icon={ShoppingBag}
+            hint="Sales and stock purchases, newest first, grouped by day."
+            href="/admin/orders"
+            cta="All orders"
+          >
             <FocusActivityFeed limit={6} />
           </Panel>
         </div>
@@ -323,7 +350,14 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
           <Panel {...enter(7)} title="What the shop holds" icon={Boxes} bodyClassName="px-3 py-3 sm:px-3">
             <ul className="grid grid-cols-2 gap-2">
               <CatalogRow icon={Boxes} accent="sky" label="Products" value={summary?.productTotal} href="/admin/products" loading={isLoading} />
-              <CatalogRow icon={FolderTree} accent="emerald" label="Categories" value={summary?.categoryTotal} href="/admin/categories" loading={isLoading} />
+              <CatalogRow
+                icon={FolderTree}
+                accent="emerald"
+                label="Categories"
+                value={summary?.categoryTotal}
+                href="/admin/categories"
+                loading={isLoading}
+              />
               <CatalogRow icon={Tag} accent="violet" label="Brands" value={summary?.brandTotal} href="/admin/brand-names" loading={isLoading} />
               <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} href="/admin/users" loading={isLoading} />
             </ul>
@@ -335,9 +369,9 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
 }
 
 /**
- * A figure card that only states things that can be read. The shared KpiTile ends in a bar whose
- * denominator is "twice the average", which no one can interpret; here the same space carries the
- * two numbers the figure is actually judged against - a typical day, and the month to date.
+ * A figure card that only states things that can be read. The space a progress bar would take is
+ * given instead to the two numbers the figure is actually judged against - a typical day, and the
+ * month to date.
  */
 function FocusKpi({
   icon: Icon,
@@ -370,9 +404,21 @@ function FocusKpi({
   const loading = value === undefined;
 
   return (
-    <Link href={href} className={cn('group block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring', className)} style={style}>
-      <div className={cn(SURFACE, 'relative flex h-full flex-col overflow-hidden transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md')}>
-        <div className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.glow)} aria-hidden />
+    <Link
+      href={href}
+      className={cn('group block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring', className)}
+      style={style}
+    >
+      <div
+        className={cn(
+          SURFACE,
+          'relative flex h-full flex-col overflow-hidden transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md'
+        )}
+      >
+        <div
+          className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.glow)}
+          aria-hidden
+        />
 
         <div className="relative flex-1 p-4">
           <div className="flex items-start justify-between gap-3">
@@ -385,7 +431,12 @@ function FocusKpi({
           <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
             {loading ? <Skeleton className="h-8 w-28" /> : <p className="truncate text-2xl font-bold tabular-nums leading-none">{value}</p>}
             {/* A red -100% on a quiet morning reads as a problem; it is just an empty day so far. */}
-            {!loading && (amount > 0 ? delta !== undefined && <TrendChip delta={delta} inverted={deltaInverted} /> : <span className="text-[11px] text-muted-foreground">nothing yet</span>)}
+            {!loading &&
+              (amount > 0 ? (
+                delta !== undefined && <TrendChip delta={delta} inverted={deltaInverted} />
+              ) : (
+                <span className="text-[11px] text-muted-foreground">nothing yet</span>
+              ))}
           </div>
         </div>
 
@@ -466,16 +517,37 @@ function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boo
   );
 }
 
-function CatalogRow({ icon: Icon, accent, label, value, href, loading }: { icon: React.ElementType; accent: Accent; label: string; value?: number; href: string; loading: boolean }) {
+function CatalogRow({
+  icon: Icon,
+  accent,
+  label,
+  value,
+  href,
+  loading,
+}: {
+  icon: React.ElementType;
+  accent: Accent;
+  label: string;
+  value?: number;
+  href: string;
+  loading: boolean;
+}) {
   return (
     <li className="min-w-0">
-      <Link href={href} className="group flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+      <Link
+        href={href}
+        className="group flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
+      >
         <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-md', ACCENT[accent].icon)}>
           <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[11px] text-muted-foreground">{label}</p>
-          {loading ? <Skeleton className="mt-0.5 h-4 w-10" /> : <p className="text-sm font-semibold tabular-nums leading-tight">{formatCount(value ?? 0)}</p>}
+          {loading ? (
+            <Skeleton className="mt-0.5 h-4 w-10" />
+          ) : (
+            <p className="text-sm font-semibold tabular-nums leading-tight">{formatCount(value ?? 0)}</p>
+          )}
         </div>
       </Link>
     </li>

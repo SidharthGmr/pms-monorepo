@@ -1,18 +1,12 @@
 'use client';
 
+import StatusBadge from '@/components/common/status-badge';
 import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
 import { SupplierDto } from '@/dtos/supplier.dto';
-import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Mail, MapPin, Pencil, Phone, Trash2, UserRound } from 'lucide-react';
-
-const STATUS_TONE: Record<string, { dot: string; text: string }> = {
-  [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  [StatusValues.Draft]: { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  [StatusValues.Trash]: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
-};
 
 const TONES = [
   'bg-sky-500/15 text-sky-700 dark:text-sky-300',
@@ -41,7 +35,6 @@ interface SupplierCardProps {
 // Card layout for the suppliers grid: who they are up top, how to reach them in the middle,
 // display order and when they were added along the footer.
 export default function SupplierCard({ supplier, onView, onEdit, onDelete }: SupplierCardProps) {
-  const tone = STATUS_TONE[supplier.status];
   const avatarTone = TONES[supplier.name.length % TONES.length];
 
   return (
@@ -58,10 +51,7 @@ export default function SupplierCard({ supplier, onView, onEdit, onDelete }: Sup
           <button type="button" onClick={onView} className="block w-full truncate text-left text-sm font-semibold hover:underline" title={supplier.name}>
             {supplier.name}
           </button>
-          <span className={cn('mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium', tone?.text ?? 'text-muted-foreground')}>
-            <span className={cn('h-1.5 w-1.5 rounded-full', tone?.dot ?? 'bg-muted-foreground')} />
-            {supplier.status}
-          </span>
+          <StatusBadge status={supplier.status} size="xs" className="mt-1" />
         </div>
       </div>
 

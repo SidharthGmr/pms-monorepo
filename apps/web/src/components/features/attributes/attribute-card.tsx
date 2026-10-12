@@ -1,5 +1,6 @@
 'use client';
 
+import StatusBadge from '@/components/common/status-badge';
 import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
 import { StatusValues } from '@/enums/status-values.enum';
@@ -8,12 +9,6 @@ import { AttributeDto } from '@pms/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Pencil, Ruler, Trash2 } from 'lucide-react';
 import { KeyboardEvent } from 'react';
-
-const STATUS_TONE: Record<string, { dot: string; text: string }> = {
-  [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  [StatusValues.Draft]: { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  [StatusValues.Trash]: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
-};
 
 interface AttributeCardProps {
   attribute: AttributeDto;
@@ -25,7 +20,6 @@ interface AttributeCardProps {
 // Card layout for the attributes grid: identity and unit up top, status and age along the footer.
 // The whole card opens the read-only view; the overlay buttons stop propagation.
 export default function AttributeCard({ attribute, onView, onEdit, onDelete }: AttributeCardProps) {
-  const tone = STATUS_TONE[attribute.status] ?? { dot: 'bg-muted-foreground', text: 'text-muted-foreground' };
   const trashed = attribute.status === StatusValues.Trash;
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -68,10 +62,7 @@ export default function AttributeCard({ attribute, onView, onEdit, onDelete }: A
       </div>
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-2.5 text-[11px]">
-        <span className={cn('inline-flex items-center gap-1.5 font-medium', tone.text)}>
-          <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-          {attribute.status}
-        </span>
+        <StatusBadge status={attribute.status} size="xs" />
         <span className="flex items-center gap-2 text-muted-foreground">
           <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums" title="Display order">
             {attribute.displayOrder ?? '—'}

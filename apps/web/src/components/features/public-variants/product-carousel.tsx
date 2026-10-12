@@ -6,7 +6,7 @@ import Autoplay from 'embla-carousel-autoplay';
 import { useMemo, useRef } from 'react';
 import ProductCard, { ProductCardSkeleton } from './product-card';
 
-const SLIDE = 'pl-3 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6';
+const SLIDE = 'pl-2.5 basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-1/6 xl:basis-[12.5%]';
 const SKELETON_COUNT = 6;
 
 interface ProductCarouselProps {
@@ -55,7 +55,7 @@ export default function ProductCarousel({
         </div>
       </div>
 
-      <CarouselContent className="-ml-3">
+      <CarouselContent className="-ml-2.5">
         {loading
           ? Array.from({ length: SKELETON_COUNT }, (_, i) => (
               <CarouselItem key={i} className={SLIDE}>

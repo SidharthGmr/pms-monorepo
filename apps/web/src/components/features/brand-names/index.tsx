@@ -27,8 +27,6 @@ import { Button } from '@/components/ui/button';
 import ListPageHeader from '@/components/common/list-page-header';
 
 const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
-
-// `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant), which puts a 20px inset around the image at desktop widths.
 const FLUSH_CARD = 'p-0 md:p-0';
 
 const VIEW_STORAGE_KEY = 'brand-names.view';
@@ -36,8 +34,6 @@ const VIEW_STORAGE_KEY = 'brand-names.view';
 export default function BrandName() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
-  // Add opens an inline panel above the search bar; Edit still uses the dialog. Cards are the
-  // default view; the stored preference is applied after mount so server and first client render agree.
   const [showAddModal, setShowAddModal] = useState(false);
   const [view, setView] = useState<ListView>('grid');
   useEffect(() => {
@@ -48,7 +44,7 @@ export default function BrandName() {
     setView(next);
     storeView(VIEW_STORAGE_KEY, next);
   };
-  // The URL seeds the first render so a shared link opens on the same view; after that the page owns the state.
+
   const [filter, setFilter] = useState<BrandNameFilterValue>(() => ({
     search: searchParams.get('search') ?? DEFAULT_BRAND_NAME_FILTER.search,
     status: (searchParams.get('status') as Status | null) ?? DEFAULT_BRAND_NAME_FILTER.status,
@@ -56,6 +52,7 @@ export default function BrandName() {
     sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
     page: +(searchParams.get('page') || 1),
   }));
+
   const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));
   const [pageSize, setPageSize] = useState(() => Number(searchParams.get('recordPerPage')) || 8 || config.recordPerPage);
 
@@ -100,7 +97,6 @@ export default function BrandName() {
     sorting: [{ id: filter.sortBy, desc: filter.sortDirection === 'DESC' }],
   });
 
-  // Any change to what is being listed sends the user back to page 1, otherwise a narrower result set can leave them on an empty page.
   const updateFilter = (patch: Partial<BrandNameFilterValue>) => {
     setFilter((current) => ({ ...current, ...patch }));
     setPage(1);

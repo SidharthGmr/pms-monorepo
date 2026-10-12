@@ -1,6 +1,7 @@
 import { Roles } from '@/enums/roles.enum';
 import {
   Boxes,
+  Images,
   Inbox,
   MailPlus,
   CreditCard,
@@ -342,6 +343,15 @@ export const SideBarMenu: SideBarMenuDto[] = [
     url: '/super-admin/stores/',
     group: 'Administration',
     role: [Roles.SUPER_ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'media',
+    title: 'Media',
+    icon: Images,
+    url: '/admin/media/',
+    group: 'Administration',
+    role: [Roles.SUPER_ADMIN, Roles.ADMIN],
     isActive: false,
   },
   {

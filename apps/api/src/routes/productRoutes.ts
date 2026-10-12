@@ -170,6 +170,35 @@ productRouter.get('/public', asyncHandler(productController.getAllPublic));
  *       404:
  *         description: Product not found
  */
+/**
+ * @swagger
+ * /products/reports/low-stock:
+ *   get:
+ *     summary: Variants at or below their low-stock threshold
+ *     tags: [Product]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Low stock products fetched successfully
+ *       400:
+ *         description: Store code missing
+ *       401:
+ *         description: Unauthorized
+ */
+productRouter.get('/reports/low-stock', authenticateToken, asyncHandler(productController.getLowStock));
+
 productRouter.get('/:id', authenticateToken, asyncHandler(productController.getById));
 
 /**

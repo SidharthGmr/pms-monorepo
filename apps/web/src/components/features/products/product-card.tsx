@@ -1,5 +1,6 @@
 'use client';
 
+import StatusBadge from '@/components/common/status-badge';
 import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
 import { StatusValues } from '@/enums/status-values.enum';
@@ -8,12 +9,6 @@ import { ProductResponseDto } from '@pms/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Boxes, Eye, ImageOff, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-const STATUS_TONE: Record<string, { dot: string; text: string }> = {
-  [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  [StatusValues.Draft]: { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  [StatusValues.Trash]: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
-};
 
 interface ProductCardProps {
   product: ProductResponseDto;
@@ -28,7 +23,6 @@ interface ProductCardProps {
 // the rest (Edit and Variants are pages, so they navigate).
 export default function ProductCard({ product, onView, onEdit, onDelete }: ProductCardProps) {
   const router = useRouter();
-  const tone = STATUS_TONE[product.status] ?? { dot: 'bg-muted-foreground', text: 'text-muted-foreground' };
   const trashed = product.status === StatusValues.Trash;
   const image = product.images?.[0] ?? null;
 
@@ -65,10 +59,7 @@ export default function ProductCard({ product, onView, onEdit, onDelete }: Produ
       </div>
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t px-3 py-2.5 text-[11px]">
-        <span className={cn('inline-flex items-center gap-1.5 font-medium', tone.text)}>
-          <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-          {product.status}
-        </span>
+        <StatusBadge status={product.status} size="xs" />
         <span className="truncate text-muted-foreground" title={product.createdAt ? new Date(product.createdAt).toLocaleString() : undefined}>
           {product.createdAt ? formatDistanceToNow(new Date(product.createdAt), { addSuffix: true }) : '—'}
         </span>

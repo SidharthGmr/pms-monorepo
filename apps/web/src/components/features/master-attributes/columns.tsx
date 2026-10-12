@@ -1,32 +1,16 @@
 'use client';
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { format, formatDistanceToNow } from 'date-fns';
 import { ListChecks, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import RecordTimestamps from '@/components/common/record-timestamps';
+import StatusBadge from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
 import { MasterAttributeDto } from '@/dtos/master-entry.dto';
 import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
-
-const STATUS_TONE: Record<string, { dot: string; text: string }> = {
-  [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  [StatusValues.Draft]: { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  [StatusValues.Trash]: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
-};
-
-// "3 days ago" with the exact timestamp on hover; a dash when the column was never set.
-function When({ value }: { value?: Date | string | null }) {
-  if (!value) return <span className="text-muted-foreground/60">—</span>;
-  const date = new Date(value);
-  return (
-    <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground" title={format(date, 'PPpp')}>
-      {formatDistanceToNow(date, { addSuffix: true })}
-    </span>
-  );
-}
 
 // Table layout for the attribute list. Sorting is driven by the page's Sort control, not the headers.
 export const useMasterAttributeColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
@@ -101,13 +85,7 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
         enableSorting: false,
         header: () => <span className={HEADER}>Status</span>,
         cell: ({ row }) => {
-          const tone = STATUS_TONE[row.original.status] ?? { dot: 'bg-muted-foreground', text: 'text-muted-foreground' };
-          return (
-            <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium', tone.text)}>
-              <span className={cn('h-1.5 w-1.5 rounded-full', tone.dot)} />
-              {row.original.status}
-            </span>
-          );
+          return <StatusBadge status={row.original.status} />;
         },
         meta: { sortingKey: 'status' },
       },
@@ -127,16 +105,7 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
         enableSorting: false,
         header: () => <span className={HEADER}>Added / Updated</span>,
         cell: ({ row }) => (
-          <div className="flex flex-col gap-0.5 whitespace-nowrap">
-            <span className="text-xs">
-              <span className="text-muted-foreground/70">Added </span>
-              <When value={row.original.createdAt} />
-            </span>
-            <span className="text-xs">
-              <span className="text-muted-foreground/70">Updated </span>
-              <When value={row.original.updatedAt} />
-            </span>
-          </div>
+          <RecordTimestamps createdAt={row.original.createdAt} updatedAt={row.original.updatedAt} />
         ),
         meta: { sortingKey: 'createdAt', thClassName: 'hidden md:table-cell', tdClassName: 'hidden md:table-cell' },
       },

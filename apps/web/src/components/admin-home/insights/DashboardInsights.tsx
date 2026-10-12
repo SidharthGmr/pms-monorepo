@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Boxes,
   Briefcase,
-  CalendarDays,
   FolderTree,
   IndianRupee,
   Plus,
@@ -30,7 +29,7 @@ import ActivityFeed from './ActivityFeed';
 import { CHART_COLORS, ComparisonBars, DonutChart } from './charts';
 import { formatCount, formatMoney, percentOf } from './format';
 import SalesTrend from './SalesTrend';
-import { Accent, ACCENT, EmptyLine, Initials, KpiTile, Panel, Segmented, SURFACE, TrendChip, trendPct } from './widgets';
+import { Accent, ACCENT, EmptyLine, Initials, Panel, Segmented, SURFACE, TrendChip, trendPct } from './widgets';
 
 interface LowStockProduct {
   id: number;
@@ -47,7 +46,7 @@ const greetingFor = (hour: number) => (hour < 12 ? 'Good morning' : hour < 17 ? 
 const enter = (step: number) => ({ className: 'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500', style: { animationDelay: `${step * 60}ms` } });
 
 interface DashboardInsightsProps {
-  /** Rendered beside the page actions, e.g. the Insights / Classic switch. */
+  /** Rendered inside the hero, beside the page actions. */
   toolbar?: ReactNode;
 }
 
@@ -106,120 +105,164 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* 1. One banner carries the greeting, the day's actions and today's three numbers, so the
+             page opens on a single block instead of a plain heading stacked above a card. */}
       <section {...enter(0)}>
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5" />
-              {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-            <h1 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
-              {greetingFor(today.getHours())}
-              {firstName ? `, ${firstName}` : ''}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isLoading ? (
-                <Skeleton className="h-4 w-64" />
-              ) : metrics.todayOrders > 0 ? (
-                <>
-                  <strong className="font-semibold text-foreground">{formatCount(metrics.todayOrders)}</strong> {metrics.todayOrders === 1 ? 'order' : 'orders'} so far today, worth{' '}
-                  <strong className="font-semibold text-foreground">{formatMoney(metrics.todaySale)}</strong>.{' '}
-                  {metrics.todaySale >= metrics.avgDaySale ? 'You are ahead of a typical day this month.' : 'A slower start than a typical day this month.'}
-                </>
-              ) : (
-                'No orders yet today. Start a sale, or check what is running low.'
-              )}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {toolbar}
-            <Button asChild size="sm" variant="outline" className="h-9">
-              <Link href="/admin/stock-purchase">
-                <Truck className="h-4 w-4" />
-                Receive stock
-              </Link>
-            </Button>
-            <Button asChild size="sm" className="h-9">
-              <Link href="/admin/checkout">
-                <Plus className="h-4 w-4" />
-                New sale
-              </Link>
-            </Button>
+        <div className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-indigo-700 p-5 text-primary-foreground shadow-lg sm:p-6 lg:p-7">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '18px 18px' }} aria-hidden />
+          <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-white/15 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-secondary/25 blur-3xl" aria-hidden />
+
+          <div className="relative">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/80">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                  </span>
+                  {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+
+                <h1 className="mt-2 text-xl font-bold tracking-tight text-primary-foreground sm:text-2xl">
+                  {greetingFor(today.getHours())}
+                  {firstName ? `, ${firstName}` : ''}
+                </h1>
+
+                <p className="mt-1 max-w-xl text-sm text-primary-foreground/80">
+                  {isLoading ? (
+                    <Skeleton className="h-4 w-64 bg-white/20" />
+                  ) : metrics.todayOrders > 0 ? (
+                    <>
+                      <strong className="font-semibold text-primary-foreground">{formatCount(metrics.todayOrders)}</strong> {metrics.todayOrders === 1 ? 'order' : 'orders'} so far today, worth{' '}
+                      <strong className="font-semibold text-primary-foreground">{formatMoney(metrics.todaySale)}</strong>.{' '}
+                      {metrics.todaySale >= metrics.avgDaySale ? 'Ahead of a typical day this month.' : 'A slower start than a typical day this month.'}
+                    </>
+                  ) : (
+                    'No orders yet today. Start a sale, or check what is running low.'
+                  )}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                {toolbar}
+                <Button asChild size="sm" variant="outline" className="h-9 border-white/25 bg-white/10 text-primary-foreground backdrop-blur-sm hover:bg-white/20 hover:text-primary-foreground">
+                  <Link href="/admin/stock-purchase">
+                    <Truck className="h-4 w-4" />
+                    Receive stock
+                  </Link>
+                </Button>
+                <Button asChild size="sm" className="h-9 bg-white text-primary shadow-sm hover:bg-white/90">
+                  <Link href="/admin/checkout">
+                    <Plus className="h-4 w-4" />
+                    New sale
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_1.5fr]">
+              <HeroStat
+                label="Sales today"
+                value={isLoading ? undefined : formatMoney(metrics.todaySale)}
+                delta={isLoading ? undefined : trendPct(metrics.todaySale, metrics.avgDaySale)}
+                emphasis
+              />
+              <HeroStat label="Orders today" value={isLoading ? undefined : formatCount(metrics.todayOrders)} delta={isLoading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)} />
+              <HeroStat label="Stock bought today" value={isLoading ? undefined : formatMoney(metrics.todayPurchase, true)} />
+
+              <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm sm:col-span-3 lg:col-span-1">
+                <div className="flex items-center justify-between text-[11px] text-primary-foreground/80">
+                  <span>Month progress</span>
+                  <span className="tabular-nums">
+                    Day {dayOfMonth} of {daysInMonth} · {monthPct}%
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/20">
+                  <div className="h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${monthPct}%` }} />
+                </div>
+                <div className="mt-2.5 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-primary-foreground/70">Month so far</p>
+                    {isLoading ? <Skeleton className="mt-1 h-5 w-20 bg-white/20" /> : <p className="truncate text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.monthSale)}</p>}
+                  </div>
+                  <div className="min-w-0 text-right">
+                    <p className="text-[11px] text-primary-foreground/70">On track for</p>
+                    {isLoading ? <Skeleton className="mt-1 h-5 w-20 bg-white/20" /> : <p className="truncate text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.projectedSale, true)}</p>}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div {...enter(1)} className={cn(enter(1).className, 'lg:col-span-2')}>
-          <HeroCard metrics={metrics} loading={isLoading} dayOfMonth={dayOfMonth} daysInMonth={daysInMonth} monthPct={monthPct} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-3">
-          <KpiTile
-            {...enter(2)}
-            icon={IndianRupee}
-            accent="emerald"
-            label="Sales this month"
-            value={isLoading ? undefined : formatMoney(metrics.monthSale)}
-            delta={isLoading ? undefined : trendPct(metrics.todaySale, metrics.avgDaySale)}
-            progress={percentOf(metrics.todaySale, metrics.monthSale)}
-            progressLabel={`Today ${formatMoney(metrics.todaySale)} · ${percentOf(metrics.todaySale, metrics.monthSale)}% of month`}
-            href="/admin/orders"
-          />
-          <KpiTile
-            {...enter(3)}
-            icon={ShoppingBag}
-            accent="sky"
-            label="Orders this month"
-            value={isLoading ? undefined : formatCount(metrics.monthOrders)}
-            delta={isLoading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)}
-            progress={percentOf(metrics.todayOrders, metrics.monthOrders)}
-            progressLabel={`${formatCount(metrics.todayOrders)} today · about ${metrics.avgDayOrders.toFixed(1)} per day`}
-            href="/admin/orders"
-          />
-          <KpiTile
-            {...enter(4)}
-            icon={Truck}
-            accent="amber"
-            label="Purchases this month"
-            value={isLoading ? undefined : formatMoney(metrics.monthPurchase)}
-            delta={isLoading ? undefined : trendPct(metrics.todayPurchase, metrics.avgDayPurchase)}
-            deltaInverted
-            progress={percentOf(metrics.todayPurchase, metrics.monthPurchase)}
-            progressLabel={`Today ${formatMoney(metrics.todayPurchase)} spent on stock`}
-            href="/admin/stock-purchase/history"
-          />
-          <KpiTile
-            {...enter(5)}
-            icon={Wallet}
-            accent={metrics.netMonth >= 0 ? 'violet' : 'rose'}
-            label="Net this month"
-            value={isLoading ? undefined : `${metrics.netMonth < 0 ? '−' : ''}${formatMoney(Math.abs(metrics.netMonth))}`}
-            progress={metrics.monthSale > 0 ? percentOf(Math.max(0, metrics.netMonth), metrics.monthSale) : 0}
-            progressLabel={metrics.monthSale > 0 ? `${percentOf(Math.max(0, metrics.netMonth), metrics.monthSale)}% of sales kept after purchases` : 'No sales yet this month'}
-            href="/admin/orders"
-          />
-        </div>
+      {/* 2. The month, in four figures. Each card ends in the two numbers its headline is judged
+             against rather than a bar whose denominator nobody can name. */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <InsightKpi
+          {...enter(1)}
+          icon={IndianRupee}
+          accent="emerald"
+          label="Sales this month"
+          value={isLoading ? undefined : formatMoney(metrics.monthSale)}
+          delta={isLoading ? undefined : trendPct(metrics.todaySale, metrics.avgDaySale)}
+          left={`Typical day ${formatMoney(metrics.avgDaySale, true)}`}
+          right={`${formatMoney(metrics.todaySale, true)} today`}
+          href="/admin/orders"
+        />
+        <InsightKpi
+          {...enter(2)}
+          icon={ShoppingBag}
+          accent="sky"
+          label="Orders this month"
+          value={isLoading ? undefined : formatCount(metrics.monthOrders)}
+          delta={isLoading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)}
+          left={`About ${metrics.avgDayOrders.toFixed(1)} a day`}
+          right={`${formatCount(metrics.todayOrders)} today`}
+          href="/admin/orders"
+        />
+        <InsightKpi
+          {...enter(3)}
+          icon={Truck}
+          accent="amber"
+          label="Purchases this month"
+          value={isLoading ? undefined : formatMoney(metrics.monthPurchase)}
+          delta={isLoading ? undefined : trendPct(metrics.todayPurchase, metrics.avgDayPurchase)}
+          deltaInverted
+          left={`Typical day ${formatMoney(metrics.avgDayPurchase, true)}`}
+          right={`${formatMoney(metrics.todayPurchase, true)} today`}
+          href="/admin/stock-purchase/history"
+        />
+        <InsightKpi
+          {...enter(4)}
+          icon={Wallet}
+          accent={metrics.netMonth >= 0 ? 'violet' : 'rose'}
+          label="Net this month"
+          value={isLoading ? undefined : `${metrics.netMonth < 0 ? '\u2212' : ''}${formatMoney(Math.abs(metrics.netMonth))}`}
+          left={`${formatMoney(metrics.monthSale, true)} in`}
+          right={`${formatMoney(metrics.monthPurchase, true)} out`}
+          note={metrics.monthSale > 0 ? `${percentOf(Math.max(0, metrics.netMonth), metrics.monthSale)}% of sales kept` : undefined}
+          href="/admin/orders"
+        />
       </section>
 
+      {/* 3. How the money moved: the week's shape and the feed behind it, with the two panels that
+             explain it sitting alongside. */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4 xl:col-span-2">
-          <Panel {...enter(6)} title="Sales, last 7 days" icon={TrendingUp} hint="Completed orders by day; cancelled and returned orders are left out." href="/admin/orders" cta="All orders">
+          <Panel {...enter(5)} title="Sales, last 7 days" icon={TrendingUp} hint="Completed orders by day; cancelled and returned orders are left out." href="/admin/orders" cta="All orders">
             <SalesTrend days={7} />
           </Panel>
 
-          <Panel {...enter(7)} title="Latest activity" icon={ShoppingBag} hint="Sales and stock purchases, newest first." href="/admin/orders" cta="All orders">
+          <Panel {...enter(6)} title="Latest activity" icon={ShoppingBag} hint="Sales and stock purchases, newest first." href="/admin/orders" cta="All orders">
             <ActivityFeed limit={8} />
-          </Panel>
-
-          <Panel {...enter(8)} title="People" icon={Users} hint="Newest customers and the team on the books." href="/admin/users" cta="All users">
-            <PeoplePanel summary={summary} loading={isLoading} />
           </Panel>
         </div>
 
         <div className="min-w-0 space-y-4">
           <Panel
-            {...enter(6)}
+            {...enter(5)}
             title="Stock watch"
             icon={AlertTriangle}
             count={lowStockQuery.isLoading ? undefined : lowStock.length}
@@ -230,7 +273,7 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
             <StockWatch items={lowStock} loading={lowStockQuery.isLoading} />
           </Panel>
 
-          <Panel {...enter(7)} title="Sales vs purchases" icon={IndianRupee} hint="Money in against money out.">
+          <Panel {...enter(6)} title="Sales vs purchases" icon={IndianRupee} hint="Money in against money out.">
             {isLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-3 w-40" />
@@ -251,22 +294,29 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
               />
             )}
           </Panel>
-
-          <Panel {...enter(8)} title="Products by category" icon={FolderTree} href="/admin/products" cta="Products">
-            <CategoryBreakdown summary={summary} loading={isLoading} />
-          </Panel>
-
-          <Panel {...enter(9)} title="Catalog" icon={Boxes} hint="What the store is built from." bodyClassName="px-3 py-3 sm:px-3">
-            <ul className="grid grid-cols-2 gap-2">
-              <CatalogRow icon={Boxes} accent="sky" label="Products" value={summary?.productTotal} recent={summary?.products?.length} href="/admin/products" loading={isLoading} />
-              <CatalogRow icon={FolderTree} accent="emerald" label="Categories" value={summary?.categoryTotal} recent={summary?.categories?.length} href="/admin/categories" loading={isLoading} />
-              <CatalogRow icon={Tag} accent="violet" label="Brands" value={summary?.brandTotal} recent={summary?.brands?.length} href="/admin/brand-names" loading={isLoading} />
-              <CatalogRow icon={Ruler} accent="amber" label="Attributes" value={summary?.attributeTotal} recent={summary?.attributes?.length} href="/admin/master-attributes" loading={isLoading} />
-              <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} recent={summary?.customers?.length} href="/admin/users" loading={isLoading} />
-              <CatalogRow icon={Briefcase} accent="indigo" label="Staff" value={summary?.staffTotal} recent={summary?.staff?.length} href="/admin/users" loading={isLoading} />
-            </ul>
-          </Panel>
         </div>
+      </section>
+
+      {/* 4. What the shop is made of: the catalogue on one side, the people on the other. */}
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <Panel {...enter(7)} title="Products by category" icon={FolderTree} href="/admin/products" cta="Products">
+          <CategoryBreakdown summary={summary} loading={isLoading} />
+        </Panel>
+
+        <Panel {...enter(8)} title="People" icon={Users} hint="Newest customers and the team on the books." href="/admin/users" cta="All users" className="xl:col-span-2">
+          <PeoplePanel summary={summary} loading={isLoading} />
+        </Panel>
+      </section>
+
+      <section {...enter(9)}>
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <CatalogRow icon={Boxes} accent="sky" label="Products" value={summary?.productTotal} recent={summary?.products?.length} href="/admin/products" loading={isLoading} />
+          <CatalogRow icon={FolderTree} accent="emerald" label="Categories" value={summary?.categoryTotal} recent={summary?.categories?.length} href="/admin/categories" loading={isLoading} />
+          <CatalogRow icon={Tag} accent="violet" label="Brands" value={summary?.brandTotal} recent={summary?.brands?.length} href="/admin/brand-names" loading={isLoading} />
+          <CatalogRow icon={Ruler} accent="amber" label="Attributes" value={summary?.attributeTotal} recent={summary?.attributes?.length} href="/admin/master-attributes" loading={isLoading} />
+          <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} recent={summary?.customers?.length} href="/admin/users" loading={isLoading} />
+          <CatalogRow icon={Briefcase} accent="indigo" label="Staff" value={summary?.staffTotal} recent={summary?.staff?.length} href="/admin/users" loading={isLoading} />
+        </ul>
       </section>
     </div>
   );
@@ -274,84 +324,84 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
 
 /* ---------- sections ---------- */
 
-interface HeroMetrics {
-  todaySale: number;
-  avgDaySale: number;
-  todayOrders: number;
-  avgDayOrders: number;
-  todayPurchase: number;
-  monthSale: number;
-  projectedSale: number;
-}
-
-function HeroCard({ metrics, loading, dayOfMonth, daysInMonth, monthPct }: { metrics: HeroMetrics; loading: boolean; dayOfMonth: number; daysInMonth: number; monthPct: number }) {
+function HeroStat({ label, value, delta, emphasis = false }: { label: string; value?: string; delta?: number | null; emphasis?: boolean }) {
   return (
-    <div className="relative h-full overflow-hidden rounded-xl bg-gradient-to-br from-primary via-primary to-indigo-700 p-5 text-primary-foreground shadow-md sm:p-6">
-      <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '18px 18px' }} aria-hidden />
-      <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/15 blur-3xl" aria-hidden />
-
-      <div className="relative flex h-full flex-col gap-5">
-        <div className="flex items-center justify-between gap-3">
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/80">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
-            </span>
-            Today
-          </p>
-          <span className="text-[11px] text-primary-foreground/70">
-            Day {dayOfMonth} of {daysInMonth}
-          </span>
-        </div>
-
-        <div>
-          <p className="text-xs text-primary-foreground/75">Sales today</p>
-          {loading ? <Skeleton className="mt-1 h-9 w-40 bg-white/20" /> : <p className="mt-0.5 text-3xl font-bold tabular-nums leading-none sm:text-4xl">{formatMoney(metrics.todaySale)}</p>}
-          <div className="mt-2">
-            <TrendChip delta={loading ? undefined : trendPct(metrics.todaySale, metrics.avgDaySale)} label="vs typical day" onDark />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <HeroStat label="Orders today" value={loading ? undefined : formatCount(metrics.todayOrders)} delta={loading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)} />
-          <HeroStat label="Stock bought" value={loading ? undefined : formatMoney(metrics.todayPurchase, true)} />
-        </div>
-
-        <div className="mt-auto rounded-lg border border-white/15 bg-white/10 px-3.5 py-3 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-[11px] text-primary-foreground/80">
-            <span>Month progress</span>
-            <span>{monthPct}%</span>
-          </div>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/20">
-            <div className="h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${monthPct}%` }} />
-          </div>
-          <div className="mt-2.5 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-[11px] text-primary-foreground/70">Month so far</p>
-              {loading ? <Skeleton className="mt-1 h-5 w-20 bg-white/20" /> : <p className="text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.monthSale)}</p>}
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] text-primary-foreground/70">On track for</p>
-              {loading ? <Skeleton className="mt-1 h-5 w-20 bg-white/20" /> : <p className="text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.projectedSale, true)}</p>}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function HeroStat({ label, value, delta }: { label: string; value?: string; delta?: number | null }) {
-  return (
-    <div className="min-w-0 rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 backdrop-blur-sm">
+    <div className={cn('min-w-0 rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm', emphasis && 'bg-white/[0.18]')}>
       <p className="truncate text-[11px] text-primary-foreground/70">{label}</p>
-      {value === undefined ? <Skeleton className="mt-1 h-6 w-16 bg-white/20" /> : <p className="mt-0.5 truncate text-lg font-bold tabular-nums leading-tight">{value}</p>}
+      {value === undefined ? (
+        <Skeleton className={cn('mt-1.5 h-7 w-24 bg-white/20', emphasis && 'h-8 w-32')} />
+      ) : (
+        <p className={cn('mt-0.5 truncate font-bold tabular-nums leading-tight', emphasis ? 'text-2xl sm:text-3xl' : 'text-xl')}>{value}</p>
+      )}
       {delta !== undefined && (
-        <div className="mt-1">
+        <div className="mt-1.5">
           <TrendChip delta={delta} onDark />
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * A month figure with the two numbers it is read against. An earlier version ended in a progress
+ * bar measuring today against the month total, which made every card look nearly empty on the 2nd
+ * and nearly full on the 30th without saying anything; this states the comparison instead.
+ */
+function InsightKpi({
+  icon: Icon,
+  accent,
+  label,
+  value,
+  delta,
+  deltaInverted,
+  left,
+  right,
+  note,
+  href,
+  className,
+  style,
+}: {
+  icon: React.ElementType;
+  accent: Accent;
+  label: string;
+  value?: string;
+  delta?: number | null;
+  deltaInverted?: boolean;
+  left: string;
+  right: string;
+  note?: string;
+  href: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const a = ACCENT[accent];
+  return (
+    <Link href={href} className={cn('group block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring', className)} style={style}>
+      <div className={cn(SURFACE, 'relative flex h-full flex-col overflow-hidden transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md')}>
+        <div className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.glow)} aria-hidden />
+
+        <div className="relative flex flex-1 flex-col p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-xs text-muted-foreground">{label}</p>
+            <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', a.icon)}>
+              <Icon className="h-4 w-4" />
+            </span>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            {value === undefined ? <Skeleton className="h-8 w-28" /> : <p className="text-2xl font-bold tabular-nums leading-none">{value}</p>}
+            {delta !== undefined && <TrendChip delta={delta} inverted={deltaInverted} />}
+          </div>
+
+          {note && <p className="mt-2 truncate text-[11px] text-muted-foreground">{note}</p>}
+        </div>
+
+        <div className="relative flex items-center justify-between gap-2 border-t border-border/70 bg-muted/30 px-4 py-2 text-[11px] text-muted-foreground">
+          <span className="truncate">{left}</span>
+          <span className="shrink-0 truncate font-medium text-foreground/70">{right}</span>
+        </div>
+      </div>
+    </Link>
   );
 }
 

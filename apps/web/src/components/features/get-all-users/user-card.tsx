@@ -1,5 +1,6 @@
 'use client';
 
+import StatusBadge from '@/components/common/status-badge';
 import ActiveStatusToggle from '@/components/common/active-status-toggle';
 import CardAction from '@/components/common/card-action';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,7 +8,6 @@ import { Badge, BadgeProps } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { UserDto } from '@/dtos/UserDto';
 import { Roles } from '@/enums/roles.enum';
-import { StatusValues } from '@/enums/status-values.enum';
 import { cn } from '@/lib/utils';
 import { getAvatarSoftColor, getInitialName } from '@/utils/avatar-color';
 import { formatDistanceToNow } from 'date-fns';
@@ -23,14 +23,6 @@ const ROLE_BADGE: Record<string, { label: string; variant: BadgeVariant }> = {
   [Roles.USER]: { label: 'Customer', variant: 'zinc' },
 };
 
-const STATUS_TONE: Record<string, { dot: string; text: string }> = {
-  [StatusValues.Published]: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
-  [StatusValues.Draft]: { dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  [StatusValues.InReview]: { dot: 'bg-sky-500', text: 'text-sky-700 dark:text-sky-400' },
-  [StatusValues.Reject]: { dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
-  [StatusValues.Trash]: { dot: 'bg-zinc-400', text: 'text-muted-foreground' },
-};
-
 interface UserCardProps {
   user: UserDto;
   onEdit: () => void;
@@ -42,7 +34,6 @@ interface UserCardProps {
 export default function UserCard({ user, onEdit, onDelete }: UserCardProps) {
   const role = ROLE_BADGE[user.role];
   const status = String(user.status ?? '');
-  const tone = STATUS_TONE[status];
   const avatarTone = getAvatarSoftColor(user.name);
 
   return (
@@ -73,10 +64,7 @@ export default function UserCard({ user, onEdit, onDelete }: UserCardProps) {
           <div className="mt-1 flex items-center gap-2">
             {user.userName && <span className="truncate text-[11px] text-muted-foreground">@{user.userName}</span>}
             {status && (
-              <span className={cn('inline-flex shrink-0 items-center gap-1 text-[11px] font-medium', tone?.text ?? 'text-muted-foreground')}>
-                <span className={cn('h-1.5 w-1.5 rounded-full', tone?.dot ?? 'bg-muted-foreground')} />
-                {status}
-              </span>
+              <StatusBadge status={status} size="xs" className="shrink-0" />
             )}
           </div>
         </div>
