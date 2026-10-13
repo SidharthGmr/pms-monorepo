@@ -109,6 +109,66 @@ reviewRouter.get("/", authenticateToken, asyncHandler(reviewController.getAll));
 
 /**
  * @swagger
+ * /reviews/public:
+ *   get:
+ *     summary: Published reviews of a product, for the public storefront
+ *     tags: [Review]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: query
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: recordPerPage
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Reviews fetched successfully
+ *       400:
+ *         description: Invalid productId
+ */
+reviewRouter.get("/public", asyncHandler(reviewController.getAllPublic));
+
+/**
+ * @swagger
+ * /reviews/public/summary/{productId}:
+ *   get:
+ *     summary: Average rating and per-star counts of Published reviews, for the public storefront
+ *     tags: [Review]
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enter Client Id
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Review summary fetched successfully
+ *       400:
+ *         description: Invalid productId
+ */
+reviewRouter.get("/public/summary/:productId", asyncHandler(reviewController.getPublicSummary));
+
+/**
+ * @swagger
  * /reviews/summary/{productId}:
  *   get:
  *     summary: Average rating and per-star counts for a product

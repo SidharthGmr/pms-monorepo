@@ -28,6 +28,18 @@ export default class ReviewService implements IReviewService {
       .get<ListResponseDto<ReviewDto>, AxiosResponse<Response<ListResponseDto<ReviewDto>>>>('/reviews', { params });
   }
 
+  // The storefront product page is public: externalCall() keeps the clientId gate but sends no
+  // bearer token, so anonymous shoppers can read Published reviews too.
+  getAllPublic(params: { productId: number; page?: number; recordPerPage?: number }): Promise<AxiosResponse<Response<ListResponseDto<ReviewDto>>>> {
+    return this.httpService
+      .externalCall()
+      .get<ListResponseDto<ReviewDto>, AxiosResponse<Response<ListResponseDto<ReviewDto>>>>('/reviews/public', { params });
+  }
+
+  getPublicSummary(productId: number | string): Promise<AxiosResponse<Response<ReviewSummaryDto>>> {
+    return this.httpService.externalCall().get<ReviewSummaryDto, AxiosResponse<Response<ReviewSummaryDto>>>(`/reviews/public/summary/${productId}`);
+  }
+
   getById(id: number | string): Promise<AxiosResponse<Response<ReviewDto>>> {
     return this.httpService.call().get<ReviewDto, AxiosResponse<Response<ReviewDto>>>(`/reviews/${id}`);
   }

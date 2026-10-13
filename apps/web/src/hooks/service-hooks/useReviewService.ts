@@ -37,6 +37,22 @@ export const useGetReviewSummary = (productId: number | string, enabled: boolean
     enabled: !!productId && enabled,
   });
 
+// Public storefront reads. They share the 'reviews'/'review-summary' prefixes so every
+// review write above invalidates them too, and the page updates without a reload.
+export const useGetPublicProductReviews = (params: { productId: number; page?: number; recordPerPage?: number }, enabled: boolean = true) =>
+  useQuery({
+    queryKey: ['reviews', 'public', params],
+    queryFn: () => reviewService().getAllPublic(params),
+    enabled: !!params.productId && enabled,
+  });
+
+export const useGetPublicReviewSummary = (productId: number, enabled: boolean = true) =>
+  useQuery({
+    queryKey: ['review-summary', 'public', productId],
+    queryFn: () => reviewService().getPublicSummary(productId),
+    enabled: !!productId && enabled,
+  });
+
 export const useCreateReview = () => {
   const queryClient = useQueryClient();
   return useMutation({

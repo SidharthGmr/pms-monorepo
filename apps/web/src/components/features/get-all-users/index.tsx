@@ -23,7 +23,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useUserColumns } from './columns';
 import UserCard from './user-card';
 import EditUserProfile from './edit-profile';
-import UserListFilter, { DEFAULT_USER_FILTER, SortDirection, UserFilterValue, UserStatus } from './filter';
+import UserListFilter, { DEFAULT_USER_FILTER, UserFilterValue, UserStatus } from './filter';
 
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
 const FLUSH_CARD = 'p-0 md:p-0';
@@ -54,13 +54,14 @@ export default function GetAllUserss({ role }: { role?: string }) {
   const [filter, setFilter] = useState<UserFilterValue>(() => {
     const from = searchParams.get('startDate');
     const to = searchParams.get('endDate');
+    const direction = searchParams.get('sortDirection')?.toUpperCase();
     return {
       search: searchParams.get('search') ?? DEFAULT_USER_FILTER.search,
       status: (searchParams.get('status') as UserStatus) || DEFAULT_USER_FILTER.status,
       role: role ?? searchParams.get('role') ?? DEFAULT_USER_FILTER.role,
       dateRange: from || to ? { from: from ? new Date(from) : undefined, to: to ? new Date(to) : undefined } : undefined,
       sortBy: searchParams.get('sortBy') ?? DEFAULT_USER_FILTER.sortBy,
-      sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
+      sortDirection: direction === 'ASC' || direction === 'DESC' ? direction : DEFAULT_USER_FILTER.sortDirection,
     };
   });
   const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get('page')) || 1));

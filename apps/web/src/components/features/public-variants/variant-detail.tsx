@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import ProductWebVariants from '../products/variants/varients-web';
+import VariantReviews from './variant-reviews';
 
 const attributesOf = (variant: ProductVariantListItemDto): { key: string; value: string }[] => {
   const attributes = variant.attributes;
@@ -383,6 +384,8 @@ function VariantDetailView({ variant }: VariantDetailViewProps) {
           </dl>
         </Card>
       </div>
+
+      <VariantReviews productId={variant.product.id} productName={title} />
 
       <ProductWebVariants productId={variant.product.id} excludeId={variant.id} />
     </div>

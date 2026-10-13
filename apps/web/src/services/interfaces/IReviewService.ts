@@ -8,6 +8,9 @@ import { AxiosResponse } from 'axios';
 export default interface IReviewService {
   create(model: CreateReviewModel): Promise<AxiosResponse<Response<ReviewDto>>>;
   getAll(params?: ReviewFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ReviewDto>>>>;
+  /** Public storefront reads - no bearer token, Published reviews only. */
+  getAllPublic(params: { productId: number; page?: number; recordPerPage?: number }): Promise<AxiosResponse<Response<ListResponseDto<ReviewDto>>>>;
+  getPublicSummary(productId: number | string): Promise<AxiosResponse<Response<ReviewSummaryDto>>>;
   getById(id: number | string): Promise<AxiosResponse<Response<ReviewDto>>>;
   getSummary(productId: number | string): Promise<AxiosResponse<Response<ReviewSummaryDto>>>;
   update(id: number | string, model: UpdateReviewModel): Promise<AxiosResponse<Response<ReviewDto>>>;

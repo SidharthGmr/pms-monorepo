@@ -74,6 +74,36 @@ export class ReviewController {
     return res.status(200).json({ success: true, message: 'Review summary fetched successfully', data });
   };
 
+  // Storefront product pages are public, so these two reads run without a token. They only
+  // ever return Published reviews, and reviewer emails are withheld from the payload.
+  getAllPublic = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ReviewDto>>>> => {
+    const productId = parseInt(req.query['productId'] as string);
+    if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid productId' });
+
+    const page = req.query['page'] ? parseInt(req.query['page'] as string) : 1;
+    const requested = req.query['recordPerPage'] ? parseInt(req.query['recordPerPage'] as string) : 10;
+    // Capped so an anonymous caller cannot ask for the whole table in one request.
+    const recordPerPage = Math.min(Math.max(requested || 10, 1), 50);
+
+    const result = await this.unitOfService.Review.getAll({ productId, status: Status.Published, page, recordPerPage, sortBy: 'createdAt', sortOrder: 'desc' });
+    const data: ListResponseDto<ReviewDto> = {
+      totalRecord: result.totalRecord,
+      data: (result.data ?? []).map((review) => ({
+        ...review,
+        user: review.user ? { ...review.user, email: '' } : null,
+        replies: (review.replies ?? []).map((reply) => ({ ...reply, user: reply.user ? { ...reply.user, email: '' } : null })),
+      })),
+    };
+    return res.status(200).json({ success: true, message: 'Reviews fetched successfully', data });
+  };
+
+  getPublicSummary = async (req: Request, res: Response): Promise<Response<CustomResponse<ReviewSummaryDto>>> => {
+    const productId = parseInt(req.params['productId'] as string);
+    if (isNaN(productId)) return res.status(400).json({ success: false, message: 'Invalid productId' });
+    const data = await this.unitOfService.Review.getSummary(productId);
+    return res.status(200).json({ success: true, message: 'Review summary fetched successfully', data });
+  };
+
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<ReviewDto>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
