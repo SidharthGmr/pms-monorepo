@@ -3,7 +3,7 @@ import { forwardRef, KeyboardEvent, useEffect, useImperativeHandle, useRef, useS
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { BrandNameDto, brandNameFields, CreateBrandNameModel } from '@pms/types';
-import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
 import StatusCards from '@/components/common/status-cards';
 import ConfirmBox from '@/components/common/confirm-box';
 import { Button } from '@/components/ui/button';
@@ -228,7 +228,7 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
   // Everything the API accepts but does not require, folded away until it is wanted. The summary
   // keeps the stored values visible while the section is closed.
   const optionalSummary = [
-    images.length > 0 ? `${images.length} ${images.length === 1 ? 'image' : 'images'}` : null,
+    images.length > 0 ? 'logo added' : null,
     displayOrder != null && String(displayOrder) !== '' ? `order ${displayOrder}` : null,
   ]
     .filter(Boolean)
@@ -250,6 +250,8 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
 
       {optionalOpen && (
         <div className="space-y-5 border-t px-4 py-4">
+          {/* The column stores a list, but a brand only ever shows one logo: the uploader works on
+              the first entry and empties the list when that image is removed. */}
           <FormField
             control={form.control}
             name="images"
@@ -257,7 +259,7 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
               <FormItem>
                 <FormLabel>Logo</FormLabel>
                 <FormControl>
-                  <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                  <SingleImageUpload value={field.value?.[0] ?? ''} onChange={(path) => field.onChange(path ? [path] : [])} folder="brands" alt="Brand logo" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

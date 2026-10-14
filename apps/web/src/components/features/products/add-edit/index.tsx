@@ -426,7 +426,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                           <FormItem>
                             <FormLabel>Images</FormLabel>
                             <FormControl>
-                              <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                              <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="products" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

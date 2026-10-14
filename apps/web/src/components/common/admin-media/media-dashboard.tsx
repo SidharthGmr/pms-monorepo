@@ -222,7 +222,7 @@ export default function AdminMediaDashboard() {
                   <option value="all">All Folders</option>
                   {uniqueFolders.map((folder) => (
                     <option key={folder} value={folder}>
-                      {folder.replace('pms_admin_uploads/', '')}
+                      {folder.replace('media/', '')}
                     </option>
                   ))}
                 </select>

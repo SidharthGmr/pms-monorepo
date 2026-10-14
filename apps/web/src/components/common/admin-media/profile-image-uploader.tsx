@@ -14,10 +14,13 @@ interface ProfileImageUploaderProps {
   className?: string;
   /** Hide the "paste a URL" field, for compact placements where only the avatar fits. */
   showUrlInput?: boolean;
+  /** Sub-folder the image is filed under, inside the signed-in admin's own media folder.
+   *  Created on first upload. Leave unset to drop it straight into that folder. */
+  folder?: string;
 }
 
-export function ProfileImageUploader({ value, onChange, className, showUrlInput = true }: ProfileImageUploaderProps) {
-  const { uploadUrl, isUploading } = useImageUpload();
+export function ProfileImageUploader({ value, onChange, className, showUrlInput = true, folder }: ProfileImageUploaderProps) {
+  const { uploadUrl, isUploading } = useImageUpload(folder ? { folder } : undefined);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

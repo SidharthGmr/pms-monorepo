@@ -58,7 +58,7 @@ export default function EditUserPhoto({ isOpen, userId, currentImageUrl, userNam
         </DialogHeader>
 
         <div className="py-2">
-          <ProfileImageUploader value={imageUrl} onChange={setImageUrl} />
+          <ProfileImageUploader value={imageUrl} onChange={setImageUrl} folder="profile" />
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground">Square images work best. Drop a file on the circle, click it to browse, or paste a link.</p>

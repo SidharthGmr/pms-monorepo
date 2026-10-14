@@ -16,9 +16,12 @@ export interface UseImageUploadOptions {
   accept?: string | null;
   /** Suppress the built-in toasts when the caller wants to report failures itself. */
   silent?: boolean;
+  /** Sub-folder to file uploads under, inside the caller's own media folder. Created on first
+   *  use. Leave unset to drop them straight into that folder. */
+  folder?: string;
 }
 
-const DEFAULTS: Required<Omit<UseImageUploadOptions, 'accept'>> & { accept: string | null } = {
+const DEFAULTS: Required<Omit<UseImageUploadOptions, 'accept' | 'folder'>> & { accept: string | null } = {
   maxSizeMb: 5,
   accept: 'image',
   silent: false,
@@ -67,6 +70,7 @@ export function useImageUpload(options?: UseImageUploadOptions) {
 
       try {
         const response = await unitOfService.MediaService.upload(file, {
+          folder: settings.folder,
           onProgress: (percent) => {
             setProgress((current) => ({ ...current, [file.name]: percent }));
             perCall?.onProgress?.(percent);
@@ -83,7 +87,7 @@ export function useImageUpload(options?: UseImageUploadOptions) {
         if (activeRef.current === 0) setIsUploading(false);
       }
     },
-    [unitOfService, settings.accept, settings.maxSizeMb, fail, clearProgress]
+    [unitOfService, settings.accept, settings.maxSizeMb, settings.folder, fail, clearProgress]
   );
 
   // Sequential on purpose: a dozen parallel Cloudinary uploads from one browser tab is how you

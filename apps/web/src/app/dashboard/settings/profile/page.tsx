@@ -207,6 +207,7 @@ export default function ProfilePage() {
                         <ProfileImageUploader
                           value={field.value || ''}
                           onChange={field.onChange}
+                          folder="profile"
                         />
                       </FormControl>
                       <FormMessage />

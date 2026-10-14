@@ -540,7 +540,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                   <FormItem>
                     <FormLabel>Images</FormLabel>
                     <FormControl>
-                      <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                      <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="product-variants" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

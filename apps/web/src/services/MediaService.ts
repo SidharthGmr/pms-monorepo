@@ -20,6 +20,7 @@ export default class MediaService implements IMediaService {
   async upload(file: File, options?: UploadMediaOptions): Promise<UploadMediaResponse> {
     const formData = new FormData();
     formData.append('file', file);
+    if (options?.folder) formData.append('folder', options.folder);
 
     try {
       const response = await axios.post<UploadMediaResponse>(`${BASE}/upload`, formData, {

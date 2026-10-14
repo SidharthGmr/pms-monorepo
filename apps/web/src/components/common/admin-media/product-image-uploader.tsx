@@ -11,14 +11,17 @@ interface ProductImageUploaderProps {
   onChange: (value: string[]) => void;
   /** Max file size in MB. */
   maxSizeMb?: number;
+  /** Sub-folder the images are filed under, inside the signed-in admin's own media folder.
+   *  Created on first upload. Leave unset to drop them straight into that folder. */
+  folder?: string;
 }
 
 // Narrows the OS file picker. Size and MIME are enforced again by useImageUpload, which is
 // what catches a file dragged straight onto the dropzone.
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
-export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5 }: ProductImageUploaderProps) {
-  const { uploadUrls, isUploading } = useImageUpload({ maxSizeMb });
+export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5, folder }: ProductImageUploaderProps) {
+  const { uploadUrls, isUploading } = useImageUpload({ maxSizeMb, ...(folder ? { folder } : {}) });
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

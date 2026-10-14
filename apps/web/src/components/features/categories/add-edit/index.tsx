@@ -1,5 +1,5 @@
 'use client';
-import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
 import StatusCards from '@/components/common/status-cards';
 import ConfirmBox from '@/components/common/confirm-box';
 import { SelectSearch } from '@/components/common/select-search';
@@ -146,7 +146,7 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
   const parentLabel = parentId == null ? null : (allCategories.find((item) => item.id === parentId)?.name ?? `#${parentId}`);
   const optionalSummary = [
     parentLabel ? `in ${parentLabel}` : null,
-    images.length > 0 ? `${images.length} ${images.length === 1 ? 'image' : 'images'}` : null,
+    images.length > 0 ? 'image added' : null,
     displayOrder != null && String(displayOrder) !== '' ? `order ${displayOrder}` : null,
     description.trim() ? 'description' : null,
   ]
@@ -268,6 +268,8 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                               )}
                             />
 
+                            {/* The column stores a list, but a category only ever shows one tile image:
+                                the uploader works on the first entry and empties the list when it is removed. */}
                             <FormField
                               control={form.control}
                               name="images"
@@ -275,7 +277,7 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                                 <FormItem>
                                   <FormLabel>Image</FormLabel>
                                   <FormControl>
-                                    <ProductImageUploader value={field.value || []} onChange={field.onChange} />
+                                    <SingleImageUpload value={field.value?.[0] ?? ''} onChange={(path) => field.onChange(path ? [path] : [])} folder="categories" alt="Category image" />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>

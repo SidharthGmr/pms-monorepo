@@ -264,7 +264,7 @@ export default function AdminProfilePage() {
                       <FormItem className="m-0">
                         <FormControl>
                           <div className="rounded-full bg-card p-1.5 shadow-md ring-1 ring-border">
-                            <ProfileImageUploader value={field.value || ''} onChange={field.onChange} showUrlInput={false} className="w-auto max-w-none gap-0" />
+                            <ProfileImageUploader value={field.value || ''} onChange={field.onChange} showUrlInput={false} folder="profile" className="w-auto max-w-none gap-0" />
                           </div>
                         </FormControl>
                         <FormMessage className="text-center" />
