@@ -193,65 +193,6 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
         </div>
       </section>
 
-      {/* 2. The only part of the page that asks for a decision, so it comes before the figures. */}
-      <section {...enter(1)}>
-        <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-          Needs attention
-          {!checking && tasks.length > 0 && (
-            <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>
-          )}
-        </h2>
-
-        {checking ? (
-          <div className="grid gap-3 lg:grid-cols-3">
-            {Array.from({ length: 2 }).map((_, index) => (
-              <Skeleton key={index} className="h-[4.5rem] rounded-xl" />
-            ))}
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className={cn(SURFACE, 'flex items-center gap-3 px-4 py-3.5')}>
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Nothing needs you right now</p>
-              <p className="text-xs text-muted-foreground">Every product is above its threshold and no order is waiting.</p>
-            </div>
-          </div>
-        ) : (
-          <ul className="grid gap-3 lg:grid-cols-3">
-            {tasks.map((task) => (
-              <li key={task.key}>
-                <Link
-                  href={task.cta.href}
-                  className={cn(
-                    'group flex h-full items-start gap-3 rounded-xl border px-4 py-3.5 transition-all hover:-translate-y-0.5 hover:shadow-md',
-                    task.tone === 'critical' ? 'border-destructive/30 bg-destructive/[0.04]' : 'border-amber-500/30 bg-amber-500/[0.05]'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                      task.tone === 'critical' ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
-                    )}
-                  >
-                    <task.icon className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold leading-snug">{task.title}</p>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{task.body}</p>
-                    <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                      {task.cta.label}
-                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
       {/* 3. The numbers, all four read the same way: figure, change against a typical day, link. */}
       <section>
         <h2 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -344,7 +285,7 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
             href="/admin/stock-purchase"
             cta="Receive stock"
           >
-            <StockWatch items={lowStockAll.slice(0, 5)} loading={lowStockQuery.isLoading} />
+            <StockWatch items={lowStockAll} loading={lowStockQuery.isLoading} />
           </Panel>
 
           <Panel {...enter(7)} title="What the shop holds" icon={Boxes} bodyClassName="px-3 py-3 sm:px-3">
@@ -362,6 +303,65 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
               <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} href="/admin/users" loading={isLoading} />
             </ul>
           </Panel>
+
+          {/* 2. The only part of the page that asks for a decision, so it comes before the figures. */}
+          <section {...enter(1)}>
+            <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Needs attention
+              {!checking && tasks.length > 0 && (
+                <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>
+              )}
+            </h2>
+
+            {checking ? (
+              <div className="grid gap-3 lg:grid-cols-3">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <Skeleton key={index} className="h-[4.5rem] rounded-xl" />
+                ))}
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className={cn(SURFACE, 'flex items-center gap-3 px-4 py-3.5')}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Nothing needs you right now</p>
+                  <p className="text-xs text-muted-foreground">Every product is above its threshold and no order is waiting.</p>
+                </div>
+              </div>
+            ) : (
+              <ul className="grid gap-3 lg:grid-cols-1">
+                {tasks.map((task) => (
+                  <li key={task.key}>
+                    <Link
+                      href={task.cta.href}
+                      className={cn(
+                        'group flex h-full items-start gap-3 rounded-xl border px-4 py-3.5 transition-all hover:-translate-y-0.5 hover:shadow-md',
+                        task.tone === 'critical' ? 'border-destructive/30 bg-destructive/[0.04]' : 'border-amber-500/30 bg-amber-500/[0.05]'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                          task.tone === 'critical' ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                        )}
+                      >
+                        <task.icon className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-snug">{task.title}</p>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{task.body}</p>
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                          {task.cta.label}
+                          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       </section>
     </div>
@@ -477,43 +477,47 @@ function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boo
 
   if (items.length === 0) return <EmptyLine icon={Boxes} text="Everything is above its low-stock threshold." tone="good" />;
 
+  // The panel sits beside a taller column, so the list is capped at roughly four rows and the
+  // rest scrolls - every low item stays reachable without the card growing down the page.
   return (
-    <ul className="space-y-3">
-      {items.map((product) => {
-        const threshold = product.lowStockThreshold || 5;
-        const ratio = Math.min(100, Math.round((product.stock / threshold) * 100));
-        const critical = product.stock === 0;
-        return (
-          <li key={product.id}>
-            <Link href={`/admin/products?search=${encodeURIComponent(product.name)}`} className="group flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-                {product.images?.[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={product.images[0]} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <Boxes className="h-4 w-4 text-muted-foreground/50" />
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate font-medium group-hover:underline">{product.name}</span>
-                  <span
-                    className={cn(
-                      'shrink-0 rounded-full px-1.5 py-0 text-[10px] font-semibold tabular-nums',
-                      critical ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                    )}
-                  >
-                    {critical ? 'Out' : `${product.stock} left`}
-                  </span>
+    <div className="-mr-3 max-h-[15rem] overflow-y-auto overscroll-contain pr-3 sm:max-h-[17rem]">
+      <ul className="space-y-3">
+        {items.map((product) => {
+          const threshold = product.lowStockThreshold || 5;
+          const ratio = Math.min(100, Math.round((product.stock / threshold) * 100));
+          const critical = product.stock === 0;
+          return (
+            <li key={product.id}>
+              <Link href={`/admin/products?search=${encodeURIComponent(product.name)}`} className="group flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+                  {product.images?.[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={product.images[0]} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <Boxes className="h-4 w-4 text-muted-foreground/50" />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate font-medium group-hover:underline">{product.name}</span>
+                    <span
+                      className={cn(
+                        'shrink-0 rounded-full px-1.5 py-0 text-[10px] font-semibold tabular-nums',
+                        critical ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                      )}
+                    >
+                      {critical ? 'Out' : `${product.stock} left`}
+                    </span>
+                  </div>
+                  <Progress value={ratio} className={cn('mt-1.5 h-1.5', critical ? '[&>div]:bg-destructive' : '[&>div]:bg-amber-500')} />
+                  <p className="mt-1 text-[10px] text-muted-foreground">Alerts below {threshold}</p>
                 </div>
-                <Progress value={ratio} className={cn('mt-1.5 h-1.5', critical ? '[&>div]:bg-destructive' : '[&>div]:bg-amber-500')} />
-                <p className="mt-1 text-[10px] text-muted-foreground">Alerts below {threshold}</p>
-              </div>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

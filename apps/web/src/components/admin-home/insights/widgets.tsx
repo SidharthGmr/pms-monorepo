@@ -37,7 +37,8 @@ interface TrendChipProps {
 
 export function TrendChip({ delta, inverted = false, label, onDark = false }: TrendChipProps) {
   if (delta === undefined) return <Skeleton className={cn('h-5 w-20', onDark && 'bg-white/20')} />;
-  if (delta === null) return <span className={cn('text-[11px]', onDark ? 'text-primary-foreground/70' : 'text-muted-foreground')}>No baseline yet</span>;
+  if (delta === null)
+    return <span className={cn('text-[11px]', onDark ? 'text-primary-foreground/70' : 'text-muted-foreground')}>No baseline yet</span>;
   const up = delta > 0;
   const flat = delta === 0;
   const good = flat ? null : inverted ? !up : up;
@@ -106,7 +107,12 @@ export function Panel({ title, icon: Icon, hint, count, href, cta, action, child
 
 export function EmptyLine({ icon: Icon, text, tone = 'muted' }: { icon: React.ElementType; text: string; tone?: 'muted' | 'good' }) {
   return (
-    <div className={cn('flex items-center gap-2 rounded-lg px-3 py-3 text-xs', tone === 'good' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-muted/50 text-muted-foreground')}>
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-lg px-3 py-3 text-xs',
+        tone === 'good' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-muted/50 text-muted-foreground'
+      )}
+    >
       <Icon className="h-4 w-4 shrink-0" />
       {text}
     </div>
@@ -133,13 +139,29 @@ export function Initials({ name, active }: { name: string; active: boolean }) {
   return (
     <span className="relative shrink-0">
       <span className={cn('flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold', tone)}>{initials || '?'}</span>
-      <span className={cn('absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background', active ? 'bg-emerald-500' : 'bg-zinc-400')} title={active ? 'Active' : 'Inactive'} />
+      <span
+        className={cn(
+          'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background',
+          active ? 'bg-emerald-500' : 'bg-zinc-400'
+        )}
+        title={active ? 'Active' : 'Inactive'}
+      />
     </span>
   );
 }
 
 // Tiny segmented control used inside panel headers.
-export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string }) {
+export function Segmented<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  label: string;
+}) {
   return (
     <div className="inline-flex rounded-md border bg-muted/40 p-0.5 text-[11px]" role="radiogroup" aria-label={label}>
       {options.map((o) => (
@@ -149,7 +171,10 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
           role="radio"
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
-          className={cn('rounded px-2 py-0.5 font-medium transition-colors', value === o.value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+          className={cn(
+            'rounded px-2 py-0.5 font-medium transition-colors',
+            value === o.value ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          )}
         >
           {o.label}
         </button>

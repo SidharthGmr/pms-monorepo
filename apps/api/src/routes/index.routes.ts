@@ -28,6 +28,7 @@ import priceHistoryRouter from "./priceHistoryRoutes";
 import contactMessageRouter from "./contactMessageRoutes";
 import subscriberRouter from "./subscriberRoutes";
 import cmsPageRouter from "./cmsPageRoutes";
+import notificationRouter from "./notificationRoutes";
 
 const routes = express.Router();
 
@@ -60,5 +61,6 @@ routes.use("/price-histories", priceHistoryRouter);
 routes.use("/contact-messages", contactMessageRouter);
 routes.use("/subscribers", subscriberRouter);
 routes.use("/cms-pages", cmsPageRouter);
+routes.use("/notifications", notificationRouter);
 
 export default routes;

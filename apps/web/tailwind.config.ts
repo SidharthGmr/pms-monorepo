@@ -139,13 +139,43 @@ const config = {
   					'background-size': '200% 200%',
   					'background-position': 'right center'
   				}
+  			},
+  			'bell-ring': {
+  				'0%, 55%, 100%': {
+  					transform: 'rotate(0deg)'
+  				},
+  				'5%': {
+  					transform: 'rotate(14deg)'
+  				},
+  				'10%': {
+  					transform: 'rotate(-12deg)'
+  				},
+  				'15%': {
+  					transform: 'rotate(10deg)'
+  				},
+  				'20%': {
+  					transform: 'rotate(-8deg)'
+  				},
+  				'25%': {
+  					transform: 'rotate(6deg)'
+  				},
+  				'30%': {
+  					transform: 'rotate(-4deg)'
+  				},
+  				'35%': {
+  					transform: 'rotate(2deg)'
+  				},
+  				'40%': {
+  					transform: 'rotate(0deg)'
+  				}
   			}
   		},
   		animation: {
   			gradient: 'gradient 8s linear infinite',
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'gradient-bg': 'gradient 50s ease infinite'
+  			'gradient-bg': 'gradient 50s ease infinite',
+  			'bell-ring': 'bell-ring 2.5s ease-in-out infinite'
   		},
   		backgroundImage: {
   			'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))'

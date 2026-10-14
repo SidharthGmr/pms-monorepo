@@ -11,6 +11,7 @@ import IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { createUserName, generateStoreCode, generateUserGUID } from "../utils/authHelpers.service";
 import { generateOtp } from "../utils/otp.util";
 import { IAccountService } from "./interfaces/Iaccount.service";
+import { INotificationService } from "./interfaces/Inotification.service";
 import { getOtpExpiryDate } from "../utils/timeExpiry.util";
 import { toUserDto, userProfileInclude } from "../repository/user-profile.mapper";
 import { Role, Status, StatusEnum } from "@pms/types";
@@ -19,6 +20,7 @@ import { Role, Status, StatusEnum } from "@pms/types";
 export class AccountService implements IAccountService {
   constructor(
     @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
+    @inject(TYPES.INotificationService) private notificationService: INotificationService,
   ) { }
 
 
@@ -36,7 +38,7 @@ export class AccountService implements IAccountService {
     const { otp } = generateOtp();
     const storeCode = generateStoreCode(data.firstName);
 
-    return this.unitOfWork.transaction(async (transactionClient) => {
+    const created = await this.unitOfWork.transaction(async (transactionClient) => {
       await transactionClient.store.create({
         data: {
           name: `${data.firstName} ${data.lastName}'s Store - ${storeCode}`,
@@ -71,13 +73,25 @@ export class AccountService implements IAccountService {
 
       return this.convertToDto(toUserDto(user));
     });
+
+    // Fired only after the transaction has committed, and never awaited: a failed notification
+    // must not roll back or slow down the registration it reports.
+    void this.notificationService.notifyUserRegistered({
+      storeCode,
+      userId: created.userId,
+      name: created.name ?? '',
+      email: created.email ?? '',
+      role: String(created.role ?? role),
+    });
+
+    return created;
   }
 
   async create(data: CreateUserModel, storeCode: string) {
     const hashedPassword = await bcrypt.hash(`${data.password}`, 10);
     const { otp } = generateOtp();
 
-    return this.unitOfWork.transaction(async (transactionClient) => {
+    const created = await this.unitOfWork.transaction(async (transactionClient) => {
       const user = await transactionClient.users.create({
         data: {
           userId: generateUserGUID().toString(),
@@ -113,6 +127,18 @@ export class AccountService implements IAccountService {
 
       return this.convertToDto(toUserDto(user));
     });
+
+    // Same as signup: the store's admins hear about the new account once it exists, and a
+    // failed notification cannot undo the account.
+    void this.notificationService.notifyUserRegistered({
+      storeCode,
+      userId: created.userId,
+      name: created.name ?? '',
+      email: created.email ?? '',
+      role: String(created.role ?? data.role ?? Role.user),
+    });
+
+    return created;
   }
 
 

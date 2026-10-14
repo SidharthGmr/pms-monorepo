@@ -30,6 +30,7 @@ export const TYPES = {
   IContactMessageService: Symbol.for("ContactMessageService"),
   ISubscriberService: Symbol.for("SubscriberService"),
   ICmsPageService: Symbol.for("CmsPageService"),
+  INotificationService: Symbol.for("NotificationService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -61,6 +62,7 @@ export const TYPES = {
   ContactMessageController: Symbol.for("ContactMessageController"),
   SubscriberController: Symbol.for("SubscriberController"),
   CmsPageController: Symbol.for("CmsPageController"),
+  NotificationController: Symbol.for("NotificationController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -92,4 +94,5 @@ export const TYPES = {
   IContactMessageRepository: Symbol.for("ContactMessageRepository"),
   ISubscriberRepository: Symbol.for("SubscriberRepository"),
   ICmsPageRepository: Symbol.for("CmsPageRepository"),
+  INotificationRepository: Symbol.for("NotificationRepository"),
 };

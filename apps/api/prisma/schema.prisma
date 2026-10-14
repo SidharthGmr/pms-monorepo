@@ -1,5 +1,5 @@
 generator client {
-  provider      = "prisma-client-js" 
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -59,6 +59,7 @@ model users {
   Wishlist                 Wishlist[]
   PriceHistory             PriceHistory[]
   VariantRating            VariantRating[]
+  notifications            Notification[]
 
   @@index([userId])
   @@index([email])
@@ -177,6 +178,7 @@ model store {
   contactMessages  ContactMessage[]
   subscribers      Subscriber[]
   cmsPages         CmsPage[]
+  notifications    Notification[]
 }
 
 model category {
@@ -253,7 +255,7 @@ model product {
   deletedBy users?     @relation("ProductDeletedBy", fields: [deletedById], references: [userId], onDelete: SetNull)
 
   variants       ProductVariant[]
-  priceHistory      PriceHistory[]
+  priceHistory   PriceHistory[]
   orderItems     orderItem[]
   purchaseItems  purchaseItem[]
   stockHistories stockHistory[]
@@ -338,7 +340,7 @@ model PriceHistory {
   createdById    String
   updatedById    String?
   deletedById    String?
-  product           product   @relation(fields: [storeCode, productId], references: [storeCode, id], onDelete: Restrict)
+  product        product        @relation(fields: [storeCode, productId], references: [storeCode, id], onDelete: Restrict)
   variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   createdBy      users          @relation(fields: [createdById], references: [userId], onDelete: Restrict)
 
@@ -892,4 +894,31 @@ enum PageStatus {
   Published
   Unpublished
   Archived
+}
+
+model Notification {
+  id          Int              @id @default(autoincrement())
+  storeCode   String
+  recipientId String
+  type        NotificationType
+  title       String           @db.VarChar(200)
+  message     String
+  link        String?
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  store       store            @relation(fields: [storeCode], references: [code], onDelete: Cascade)
+  recipient   users            @relation(fields: [recipientId], references: [userId], onDelete: Cascade)
+
+  @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
+  @@index([storeCode, type, isRead])
+}
+
+enum NotificationType {
+  USER_REGISTERED
+  ORDER_PLACED
+  ORDER_STATUS_CHANGED
+  LOW_STOCK
 }

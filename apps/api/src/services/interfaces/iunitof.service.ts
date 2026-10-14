@@ -27,6 +27,7 @@ import { IPriceHistoryService } from "./Iprice-history.service";
 import { IContactMessageService } from "./Icontact-message.service";
 import { ISubscriberService } from "./Isubscriber.service";
 import { ICmsPageService } from "./Icms-page.service";
+import { INotificationService } from "./Inotification.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -58,4 +59,5 @@ export default interface IUnitOfService {
   ContactMessage: IContactMessageService;
   Subscriber: ISubscriberService;
   CmsPage: ICmsPageService;
+  Notification: INotificationService;
 }

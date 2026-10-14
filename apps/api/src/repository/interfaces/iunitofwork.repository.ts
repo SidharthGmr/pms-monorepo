@@ -27,6 +27,7 @@ import { IPriceHistoryRepository } from "./iprice-history.repository";
 import { IContactMessageRepository } from "./icontact-message.repository";
 import { ISubscriberRepository } from "./isubscriber.repository";
 import { ICmsPageRepository } from "./icms-page.repository";
+import { INotificationRepository } from "./inotification.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -57,6 +58,7 @@ export default interface IUnitOfWork {
   ContactMessage: IContactMessageRepository;
   Subscriber: ISubscriberRepository;
   CmsPage: ICmsPageRepository;
+  Notification: INotificationRepository;
 
   /**
    * Executes a set of operations within a database transaction.

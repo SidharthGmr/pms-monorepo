@@ -13,12 +13,16 @@ import { OrderFilterParams } from "../params/order.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
 import { payablePrice } from "../utils/variant-pricing";
+import { INotificationService } from "./interfaces/Inotification.service";
 import { IOrderService } from "./interfaces/Iorder.service";
 import { OrderStatus, Role } from "@prisma/client";
 
 @injectable()
 export class OrderService implements IOrderService {
-  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
+  constructor(
+    @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
+    @inject(TYPES.INotificationService) private notificationService: INotificationService
+  ) { }
 
   async getAll(filters?: OrderFilterParams): Promise<ListResponseDto<OrderDto>> {
     return this.unitOfWork.Order.findAll(filters);
@@ -161,8 +165,36 @@ export class OrderService implements IOrderService {
     // Fired only after the transaction has committed, and never awaited: the admin's copy of
     // the order must not be able to slow a sale down or roll one back.
     void this.notifyAdmin(order.id);
+    void this.raiseOrderNotifications(order.id, storeCode, [...new Set((data.items ?? []).map((item) => item.variantId))]);
 
     return order;
+  }
+
+  // In-app counterpart to notifyAdmin: the new order itself, plus a warning for any variant the
+  // sale has just pushed to or below its low-stock threshold.
+  private async raiseOrderNotifications(orderId: number, storeCode: string, variantIds: number[]): Promise<void> {
+    try {
+      const order = await this.unitOfWork.Order.findById(orderId);
+      if (!order) return;
+
+      await this.notificationService.notifyOrderPlaced(order);
+      if (variantIds.length === 0) return;
+
+      const sold = new Set(variantIds);
+      const lowStock = await this.unitOfWork.Product.findLowStock(storeCode, 200);
+      for (const variant of (lowStock.data ?? []).filter((item) => sold.has(item.id))) {
+        await this.notificationService.notifyLowStock({
+          storeCode,
+          variantId: variant.id,
+          variantName: variant.name,
+          sku: variant.sku,
+          stock: variant.stock,
+          threshold: variant.lowStockThreshold,
+        });
+      }
+    } catch (error) {
+      logger.error('order in-app notification failed', { orderId, error: (error as Error)?.message });
+    }
   }
 
   private async notifyAdmin(orderId: number): Promise<void> {
@@ -196,7 +228,10 @@ export class OrderService implements IOrderService {
     if (!existing) throw new NotFoundError("Order not found");
     if (storeCode && existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
     if (existing.status === status) return existing;
-    return this.unitOfWork.Order.updateStatus(id, status);
+
+    const updated = await this.unitOfWork.Order.updateStatus(id, status);
+    void this.notificationService.notifyOrderStatusChanged(updated, existing.status);
+    return updated;
   }
 
   async delete(id: number): Promise<OrderDto> {

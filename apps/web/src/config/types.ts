@@ -32,4 +32,5 @@ export const TYPES = {
   IMediaService: Symbol.for('IMediaService'),
   ISubscriberService: Symbol.for('ISubscriberService'),
   ICmsPageService: Symbol.for('ICmsPageService'),
+  INotificationService: Symbol.for('INotificationService'),
 };

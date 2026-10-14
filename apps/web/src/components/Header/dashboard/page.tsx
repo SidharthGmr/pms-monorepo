@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import { BreadCrumb } from '../breadcrumb';
 import { CartIndicator } from '../cart-indicator';
 import { GlobalSearch } from '../global-search';
+import { NotificationBell } from '../notification-bell';
 import { QuickCreate } from '../quick-create';
 import { ModeToggle } from './sidebar/thememode';
 
@@ -64,6 +65,7 @@ export default function HeaderDashboard() {
         <QuickCreate />
         <Separator orientation="vertical" className="hidden h-5 sm:block" />
         <CartIndicator />
+        <NotificationBell />
         <ModeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
