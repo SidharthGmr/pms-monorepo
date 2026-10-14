@@ -8,6 +8,7 @@ import { useSubscribePublic } from '@/hooks/service-hooks/useSubscriberService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { BellRing, CheckCircle2, Mail } from 'lucide-react';
 import { FormEvent, useState } from 'react';
+import { FORM_ACCESS_COOKIE, storeAccessCookie } from '@/lib/page-access';
 
 // Sits between the light brand strip and the dark footer, so it is a brand-gradient card on a
 // plain section rather than another full-width band - otherwise it would merge into the footer.
@@ -24,6 +25,9 @@ export default function Newsletter() {
 
     const response = await mutation.mutateAsync({ email });
     if (response && (response.status === 200 || response.status === 201)) {
+      // Unlocks any CMS page conditioned on subscribing (see lib/page-access.ts).
+      const formToken = (response.data?.data as { formToken?: string } | undefined)?.formToken;
+      if (formToken) storeAccessCookie(FORM_ACCESS_COOKIE, formToken);
       // 200 means the address was already on the list; say so instead of pretending it is new.
       setDone(response.status === 200 ? 'You are already on the list.' : 'Subscribed - see you in your inbox.');
     } else {

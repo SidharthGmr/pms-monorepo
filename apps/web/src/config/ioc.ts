@@ -66,6 +66,8 @@ import ContactMessageService from '@/services/ContactMessageService';
 import IContactMessageService from '@/services/interfaces/IContactMessageService';
 import SubscriberService from '@/services/SubscriberService';
 import ISubscriberService from '@/services/interfaces/ISubscriberService';
+import CmsPageService from '@/services/CmsPageService';
+import ICmsPageService from '@/services/interfaces/ICmsPageService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -103,6 +105,7 @@ container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistory
 container.bind<IContactMessageService>(TYPES.IContactMessageService).to(ContactMessageService);
 container.bind<IMediaService>(TYPES.IMediaService).to(MediaService);
 container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
+container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 
 export { container };
 

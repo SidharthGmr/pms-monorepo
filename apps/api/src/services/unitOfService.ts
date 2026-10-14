@@ -29,6 +29,7 @@ import { IMasterEntryService } from "./interfaces/Imaster-entry.service";
 import { IPriceHistoryService } from "./interfaces/Iprice-history.service";
 import { IContactMessageService } from "./interfaces/Icontact-message.service";
 import { ISubscriberService } from "./interfaces/Isubscriber.service";
+import { ICmsPageService } from "./interfaces/Icms-page.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -59,6 +60,7 @@ export default class UnitOfService implements IUnitOfService {
   public PriceHistory: IPriceHistoryService;
   public ContactMessage: IContactMessageService;
   public Subscriber: ISubscriberService;
+  public CmsPage: ICmsPageService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -89,6 +91,7 @@ export default class UnitOfService implements IUnitOfService {
     priceHistory = container.get<IPriceHistoryService>(TYPES.IPriceHistoryService),
     contactMessage = container.get<IContactMessageService>(TYPES.IContactMessageService),
     subscriber = container.get<ISubscriberService>(TYPES.ISubscriberService),
+    cmsPage = container.get<ICmsPageService>(TYPES.ICmsPageService),
   ) {
     this.User = user;
     this.Account = account;
@@ -118,5 +121,6 @@ export default class UnitOfService implements IUnitOfService {
     this.PriceHistory = priceHistory;
     this.ContactMessage = contactMessage;
     this.Subscriber = subscriber;
+    this.CmsPage = cmsPage;
   }
 }

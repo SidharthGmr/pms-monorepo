@@ -17,6 +17,8 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   DELETED: { label: 'Deleted', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400', soft: 'bg-rose-500/10' },
   INREVIEW: { label: 'In review', dot: 'bg-sky-500', text: 'text-sky-700 dark:text-sky-400', soft: 'bg-sky-500/10' },
   REJECTED: { label: 'Rejected', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400', soft: 'bg-rose-500/10' },
+  UNPUBLISHED: { label: 'Unpublished', dot: 'bg-zinc-400', text: 'text-muted-foreground', soft: 'bg-muted' },
+  ARCHIVED: { label: 'Archived', dot: 'bg-violet-500', text: 'text-violet-700 dark:text-violet-400', soft: 'bg-violet-500/10' },
   ACTIVE: { label: 'Active', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', soft: 'bg-emerald-500/10' },
   INACTIVE: { label: 'Inactive', dot: 'bg-zinc-400', text: 'text-muted-foreground', soft: 'bg-muted' },
 };

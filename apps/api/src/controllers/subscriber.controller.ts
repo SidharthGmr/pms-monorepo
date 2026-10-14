@@ -5,6 +5,7 @@ import { TYPES } from "../config/ioc.types";
 import CustomResponse from "../dtos/custom-response";
 import { ListResponseDto } from "../dtos/list-response.dto";
 import IUnitOfService from "../services/interfaces/iunitof.service";
+import { signFormSubmissionToken } from "../utils/page-access.util";
 
 export class SubscriberController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -15,10 +16,12 @@ export class SubscriberController {
     const storeCode = (req.query["storeCode"] as string | undefined) || undefined;
 
     const { subscriber, already } = await this.unitOfService.Subscriber.subscribe(body.email, storeCode);
+    // The token unlocks CMS pages conditioned on this form (see page-access.util.ts).
+    const data = { ...subscriber, formToken: signFormSubmissionToken('subscribe') };
     if (already) {
-      return res.status(200).json({ success: true, message: "You are already subscribed", data: subscriber });
+      return res.status(200).json({ success: true, message: "You are already subscribed", data });
     }
-    return res.status(201).json({ success: true, message: "Subscribed - welcome aboard", data: subscriber });
+    return res.status(201).json({ success: true, message: "Subscribed - welcome aboard", data });
   };
 
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<SubscriberDto>>>> => {

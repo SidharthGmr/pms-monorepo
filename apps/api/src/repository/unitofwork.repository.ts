@@ -30,6 +30,7 @@ import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
 import { IPriceHistoryRepository } from "./interfaces/iprice-history.repository";
 import { IContactMessageRepository } from "./interfaces/icontact-message.repository";
 import { ISubscriberRepository } from "./interfaces/isubscriber.repository";
+import { ICmsPageRepository } from "./interfaces/icms-page.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -59,6 +60,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public PriceHistory: IPriceHistoryRepository;
   public ContactMessage: IContactMessageRepository;
   public Subscriber: ISubscriberRepository;
+  public CmsPage: ICmsPageRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -88,6 +90,7 @@ export default class UnitOfWork implements IUnitOfWork {
     priceHistory = container.get<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository),
     contactMessage = container.get<IContactMessageRepository>(TYPES.IContactMessageRepository),
     subscriber = container.get<ISubscriberRepository>(TYPES.ISubscriberRepository),
+    cmsPage = container.get<ICmsPageRepository>(TYPES.ICmsPageRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -116,6 +119,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.PriceHistory = priceHistory;
     this.ContactMessage = contactMessage;
     this.Subscriber = subscriber;
+    this.CmsPage = cmsPage;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

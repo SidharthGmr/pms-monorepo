@@ -176,6 +176,7 @@ model store {
   masterEntries    MasterEntry[]
   contactMessages  ContactMessage[]
   subscribers      Subscriber[]
+  cmsPages         CmsPage[]
 }
 
 model category {
@@ -836,4 +837,59 @@ model VariantRating {
   @@unique([userId, variantId])
   @@index([variantId])
   @@index([storeCode])
+}
+
+// Admin-authored storefront pages. The slug is globally unique because the public site
+// resolves /<slug> without a store code. passwordHash never leaves the API.
+model CmsPage {
+  id                 Int        @id @default(autoincrement())
+  storeCode          String
+  name               String     @db.VarChar(200)
+  slug               String     @unique @db.VarChar(200)
+  urlOption          String     @default("default")
+  status             PageStatus @default(Draft)
+  includeHeader      Boolean    @default(true)
+  includeFooter      Boolean    @default(true)
+  thumbnailUrl       String?
+  passwordEnabled    Boolean    @default(false)
+  passwordHash       String?
+  conditionEnabled   Boolean    @default(false)
+  /// 'contact' | 'subscribe' - which public form unlocks the page when conditionEnabled.
+  conditionForm      String?
+  htmlContent        String     @default("")
+  cssContent         String?
+  jsContent          String?
+  metaTitle          String?    @db.VarChar(255)
+  metaDescription    String?
+  metaKeywords       String?
+  canonicalUrl       String?
+  robots             String?
+  ogTitle            String?    @db.VarChar(255)
+  ogDescription      String?
+  ogImageUrl         String?
+  /// Array of JSON-LD objects; @graph structures pass through untouched.
+  schemaMarkup       Json?
+  headerScript       String?
+  afterBodyScript    String?
+  footerScript       String?
+  preloadScript      String?
+  hideFromSearch     Boolean    @default(false)
+  disableRecaptcha   Boolean    @default(false)
+  excludeFromSitemap Boolean    @default(false)
+  sitemapPriority    Float      @default(0.5)
+  createdById        String?
+  updatedById        String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime?
+  store              store      @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+
+  @@index([storeCode, status])
+  @@index([status, hideFromSearch, excludeFromSitemap])
+}
+
+enum PageStatus {
+  Draft
+  Published
+  Unpublished
+  Archived
 }

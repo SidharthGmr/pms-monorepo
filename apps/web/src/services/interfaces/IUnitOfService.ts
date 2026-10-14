@@ -27,6 +27,7 @@ import IPriceHistoryService from './IPriceHistoryService';
 import IContactMessageService from './IContactMessageService';
 import IMediaService from './IMediaService';
 import ISubscriberService from './ISubscriberService';
+import ICmsPageService from './ICmsPageService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -60,4 +61,5 @@ export default interface IUnitOfService {
   ContactMessageService: IContactMessageService;
   MediaService: IMediaService;
   SubscriberService: ISubscriberService;
+  CmsPageService: ICmsPageService;
 }

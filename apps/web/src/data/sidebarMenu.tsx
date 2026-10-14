@@ -1,5 +1,6 @@
 import { Roles } from '@/enums/roles.enum';
 import {
+  FileText,
   Boxes,
   Images,
   Inbox,
@@ -246,6 +247,15 @@ export const SideBarMenu: SideBarMenuDto[] = [
         isActive: false,
       },
     ],
+  },
+  {
+    id: 'pages',
+    title: 'Pages',
+    icon: FileText,
+    url: '/admin/pages/',
+    group: 'Content',
+    role: [Roles.ADMIN],
+    isActive: false,
   },
   {
     id: 'contact-messages',

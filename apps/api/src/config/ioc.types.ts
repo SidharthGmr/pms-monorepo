@@ -29,6 +29,7 @@ export const TYPES = {
   IPriceHistoryService: Symbol.for("PriceHistoryService"),
   IContactMessageService: Symbol.for("ContactMessageService"),
   ISubscriberService: Symbol.for("SubscriberService"),
+  ICmsPageService: Symbol.for("CmsPageService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -59,6 +60,7 @@ export const TYPES = {
   PriceHistoryController: Symbol.for("PriceHistoryController"),
   ContactMessageController: Symbol.for("ContactMessageController"),
   SubscriberController: Symbol.for("SubscriberController"),
+  CmsPageController: Symbol.for("CmsPageController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -89,4 +91,5 @@ export const TYPES = {
   IPriceHistoryRepository: Symbol.for("PriceHistoryRepository"),
   IContactMessageRepository: Symbol.for("ContactMessageRepository"),
   ISubscriberRepository: Symbol.for("SubscriberRepository"),
+  ICmsPageRepository: Symbol.for("CmsPageRepository"),
 };

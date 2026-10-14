@@ -26,6 +26,7 @@ import { IMasterEntryService } from "./Imaster-entry.service";
 import { IPriceHistoryService } from "./Iprice-history.service";
 import { IContactMessageService } from "./Icontact-message.service";
 import { ISubscriberService } from "./Isubscriber.service";
+import { ICmsPageService } from "./Icms-page.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -56,4 +57,5 @@ export default interface IUnitOfService {
   PriceHistory: IPriceHistoryService;
   ContactMessage: IContactMessageService;
   Subscriber: ISubscriberService;
+  CmsPage: ICmsPageService;
 }

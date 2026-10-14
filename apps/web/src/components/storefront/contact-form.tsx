@@ -14,6 +14,7 @@ import { contactMessageFields, CreateContactMessageModel } from '@pms/types';
 import { CheckCircle2, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { FORM_ACCESS_COOKIE, storeAccessCookie } from '@/lib/page-access';
 
 const DEFAULT_VALUES: CreateContactMessageModel = { name: '', email: '', phone: '', subject: '', message: '' };
 
@@ -33,6 +34,9 @@ export default function ContactForm() {
     const response = await mutation.mutateAsync(model);
 
     if (response && response.status === 201) {
+      // Unlocks any CMS page conditioned on the contact form (see lib/page-access.ts).
+      const formToken = (response.data?.data as { formToken?: string } | undefined)?.formToken;
+      if (formToken) storeAccessCookie(FORM_ACCESS_COOKIE, formToken);
       setSent(true);
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);

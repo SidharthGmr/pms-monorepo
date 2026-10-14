@@ -5,6 +5,9 @@ import Logo from '@/components/common/Logo';
 
 export const metadata: Metadata = {
   title: `Page Not Found - ${config.appName}`,
+  // The root layout streams its shell before notFound() resolves, so these responses go out
+  // as 200 (a soft 404). noindex keeps crawlers from indexing them regardless.
+  robots: { index: false, follow: false },
 };
 
 export default function NotFound() {

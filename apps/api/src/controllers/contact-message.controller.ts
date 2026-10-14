@@ -6,6 +6,7 @@ import { TYPES } from "../config/ioc.types";
 import CustomResponse from "../dtos/custom-response";
 import { ListResponseDto } from "../dtos/list-response.dto";
 import IUnitOfService from "../services/interfaces/iunitof.service";
+import { signFormSubmissionToken } from "../utils/page-access.util";
 
 export class ContactMessageController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -16,7 +17,8 @@ export class ContactMessageController {
     const storeCode = (req.query["storeCode"] as string | undefined) || undefined;
 
     const data = await this.unitOfService.ContactMessage.create(body, storeCode);
-    return res.status(201).json({ success: true, message: "Thanks - your message has been sent", data });
+    // The token unlocks CMS pages conditioned on this form (see page-access.util.ts).
+    return res.status(201).json({ success: true, message: "Thanks - your message has been sent", data: { ...data, formToken: signFormSubmissionToken('contact') } });
   };
 
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ContactMessageDto>>>> => {
