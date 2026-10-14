@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "भाषा",
+    "loading": "लोड हो रहा है…",
+    "dismiss": "हटाएँ"
+  },
+  "notifications": {
+    "title": "सूचनाएँ",
+    "unread": "({count} अपठित)",
+    "markAllRead": "सभी पढ़ा हुआ मार्क करें",
+    "emptyTitle": "आप पूरी तरह अपडेट हैं",
+    "emptyHint": "नए ऑर्डर, साइन-अप और स्टॉक चेतावनियाँ यहाँ दिखेंगी।",
+    "badgeTitle": "{count} अपठित सूचनाएँ",
+    "badgeTitleOne": "1 अपठित सूचना",
+    "badgeTitleNone": "कोई नई सूचना नहीं",
+    "ariaLabel": "सूचनाएँ",
+    "ariaLabelUnread": "सूचनाएँ, {count} अपठित"
+  },
+  "time": {
+    "justNow": "अभी",
+    "minutes": "{count} मिनट पहले",
+    "hours": "{count} घंटे पहले",
+    "days": "{count} दिन पहले"
+  },
+  "stock": {
+    "lowOnStock": "कम स्टॉक",
+    "receiveStock": "स्टॉक प्राप्त करें",
+    "alertsBelow": "{count} से कम पर अलर्ट",
+    "out": "खत्म",
+    "left": "{count} शेष",
+    "allAbove": "सभी वस्तुएँ अपनी न्यूनतम सीमा से ऊपर हैं।"
+  },
+  "nav": {
+    "groups": {
+      "Overview": "अवलोकन",
+      "Catalog": "कैटलॉग",
+      "Sales": "बिक्री",
+      "Inventory": "इन्वेंटरी",
+      "Content": "सामग्री",
+      "Customers": "ग्राहक",
+      "Shop": "दुकान",
+      "My Account": "मेरा खाता",
+      "Administration": "प्रशासन"
+    },
+    "items": {
+      "Dashboard": "डैशबोर्ड",
+      "Products": "उत्पाद",
+      "Categories": "श्रेणियाँ",
+      "Brand Names": "ब्रांड नाम",
+      "Attributes": "विशेषताएँ",
+      "Master Attributes": "मास्टर विशेषताएँ",
+      "Master Entries": "मास्टर प्रविष्टियाँ",
+      "Orders": "ऑर्डर",
+      "Purchases": "खरीद",
+      "Purchase History": "खरीद इतिहास",
+      "Receive Stock": "स्टॉक प्राप्त करें",
+      "Price Histories": "मूल्य इतिहास",
+      "Pages": "पेज",
+      "Media": "मीडिया",
+      "Reviews": "समीक्षाएँ",
+      "Contact Messages": "संपर्क संदेश",
+      "Subscribers": "सब्सक्राइबर",
+      "Users": "उपयोगकर्ता",
+      "Staff": "स्टाफ",
+      "Staff Salaries": "स्टाफ वेतन",
+      "Suppliers": "आपूर्तिकर्ता",
+      "Stores": "स्टोर",
+      "Settings": "सेटिंग्स",
+      "Profile": "प्रोफ़ाइल",
+      "Cart": "कार्ट",
+      "Checkout": "चेकआउट",
+      "Wishlist": "विशलिस्ट",
+      "POS": "पीओएस"
+    }
+  },
+  "order": {
+    "status": {
+      "PENDING": "लंबित",
+      "CONFIRMED": "पुष्ट",
+      "SHIPPED": "भेजा गया",
+      "DELIVERED": "वितरित",
+      "CANCELLED": "रद्द",
+      "RETURNED": "वापस"
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from '@/components/ui/sidebar';
 import { SideBarMenuDto } from '@/data/sidebarMenu';
+import { useNavLabel } from '@/i18n/nav-label';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -34,6 +35,7 @@ const matchesPath = (pathname: string, url?: string) => {
 export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, isOpen, onToggle, forceOpen = false }) => {
   const pathname = usePathname();
   const { isMobile, setOpenMobile, state } = useSidebar();
+  const navLabel = useNavLabel();
   const Icon = item.icon;
 
   const children = item.submenu ?? [];
@@ -49,10 +51,10 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
   if (children.length === 0) {
     return (
       <SidebarMenuItem>
-        <SidebarMenuButton tooltip={item.title} isActive={selfActive} asChild>
+        <SidebarMenuButton tooltip={navLabel(item.title)} isActive={selfActive} asChild>
           <Link href={item.url || '#'} onClick={handleNavigate}>
             {Icon && <Icon />}
-            <span>{item.title}</span>
+            <span>{navLabel(item.title)}</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -65,13 +67,13 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton tooltip={item.title} isActive={childActive}>
+            <SidebarMenuButton tooltip={navLabel(item.title)} isActive={childActive}>
               {Icon && <Icon />}
-              <span>{item.title}</span>
+              <span>{navLabel(item.title)}</span>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="right" align="start" sideOffset={8} className="min-w-48 rounded-lg">
-            <DropdownMenuLabel className="text-xs text-muted-foreground">{item.title}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">{navLabel(item.title)}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {children.map((child) => {
               const active = matchesPath(pathname, child.url);
@@ -79,7 +81,7 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
                 <DropdownMenuItem key={child.id} asChild className={cn(active && 'bg-primary/10 font-semibold text-primary focus:text-primary')}>
                   <Link href={child.url}>
                     {child.icon && <child.icon className="h-4 w-4" />}
-                    <span>{child.title}</span>
+                    <span>{navLabel(child.title)}</span>
                   </Link>
                 </DropdownMenuItem>
               );
@@ -96,9 +98,9 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
     <Collapsible asChild open={open} onOpenChange={onToggle} className="group/collapsible">
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton tooltip={item.title} className={cn(childActive && 'text-primary')}>
+          <SidebarMenuButton tooltip={navLabel(item.title)} className={cn(childActive && 'text-primary')}>
             {Icon && <Icon />}
-            <span>{item.title}</span>
+            <span>{navLabel(item.title)}</span>
             <ChevronRight className="ml-auto !size-3.5 text-sidebar-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
@@ -110,7 +112,7 @@ export const SidebarItemRenderer: React.FC<SidebarItemRendererProps> = ({ item, 
                 <SidebarMenuSubButton asChild isActive={matchesPath(pathname, child.url)}>
                   <Link href={child.url} onClick={handleNavigate}>
                     {child.icon && <child.icon />}
-                    <span>{child.title}</span>
+                    <span>{navLabel(child.title)}</span>
                   </Link>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>

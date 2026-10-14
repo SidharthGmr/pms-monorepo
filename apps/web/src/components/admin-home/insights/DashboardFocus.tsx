@@ -7,6 +7,7 @@ import { useGetDashboardSummary } from '@/hooks/service-hooks/useDashboardServic
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useGetLowStockProducts } from '@/hooks/service-hooks/useProductService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { useTranslations } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import {
   AlertTriangle,
@@ -61,6 +62,7 @@ interface DashboardFocusProps {
 export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
   const { currentUser } = useGetCurrentUser();
   const summaryQuery = useGetDashboardSummary();
+  const tPanel = useTranslations();
   const lowStockQuery = useGetLowStockProducts();
   // Only the count is wanted, so one row is enough - the API still reports the full total.
   const pendingQuery = useGetAllOrders({ status: 'PENDING', recordPerPage: 1 });
@@ -279,11 +281,11 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
         <div className="min-w-0 space-y-4">
           <Panel
             {...enter(6)}
-            title="Low on stock"
+            title={tPanel('stock.lowOnStock')}
             icon={AlertTriangle}
             count={lowStockQuery.isLoading ? undefined : lowStockAll.length}
             href="/admin/stock-purchase"
-            cta="Receive stock"
+            cta={tPanel('stock.receiveStock')}
           >
             <StockWatch items={lowStockAll} loading={lowStockQuery.isLoading} />
           </Panel>
@@ -459,6 +461,8 @@ function FocusKpi({
 }
 
 function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boolean }) {
+  const t = useTranslations();
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -475,7 +479,7 @@ function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boo
     );
   }
 
-  if (items.length === 0) return <EmptyLine icon={Boxes} text="Everything is above its low-stock threshold." tone="good" />;
+  if (items.length === 0) return <EmptyLine icon={Boxes} text={t('stock.allAbove')} tone="good" />;
 
   // The panel sits beside a taller column, so the list is capped at roughly four rows and the
   // rest scrolls - every low item stays reachable without the card growing down the page.
@@ -506,11 +510,11 @@ function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boo
                         critical ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                       )}
                     >
-                      {critical ? 'Out' : `${product.stock} left`}
+                      {critical ? t('stock.out') : t('stock.left', { count: product.stock })}
                     </span>
                   </div>
                   <Progress value={ratio} className={cn('mt-1.5 h-1.5', critical ? '[&>div]:bg-destructive' : '[&>div]:bg-amber-500')} />
-                  <p className="mt-1 text-[10px] text-muted-foreground">Alerts below {threshold}</p>
+                  <p className="mt-1 text-[10px] text-muted-foreground">{t('stock.alertsBelow', { count: threshold })}</p>
                 </div>
               </Link>
             </li>

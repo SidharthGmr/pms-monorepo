@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeleteNotification, useGetAllNotifications, useGetUnreadNotificationCount, useMarkNotificationsRead } from '@/hooks/service-hooks/useNotificationService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { useLocale } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { NotificationDto, NotificationTypeEnum } from '@pms/types';
 import { Bell, CheckCheck, PackageCheck, ShoppingBag, TriangleAlert, UserPlus, X } from 'lucide-react';
@@ -37,21 +38,25 @@ const TONES = {
   [NotificationTypeEnum.LowStock]: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
 } as const;
 
-const relativeTime = (value: Date | string): string => {
+type Translate = ReturnType<typeof useLocale>['t'];
+type FormatDate = ReturnType<typeof useLocale>['formatDate'];
+
+const relativeTime = (value: Date | string, t: Translate, formatDate: FormatDate): string => {
   const then = new Date(value).getTime();
   const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('time.justNow');
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('time.minutes', { count: minutes });
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('time.hours', { count: hours });
   const days = Math.round(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(value).toLocaleDateString();
+  if (days < 7) return t('time.days', { count: days });
+  return formatDate(value);
 };
 
 export function NotificationBell() {
   const { currentUser } = useGetCurrentUser();
+  const { t, formatDate } = useLocale();
   const signedIn = !!currentUser;
   const router = useRouter();
 
@@ -80,8 +85,8 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="relative h-9 w-9"
-          title={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}` : 'No new notifications'}
-          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+          title={unreadCount === 0 ? t('notifications.badgeTitleNone') : unreadCount === 1 ? t('notifications.badgeTitleOne') : t('notifications.badgeTitle', { count: unreadCount })}
+          aria-label={unreadCount > 0 ? t('notifications.ariaLabelUnread', { count: unreadCount }) : t('notifications.ariaLabel')}
         >
           {/* Swings only while something is unread, and only for visitors who accept motion. */}
           <Bell className={cn('h-[18px] w-[18px]', unreadCount > 0 && 'origin-top motion-safe:animate-bell-ring')} />
@@ -96,13 +101,13 @@ export function NotificationBell() {
       <DropdownMenuContent align="end" sideOffset={8} collisionPadding={8} className="w-[calc(100vw-1.5rem)] max-w-[22rem] rounded-lg p-0 sm:w-[22rem]">
         <div className="flex items-center justify-between border-b px-3 py-2.5">
           <p className="text-sm font-semibold">
-            Notifications
-            {unreadCount > 0 && <span className="ml-1.5 text-xs font-normal text-muted-foreground">({unreadCount} unread)</span>}
+            {t('notifications.title')}
+            {unreadCount > 0 && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{t('notifications.unread', { count: unreadCount })}</span>}
           </p>
           {unreadCount > 0 && (
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => markRead.mutate({})} disabled={markRead.isPending}>
               <CheckCheck className="h-3.5 w-3.5" />
-              Mark all read
+              {t('notifications.markAllRead')}
             </Button>
           )}
         </div>
@@ -122,8 +127,8 @@ export function NotificationBell() {
         ) : notifications.length === 0 ? (
           <div className="px-4 py-10 text-center">
             <Bell className="mx-auto h-7 w-7 text-muted-foreground/40" />
-            <p className="mt-2 text-sm font-medium">You are all caught up</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">New orders, signups and stock warnings land here.</p>
+            <p className="mt-2 text-sm font-medium">{t('notifications.emptyTitle')}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t('notifications.emptyHint')}</p>
           </div>
         ) : (
           <div className="max-h-[60vh] overflow-y-auto overscroll-contain sm:max-h-[22rem]">
@@ -142,15 +147,15 @@ export function NotificationBell() {
                           <span className="truncate text-[13px] font-semibold leading-tight">{notification.title}</span>
                         </span>
                         <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{notification.message}</span>
-                        <span className="mt-1 block text-[11px] text-muted-foreground/70">{relativeTime(notification.createdAt)}</span>
+                        <span className="mt-1 block text-[11px] text-muted-foreground/70">{relativeTime(notification.createdAt, t, formatDate)}</span>
                       </span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeNotification.mutate(notification.id)}
-                      aria-label="Dismiss notification"
-                      title="Dismiss"
+                      aria-label={t('common.dismiss')}
+                      title={t('common.dismiss')}
                       className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus:opacity-100 group-hover:opacity-100"
                     >
                       <X className="h-3.5 w-3.5" />

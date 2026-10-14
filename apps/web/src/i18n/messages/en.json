@@ -1,0 +1,86 @@
+{
+  "common": {
+    "language": "Language",
+    "loading": "Loading…",
+    "dismiss": "Dismiss"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread": "({count} unread)",
+    "markAllRead": "Mark all read",
+    "emptyTitle": "You are all caught up",
+    "emptyHint": "New orders, signups and stock warnings land here.",
+    "badgeTitle": "{count} unread notifications",
+    "badgeTitleOne": "1 unread notification",
+    "badgeTitleNone": "No new notifications",
+    "ariaLabel": "Notifications",
+    "ariaLabelUnread": "Notifications, {count} unread"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutes": "{count}m ago",
+    "hours": "{count}h ago",
+    "days": "{count}d ago"
+  },
+  "stock": {
+    "lowOnStock": "Low on stock",
+    "receiveStock": "Receive stock",
+    "alertsBelow": "Alerts below {count}",
+    "out": "Out",
+    "left": "{count} left",
+    "allAbove": "Everything is above its low-stock threshold."
+  },
+  "nav": {
+    "groups": {
+      "Overview": "Overview",
+      "Catalog": "Catalog",
+      "Sales": "Sales",
+      "Inventory": "Inventory",
+      "Content": "Content",
+      "Customers": "Customers",
+      "Shop": "Shop",
+      "My Account": "My Account",
+      "Administration": "Administration"
+    },
+    "items": {
+      "Dashboard": "Dashboard",
+      "Products": "Products",
+      "Categories": "Categories",
+      "Brand Names": "Brand Names",
+      "Attributes": "Attributes",
+      "Master Attributes": "Master Attributes",
+      "Master Entries": "Master Entries",
+      "Orders": "Orders",
+      "Purchases": "Purchases",
+      "Purchase History": "Purchase History",
+      "Receive Stock": "Receive Stock",
+      "Price Histories": "Price Histories",
+      "Pages": "Pages",
+      "Media": "Media",
+      "Reviews": "Reviews",
+      "Contact Messages": "Contact Messages",
+      "Subscribers": "Subscribers",
+      "Users": "Users",
+      "Staff": "Staff",
+      "Staff Salaries": "Staff Salaries",
+      "Suppliers": "Suppliers",
+      "Stores": "Stores",
+      "Settings": "Settings",
+      "Profile": "Profile",
+      "Cart": "Cart",
+      "Checkout": "Checkout",
+      "Wishlist": "Wishlist",
+      "POS": "POS"
+    }
+  },
+  "order": {
+    "status": {
+      "PENDING": "Pending",
+      "CONFIRMED": "Confirmed",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled",
+      "RETURNED": "Returned"
+    }
+  }
+}

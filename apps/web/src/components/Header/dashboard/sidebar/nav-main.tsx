@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import useLogout from '@/hooks/use-logout';
+import { useNavLabel } from '@/i18n/nav-label';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuSkeleton } from '@/components/ui/sidebar';
@@ -38,6 +39,7 @@ function SidebarSkeleton() {
 export function NavMain({ query = '' }: NavMainProps) {
   const { currentUser, status } = useGetCurrentUser();
   const logout = useLogout();
+  const navLabel = useNavLabel();
   const [openId, setOpenId] = useState<string | null>(null);
 
   const userRoles = useMemo<string[]>(() => {
@@ -51,7 +53,7 @@ export function NavMain({ query = '' }: NavMainProps) {
   const sections = useMemo(() => {
     const visible = SideBarMenu.filter((item) => item.role?.some((role) => userRoles.includes(role)));
 
-    const matches = (title: string) => !q || title.toLowerCase().includes(q);
+    const matches = (title: string) => !q || title.toLowerCase().includes(q) || navLabel(title).toLowerCase().includes(q);
     const searched: SideBarMenuDto[] = visible.flatMap((item) => {
       if (!item.submenu?.length) return matches(item.title) ? [item] : [];
       if (matches(item.title)) return [item];
@@ -72,7 +74,7 @@ export function NavMain({ query = '' }: NavMainProps) {
     // Unlabelled items always sit at the bottom.
     order.sort((a, b) => (a === UNGROUPED ? 1 : b === UNGROUPED ? -1 : 0));
     return order.map((key) => ({ label: key, items: buckets.get(key)! }));
-  }, [userRoles, q]);
+  }, [userRoles, q, navLabel]);
 
   if (status === 'loading') return <SidebarSkeleton />;
 
@@ -89,7 +91,7 @@ export function NavMain({ query = '' }: NavMainProps) {
     <>
       {sections.map((section) => (
         <SidebarGroup key={section.label || 'other'} className="py-1.5">
-          {section.label && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
+          {section.label && <SidebarGroupLabel>{navLabel(section.label, 'groups')}</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {section.items.map((item) => (
