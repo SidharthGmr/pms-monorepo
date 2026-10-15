@@ -57,13 +57,17 @@ export class OrderRepository implements IOrderRepository {
         orderBy: [{ [column]: direction }, { id: 'desc' }],
         ...(showAll ? {} : { skip: (page - 1) * limit, take: limit }),
         include: {
-          customer: true,
+          // A narrow select, never `customer: true`: the full users row would serialize the
+          // customer's password hash and live session tokens into every order response.
+          customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
           store: true,
           items: {
             include: {
               product: true,
             },
           },
+          // Newest first so payments[0] is how the order was ultimately paid.
+          payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
         },
       }),
       prisma.order.count({ where }),
@@ -79,13 +83,14 @@ export class OrderRepository implements IOrderRepository {
         createdAt: 'desc',
       },
       include: {
-        customer: true,
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
         store: true,
         items: {
           include: {
             product: true,
           },
         },
+        payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
       },
     });
   }
@@ -94,7 +99,7 @@ export class OrderRepository implements IOrderRepository {
     return prisma.order.findUnique({
       where: { id },
       include: {
-        customer: true,
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
         store: true,
         items: {
           include: {
@@ -102,6 +107,7 @@ export class OrderRepository implements IOrderRepository {
             variant: { select: { id: true, name: true, sku: true, images: true } },
           },
         },
+        payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
       },
     });
   }

@@ -50,6 +50,22 @@
       "deleted": "सूचना हटाई गई"
     }
   },
+  "cart": {
+    "title": "कार्ट",
+    "countLine": "({count} आइटम)",
+    "countLineOne": "(1 आइटम)",
+    "badgeTitle": "कार्ट में {count} आइटम",
+    "badgeTitleOne": "कार्ट में 1 आइटम",
+    "badgeTitleNone": "कार्ट खाली है",
+    "empty": "आपका कार्ट खाली है",
+    "emptyHint": "जोड़ी गई वस्तुएँ यहाँ दिखेंगी।",
+    "subtotal": "उप-योग",
+    "viewCart": "कार्ट देखें",
+    "checkout": "चेकआउट",
+    "remove": "हटाएँ",
+    "decrease": "मात्रा घटाएँ",
+    "increase": "मात्रा बढ़ाएँ"
+  },
   "time": {
     "justNow": "अभी",
     "minutes": "{count} मिनट पहले",

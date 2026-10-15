@@ -50,6 +50,22 @@
       "deleted": "Notification deleted"
     }
   },
+  "cart": {
+    "title": "Cart",
+    "countLine": "({count} items)",
+    "countLineOne": "(1 item)",
+    "badgeTitle": "{count} items in the cart",
+    "badgeTitleOne": "1 item in the cart",
+    "badgeTitleNone": "Cart is empty",
+    "empty": "Your cart is empty",
+    "emptyHint": "Items you add appear here.",
+    "subtotal": "Subtotal",
+    "viewCart": "View cart",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity"
+  },
   "time": {
     "justNow": "just now",
     "minutes": "{count}m ago",

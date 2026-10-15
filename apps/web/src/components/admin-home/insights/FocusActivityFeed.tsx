@@ -1,15 +1,20 @@
 'use client';
-import { Skeleton } from '@/components/ui/skeleton';
 import { toneFor } from '@/components/features/orders/order-status';
+import { container } from '@/config/ioc';
+import { TYPES } from '@/config/types';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { OrderDto } from '@/dtos/order.dto';
 import { PurchaseDto } from '@/dtos/purchase.dto';
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllPurchases } from '@/hooks/service-hooks/usePurchaseService';
 import { cn } from '@/lib/utils';
-import { format, isToday, isYesterday } from 'date-fns';
-import { Activity, ChevronRight, ShoppingBag, Truck } from 'lucide-react';
+import { isToday, isYesterday } from 'date-fns';
+import { Activity, AlertTriangle, Banknote, ChevronRight, CreditCard, RotateCcw, ShoppingBag, Truck } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { formatMoney } from './format';
 
 // The Focus cut of the feed. The shared ActivityFeed is one undifferentiated stream; this one
@@ -21,8 +26,14 @@ type Filter = 'all' | Kind;
 interface FeedItem {
   key: string;
   kind: Kind;
+  /** Who the money moved with: the customer on a sale, the supplier on a purchase. */
   title: string;
-  subtitle: string;
+  /** The paper trail: order number or purchase invoice number. */
+  reference: string;
+  /** Line count, plus who recorded a purchase. */
+  detail: string;
+  /** How a sale was paid. Empty on purchases. */
+  payment: 'Cash' | 'Online' | '';
   amount: number;
   status: string;
   at: Date;
@@ -35,19 +46,40 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'purchase', label: 'Stock' },
 ];
 
-const dayLabel = (d: Date) => (isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'EEE d MMM'));
+const lineCount = (n: number | undefined) => (n ? `${n} item${n === 1 ? '' : 's'}` : '');
+
+// Storefront checkouts always record a payment (method ONLINE); counter sales record none, so
+// an order without one was taken at the till and reads as cash.
+const paymentLabel = (o: OrderDto): 'Cash' | 'Online' => {
+  const method = o.payments?.[0]?.method;
+  if (!method || method === 'CASH') return 'Cash';
+  return 'Online';
+};
 
 export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const dateTime = unitOfService.DateTimeService;
   const orders = useGetAllOrders({ page: 1, recordPerPage: limit });
   const purchases = useGetAllPurchases({ page: 1, recordPerPage: limit });
   const [filter, setFilter] = useState<Filter>('all');
 
+  // Dates render through DateTimeService, so the feed shows the admin's saved timezone like
+  // every other admin screen instead of whatever the browser happens to be set to.
+  const dayLabel = useCallback(
+    (d: Date) => (isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : dateTime.convertToLocalDate(d, false)),
+    [dateTime]
+  );
+
   const all = useMemo<FeedItem[]>(() => {
+    // The customer relation carries `name` (the users table has no first/last name columns);
+    // a counter sale has no customer row, so the staff member who rang it up stands in.
     const orderItems: FeedItem[] = ((orders.data?.data?.data?.data as OrderDto[] | undefined) ?? []).map((o) => ({
       key: `o-${o.id}`,
       kind: 'order',
-      title: o.orderNumber,
-      subtitle: (o.customer && `${o.customer.name}`.trim()) || '{o.customer.name}',
+      title: o.customer?.name?.trim() || o.createdByName || 'Walk-in',
+      reference: o.orderNumber,
+      detail: lineCount(o.items?.length),
+      payment: paymentLabel(o),
       amount: o.grandTotal ?? 0,
       status: String(o.status ?? ''),
       at: new Date(o.createdAt),
@@ -56,8 +88,10 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
     const purchaseItems: FeedItem[] = ((purchases.data?.data?.data?.data as PurchaseDto[] | undefined) ?? []).map((p) => ({
       key: `p-${p.id}`,
       kind: 'purchase',
-      title: p.invoiceNumber || `Purchase #${p.id}`,
-      subtitle: p.supplierName || 'Supplier',
+      title: p.supplierName || 'Supplier',
+      reference: p.invoiceNumber || `Purchase #${p.id}`,
+      detail: [lineCount(p.items?.length), p.user?.name ? `by ${p.user.name}` : ''].filter(Boolean).join(' · '),
+      payment: '',
       amount: p.totalAmount ?? 0,
       status: String(p.status ?? ''),
       at: new Date(p.purchaseDate || p.createdAt),
@@ -80,9 +114,49 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
       map.set(key, row);
     }
     return map;
-  }, [items]);
+  }, [items, dayLabel]);
 
   const isLoading = orders.isLoading || purchases.isLoading;
+  const isError = orders.isError || purchases.isError;
+
+  if (isLoading) {
+    return (
+      <ul className="space-y-1" aria-busy="true" aria-label="Loading activity">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <li key={i} className="flex items-center gap-3 py-2">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <div className="flex-1 space-y-1.5">
+              <Skeleton className="h-3.5 w-1/3" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <Skeleton className="h-4 w-16" />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="py-12 text-center">
+        <AlertTriangle className="mx-auto h-7 w-7 text-destructive/70" />
+        <p className="mt-3 text-sm font-semibold">Could not load the activity feed</p>
+        <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-5 gap-1.5"
+          onClick={() => {
+            if (orders.isError) orders.refetch();
+            if (purchases.isError) purchases.refetch();
+          }}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Try again
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -107,27 +181,14 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
             );
           })}
         </div>
-        {!isLoading && items.length > 0 && (
+        {items.length > 0 && (
           <span className="text-[11px] text-muted-foreground">
             {items.length} most recent {items.length === 1 ? 'entry' : 'entries'}
           </span>
         )}
       </div>
 
-      {isLoading ? (
-        <ul className="space-y-1">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <li key={i} className="flex items-center gap-3 py-2">
-              <Skeleton className="h-8 w-8 rounded-lg" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3.5 w-1/3" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-              <Skeleton className="h-4 w-16" />
-            </li>
-          ))}
-        </ul>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 py-10 text-center">
           <Activity className="h-7 w-7 text-muted-foreground/40" />
           <p className="text-sm font-medium">
@@ -148,7 +209,10 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
               <Fragment key={item.key}>
                 {showDay && (
                   <li className={cn('flex items-baseline justify-between gap-3 border-b border-border/70 px-1 pb-1.5', i === 0 ? 'pt-0' : 'pt-4')}>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {label}
+                      {!!day?.count && <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">· {day.count}</span>}
+                    </span>
                     <span className="flex shrink-0 items-baseline gap-2 text-[11px] tabular-nums">
                       {!!day?.sale && <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatMoney(day.sale, true)}</span>}
                       {!!day?.spend && <span className="font-semibold text-amber-600 dark:text-amber-400">−{formatMoney(day.spend, true)}</span>}
@@ -171,12 +235,12 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
                     </span>
 
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium" title={item.subtitle}>
-                        {item.subtitle}
+                      <span className="block truncate text-sm font-medium" title={item.title}>
+                        {item.title}
                       </span>
                       <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <span className="truncate font-mono" title={item.title}>
-                          {item.title}
+                        <span className="truncate font-mono" title={item.reference}>
+                          {item.reference}
                         </span>
                         {item.status && (
                           <>
@@ -184,6 +248,13 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
                             <span className="shrink-0">{tone.label}</span>
                           </>
                         )}
+                        {item.payment && (
+                          <span className="flex shrink-0 items-center gap-1" title={`Paid ${item.payment.toLowerCase()}`}>
+                            · {item.payment === 'Cash' ? <Banknote className="h-3 w-3" aria-hidden /> : <CreditCard className="h-3 w-3" aria-hidden />}
+                            {item.payment}
+                          </span>
+                        )}
+                        {item.detail && <span className="hidden shrink-0 sm:inline">· {item.detail}</span>}
                       </span>
                     </span>
 
@@ -198,7 +269,9 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
                           {isOrder ? '+' : '−'}
                           {formatMoney(item.amount)}
                         </span>
-                        <span className="block text-[11px] tabular-nums text-muted-foreground">{format(item.at, 'HH:mm')}</span>
+                        <span className="block text-[11px] tabular-nums text-muted-foreground" title={dateTime.convertToLocalDate(item.at, true)}>
+                          {dateTime.convertToLocalDate(item.at, true)}
+                        </span>
                       </span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                     </span>
