@@ -1,5 +1,4 @@
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
-import { ListResponseDto } from '../../dtos/list-response.dto';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, ListResponseDto } from '@pms/types';
 
 export interface IBrandNameService {
   create(data: CreateBrandNameModel, storeCode: string): Promise<BrandNameDto>;

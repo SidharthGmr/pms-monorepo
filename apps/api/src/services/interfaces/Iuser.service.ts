@@ -1,6 +1,6 @@
 import { Role, Status } from "@prisma/client";
 import { UpdateUserDto, UserDto } from "../../dtos/user.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { CreateUserModel } from "../../models/user.model";
 import { UserFilterParams } from "../../params/user.params";
 

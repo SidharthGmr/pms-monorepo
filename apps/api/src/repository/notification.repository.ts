@@ -1,7 +1,6 @@
-import { NotificationDto, NotificationFilterParams, NotificationType } from "@pms/types";
+import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationType } from "@pms/types";
 import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { CreateNotificationModel } from "../models/notification.model";
 import { INotificationRepository } from "./interfaces/inotification.repository";
 

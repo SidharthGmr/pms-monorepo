@@ -6,9 +6,9 @@ import {
   CmsPageSitemapEntryDto,
   CmsPageUnlockResultDto,
   CreateCmsPageModel,
+  ListResponseDto,
   UpdateCmsPageModel,
-} from "@pms/types";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+} from '@pms/types';
 
 export interface ICmsPageService {
   create(model: CreateCmsPageModel, storeCode: string, actorUserId?: string): Promise<CmsPageDto>;

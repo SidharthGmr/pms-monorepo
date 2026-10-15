@@ -8,22 +8,22 @@ import {
   CmsPageUnlockResultDto,
   CmsPageUrlOption,
   CreateCmsPageModel,
+  ListResponseDto,
   PublicCmsPageDto,
   RESERVED_CMS_SLUGS,
   UpdateCmsPageModel,
-} from "@pms/types";
-import { CmsPage, PageStatus, Prisma } from "@prisma/client";
-import bcrypt from "bcryptjs";
-import { inject, injectable } from "inversify";
-import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "../dtos/list-response.dto";
-import ClientError from "../exceptions/client-error";
-import ConflictError from "../exceptions/conflict-error";
-import NotFoundError from "../exceptions/not-found-error";
-import UnauthorizedError from "../exceptions/unauthorized-error";
-import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
-import { signPageUnlockToken, verifyPageAccessToken } from "../utils/page-access.util";
-import { ICmsPageService } from "./interfaces/Icms-page.service";
+} from '@pms/types';
+import { CmsPage, PageStatus, Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '../config/ioc.types';
+import ClientError from '../exceptions/client-error';
+import ConflictError from '../exceptions/conflict-error';
+import NotFoundError from '../exceptions/not-found-error';
+import UnauthorizedError from '../exceptions/unauthorized-error';
+import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
+import { signPageUnlockToken, verifyPageAccessToken } from '../utils/page-access.util';
+import { ICmsPageService } from './interfaces/Icms-page.service';
 
 const slugify = (value: string): string =>
   value
@@ -99,17 +99,14 @@ const toPublicDto = (row: CmsPage): PublicCmsPageDto => ({
 
 @injectable()
 export class CmsPageService implements ICmsPageService {
-  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
+  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) {}
 
   /** Lowercased, de-duplicated and steered away from reserved slugs. */
   private async generateSlug(name: string, excludeId?: number): Promise<string> {
     const base = slugify(name) || 'page';
     let candidate = base;
     let suffix = 2;
-    while (
-      (RESERVED_CMS_SLUGS as readonly string[]).includes(candidate) ||
-      (await this.unitOfWork.CmsPage.slugExists(candidate, excludeId))
-    ) {
+    while ((RESERVED_CMS_SLUGS as readonly string[]).includes(candidate) || (await this.unitOfWork.CmsPage.slugExists(candidate, excludeId))) {
       candidate = `${base}-${suffix}`;
       suffix += 1;
     }

@@ -1,5 +1,4 @@
-import { SubscriberDto, SubscriberFilterParams } from "@pms/types";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto, SubscriberDto, SubscriberFilterParams } from "@pms/types";
 
 export interface ISubscriberService {
   /** Returns the row plus whether this call created or revived it, so the API can answer honestly. */

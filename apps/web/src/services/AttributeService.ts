@@ -4,9 +4,7 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IAttributeService from './interfaces/IAttributeService';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
-import { AttributeDto, AttributeFilterParams, AttributeModel } from '@pms/types';
+import { AttributeDto, AttributeFilterParams, AttributeModel, CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 @injectable()
 export default class AttributeService implements IAttributeService {

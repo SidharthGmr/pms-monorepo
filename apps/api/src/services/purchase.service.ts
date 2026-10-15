@@ -1,9 +1,8 @@
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import { IPurchaseService } from './interfaces/ipurchase.service';
-import { CreatePurchaseModel, PurchaseResponseDto } from '@pms/types';
+import { CreatePurchaseModel, ListResponseDto, PurchaseResponseDto } from '@pms/types';
 import IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
-import { ListResponseDto } from '../dtos/list-response.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import { PricingUtils } from '../utils/authHelpers.service';
 

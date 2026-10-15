@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { ReviewDto, ReviewSummaryDto } from "../../dtos/review.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { ReviewFilterParams } from "../../params/review.params";
 
 export interface IReviewRepository {

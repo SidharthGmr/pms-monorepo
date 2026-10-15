@@ -2,15 +2,13 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { LoginDto } from '@/dtos/LoginDto';
 import PlainDto from '@/dtos/PlainDto';
-import Response from '@/dtos/Response';
-import { ListResponseDto } from '@/dtos/list-response.dto';
 import ResetPasswordModel from '@/models/ResetPasswordModel';
 import { CreateUserModel } from '@/models/user.model';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';
 import IUserListService from './interfaces/IUserListService.ts';
-import { UserDto, UserListParams } from '@pms/types';
+import { CustomResponse as Response, ListResponseDto, UserDto, UserListParams } from '@pms/types';
 
 
 @injectable()

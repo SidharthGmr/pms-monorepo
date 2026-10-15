@@ -1,8 +1,7 @@
 import { Prisma, Status } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
-import { ListResponseDto } from '../dtos/list-response.dto';
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { toVariantResponse, VariantRatingDto } from '../dtos/product-variant.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';

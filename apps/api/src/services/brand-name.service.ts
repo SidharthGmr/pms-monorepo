@@ -1,7 +1,6 @@
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, ListResponseDto } from '@pms/types';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ListResponseDto } from '../dtos/list-response.dto';
 import ConflictError from '../exceptions/conflict-error';
 import NotFoundError from '../exceptions/not-found-error';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';

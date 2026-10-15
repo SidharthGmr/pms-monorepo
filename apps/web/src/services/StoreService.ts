@@ -7,8 +7,7 @@ import IStoreService from './interfaces/IStoreService';
 import { StoreDto } from '@/dtos/store.dto';
 import { CreateStoreModel, UpdateStoreModel } from '@/models/store.model';
 import { StoreFilterParams } from '@/params/store.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 @injectable()
 export default class StoreService implements IStoreService {

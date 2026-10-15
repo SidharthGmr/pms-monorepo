@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
-import CustomResponse from '../dtos/custom-response';
+import { CustomResponse } from '@pms/types';
 import PlainDto from '../dtos/plain.dto';
 import ResponseErrorDto from '../dtos/response-error.dto';
 import ClientError from '../exceptions/client-error';

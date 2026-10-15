@@ -1,5 +1,4 @@
-import { NotificationDto, NotificationFilterParams, NotificationType } from "@pms/types";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationType } from "@pms/types";
 import { CreateNotificationModel } from "../../models/notification.model";
 
 export interface INotificationRepository {

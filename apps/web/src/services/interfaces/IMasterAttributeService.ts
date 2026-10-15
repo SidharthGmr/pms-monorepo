@@ -1,6 +1,5 @@
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { MasterAttributeDto } from '@/dtos/master-entry.dto';
-import Response from '@/dtos/Response';
 import { CreateMasterAttributeModel } from '@/models/master-entry.model';
 import { MasterAttributeFilterParams } from '@/params/master-entry.params';
 import { AxiosResponse } from 'axios';

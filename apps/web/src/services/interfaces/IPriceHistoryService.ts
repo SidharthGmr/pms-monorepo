@@ -1,6 +1,5 @@
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { PriceHistoryDto, PriceHistorySummaryDto } from '@/dtos/price-history.dto';
-import Response from '@/dtos/Response';
 import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '@/models/price-history.model';
 import { PriceHistoryFilterParams } from '@/params/price-history.params';
 import { AxiosResponse } from 'axios';

@@ -2,8 +2,7 @@ import { AxiosResponse } from 'axios';
 import { StoreDto } from '@/dtos/store.dto';
 import { CreateStoreModel, UpdateStoreModel } from '@/models/store.model';
 import { StoreFilterParams } from '@/params/store.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 export default interface IStoreService {
     create(model: CreateStoreModel): Promise<AxiosResponse<Response<StoreDto>>>;

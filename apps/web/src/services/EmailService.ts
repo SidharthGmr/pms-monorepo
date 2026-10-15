@@ -4,11 +4,9 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IEmailService from './interfaces/IEmailService';
-import Response from '@/dtos/Response';
 import { EmailModel } from '@/models/email.model';
 import { sendEmailDto } from '@/dtos/newsletter.dto';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import { UserListParams } from '@pms/types';
+import { CustomResponse as Response, ListResponseDto, UserListParams } from '@pms/types';
 
 @injectable()
 export default class EmailService implements IEmailService {

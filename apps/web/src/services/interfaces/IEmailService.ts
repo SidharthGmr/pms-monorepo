@@ -1,9 +1,7 @@
 import { AxiosResponse } from 'axios';
-import Response from '@/dtos/Response';
 import { EmailModel } from '@/models/email.model';
 import { sendEmailDto } from '@/dtos/newsletter.dto';
-import { UserListParams } from '@pms/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto, UserListParams } from '@pms/types';
 
 export default interface IEmailService {
     sendEmail(model: EmailModel): Promise<AxiosResponse<Response<sendEmailDto>>>;

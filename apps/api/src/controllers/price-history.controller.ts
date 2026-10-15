@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import CustomResponse from '../dtos/custom-response';
-import { ListResponseDto } from '../dtos/list-response.dto';
+import { CustomResponse, ListResponseDto } from '@pms/types';
 import { PriceHistoryDto, PriceHistorySummaryDto } from '../dtos/price-history.dto';
 import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../models/price-history.model';
 import { PriceHistoryFilterParams } from '../params/price-history.params';

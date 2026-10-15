@@ -2,8 +2,7 @@ import { AxiosResponse } from 'axios';
 import { StaffDto } from '@/dtos/staff.dto';
 import { CreateStaffModel, UpdateStaffModel } from '@/models/staff.model';
 import { StaffFilterParams } from '@/params/staff.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 export default interface IStaffService {
     create(model: CreateStaffModel): Promise<AxiosResponse<Response<StaffDto>>>;

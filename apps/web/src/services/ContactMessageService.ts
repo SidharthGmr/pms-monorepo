@@ -1,8 +1,13 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
-import { ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel, UpdateContactMessageStatusModel } from '@pms/types';
+import {
+  ContactMessageDto,
+  ContactMessageFilterParams,
+  CreateContactMessageModel,
+  CustomResponse as Response,
+  ListResponseDto,
+  UpdateContactMessageStatusModel,
+} from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IContactMessageService from './interfaces/IContactMessageService';
@@ -19,9 +24,7 @@ export default class ContactMessageService implements IContactMessageService {
   // The form is public: externalCall() keeps the clientId gate but sends no bearer token, so a
   // logged-out visitor is never dragged through the 401 refresh/sign-out interceptor.
   createPublic(model: CreateContactMessageModel): Promise<AxiosResponse<Response<ContactMessageDto>>> {
-    return this.httpService
-      .externalCall()
-      .post<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>('/contact-messages/public', model);
+    return this.httpService.externalCall().post<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>('/contact-messages/public', model);
   }
 
   getAll(params?: ContactMessageFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ContactMessageDto>>>> {
@@ -31,20 +34,14 @@ export default class ContactMessageService implements IContactMessageService {
   }
 
   getById(id: number | string): Promise<AxiosResponse<Response<ContactMessageDto>>> {
-    return this.httpService
-      .call()
-      .get<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>(`/contact-messages/${id}`);
+    return this.httpService.call().get<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>(`/contact-messages/${id}`);
   }
 
   updateStatus(id: number | string, model: UpdateContactMessageStatusModel): Promise<AxiosResponse<Response<ContactMessageDto>>> {
-    return this.httpService
-      .call()
-      .patch<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>(`/contact-messages/${id}/status`, model);
+    return this.httpService.call().patch<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>(`/contact-messages/${id}/status`, model);
   }
 
   delete(id: number | string): Promise<AxiosResponse<Response<ContactMessageDto>>> {
-    return this.httpService
-      .call()
-      .delete<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>(`/contact-messages/${id}`);
+    return this.httpService.call().delete<ContactMessageDto, AxiosResponse<Response<ContactMessageDto>>>(`/contact-messages/${id}`);
   }
 }

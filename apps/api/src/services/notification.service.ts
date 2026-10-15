@@ -1,8 +1,7 @@
-import { NotificationDto, NotificationFilterParams, NotificationTypeEnum } from "@pms/types";
+import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationTypeEnum } from "@pms/types";
 import { OrderStatus, Role } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { OrderDto } from "../dtos/order.dto";
 import NotFoundError from "../exceptions/not-found-error";
 import { CreateNotificationModel } from "../models/notification.model";

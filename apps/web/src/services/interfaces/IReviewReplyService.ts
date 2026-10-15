@@ -1,5 +1,4 @@
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { ReviewReplyDto } from '@/dtos/review.dto';
 import { CreateReviewReplyModel, UpdateReviewReplyModel } from '@/models/review.model';
 import { ReviewReplyFilterParams } from '@/params/review.params';

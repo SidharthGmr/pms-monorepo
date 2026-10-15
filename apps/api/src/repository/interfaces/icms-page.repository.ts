@@ -1,6 +1,5 @@
-import { CmsPageFilterParams, CmsPageListItemDto, CmsPageSitemapEntryDto } from "@pms/types";
+import { CmsPageFilterParams, CmsPageListItemDto, CmsPageSitemapEntryDto, ListResponseDto } from "@pms/types";
 import { CmsPage, Prisma } from "@prisma/client";
-import { ListResponseDto } from "../../dtos/list-response.dto";
 
 export interface ICmsPageRepository {
   create(data: Prisma.CmsPageUncheckedCreateInput): Promise<CmsPage>;

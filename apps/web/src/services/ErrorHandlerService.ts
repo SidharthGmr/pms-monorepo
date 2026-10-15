@@ -3,7 +3,7 @@ import { injectable } from 'inversify';
 
 import config from '@/config';
 import IErrorHandlerService from './interfaces/IErrorHandlerService';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 import PlainDto from '@/dtos/PlainDto';
 
 @injectable()

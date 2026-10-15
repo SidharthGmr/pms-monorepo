@@ -1,7 +1,5 @@
-import { CreateSubscriberModel, SubscriberDto, SubscriberFilterParams } from '@pms/types';
+import { CreateSubscriberModel, CustomResponse as Response, ListResponseDto, SubscriberDto, SubscriberFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
 
 export default interface ISubscriberService {
   subscribePublic(model: CreateSubscriberModel): Promise<AxiosResponse<Response<SubscriberDto>>>;

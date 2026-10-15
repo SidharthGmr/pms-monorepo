@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { DashboardSummaryDto } from '@/dtos/dashboard-summary.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 
 export default interface IDashboardService {
     getSummary(): Promise<AxiosResponse<Response<DashboardSummaryDto>>>;

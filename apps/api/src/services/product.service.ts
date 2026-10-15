@@ -1,9 +1,8 @@
 
 import { inject, injectable } from "inversify";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { LowStockItemDto } from "../dtos/low-stock.dto";
 import { TYPES } from "../config/ioc.types";
-import { ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
+import { ListResponseDto, ProductModel, ProductResponseDto, StatusEnum } from "@pms/types";
 import NotFoundError from "../exceptions/not-found-error";
 import { ProductFilterParams } from "../params/product.params";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";

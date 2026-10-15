@@ -1,7 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { WishlistDto, WishlistHasDto, WishlistVariantHasDto } from '@/dtos/wishlist.dto';
 import { CreateWishlistModel } from '@/models/wishlist.model';
 import { WishlistFilterParams } from '@/params/wishlist.params';

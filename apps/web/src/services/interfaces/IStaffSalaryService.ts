@@ -2,8 +2,7 @@ import { AxiosResponse } from 'axios';
 import { StaffSalaryDto } from '@/dtos/staff-salary.dto';
 import { CreateStaffSalaryModel, UpdateStaffSalaryModel } from '@/models/staff-salary.model';
 import { StaffSalaryFilterParams } from '@/params/staff-salary.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 export default interface IStaffSalaryService {
     create(model: CreateStaffSalaryModel): Promise<AxiosResponse<Response<StaffSalaryDto>>>;

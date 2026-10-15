@@ -1,7 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { ReviewDto, ReviewSummaryDto } from '@/dtos/review.dto';
 import { CreateReviewModel, UpdateReviewModel } from '@/models/review.model';
 import { ReviewFilterParams } from '@/params/review.params';

@@ -3,12 +3,11 @@ import { LowStockItemDto } from "../dtos/low-stock.dto";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto, ProductModel, ProductResponseDto, ProductWithPriceResponseDto } from "@pms/types";
+import { CustomResponse, ListResponseDto, ProductModel, ProductResponseDto, ProductWithPriceResponseDto } from "@pms/types";
 import { Role } from "../enum/user.enum";
 import NotFoundError from "../exceptions/not-found-error";
 import { ProductFilterParams } from "../params/product.params";
 import IUnitOfService from "../services/interfaces/iunitof.service";
-import CustomResponse from "@pms/types/src/dto/custom-response";
 import { MISSING_STORE_CODE } from '../constants/responses';
 
 export class ProductController {

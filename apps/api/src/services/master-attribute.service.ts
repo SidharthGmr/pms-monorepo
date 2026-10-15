@@ -1,7 +1,7 @@
 import { Status } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { CreateMasterAttributeDto, MasterAttributeDto } from "../dtos/master-entry.dto";
 import NotFoundError from "../exceptions/not-found-error";
 import { MasterAttributeFilterParams } from "../params/master-entry.params";

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError, ZodType } from "zod";
-import CustomResponse from "../dtos/custom-response";
+import { CustomResponse } from "@pms/types";
 import PlainDto from "../dtos/plain.dto";
 
 /**

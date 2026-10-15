@@ -1,6 +1,6 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { MasterEntryDto } from "../dtos/master-entry.dto";
 import { MasterEntryFilterParams } from "../params/master-entry.params";
 import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";

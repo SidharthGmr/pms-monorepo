@@ -1,6 +1,5 @@
 
-import { ProductResponseDto } from '@pms/types';
-import { ListResponseDto } from '../../dtos/list-response.dto';
+import { ListResponseDto, ProductResponseDto } from '@pms/types';
 import { LowStockItemDto } from '../../dtos/low-stock.dto';
 import { ProductFilterParams } from '../../params/product.params';
 

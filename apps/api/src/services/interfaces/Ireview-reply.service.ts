@@ -1,5 +1,5 @@
 import { CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto } from "../../dtos/review.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { ReviewReplyFilterParams } from "../../params/review.params";
 import { ReviewActor } from "./Ireview.service";
 

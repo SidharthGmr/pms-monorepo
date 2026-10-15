@@ -1,8 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { MasterEntryDto } from '@/dtos/master-entry.dto';
-import Response from '@/dtos/Response';
 import { CreateMasterEntryModel } from '@/models/master-entry.model';
 import { MasterEntryFilterParams } from '@/params/master-entry.params';
 import { AxiosResponse } from 'axios';

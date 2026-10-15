@@ -1,7 +1,6 @@
-import { SubscriberDto, SubscriberFilterParams } from "@pms/types";
+import { ListResponseDto, SubscriberDto, SubscriberFilterParams } from "@pms/types";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import NotFoundError from "../exceptions/not-found-error";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { subscriberSelect } from "../repository/subscriber.repository";

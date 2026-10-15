@@ -1,7 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel } from '@pms/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 export default interface IBrandNameService {
 

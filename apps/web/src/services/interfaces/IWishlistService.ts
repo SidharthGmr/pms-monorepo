@@ -1,5 +1,4 @@
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { WishlistDto, WishlistHasDto, WishlistVariantHasDto } from '@/dtos/wishlist.dto';
 import { WishlistFilterParams } from '@/params/wishlist.params';
 import { AxiosResponse } from 'axios';

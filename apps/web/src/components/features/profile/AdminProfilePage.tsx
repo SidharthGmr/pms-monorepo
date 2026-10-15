@@ -11,7 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import Response from '@/dtos/Response';
 import { useUpdateProfile } from '@/hooks/service-hooks/useAccountService';
 import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
@@ -19,7 +18,7 @@ import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { zodResolver } from '@/lib/zod-resolver';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
+import { CustomResponse as Response, profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { format, formatDistanceToNow } from 'date-fns';
 import {

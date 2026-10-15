@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import PlainDto from '../dtos/plain.dto';
-import CustomResponse from '../dtos/custom-response';
+import { CustomResponse } from '@pms/types';
 import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { container } from '../config/ioc.config';

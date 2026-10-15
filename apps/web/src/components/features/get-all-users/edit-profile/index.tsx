@@ -13,8 +13,7 @@ import { zodResolver } from '@/lib/zod-resolver';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Loader2 } from 'lucide-react';
-import { profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, profileValidator, UpdateProfileModel, UserDto } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import DateTimePicker from '@/components/common/data-time-picker/date-time-picker';
 

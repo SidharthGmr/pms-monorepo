@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import CustomResponse from "../dtos/custom-response";
+import { CustomResponse } from "@pms/types";
 import PlainDto from "../dtos/plain.dto";
 import IUnitOfService from "../services/interfaces/iunitof.service";
 import { ACCESS_TOKEN_TYPE, verifySessionToken } from "../utils/token.util";

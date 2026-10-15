@@ -1,7 +1,6 @@
-import { CmsPageFilterParams, CmsPageListItemDto, CmsPageSitemapEntryDto } from "@pms/types";
+import { CmsPageFilterParams, CmsPageListItemDto, CmsPageSitemapEntryDto, ListResponseDto } from "@pms/types";
 import { CmsPage, PageStatus, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { ICmsPageRepository } from "./interfaces/icms-page.repository";
 
 const SORTABLE_COLUMNS = new Set(['name', 'slug', 'status', 'createdAt', 'updatedAt', 'id']);

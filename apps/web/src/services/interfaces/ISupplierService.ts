@@ -1,9 +1,8 @@
 import { AxiosResponse } from 'axios';
 import { SupplierDto } from '@/dtos/supplier.dto';
 import { CreateSupplierModel } from '@/models/supplier.model';
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { SupplierFilterParams } from '@/params/supplier.params';
-import Response from '@/dtos/Response';
 
 export default interface ISupplierService {
     create(model: CreateSupplierModel): Promise<AxiosResponse<Response<SupplierDto>>>;

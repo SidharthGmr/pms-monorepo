@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto } from "../dtos/review.dto";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";

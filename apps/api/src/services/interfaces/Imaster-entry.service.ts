@@ -1,5 +1,5 @@
 import { CreateMasterEntryDto, MasterEntryDto } from "../../dtos/master-entry.dto";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { MasterEntryFilterParams } from "../../params/master-entry.params";
 
 export interface IMasterEntryService {

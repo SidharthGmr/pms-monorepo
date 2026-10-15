@@ -2,7 +2,7 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import ClientError from "../exceptions/client-error";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";

@@ -1,7 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
-import { ListResponseDto } from '../dtos/list-response.dto';
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
 import { ProductVariantInternalDto, VariantRatingDto } from '../dtos/product-variant.dto';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { EffectivePrice, priceForVariant, pricesForVariants, stockForVariant, stockForVariants } from '../utils/variant-pricing';

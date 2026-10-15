@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import config from '../config';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import CustomResponse from '../dtos/custom-response';
+import { CustomResponse } from '@pms/types';
 import { LoginResponseDto, refreshTokenResponseDto } from '../dtos/loginResponse.dto';
 import { SessionContext, UserSessionDto } from '../dtos/user-session.dto';
 import { UserDto } from '../dtos/user.dto';

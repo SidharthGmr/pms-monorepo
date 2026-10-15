@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ListResponseDto } from '../../dtos/list-response.dto';
+import { ListResponseDto } from '@pms/types';
 import { PriceHistoryDto, PriceHistorySummaryDto, PriceHistoryVariantScopeDto } from '../../dtos/price-history.dto';
 import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../../models/price-history.model';
 import { PriceHistoryFilterParams } from '../../params/price-history.params';

@@ -2,15 +2,8 @@ import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
-import CustomResponse from '@pms/types/src/dto/custom-response';
 import { Status } from '@prisma/client';
-import {
-  ListResponseDto,
-  ProductVariantListItemDto,
-  ProductVariantModel,
-  ProductVariantResponseDto,
-  StatusEnum,
-} from '@pms/types';
+import { CustomResponse, ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum } from '@pms/types';
 import { ProductVariantFilterParams } from '../params/product-variant.params';
 import { VariantRatingDto } from '../dtos/product-variant.dto';
 import { MISSING_STORE_CODE } from '../constants/responses';

@@ -1,5 +1,4 @@
-import Response from '@/dtos/Response';
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { PurchaseDto } from '@/dtos/purchase.dto';
 import { PurchaseFilterParams } from '@/params/purchase.params';
 import { AxiosResponse } from 'axios';

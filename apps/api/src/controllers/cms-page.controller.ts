@@ -6,6 +6,8 @@ import {
   CmsPageSitemapEntryDto,
   CmsPageUnlockResultDto,
   CreateCmsPageModel,
+  CustomResponse,
+  ListResponseDto,
   PageStatus,
   UpdateCmsPageModel,
 } from '@pms/types';
@@ -13,12 +15,10 @@ import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import { MISSING_STORE_CODE } from '../constants/responses';
-import CustomResponse from '../dtos/custom-response';
-import { ListResponseDto } from '../dtos/list-response.dto';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 
 export class CmsPageController {
-  constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
+  constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {}
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<CmsPageDto>>> => {
     const storeCode = req.user?.storeCode;

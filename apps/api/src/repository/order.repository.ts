@@ -1,7 +1,7 @@
 import { OrderStatus, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
 import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { CreateOrderModel } from "../models/order.model";
 import { IOrderRepository } from "./interfaces/iorder.repository";
 import { OrderFilterParams } from "../params/order.params";

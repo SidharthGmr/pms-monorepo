@@ -7,8 +7,7 @@ import IStaffService from './interfaces/IStaffService';
 import { StaffDto } from '@/dtos/staff.dto';
 import { CreateStaffModel, UpdateStaffModel } from '@/models/staff.model';
 import { StaffFilterParams } from '@/params/staff.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 @injectable()
 export default class StaffService implements IStaffService {

@@ -6,7 +6,7 @@ import IHttpService from './interfaces/IHttpService';
 import INewsletterService from './interfaces/INewsletterService'; 
 import { NewsletterModel } from '@/models/newsletter.model';
 import { NewsletterDto } from '@/dtos/newsletter.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 
 @injectable()
 export default class NewsletterService implements INewsletterService {

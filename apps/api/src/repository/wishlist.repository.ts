@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 import { WishlistDto } from "../dtos/wishlist.dto";
 import { WishlistFilterParams } from "../params/wishlist.params";
 import { IWishlistRepository } from "./interfaces/iwishlist.repository";

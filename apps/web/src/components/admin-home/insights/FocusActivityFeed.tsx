@@ -47,7 +47,7 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
       key: `o-${o.id}`,
       kind: 'order',
       title: o.orderNumber,
-      subtitle: o.customer ? `${o.customer.firstName ?? ''} ${o.customer.lastName ?? ''}`.trim() || 'Walk-in' : o.createdByName || 'Walk-in',
+      subtitle: (o.customer && `${o.customer.name}`.trim()) || '{o.customer.name}',
       amount: o.grandTotal ?? 0,
       status: String(o.status ?? ''),
       at: new Date(o.createdAt),
@@ -130,7 +130,9 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 py-10 text-center">
           <Activity className="h-7 w-7 text-muted-foreground/40" />
-          <p className="text-sm font-medium">{filter === 'all' ? 'Nothing has happened yet' : filter === 'order' ? 'No sales yet' : 'No stock purchases yet'}</p>
+          <p className="text-sm font-medium">
+            {filter === 'all' ? 'Nothing has happened yet' : filter === 'order' ? 'No sales yet' : 'No stock purchases yet'}
+          </p>
           <p className="text-xs text-muted-foreground">Sales and stock purchases appear here as they come in.</p>
         </div>
       ) : (
@@ -187,7 +189,12 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
 
                     <span className="flex shrink-0 items-center gap-1 text-right">
                       <span className="block">
-                        <span className={cn('block text-sm font-semibold tabular-nums', isOrder ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
+                        <span
+                          className={cn(
+                            'block text-sm font-semibold tabular-nums',
+                            isOrder ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                          )}
+                        >
                           {isOrder ? '+' : '−'}
                           {formatMoney(item.amount)}
                         </span>

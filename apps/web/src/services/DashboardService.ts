@@ -5,7 +5,7 @@ import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IDashboardService from './interfaces/IDashboardService';
 import { DashboardSummaryDto } from '@/dtos/dashboard-summary.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 
 @injectable()
 export default class DashboardService implements IDashboardService {

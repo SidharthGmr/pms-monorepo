@@ -1,6 +1,5 @@
-import { ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel } from "@pms/types";
+import { ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel, ListResponseDto } from "@pms/types";
 import { ContactMessageStatus } from "@prisma/client";
-import { ListResponseDto } from "../../dtos/list-response.dto";
 
 export interface IContactMessageService {
   create(data: CreateContactMessageModel, storeCode?: string): Promise<ContactMessageDto>;

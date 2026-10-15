@@ -1,7 +1,6 @@
-import { ContactMessageDto, ContactMessageFilterParams } from "@pms/types";
+import { ContactMessageDto, ContactMessageFilterParams, ListResponseDto } from "@pms/types";
 import { ContactMessageStatus, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { IContactMessageRepository } from "./interfaces/icontact-message.repository";
 
 const SORTABLE_COLUMNS = new Set(['name', 'email', 'subject', 'status', 'createdAt', 'updatedAt', 'id']);

@@ -6,10 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import Response from '@/dtos/Response';
 import { useUpdateUser } from '@/hooks/service-hooks/useUserList.service.hook';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { UserDto } from '@pms/types';
+import { CustomResponse as Response, UserDto } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { useState } from 'react';
 

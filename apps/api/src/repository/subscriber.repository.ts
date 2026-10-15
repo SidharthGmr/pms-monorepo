@@ -1,7 +1,6 @@
-import { SubscriberDto, SubscriberFilterParams } from "@pms/types";
+import { ListResponseDto, SubscriberDto, SubscriberFilterParams } from "@pms/types";
 import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { ISubscriberRepository } from "./interfaces/isubscriber.repository";
 
 const SORTABLE_COLUMNS = new Set(['email', 'createdAt', 'unsubscribedAt', 'id']);

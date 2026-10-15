@@ -1,6 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
-import { ListResponseDto } from '../../dtos/list-response.dto';
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
 import { VariantRatingDto } from '../../dtos/product-variant.dto';
 import { ProductVariantFilterParams } from '../../params/product-variant.params';
 

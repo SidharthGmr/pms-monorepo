@@ -16,7 +16,7 @@ import clientidMiddleware from './src/middleware/clientid.middleware';
 import errorHandler from './src/middleware/errorHandler.middleware';
 import requestContext from './src/middleware/requestContext.middleware';
 import { apiLimiter } from './src/middleware/rateLimiter.middleware';
-import CustomResponse from './src/dtos/custom-response';
+import { CustomResponse } from '@pms/types';
 import PlainDto from './src/dtos/plain.dto';
 
 const app = express();

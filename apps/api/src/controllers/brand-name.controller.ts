@@ -1,9 +1,7 @@
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, StatusEnum } from '@pms/types';
+import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, CustomResponse, ListResponseDto, StatusEnum } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import CustomResponse from '../dtos/custom-response';
-import { ListResponseDto } from '../dtos/list-response.dto';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE } from '../constants/responses';
 import { parseStatusQuery } from '../utils/status-query';

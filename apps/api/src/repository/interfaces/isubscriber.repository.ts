@@ -1,5 +1,4 @@
-import { SubscriberDto, SubscriberFilterParams } from "@pms/types";
-import { ListResponseDto } from "../../dtos/list-response.dto";
+import { ListResponseDto, SubscriberDto, SubscriberFilterParams } from "@pms/types";
 
 export interface ISubscriberRepository {
   findAll(filters?: SubscriberFilterParams): Promise<ListResponseDto<SubscriberDto>>;

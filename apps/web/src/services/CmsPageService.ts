@@ -1,7 +1,5 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
 import {
   CmsPageAccessDto,
   CmsPageDto,
@@ -9,6 +7,8 @@ import {
   CmsPageListItemDto,
   CmsPageUnlockResultDto,
   CreateCmsPageModel,
+  CustomResponse as Response,
+  ListResponseDto,
   UpdateCmsPageModel,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';

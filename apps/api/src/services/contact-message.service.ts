@@ -1,8 +1,7 @@
-import { ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel } from "@pms/types";
+import { ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel, ListResponseDto } from "@pms/types";
 import { ContactMessageStatus, Role } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import NotFoundError from "../exceptions/not-found-error";
 import { contactMessageSelect } from "../repository/contact-message.repository";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";

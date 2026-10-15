@@ -1,5 +1,5 @@
 import { OrderItemDto } from '@/dtos/order-item.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 import { CreateOrderItemModel, UpdateOrderItemModel } from '@/models/order-item.model';
 import { AxiosResponse } from 'axios';
 

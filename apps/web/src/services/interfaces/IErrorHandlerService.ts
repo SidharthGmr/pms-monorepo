@@ -1,5 +1,5 @@
  
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IErrorHandlerService {

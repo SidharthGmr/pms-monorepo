@@ -1,6 +1,5 @@
-import { NotificationDto, NotificationFilterParams } from "@pms/types";
+import { ListResponseDto, NotificationDto, NotificationFilterParams } from "@pms/types";
 import { OrderStatus } from "@prisma/client";
-import { ListResponseDto } from "../../dtos/list-response.dto";
 import { OrderDto } from "../../dtos/order.dto";
 
 export interface LowStockNotice {

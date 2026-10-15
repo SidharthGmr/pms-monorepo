@@ -1,9 +1,8 @@
 import { AxiosResponse } from 'axios';
 import { ProductAttributeDto } from '@/dtos/product-attribute.dto';
 import { CreateProductAttributeModel, UpdateProductAttributeModel } from '@/models/product-attribute.model';
-import Response from '@/dtos/Response';
 import { ProductAttributeFilterParams } from '@/params/product.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 export default interface IProductAttributeService {
     getAll(params?: ProductAttributeFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductAttributeDto>>>>;

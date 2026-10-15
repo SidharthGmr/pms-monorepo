@@ -1,9 +1,7 @@
-import { CreateSubscriberModel, SubscriberDto, SubscriberFilterParams } from "@pms/types";
+import { CreateSubscriberModel, CustomResponse, ListResponseDto, SubscriberDto, SubscriberFilterParams } from "@pms/types";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import CustomResponse from "../dtos/custom-response";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import IUnitOfService from "../services/interfaces/iunitof.service";
 import { signFormSubmissionToken } from "../utils/page-access.util";
 

@@ -1,7 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '@/dtos/checkout.dto';
-import Response from '@/dtos/Response';
+import { CustomResponse as Response } from '@pms/types';
 import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@/models/checkout.model';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';

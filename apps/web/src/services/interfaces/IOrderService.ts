@@ -1,6 +1,5 @@
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 import { OrderDto } from '@/dtos/order.dto';
-import Response from '@/dtos/Response';
 import { CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel } from '@/models/order.model';
 import { OrderFilterParams } from '@/params/order.params';
 import { AxiosResponse } from 'axios';

@@ -1,7 +1,6 @@
-import { BrandNameDto, BrandNameFilterParams } from "@pms/types";
+import { BrandNameDto, BrandNameFilterParams, ListResponseDto } from "@pms/types";
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "../dtos/list-response.dto";
 import { IBrandNameRepository } from "./interfaces/ibrand-name.repository";
 
 // Sorting is client-driven, so only real columns are honoured - anything else falls

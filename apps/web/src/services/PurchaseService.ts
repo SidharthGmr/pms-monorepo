@@ -3,11 +3,10 @@ import { AxiosResponse } from 'axios';
 import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
-import Response from '@/dtos/Response';
 import { IPurchaseService } from './interfaces/IPurchaseService';
 import { PurchaseFilterParams } from '@/params/purchase.params';
 import { PurchaseDto } from '@/dtos/purchase.dto';
-import { ListResponseDto } from '@/dtos/list-response.dto';
+import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
 export interface CreatePurchaseItemModel {
   /** Stock is received against a specific SKU, so the API wants the variant, not the product. */

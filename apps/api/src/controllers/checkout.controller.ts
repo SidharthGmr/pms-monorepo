@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '../dtos/checkout.dto';
-import CustomResponse from '../dtos/custom-response';
+import { CustomResponse } from '@pms/types';
 import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '../models/checkout.model';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { CheckoutContext } from '../services/interfaces/Icheckout.service';

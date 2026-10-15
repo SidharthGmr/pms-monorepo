@@ -2,9 +2,7 @@ import { AxiosResponse } from 'axios';
 import { ProductDto } from '@/dtos/product.dto';
 import { CreateProductModel, UpdateProductModel } from '@/models/product.model';
 import { ProductFilterParams } from '@/params/product.params';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
-import { ProductResponseDto } from '@pms/types';
+import { CustomResponse as Response, ListResponseDto, ProductResponseDto } from '@pms/types';
 
 export interface AddStockModel {
     /**

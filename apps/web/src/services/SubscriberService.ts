@@ -1,8 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ListResponseDto } from '@/dtos/list-response.dto';
-import Response from '@/dtos/Response';
-import { CreateSubscriberModel, SubscriberDto, SubscriberFilterParams } from '@pms/types';
+import { CreateSubscriberModel, CustomResponse as Response, ListResponseDto, SubscriberDto, SubscriberFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';

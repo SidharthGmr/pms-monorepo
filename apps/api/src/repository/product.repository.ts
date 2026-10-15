@@ -1,7 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ProductResponseDto } from '@pms/types';
-import { ListResponseDto } from '../dtos/list-response.dto';
+import { ListResponseDto, ProductResponseDto } from '@pms/types';
 import { LowStockItemDto } from '../dtos/low-stock.dto';
 import { ProductFilterParams } from '../params/product.params';
 import { IProductRepository } from './interfaces/iproduct.repository';

@@ -7,7 +7,7 @@ import type { IDateTimeService } from "./interfaces/idatetime.service";
 import type { IUserService } from "./interfaces/Iuser.service";
 import { UserFilterParams } from "../params/user.params";
 import type { UserWithProfile } from "../repository/user-profile.mapper";
-import { ListResponseDto } from "../dtos/list-response.dto";
+import { ListResponseDto } from "@pms/types";
 
 @injectable()
 export class UserService implements IUserService {
