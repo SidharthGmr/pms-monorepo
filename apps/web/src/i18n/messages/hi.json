@@ -2,7 +2,8 @@
   "common": {
     "language": "भाषा",
     "loading": "लोड हो रहा है…",
-    "dismiss": "हटाएँ"
+    "dismiss": "हटाएँ",
+    "error": "त्रुटि"
   },
   "notifications": {
     "title": "सूचनाएँ",
@@ -14,7 +15,40 @@
     "badgeTitleOne": "1 अपठित सूचना",
     "badgeTitleNone": "कोई नई सूचना नहीं",
     "ariaLabel": "सूचनाएँ",
-    "ariaLabelUnread": "सूचनाएँ, {count} अपठित"
+    "ariaLabelUnread": "सूचनाएँ, {count} अपठित",
+    "pageTitle": "सूचनाएँ",
+    "pageSubtitle": "आपके स्टोर के ऑर्डर, साइन-अप और स्टॉक चेतावनियाँ",
+    "countLine": "कुल {total} · {unread} अपठित",
+    "newBadge": "नया",
+    "loadFailed": "सूचनाएँ लोड नहीं हो सकीं",
+    "loadFailedHint": "अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+    "noMatches": "इन फ़िल्टर से कोई सूचना मेल नहीं खाती",
+    "noMatchesHint": "दूसरा प्रकार चुनें, या फ़िल्टर हटाएँ।",
+    "deleteHeading": "सूचना हटाएँ",
+    "deleteBody": "यह सूचना हटाएँ? इसे वापस नहीं लाया जा सकता।",
+    "viewAll": "सभी सूचनाएँ देखें",
+    "filter": {
+      "all": "सभी",
+      "unread": "अपठित",
+      "allTypes": "सभी प्रकार",
+      "searchPlaceholder": "सूचनाएँ खोजें"
+    },
+    "type": {
+      "orderPlaced": "नए ऑर्डर",
+      "orderStatusChanged": "ऑर्डर अपडेट",
+      "lowStock": "कम स्टॉक",
+      "userRegistered": "नए उपयोगकर्ता"
+    },
+    "sort": {
+      "received": "प्राप्त",
+      "type": "प्रकार",
+      "title": "शीर्षक",
+      "readState": "पढ़ी स्थिति"
+    },
+    "toast": {
+      "allRead": "सभी सूचनाएँ पढ़ी हुई चिह्नित",
+      "deleted": "सूचना हटाई गई"
+    }
   },
   "time": {
     "justNow": "अभी",
@@ -44,6 +78,7 @@
     },
     "items": {
       "Dashboard": "डैशबोर्ड",
+      "Notifications": "सूचनाएँ",
       "Products": "उत्पाद",
       "Categories": "श्रेणियाँ",
       "Brand Names": "ब्रांड नाम",

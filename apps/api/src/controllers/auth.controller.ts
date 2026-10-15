@@ -503,12 +503,27 @@ export class AccountController {
       const updatedUser = await this.unitOfService.Account.updateToken(existingUser.userId, token);
 
       if (updatedUser) {
+        // `html` beats `templateName` in the dispatcher, so the old shape here mailed the raw URL
+        // as the entire body and the template never rendered. The link now travels as template data.
+        const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        // Email clients need absolute image URLs; the light logo cut reads on the navy masthead.
+        const siteUrl = (process.env.APP_PUBLIC_URL || process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || process.env.JWT_ISSUER || '').replace(/\/$/, '');
+        const expiresIn = String(config.jwt.passwordResetExpires).replace(/^(\d+)([smhd])$/, (_, n, u) => `${n} ${({ s: 'second', m: 'minute', h: 'hour', d: 'day' } as Record<string, string>)[u]}${n === '1' ? '' : 's'}`);
+
         dispatchEmailAsync({
           userId: updatedUser.userId,
           to: updatedUser.email,
-          subject: `Reset your ${process.env.NEXT_PUBLIC_APP_NAME} password`,
-          templateName: 'welcome',
-          html: `${process.env.JWT_ISSUER}/reset-password?token=${token}`,
+          subject: `Reset your password · ${process.env.NEXT_PUBLIC_APP_NAME}`,
+          templateName: 'reset-password',
+          templateData: {
+            appName: process.env.NEXT_PUBLIC_APP_NAME || 'Stocklivo',
+            name: esc(updatedUser.name || 'there'),
+            resetUrl: `${siteUrl}/reset-password?token=${token}`,
+            siteUrl: siteUrl,
+            logoUrl: `${siteUrl}/logo-full-light.png`,
+            expiresIn,
+            year: String(new Date().getFullYear()),
+          },
         });
       }
     }

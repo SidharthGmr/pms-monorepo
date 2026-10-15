@@ -7,9 +7,11 @@ import { useDeleteNotification, useGetAllNotifications, useGetUnreadNotification
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { useLocale } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { NotificationDto, NotificationTypeEnum } from '@pms/types';
-import { Bell, CheckCheck, PackageCheck, ShoppingBag, TriangleAlert, UserPlus, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { notificationIcon, notificationTone, useRelativeTime } from '@/components/features/notifications/notification-meta';
+import { NotificationDto } from '@pms/types';
+import { ArrowRight, Bell, CheckCheck, X } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 /**
@@ -22,41 +24,13 @@ import { useState } from 'react';
  * the panel edge without ever scrolling.
  */
 
-const PANEL_SIZE = 15;
-
-const ICONS = {
-  [NotificationTypeEnum.UserRegistered]: UserPlus,
-  [NotificationTypeEnum.OrderPlaced]: ShoppingBag,
-  [NotificationTypeEnum.OrderStatusChanged]: PackageCheck,
-  [NotificationTypeEnum.LowStock]: TriangleAlert,
-} as const;
-
-const TONES = {
-  [NotificationTypeEnum.UserRegistered]: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
-  [NotificationTypeEnum.OrderPlaced]: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
-  [NotificationTypeEnum.OrderStatusChanged]: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
-  [NotificationTypeEnum.LowStock]: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-} as const;
-
-type Translate = ReturnType<typeof useLocale>['t'];
-type FormatDate = ReturnType<typeof useLocale>['formatDate'];
-
-const relativeTime = (value: Date | string, t: Translate, formatDate: FormatDate): string => {
-  const then = new Date(value).getTime();
-  const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
-  if (seconds < 60) return t('time.justNow');
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return t('time.minutes', { count: minutes });
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return t('time.hours', { count: hours });
-  const days = Math.round(hours / 24);
-  if (days < 7) return t('time.days', { count: days });
-  return formatDate(value);
-};
+const PANEL_SIZE = 10;
 
 export function NotificationBell() {
   const { currentUser } = useGetCurrentUser();
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const relativeTime = useRelativeTime();
+  const pathname = usePathname();
   const signedIn = !!currentUser;
   const router = useRouter();
 
@@ -71,6 +45,9 @@ export function NotificationBell() {
   const notifications = (listResponse?.data?.data?.data ?? []) as NotificationDto[];
 
   if (!signedIn) return null;
+
+  // /admin and /dashboard are role-gated in middleware.ts, so stay in the current area.
+  const allHref = pathname?.startsWith('/dashboard') ? '/dashboard/notifications' : '/admin/notifications';
 
   const openNotification = (notification: NotificationDto) => {
     if (!notification.isRead) markRead.mutate({ ids: [notification.id] });
@@ -134,11 +111,11 @@ export function NotificationBell() {
           <div className="max-h-[60vh] overflow-y-auto overscroll-contain sm:max-h-[22rem]">
             <ul className="divide-y">
               {notifications.map((notification) => {
-                const Icon = ICONS[notification.type] ?? Bell;
+                const Icon = notificationIcon(notification.type);
                 return (
                   <li key={notification.id} className={cn('group relative', !notification.isRead && 'bg-primary/[0.04]')}>
                     <button type="button" onClick={() => openNotification(notification)} className="flex w-full gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/60">
-                      <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', TONES[notification.type] ?? 'bg-muted text-muted-foreground')}>
+                      <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', notificationTone(notification.type))}>
                         <Icon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -147,7 +124,7 @@ export function NotificationBell() {
                           <span className="truncate text-[13px] font-semibold leading-tight">{notification.title}</span>
                         </span>
                         <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{notification.message}</span>
-                        <span className="mt-1 block text-[11px] text-muted-foreground/70">{relativeTime(notification.createdAt, t, formatDate)}</span>
+                        <span className="mt-1 block text-[11px] text-muted-foreground/70">{relativeTime(notification.createdAt)}</span>
                       </span>
                     </button>
 
@@ -166,6 +143,15 @@ export function NotificationBell() {
             </ul>
           </div>
         )}
+
+        <div className="border-t p-1">
+          <Button asChild variant="ghost" size="sm" className="w-full justify-center gap-1.5 text-xs font-medium">
+            <Link href={allHref} onClick={() => setOpen(false)}>
+              {t('notifications.viewAll')}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

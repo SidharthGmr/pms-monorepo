@@ -2,7 +2,8 @@
   "common": {
     "language": "Language",
     "loading": "Loading…",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "error": "Error"
   },
   "notifications": {
     "title": "Notifications",
@@ -14,7 +15,40 @@
     "badgeTitleOne": "1 unread notification",
     "badgeTitleNone": "No new notifications",
     "ariaLabel": "Notifications",
-    "ariaLabelUnread": "Notifications, {count} unread"
+    "ariaLabelUnread": "Notifications, {count} unread",
+    "pageTitle": "Notifications",
+    "pageSubtitle": "Orders, signups and stock warnings for your store",
+    "countLine": "{total} total · {unread} unread",
+    "newBadge": "New",
+    "loadFailed": "Could not load notifications",
+    "loadFailedHint": "Check your connection and try again.",
+    "noMatches": "No notifications match these filters",
+    "noMatchesHint": "Try a different type, or clear the filters.",
+    "deleteHeading": "Delete notification",
+    "deleteBody": "Delete this notification? This cannot be undone.",
+    "viewAll": "View all notifications",
+    "filter": {
+      "all": "All",
+      "unread": "Unread",
+      "allTypes": "All types",
+      "searchPlaceholder": "Search notifications"
+    },
+    "type": {
+      "orderPlaced": "New orders",
+      "orderStatusChanged": "Order updates",
+      "lowStock": "Low stock",
+      "userRegistered": "New users"
+    },
+    "sort": {
+      "received": "Received",
+      "type": "Type",
+      "title": "Title",
+      "readState": "Read state"
+    },
+    "toast": {
+      "allRead": "All notifications marked as read",
+      "deleted": "Notification deleted"
+    }
   },
   "time": {
     "justNow": "just now",
@@ -44,6 +78,7 @@
     },
     "items": {
       "Dashboard": "Dashboard",
+      "Notifications": "Notifications",
       "Products": "Products",
       "Categories": "Categories",
       "Brand Names": "Brand Names",
