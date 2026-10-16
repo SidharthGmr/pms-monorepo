@@ -28,6 +28,7 @@ import { IContactMessageService } from "./Icontact-message.service";
 import { ISubscriberService } from "./Isubscriber.service";
 import { ICmsPageService } from "./Icms-page.service";
 import { INotificationService } from "./Inotification.service";
+import { ICatalogService } from "./Icatalog.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -60,4 +61,5 @@ export default interface IUnitOfService {
   Subscriber: ISubscriberService;
   CmsPage: ICmsPageService;
   Notification: INotificationService;
+  Catalog: ICatalogService;
 }

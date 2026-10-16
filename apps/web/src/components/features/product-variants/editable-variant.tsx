@@ -123,7 +123,7 @@ export default function EditableVariant({ id, defaultEditing = false }: { id: nu
         <p className="mt-3 text-sm font-semibold">{isError ? 'Could not load this variant' : 'Variant not found'}</p>
         <p className="mt-1 text-xs text-muted-foreground">{isError ? 'Check your connection and try again.' : 'It may have been removed.'}</p>
         <Button asChild variant="outline" size="sm" className="mt-5">
-          <Link href="/admin/product-variants">Back to variants</Link>
+          <Link href="/admin/products/variants">Back to variants</Link>
         </Button>
       </Card>
     );
@@ -473,7 +473,7 @@ export default function EditableVariant({ id, defaultEditing = false }: { id: nu
 export function EditableVariantBackLink() {
   return (
     <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 gap-1 text-muted-foreground hover:text-foreground">
-      <Link href="/admin/product-variants">
+      <Link href="/admin/products/variants">
         <ChevronLeft className="h-4 w-4" />
         Back to variants
       </Link>

@@ -33,6 +33,7 @@ import IMediaService from './interfaces/IMediaService';
 import ISubscriberService from './interfaces/ISubscriberService';
 import ICmsPageService from './interfaces/ICmsPageService';
 import INotificationService from './interfaces/INotificationService';
+import ICatalogService from './interfaces/ICatalogService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -72,6 +73,7 @@ export default class UnitOfService implements IUnitOfService {
   public SubscriberService: ISubscriberService;
   public CmsPageService: ICmsPageService;
   public NotificationService: INotificationService;
+  public CatalogService: ICatalogService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -106,6 +108,7 @@ export default class UnitOfService implements IUnitOfService {
     subscriberService = container.get<ISubscriberService>(TYPES.ISubscriberService),
     cmsPageService = container.get<ICmsPageService>(TYPES.ICmsPageService),
     notificationService = container.get<INotificationService>(TYPES.INotificationService),
+    catalogService = container.get<ICatalogService>(TYPES.ICatalogService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -139,5 +142,6 @@ export default class UnitOfService implements IUnitOfService {
     this.SubscriberService = subscriberService;
     this.CmsPageService = cmsPageService;
     this.NotificationService = notificationService;
+    this.CatalogService = catalogService;
   }
 }

@@ -217,8 +217,6 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *             type: object
  *             required:
  *               - productId
- *               - name
- *               - description
  *               - sellingPrice
  *             properties:
  *               productId:
@@ -230,12 +228,13 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                 maxLength: 150
  *                 example: "Red / Large"
  *                 description: >
- *                   Display name for this variant (required). The URL slug is derived from it
- *                   server-side and made unique within the store; slug is not accepted in the body.
+ *                   Derived from the product and the picked attribute values when omitted
+ *                   ("Classic Tee - RED / M"). The URL slug is derived from it server-side and
+ *                   made unique within the store; slug is not accepted in the body.
  *               description:
  *                 type: string
  *                 example: "Cotton crew-neck tee in red, large."
- *                 description: Variant description (required).
+ *                 description: Falls back to the variant's name when omitted.
  *               sku:
  *                 type: string
  *                 example: "TSHIRT-001-RED-L"

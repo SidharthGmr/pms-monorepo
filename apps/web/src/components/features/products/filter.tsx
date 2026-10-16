@@ -121,6 +121,7 @@ export default function ProductListFilter({ value, onChange, onReset, view, onVi
           onSelect={(dateRange) => onChange({ dateRange })}
           numberOfMonthsToShow={2}
           placeholder="Date added"
+          buttonClass="h-9 bg-background"
         />
       }
     />

@@ -10,6 +10,7 @@ export const RESERVED_CMS_SLUGS = [
   "about-us",
   "contact-us",
   "products",
+  "demo-products",
   "image",
   "login",
   "sign-up",

@@ -153,7 +153,7 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
                   </Link>
                 </Button>
                 <Button asChild size="sm" className="h-9 bg-white text-primary shadow-sm hover:bg-white/90">
-                  <Link href="/admin/checkout">
+                  <Link href="/admin/cart">
                     <Plus className="h-4 w-4" />
                     New sale
                   </Link>

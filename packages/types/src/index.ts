@@ -8,6 +8,7 @@ export * from "./params/contact-message.params";
 export * from "./params/subscriber.params";
 export * from "./params/cms-page.params";
 export * from "./params/notification.params";
+export * from "./params/catalog.params";
 
 // dtos
 export * from "./dto/list-response.dto";
@@ -27,6 +28,7 @@ export * from "./dto/contact-message.dto";
 export * from "./dto/subscriber.dto";
 export * from "./dto/cms-page.dto";
 export * from "./dto/notification.dto";
+export * from "./dto/catalog.dto";
 
 // enums
 export * from "./enum/role.enum";

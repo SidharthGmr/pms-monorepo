@@ -6,10 +6,10 @@ import { StatusEnum } from "../enum/status.enum";
 export const productVariantValidator = z.object({
   productId: z.number({ error: "Select a product" }).int().positive("Product ID is required"),
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
-  name: z.string().min(1, "Name is required").max(150, "Name is too long"),
-  description: z.string().min(1, "Description is required"),
+  name: z.string().max(150, "Name is too long").optional(),
+  description: z.string().optional(),
   barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
-  images: z.array(z.string()).optional(),
+  images: z.array(z.string()).min(1, "Add at least one image"),
   isActive: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   status: z.nativeEnum(StatusEnum).optional(),
@@ -36,10 +36,9 @@ export const productVariantValidator = z.object({
 export const productVariantFields = z.object({
   productId: z.number({ error: "Select a product" }).int().positive("Product ID is required"),
   sku: z.string().min(1, "SKU cannot be empty").max(100, "SKU is too long").optional(),
-  name: z.string().min(1, "Name is required").max(150, "Name is too long"),
-  description: z.string().min(1, "Description is required"),
+  name: z.string().max(150, "Name is too long").optional(),
+  description: z.string().optional(),
   barcode: z.string().max(100, "Barcode is too long").nullable().optional(),
-  images: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   status: z.nativeEnum(StatusEnum).optional(),
@@ -51,6 +50,7 @@ export const productVariantFields = z.object({
       attributeValueId: z.number({ error: "Pick a value" }).int().positive("Pick a value"),
     })
   ).optional(),
+  images: z.array(z.string()).min(1, "Add at least one image"),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").optional(),
   sellingPrice: z.number({ error: "Selling price is required" }).nonnegative("Selling price must be a non-negative number"),
   offerPrice: z.number().nonnegative("Offer price must be a non-negative number").nullable().optional(),
@@ -89,7 +89,7 @@ export const updateProductVariantFields = z.object({
       attributeValueId: z.number({ error: "Pick a value" }).int().positive("Pick a value"),
     })
   ).optional(),
-  images: z.array(z.string()).optional(),
+  images: z.array(z.string()).min(1, "Add at least one image").optional(),
   lowStockThreshold: z.number().int("Threshold must be a whole number").nonnegative("Threshold must be zero or greater").nullable().optional(),
   isActive: z.boolean().optional(),
   isOffer: z.boolean().optional(),

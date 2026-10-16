@@ -1,12 +1,14 @@
 'use client';
 import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
 import ConfirmBox from '@/components/common/confirm-box';
+import { DateRangePicker } from '@/components/common/date-range-picker';
+import { PriceInput } from '@/components/common/price-input';
 import { SelectSearch } from '@/components/common/select-search';
-import StatusCards from '@/components/common/status-cards';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
@@ -15,18 +17,21 @@ import { StatusValues } from '@/enums/status-values.enum';
 import { useGetAllAttributes } from '@/hooks/service-hooks/useAttributeService';
 import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
+import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
+import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduct } from '@/hooks/service-hooks/useProductService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import { CreateProductModel } from '@/models/product.model';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { productFields } from '@pms/types';
-import { ArrowLeft, ChevronDown, History, Layers, Link2, Package, RefreshCw } from 'lucide-react';
+import { productFormFields } from '@pms/types';
+import { ArrowLeft, ChevronDown, Eye, EyeOff, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
+import VariantOptionRows from './variant-option-rows';
 
 interface ManageProductProps {
   id: number;
@@ -38,9 +43,20 @@ interface ManageProductProps {
   backLabel?: string;
 }
 
-// `productFields` carries price/cost/stock; the API turns them into the product's
-// initial ProductVariant and opening stock movement.
-const productFormSchema = productFields;
+// Creating a product also creates its variants: each row below becomes a ProductVariant with
+// an opening PriceHistory entry and stock movement, written in the same API transaction.
+const productFormSchema = productFormFields;
+
+const EMPTY_VARIANT_ROW = {
+  attributes: [],
+  sellingPrice: undefined as unknown as number,
+  offerPrice: undefined,
+  costPrice: undefined,
+  stockQuantity: undefined,
+  isOffer: false,
+  effectiveFrom: undefined,
+  effectiveTo: null,
+};
 
 const DEFAULT_VALUES: CreateProductModel = {
   parentId: undefined,
@@ -53,6 +69,7 @@ const DEFAULT_VALUES: CreateProductModel = {
   displayOrder: undefined,
   images: [],
   status: StatusValues.Published,
+  variants: [EMPTY_VARIANT_ROW],
 };
 
 const generateSlug = (name: string) =>
@@ -75,6 +92,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   const getAllBrandNames = useGetAllBrandNames({ showAllRecords: true });
   const getAllAttributes = useGetAllAttributes({ showAllRecords: true });
   const getAllProducts = useGetAllProducts({ showAllRecords: true });
+  const getAllMasterAttributes = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published }, !isEdit);
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -82,6 +100,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
 
   // The slug follows the name until the user edits it by hand; the refresh button re-links them.
   const [slugTouched, setSlugTouched] = useState(false);
+  const [slugOpen, setSlugOpen] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
@@ -97,6 +116,9 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
     getValues,
     formState: { isDirty },
   } = form;
+
+  const variantRows = useFieldArray({ control: form.control, name: 'variants', keyName: 'fieldKey' });
+  const getVariantsResponse = useGetProductVariants(id ?? 0, { recordPerPage: 100 }, isEdit);
 
   useEffect(() => {
     if (isEdit && productResponse?.data?.data) {
@@ -119,7 +141,46 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
     }
   }, [isEdit, productResponse, reset]);
 
-  const submitData = async (model: CreateProductModel) => {
+  // Existing variants arrive separately from the product; they slot into the same rows the
+  // create form uses. Blank offer start dates mean "unchanged" - the API appends a ledger row
+  // only when a price field actually differs. isDirty keeps a background refetch from
+  // overwriting rows the admin is editing.
+  const variantRecords = getVariantsResponse.data?.data?.data?.data;
+  useEffect(() => {
+    if (!isEdit || !variantRecords || form.formState.isDirty) return;
+    form.setValue(
+      'variants',
+      variantRecords.map((variant) => ({
+        id: variant.id,
+        attributes: Array.isArray(variant.attributes)
+          ? (variant.attributes as { attributeid?: number; attributeValueId?: number }[])
+              .filter((row) => row?.attributeid != null && row?.attributeValueId != null)
+              .map((row) => ({ attributeid: row.attributeid as number, attributeValueId: row.attributeValueId as number }))
+          : [],
+        sellingPrice: variant.sellingPrice ?? (undefined as unknown as number),
+        offerPrice: variant.offerPrice ?? undefined,
+        costPrice: variant.costPrice ?? undefined,
+        stockQuantity: variant.stockQuantity ?? undefined,
+        isOffer: variant.isOffer ?? false,
+        effectiveFrom: undefined,
+        effectiveTo: undefined,
+      }))
+    );
+  }, [isEdit, variantRecords, form]);
+
+  const submitData = async (formValues: CreateProductModel) => {
+    // An option row the admin never touched means "no option", so it is dropped rather than
+    // sent as a half-empty pair the API would reject.
+    const model: CreateProductModel = {
+      ...formValues,
+      ...(formValues.variants && {
+        variants: formValues.variants.map((variant) => ({
+          ...variant,
+          attributes: (variant.attributes ?? []).filter((option) => option?.attributeid != null && option?.attributeValueId != null),
+        })),
+      }),
+    };
+
     let response;
     if (isEdit) {
       response = await updateProduct.mutateAsync({ id: id!, model });
@@ -137,12 +198,13 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
       }
 
       const newId = Number((response.data as { data?: { id?: number } })?.data?.id);
+      const count = model.variants?.length ?? 1;
       toast({
         variant: 'success',
         title: 'Product created',
-        description: <span>Now add its first variant so it can be sold.</span>,
+        description: <span>{count === 1 ? 'Its variant is priced and ready to sell.' : `All ${count} variants are priced and ready to sell.`}</span>,
       });
-      router.push(newId > 0 ? `/admin/products/${newId}/variants?new=1` : '/admin/products');
+      router.push(newId > 0 ? `/admin/products/${newId}` : '/admin/products');
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -152,8 +214,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   // Several fields live behind the disclosure; if one of them blocks the save, it must unfold
   // so the message is visible instead of the form refusing silently.
   const onSubmit = handleSubmit(submitData, (errors) => {
-    if (errors.description || errors.images || errors.brandNameId || errors.attributeId || errors.parentId || errors.displayOrder)
-      setOptionalOpen(true);
+    if (errors.description || errors.brandNameId || errors.attributeId || errors.parentId || errors.displayOrder) setOptionalOpen(true);
   });
 
   const isSaving = createProduct.isPending || updateProduct.isPending;
@@ -192,13 +253,14 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
     () => (getAllAttributes?.data?.data?.data?.data ?? []).map((item) => ({ value: item.id, label: item.name })),
     [getAllAttributes.data]
   );
+  const masterAttributes = useMemo(() => getAllMasterAttributes?.data?.data?.data?.data ?? [], [getAllMasterAttributes.data]);
   // A product cannot be its own parent.
   const parentItems = useMemo(
     () => (getAllProducts?.data?.data?.data?.data ?? []).filter((item) => item.id !== id).map((item) => ({ value: item.id, label: item.name })),
     [getAllProducts.data, id]
   );
 
-  const images = form.watch('images') ?? [];
+  const slugValue = form.watch('slug') ?? '';
   const description = form.watch('description') ?? '';
   const brandNameId = form.watch('brandNameId');
   const displayOrder = form.watch('displayOrder');
@@ -212,7 +274,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
 
   // Keeps the stored values visible while the section is closed.
   const optionalSummary = [
-    images.length > 0 ? `${images.length} ${images.length === 1 ? 'image' : 'images'}` : null,
     brandNameId ? (brandItems.find((item) => item.value === brandNameId)?.label ?? 'brand set') : null,
     description.trim() ? 'description' : null,
     displayOrder != null && String(displayOrder) !== '' ? `order ${displayOrder}` : null,
@@ -276,7 +337,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
               </Link>
             </Button>
             <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-              <Link href={`/admin/product-variants/price-histories?productId=${id}`}>
+              <Link href={`/admin/price-histories?productId=${id}`}>
                 <History className="h-4 w-4" />
                 Price history
               </Link>
@@ -308,7 +369,20 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product name *</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Product name *</FormLabel>
+                        {!isEdit && !slugOpen && (
+                          <button
+                            type="button"
+                            onClick={() => setSlugOpen(true)}
+                            title="Edit the URL slug"
+                            className="flex min-w-0 items-center gap-1 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            <span className="truncate">/products/{slugValue || 'slug'}</span>
+                            <Pencil className="h-3 w-3 shrink-0" />
+                          </button>
+                        )}
+                      </div>
                       <FormControl>
                         <Input
                           placeholder="e.g. Air Zoom Runner"
@@ -322,83 +396,313 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                         />
                       </FormControl>
                       <FormMessage />
+                      {!isEdit && !slugOpen && form.formState.errors.slug && (
+                        <p className="text-sm font-medium text-destructive">{form.formState.errors.slug.message}</p>
+                      )}
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel>Slug *</FormLabel>
-                        <span className="truncate font-mono text-[11px] text-muted-foreground">/products/{field.value || 'slug'}</span>
-                      </div>
-                      <FormControl>
-                        <div className="relative">
-                          <Link2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-                          <Input
-                            placeholder="air-zoom-runner"
-                            className="h-10 pl-9 pr-10 font-mono text-sm"
-                            {...field}
-                            onChange={(e) => {
-                              setSlugTouched(true);
-                              field.onChange(e);
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSlugTouched(false);
-                              setValue('slug', generateSlug(getValues('name') ?? ''), { shouldValidate: true, shouldDirty: true });
-                            }}
-                            title="Regenerate from the name"
-                            aria-label="Regenerate slug from the name"
-                            className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                          </button>
+                {(isEdit || slugOpen) && (
+                  <FormField
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Slug *</FormLabel>
+                          <span className="truncate font-mono text-[11px] text-muted-foreground">/products/{field.value || 'slug'}</span>
                         </div>
+                        <FormControl>
+                          <div className="relative">
+                            <Link2
+                              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                              aria-hidden
+                            />
+                            <Input
+                              placeholder="air-zoom-runner"
+                              className="h-10 pl-9 pr-10 font-mono text-sm"
+                              {...field}
+                              onChange={(e) => {
+                                setSlugTouched(true);
+                                field.onChange(e);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSlugTouched(false);
+                                setValue('slug', generateSlug(getValues('name') ?? ''), { shouldValidate: true, shouldDirty: true });
+                              }}
+                              title="Regenerate from the name"
+                              aria-label="Regenerate slug from the name"
+                              className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category *</FormLabel>
+                        <FormControl>
+                          <SelectSearch
+                            buttonClass="h-10 w-full"
+                            placeholder="Select category"
+                            items={categoryItems}
+                            value={field.value ?? ''}
+                            onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => {
+                      const published = field.value === StatusValues.Published;
+                      return (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <FormControl>
+                            <div className="flex h-10 items-center justify-between gap-2 rounded-lg border bg-background px-3">
+                              <span
+                                className={cn(
+                                  'flex min-w-0 items-center gap-2 text-sm font-medium',
+                                  published ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
+                                )}
+                              >
+                                {published ? <Eye className="h-4 w-4 shrink-0" /> : <EyeOff className="h-4 w-4 shrink-0" />}
+                                <span className="truncate">{published ? 'Published — visible in store' : 'Draft — hidden'}</span>
+                              </span>
+                              <Switch
+                                checked={published}
+                                onCheckedChange={(checked) => field.onChange(checked ? StatusValues.Published : StatusValues.Draft)}
+                                aria-label="Published"
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Images *</FormLabel>
+                      <FormControl>
+                        <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="products" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category *</FormLabel>
-                      <FormControl>
-                        <SelectSearch
-                          buttonClass="h-10 w-full"
-                          placeholder="Select category"
-                          items={categoryItems}
-                          value={field.value ?? ''}
-                          onChange={(value) => field.onChange(value ? Number(value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <section className="overflow-hidden rounded-xl border">
+                    <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
+                          <Layers className="h-4 w-4 text-primary" />
+                          Variants &amp; pricing{isEdit ? '' : ' *'}
+                        </p>
+                        {/* <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          Pick each variant's options and price — its name and SKU are generated from them.
+                        </p> */}
+                      </div>
+                    </div>
 
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status *</FormLabel>
-                      <FormControl>
-                        <StatusCards value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <div className="divide-y">
+                      {variantRows.fields.map((row, index) => (
+                        <div key={row.fieldKey} className="relative space-y-3 p-4 pr-11">
+                          {variantRows.fields.length > 1 && (
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Variant {index + 1}</p>
+                          )}
+                          <VariantOptionRows variantIndex={index} masterAttributes={masterAttributes} />
+
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.costPrice`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Cost price</FormLabel>
+                                  <FormControl>
+                                    <PriceInput value={field.value ?? null} onChange={field.onChange} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.sellingPrice`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Selling price *</FormLabel>
+                                  <FormControl>
+                                    <PriceInput value={field.value ?? null} onChange={field.onChange} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.stockQuantity`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Opening stock</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="text"
+                                      {...field}
+                                      value={field.value ?? '0'}
+                                      onChange={(e) => field.onChange(numberChange(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="rounded-lg border">
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.isOffer`}
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
+                                  <FormLabel className="font-medium">Run an offer</FormLabel>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value ?? false}
+                                      aria-label="Run an offer"
+                                      onCheckedChange={(checked) => {
+                                        field.onChange(checked);
+                                        // Nothing stale is left hidden behind the toggle.
+                                        if (!checked) {
+                                          setValue(`variants.${index}.offerPrice`, undefined);
+                                          setValue(`variants.${index}.effectiveFrom`, undefined);
+                                          setValue(`variants.${index}.effectiveTo`, null);
+                                        }
+                                      }}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            {form.watch(`variants.${index}.isOffer`) && (
+                              <div className="grid grid-cols-1 gap-3 border-t p-3 sm:grid-cols-3">
+                                <FormField
+                                  control={form.control}
+                                  name={`variants.${index}.offerPrice`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Offer price *</FormLabel>
+                                      <FormControl>
+                                        <PriceInput value={field.value ?? null} onChange={field.onChange} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={form.control}
+                                  name={`variants.${index}.effectiveFrom`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Starts</FormLabel>
+                                      <FormControl>
+                                        <DateRangePicker
+                                          value={field.value ? { from: field.value as Date } : undefined}
+                                          onSelect={(range) => field.onChange(range?.from)}
+                                          numberOfMonthsToShow={1}
+                                          placeholder="Immediately"
+                                          buttonClass="w-full"
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={form.control}
+                                  name={`variants.${index}.effectiveTo`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Ends</FormLabel>
+                                      <FormControl>
+                                        <DateRangePicker
+                                          value={field.value ? { from: field.value as Date } : undefined}
+                                          onSelect={(range) => field.onChange(range?.from ?? null)}
+                                          numberOfMonthsToShow={1}
+                                          placeholder="No end date"
+                                          buttonClass="w-full"
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* The end date closes the price period itself, not just the discount. */}
+                                {!!form.watch(`variants.${index}.effectiveTo`) && (
+                                  <p className="text-[11px] text-amber-700 dark:text-amber-400 sm:col-span-3">
+                                    After this date the variant has no price and cannot be bought.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {variantRows.fields.length > 1 && !form.watch(`variants.${index}.id`) && (
+                            <button
+                              type="button"
+                              onClick={() => variantRows.remove(index)}
+                              aria-label={`Remove variant ${index + 1}`}
+                              title="Remove this variant"
+                              className="absolute right-2.5 top-2.5 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+
+                      <div className="p-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 w-full gap-1.5 border-dashed text-muted-foreground hover:text-foreground"
+                          onClick={() => variantRows.append(EMPTY_VARIANT_ROW)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add variant
+                        </Button>
+                      </div>
+                    </div>
+                  </section>
 
                 <section className="overflow-hidden rounded-xl border">
                   <button
@@ -407,7 +711,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                     aria-expanded={optionalOpen}
                     className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
                   >
-                    <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Images, brand &amp; more</span>
+                    <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Brand &amp; more</span>
                     {!optionalOpen && optionalSummary && (
                       <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>
                     )}
@@ -419,41 +723,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
 
                   {optionalOpen && (
                     <div className="space-y-5 border-t px-4 py-4">
-                      <FormField
-                        control={form.control}
-                        name="images"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Images</FormLabel>
-                            <FormControl>
-                              <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="products" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                rows={4}
-                                placeholder="What it is, what it is made of, who it is for…"
-                                className="resize-y"
-                                {...field}
-                                value={field.value ?? ''}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <FormField
                           control={form.control}
                           name="brandNameId"
@@ -535,6 +805,25 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                           )}
                         />
                       </div>
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                rows={4}
+                                placeholder="What it is, what it is made of, who it is for…"
+                                className="resize-y"
+                                {...field}
+                                value={field.value ?? ''}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   )}
                 </section>
@@ -555,8 +844,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                     Cancel
                   </Button>
                   <Button type="submit" className="gap-1.5" loading={isSaving}>
-                    {isEdit ? 'Save changes' : 'Create & add variants'}
-                    {!isEdit && !isSaving && <Layers className="h-4 w-4" />}
+                    {isEdit ? 'Save changes' : 'Create product'}
                   </Button>
                 </div>
               </div>

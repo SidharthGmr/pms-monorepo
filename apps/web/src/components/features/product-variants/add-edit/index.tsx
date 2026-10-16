@@ -38,7 +38,7 @@ interface ManageVariantProps {
   onSaved?: () => void;
 }
 
-const LIST_URL = '/admin/product-variants';
+const LIST_URL = '/admin/products/variants';
 
 const money = (amount: number) => `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -63,7 +63,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const { data: getAttributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
   const masterAttributes = useMemo(() => getAttributesResponse?.data?.data?.data ?? [], [getAttributesResponse]);
 
-  const { data: getEntriesResponse } = useGetAllMasterEntries({ showAllRecords: true, status: StatusValues.Published }, isEdit);
+  const { data: getEntriesResponse } = useGetAllMasterEntries({ showAllRecords: true, status: StatusValues.Published });
   const masterEntries = useMemo(() => getEntriesResponse?.data?.data?.data ?? [], [getEntriesResponse]);
 
   const [priceOpen, setPriceOpen] = useState(false);
@@ -103,6 +103,17 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const sku = form.watch('sku');
   const images = form.watch('images') ?? [];
   const stockQuantity = form.watch('stockQuantity');
+
+  const watchedProductId = form.watch('productId');
+  const derivedName = useMemo(() => {
+    if (isEdit) return null;
+    const productName = productItems.find((item) => item.value === watchedProductId)?.label;
+    if (!productName) return null;
+    const picked = attributes
+      .map((row) => masterEntries.find((entry) => entry.id === row?.attributeValueId)?.value)
+      .filter((value): value is string => !!value);
+    return picked.length ? `${productName} - ${picked.join(' / ')}` : productName;
+  }, [isEdit, productItems, watchedProductId, attributes, masterEntries]);
 
   // Mirrors payablePrice() on the API: the offer amount only counts while the switch is on.
   const payable = isOffer && offerPrice != null ? offerPrice : (sellingPrice ?? null);
@@ -154,7 +165,8 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   // the form refuses with the message out of sight.
   const onSubmit = form.handleSubmit(submitData, (errors) => {
     if (errors.costPrice || errors.offerPrice || errors.effectiveFrom || errors.effectiveTo) setPriceOpen(true);
-    if (errors.attributes || errors.sku || errors.barcode || errors.stockQuantity || errors.lowStockThreshold || errors.images || errors.reason) setMoreOpen(true);
+    if ((isEdit && (errors.attributes || errors.sku || errors.images)) || errors.barcode || errors.stockQuantity || errors.lowStockThreshold || errors.reason)
+      setMoreOpen(true);
   });
 
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
@@ -215,10 +227,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
     .join(' · ');
 
   const moreSummary = [
-    attributes.length > 0 ? `${attributes.length} ${attributes.length === 1 ? 'attribute' : 'attributes'}` : null,
-    sku ? sku : null,
+    isEdit && attributes.length > 0 ? `${attributes.length} ${attributes.length === 1 ? 'attribute' : 'attributes'}` : null,
+    isEdit && sku ? sku : null,
     stockQuantity != null ? `stock ${stockQuantity}` : null,
-    images.length > 0 ? `${images.length} ${images.length === 1 ? 'image' : 'images'}` : null,
+    isEdit && images.length > 0 ? `${images.length} ${images.length === 1 ? 'image' : 'images'}` : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -264,33 +276,68 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Variant name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder='e.g. 64GB / 4GB / 4.5"' autoFocus={!isEdit} className="h-10" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isEdit ? (
+              <>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Variant name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder='e.g. 64GB / 4GB / 4.5"' className="h-10" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description *</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="What makes this variant distinct - fabric, capacity, finish." rows={3} className="resize-y" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description *</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="What makes this variant distinct - fabric, capacity, finish." rows={3} className="resize-y" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl border bg-muted/20 p-4">
+                  <p className="text-sm font-semibold leading-tight">Options</p>
+                  <p className="mb-3 mt-0.5 text-[11px] text-muted-foreground">
+                    The variant&rsquo;s name and SKU are generated from the product and the options picked here.
+                  </p>
+                  <AttributeRows masterAttributes={masterAttributes} />
+
+                  {derivedName && (
+                    <p className="mt-4 flex flex-wrap items-baseline gap-x-2 border-t pt-3 text-xs text-muted-foreground">
+                      Will be created as
+                      <span className="text-sm font-semibold text-foreground">{derivedName}</span>
+                    </p>
+                  )}
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Images *</FormLabel>
+                      <FormControl>
+                        <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="product-variants" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
@@ -452,30 +499,34 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
               </div>
             </Fold>
 
-            <Fold title="Attributes, stock & media" summary={moreSummary} open={moreOpen} onToggle={() => setMoreOpen((open) => !open)}>
-              <AttributeRows masterAttributes={masterAttributes} />
+            <Fold title={isEdit ? 'Attributes, stock & media' : 'Stock & more'} summary={moreSummary} open={moreOpen} onToggle={() => setMoreOpen((open) => !open)}>
+              {isEdit && (
+                <>
+                  <AttributeRows masterAttributes={masterAttributes} />
+
+                  <FormField
+                    control={form.control}
+                    name="sku"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>SKU</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Auto-generated if left blank"
+                            className="h-10 font-mono"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SKU</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Auto-generated if left blank"
-                          className="h-10 font-mono"
-                          {...field}
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="barcode"
@@ -483,7 +534,13 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                     <FormItem>
                       <FormLabel>Barcode</FormLabel>
                       <FormControl>
-                        <Input placeholder="Barcode" className="h-10" {...field} value={field.value ?? ''} />
+                        <Input
+                          placeholder="Barcode"
+                          className="h-10"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -533,19 +590,21 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="images"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Images</FormLabel>
-                    <FormControl>
-                      <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="product-variants" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {isEdit && (
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Images *</FormLabel>
+                      <FormControl>
+                        <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="product-variants" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}

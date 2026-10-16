@@ -2,7 +2,7 @@
 import MasterEntrySelect from '@/components/common/master-entry-select';
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { MasterAttributeDto, MasterEntryDto } from '@/dtos/master-entry.dto';
 import { ProductVariantModel } from '@pms/types';
 import { ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
@@ -36,14 +36,18 @@ interface AttributeRowsProps {
   masterAttributes: MasterAttributeDto[];
 }
 
-/** The `Size = L` rows on the variant form. Reads the form off `<Form>`'s context. */
+/**
+ * The `Size = L` rows on the variant form, one compact line per pick: attribute, value, remove.
+ * Reads the form off `<Form>`'s context. The placeholders carry the column meaning, so the rows
+ * stay short enough to stack several without swallowing the screen.
+ */
 export default function AttributeRows({ masterAttributes }: AttributeRowsProps) {
   const { control, setValue } = useFormContext<ProductVariantModel>();
   const { fields, append, remove } = useFieldArray({ control, name: 'attributes', keyName: 'key' });
   const rows = useWatch({ control, name: 'attributes' }) ?? [];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {fields.length === 0 && <p className="text-sm text-muted-foreground">No attributes — this variant is the product’s only version.</p>}
 
       {fields.map((row, index) => {
@@ -52,13 +56,12 @@ export default function AttributeRows({ masterAttributes }: AttributeRowsProps) 
         const usedElsewhere = rows.filter((_, i) => i !== index).map((item) => item?.attributeid);
 
         return (
-          <div key={row.key} className="grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-[1fr_1fr_auto]">
+          <div key={row.key} className="grid grid-cols-[1fr_1fr_auto] items-start gap-2">
             <FormField
               control={control}
               name={`attributes.${index}.attributeid`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Attribute</FormLabel>
                   <FormControl>
                     <SelectSearch
                       items={masterAttributes
@@ -66,8 +69,8 @@ export default function AttributeRows({ masterAttributes }: AttributeRowsProps) 
                         .map((attribute) => ({ label: attribute.name, value: attribute.id }))}
                       value={field.value ?? ''}
                       valueType="number"
-                      placeholder="Select attribute"
-                      buttonClass="w-full"
+                      placeholder="Attribute"
+                      buttonClass="h-9 w-full"
                       containerName={`variant-attribute-${index}`}
                       onChange={(value) => {
                         field.onChange(value ? Number(value) : null);
@@ -85,7 +88,6 @@ export default function AttributeRows({ masterAttributes }: AttributeRowsProps) 
               name={`attributes.${index}.attributeValueId`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Value</FormLabel>
                   <FormControl>
                     {attributeCode ? (
                       <MasterEntrySelect
@@ -94,11 +96,11 @@ export default function AttributeRows({ masterAttributes }: AttributeRowsProps) 
                         showColorSwatch
                         value={field.value ?? ''}
                         onChange={(value) => field.onChange(value ? Number(value) : null)}
-                        buttonClass="w-full"
+                        buttonClass="h-9 w-full"
                       />
                     ) : (
-                      <Button type="button" variant="outline" size="sm" disabled className="h-11 w-full justify-between font-normal">
-                        Pick an attribute first
+                      <Button type="button" variant="outline" size="sm" disabled className="h-9 w-full justify-between font-normal">
+                        Value
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     )}
@@ -108,17 +110,27 @@ export default function AttributeRows({ masterAttributes }: AttributeRowsProps) 
               )}
             />
 
-            <div className="flex items-end">
-              <Button type="button" variant="ghost" size="icon" aria-label="Remove attribute" onClick={() => remove(index)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+            <button
+              type="button"
+              onClick={() => remove(index)}
+              aria-label={`Remove attribute ${index + 1}`}
+              className="mt-2 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
         );
       })}
 
-      <Button type="button" variant="outline" size="sm" disabled={fields.length >= masterAttributes.length} onClick={() => append(emptyRow)}>
-        <Plus className="mr-2 h-4 w-4" />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 gap-1"
+        disabled={fields.length >= masterAttributes.length}
+        onClick={() => append(emptyRow)}
+      >
+        <Plus className="h-3.5 w-3.5" />
         Add attribute
       </Button>
     </div>

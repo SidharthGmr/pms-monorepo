@@ -1,3 +1,4 @@
+import env from "../../config/env";
 import { sendEmail } from "../brevo.mailer";
 import { renderTemplate } from "../templateRenderer";
 
@@ -17,7 +18,20 @@ export const dispatchEmailAsync = async ({ userId, to, subject, html, templateNa
     let finalHtml = html;
 
     if (!finalHtml && templateName) {
-      finalHtml = await renderTemplate(templateName, templateData || {});
+      // Every templated email carries the brand: logo, name, site link and year, in both
+      // placeholder casings the templates use. Values the caller sends always win.
+      const siteUrl = (env.APP_PUBLIC_URL || "").replace(/\/$/, "");
+      const year = String(new Date().getFullYear());
+      const brandDefaults = {
+        appName: env.APP_NAME,
+        PlatformName: env.APP_NAME,
+        siteUrl,
+        WebsiteUrl: siteUrl,
+        logoUrl: `${siteUrl}/logo-full-light.png`,
+        year,
+        Year: year,
+      };
+      finalHtml = await renderTemplate(templateName, { ...brandDefaults, ...(templateData || {}) });
     }
     if (!finalHtml) {
       throw new Error("Email HTML content is missing");

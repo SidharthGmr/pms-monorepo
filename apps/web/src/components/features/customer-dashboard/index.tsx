@@ -256,7 +256,7 @@ export default function CustomerDashboard() {
                 {cartQuantity} {cartQuantity === 1 ? 'item' : 'items'} waiting in your cart
               </p>
               <Button asChild size="sm" className="w-full gap-1.5">
-                <Link href="/dashboard/checkout">
+                <Link href="/dashboard/cart">
                   <ShoppingCart className="h-3.5 w-3.5" />
                   Go to checkout
                 </Link>

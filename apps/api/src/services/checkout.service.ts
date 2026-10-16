@@ -190,6 +190,7 @@ export class CheckoutService implements ICheckoutService {
   async checkoutDirect(ctx: CheckoutContext, model: DirectCheckoutModel): Promise<CheckoutResultDto> {
     const cart = await this.requireCart(ctx);
     const { discount, tax, shippingCost, platformFee } = this.totalsFrom(cart, model);
+    const paidInCash = model.settlement === 'cash';
 
     const order = await this.orderService.create(
       {
@@ -198,8 +199,9 @@ export class CheckoutService implements ICheckoutService {
         tax,
         shippingCost: shippingCost + platformFee,
         notes: model.notes ?? null,
-        // No money has moved, so the order stays PENDING until it is settled.
-        status: OrderStatus.PENDING,
+        // Cash settles on the spot, so the order is confirmed; udhari (credit) has no money
+        // moved yet and stays PENDING until it is settled from the order.
+        status: paidInCash ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
         // The cart is already variant-keyed, so the chosen size/colour carries through to the
         // order line instead of being flattened back to the product.
         items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
@@ -209,10 +211,20 @@ export class CheckoutService implements ICheckoutService {
       ctx.userName
     );
 
-    // No payment row at all - direct checkout mirrors the POS screen, which
-    // records the order only and leaves payment to the Payments module.
+    // Cash is money in hand, recorded paid. Udhari files a PAY_LATER payment that stays
+    // PENDING, so the order carries how it will be settled instead of looking unpaid by accident.
+    const payment = await this.unitOfWork.Payment.create({
+      orderId: order.id,
+      storeCode: ctx.storeCode,
+      amount: order.grandTotal,
+      method: paidInCash ? PaymentMethod.CASH : PaymentMethod.PAY_LATER,
+      status: paidInCash ? PaymentStatus.PAID : PaymentStatus.PENDING,
+      transactionId: null,
+      remarks: paidInCash ? 'Cash taken at checkout' : 'Udhari - to be settled',
+    });
+
     await this.unitOfWork.Cart.clearItems(cart.id);
 
-    return { order, payment: null, alreadyProcessed: false };
+    return { order, payment, alreadyProcessed: false };
   }
 }

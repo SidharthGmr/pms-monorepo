@@ -22,7 +22,7 @@ export default function ProductVariantListingWrapper() {
         }
         actions={
           <Button asChild className="h-9 gap-1.5">
-            <Link href="/admin/product-variants/0">
+            <Link href="/admin/products/variants/add">
               <Plus className="h-4 w-4" />
               Add variant
             </Link>

@@ -10,13 +10,11 @@ export default function ProductListingWrapper() {
   const [total, setTotal] = useState<number | undefined>(undefined);
   const handleCount = useCallback((value: number) => setTotal(value), []);
 
-  // Add and edit both happen here rather than on their own route, so closing the form puts the
-  // list back exactly as it was - same page, same filters. `0` is a new product.
   const [formId, setFormId] = useState<number | null>(null);
   const closeForm = useCallback(() => setFormId(null), []);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4">
+    <div className="mx-auto w-full max-w-5xl space-y-4">
       {formId !== null ? (
         <ManageProduct id={formId} onCancel={closeForm} onSaved={closeForm} backLabel="Back to products" />
       ) : (

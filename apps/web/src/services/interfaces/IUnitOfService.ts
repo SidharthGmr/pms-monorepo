@@ -29,6 +29,7 @@ import IMediaService from './IMediaService';
 import ISubscriberService from './ISubscriberService';
 import ICmsPageService from './ICmsPageService';
 import INotificationService from './INotificationService';
+import ICatalogService from './ICatalogService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -64,4 +65,5 @@ export default interface IUnitOfService {
   SubscriberService: ISubscriberService;
   CmsPageService: ICmsPageService;
   NotificationService: INotificationService;
+  CatalogService: ICatalogService;
 }

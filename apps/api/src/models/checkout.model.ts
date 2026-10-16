@@ -21,7 +21,13 @@ export interface CheckoutModel extends CheckoutAdjustmentsModel {
  * Body for a direct (no gateway) checkout. Carries no payment fields: like the
  * POS screen, this records the order only and takes no money.
  */
-export interface DirectCheckoutModel extends CheckoutModel { }
+export interface DirectCheckoutModel extends CheckoutModel {
+  /**
+   * How the money is settled. 'cash' records a paid CASH payment and confirms the order;
+   * 'credit' (udhari, the default) places it unpaid to be settled later from the order.
+   */
+  settlement?: 'cash' | 'credit';
+}
 
 /**
  * Body for completing an online checkout. The three razorpay_* fields are exactly

@@ -137,7 +137,7 @@ const usersController = container.get<UserController>(TYPES.UserController);
  *       500:
  *         description: Server error
  */
-userRouter.get('/', authenticateToken, asyncHandler(usersController.getAllUsers));
+userRouter.get('/', authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF]), asyncHandler(usersController.getAllUsers));
 
 /**
  * @swagger

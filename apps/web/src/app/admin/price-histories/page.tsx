@@ -1,16 +1,17 @@
-import { redirect } from 'next/navigation';
+import PriceHistoryListingWrapper from '@/components/features/price-histories/listing-wrapper';
+import config from '@/config';
+import { Metadata } from 'next';
+import { Suspense } from 'react';
 
-interface PriceHistoriesPageProps {
-  searchParams: Record<string, string | string[] | undefined>;
-}
+export const metadata: Metadata = {
+  title: `Price History - ${config.appName}`,
+};
 
-// The ledger moved under /admin/product-variants so the sidebar keeps the Variants section
-// active; this route only forwards old links there with their filters intact.
-export default function PriceHistoriesPage({ searchParams }: PriceHistoriesPageProps) {
-  const query = new URLSearchParams();
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (typeof value === 'string' && value !== '') query.set(key, value);
-  });
-  const suffix = query.toString();
-  redirect(`/admin/product-variants/price-histories${suffix ? `?${suffix}` : ''}`);
+// The wrapper reads ?productId / ?variantId to pre-select the row an admin arrived from.
+export default function PriceHistoriesPage() {
+  return (
+    <Suspense>
+      <PriceHistoryListingWrapper />
+    </Suspense>
+  );
 }

@@ -75,8 +75,11 @@ export default function ListToolbar<TStatus extends string | null = string | nul
 
   return (
     <div className={cn('rounded-xl border border-border/70 bg-card shadow-sm', className)}>
-      <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      {/* One wrapping flow, not a left/right split: a page with many filters (products has
+          seven controls) folds onto a tidy second row instead of stacking the right-hand
+          group into a ragged column. ml-auto still pulls sort/view to the end when it fits. */}
+      <div className="flex flex-col gap-2 p-3 lg:flex-row lg:flex-wrap lg:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {search && <SearchBox value={search.value} onChange={search.onChange} placeholder={search.placeholder} debounceMs={search.debounceMs} />}
           {status && (
             <StatusSelect
@@ -91,7 +94,7 @@ export default function ListToolbar<TStatus extends string | null = string | nul
           {leading}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
           {trailing}
           {sort && (
             <div className="flex items-center rounded-md border bg-background">

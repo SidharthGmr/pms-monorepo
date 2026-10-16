@@ -103,7 +103,7 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
               </Button>
             )}
             <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-              <Link href={`/admin/product-variants/price-histories?productId=${product.id}`}>
+              <Link href={`/admin/price-histories?productId=${product.id}`}>
                 <History className="h-3.5 w-3.5" />
                 Price history
               </Link>
@@ -189,7 +189,7 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
             {!variantQuery.isPending && <span className="font-normal normal-case tracking-normal">({variants.length})</span>}
           </h2>
           <Button asChild type="button" variant="outline" size="sm" className="h-8 gap-1.5">
-            <Link href={`/admin/product-variants/add?productId=${product.id}`}>
+            <Link href={`/admin/products/variants/add?productId=${product.id}`}>
               <Plus className="h-3.5 w-3.5" />
               Add variant
             </Link>

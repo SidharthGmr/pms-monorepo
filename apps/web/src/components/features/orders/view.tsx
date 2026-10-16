@@ -2,6 +2,7 @@
 
 import OrderWhatsApp from '@/components/common/OrderWhatsApp';
 import OrderItemReviewCell from '@/components/features/reviews/order-item-review-cell';
+import OrderStatusMenu from '@/components/features/orders/status-menu';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +12,7 @@ import { TYPES } from '@/config/types';
 import { OrderItemDto } from '@/dtos/order-item.dto';
 import { useGetOrderById } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllReviews } from '@/hooks/service-hooks/useReviewService';
+import { Roles } from '@/enums/roles.enum';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
@@ -23,7 +25,6 @@ import {
   CheckCircle2,
   Copy,
   Download,
-  Edit2,
   FileText,
   HelpCircle,
   Mail,
@@ -36,13 +37,11 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { ReactNode, useState } from 'react';
-import ManageOrder from './add-edit';
 import BillReceipt from './bill-receipt';
 import { amountInWords, downloadInvoicePdf } from './invoice-pdf';
 
 interface OrderDetailsViewProps {
   id: number;
-  onEdit?: (id: number) => void;
 }
 
 const SURFACE = 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm';
@@ -69,7 +68,7 @@ const TIMELINE: { key: string; label: string; hint: string; icon: ReactNode }[] 
  * middle, what is owed at the end. Everything about the order rather than on it - where it has
  * got to, what can be done with it, its notes - sits in the column on the right.
  */
-export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) {
+export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const { data: response, isLoading, isError } = useGetOrderById(id);
@@ -79,11 +78,12 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
   // review for anyone else's order, so showing the control to staff would just 403.
   const { currentUser } = useGetCurrentUser();
   const isOwnOrder = !!order?.customerId && !!currentUser?.usersId && order.customerId === currentUser.usersId;
+  // Moving an order through its stages is an operator action; customers only watch it move.
+  const canChangeStatus = currentUser?.role === Roles.ADMIN || currentUser?.role === Roles.SUPER_ADMIN;
   const { data: reviewsResponse } = useGetAllReviews({ orderId: id }, isOwnOrder);
   const myReviews = reviewsResponse?.data?.data?.data ?? [];
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showEdit, setShowEdit] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const generatePdf = async () => {
@@ -208,12 +208,13 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
 
               <OrderWhatsApp order={order} />
 
-              {/* Without a host-supplied handler the page opens the edit dialog itself, so the
-                  action is reachable from the order's own URL and not only from the list. */}
-              <Button size="sm" className="ml-auto h-8 gap-1.5" onClick={() => (onEdit ? onEdit(order.id) : setShowEdit(true))}>
-                <Edit2 className="h-3.5 w-3.5" />
-                Edit
-              </Button>
+              {/* Moving the order through its stages is the page's one action; editing the
+                  order's contents stays on the orders list. Customers see no control here. */}
+              {canChangeStatus && (
+                <div className="ml-auto">
+                  <OrderStatusMenu order={order} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -448,7 +449,6 @@ export default function OrderDetailsView({ id, onEdit }: OrderDetailsViewProps) 
         </aside>
       </div>
 
-      {showEdit && <ManageOrder id={order.id} isOpen={showEdit} onClose={() => setShowEdit(false)} />}
     </div>
   );
 }

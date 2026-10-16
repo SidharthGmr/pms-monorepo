@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { Roles } from '@/enums/roles.enum';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { useGetActiveCart } from '@/hooks/service-hooks/useCartService';
 import { useCheckoutDirect, useCreateRazorpayOrder, useVerifyRazorpayPayment } from '@/hooks/service-hooks/useCheckoutService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
@@ -19,8 +20,7 @@ import { loadRazorpay, RazorpayPaymentResponse } from '@/lib/razorpay';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { ArrowLeft, BadgePercent, Check, CreditCard, Lock, Receipt, RotateCcw, ShoppingCart, Truck, UserRound, Wallet } from 'lucide-react';
-import Link from 'next/link';
+import { BadgePercent, Banknote, Check, CreditCard, Lock, RotateCcw, StickyNote, Truck, UserRound, Wallet } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -46,7 +46,7 @@ const CheckoutSchema = yup.object().shape({
 
 type CheckoutFormValues = yup.InferType<typeof CheckoutSchema>;
 
-type PaymentMode = 'razorpay' | 'direct';
+type PaymentMode = 'razorpay' | 'cash' | 'direct';
 
 const PERCENT_PRESETS = [5, 10, 15, 20];
 
@@ -60,7 +60,12 @@ const discountAmountFrom = (mode: DiscountMode, value: number, subtotal: number)
   return round2(Math.min(Math.max(0, amount), subtotal));
 };
 
-export default function CheckoutPage() {
+/**
+ * The pay step, embedded in the cart page's right column: who the order is for, how the
+ * money comes in, and the total that the server recomputes before creating the order.
+ * Renders nothing for an empty cart - the cart page owns that state.
+ */
+export default function CheckoutPanel({ children }: { children?: ReactNode }) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const router = useRouter();
   const pathname = usePathname();
@@ -76,7 +81,11 @@ export default function CheckoutPage() {
   const cart = cartResponse?.data?.data ?? null;
   const items = cart?.items ?? [];
 
-  const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
+  const { currentUser } = useGetCurrentUser();
+  const sessionRole = (currentUser as { role?: string } | undefined)?.role;
+  // A signed-in customer IS the customer: no picker, and no fetching the customer directory.
+  const isCustomer = sessionRole === Roles.USER;
+  const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true }, !!sessionRole && !isCustomer);
   const customers = useMemo(
     () =>
       (customersResponse?.data?.data?.data ?? [])
@@ -102,6 +111,17 @@ export default function CheckoutPage() {
 
   const { discountMode, discountValue, tax, shippingCost, platformFee, customerId } = form.watch();
   const selectedCustomer = customers.find((c) => c.value === customerId);
+
+  const self = currentUser as { userId?: string; name?: string; email?: string } | undefined;
+  const selfCustomer = isCustomer
+    ? { label: self?.name || self?.email || 'Your account', value: self?.userId ?? '', email: self?.email, phone: undefined as string | undefined }
+    : undefined;
+  const activeCustomer = isCustomer ? selfCustomer : selectedCustomer;
+
+  // The form still carries customerId, so validation and the API payload stay identical.
+  useEffect(() => {
+    if (isCustomer && self?.userId && form.getValues('customerId') !== self.userId) form.setValue('customerId', self.userId);
+  }, [isCustomer, self?.userId, form]);
 
   // The store's configured charges are the starting point, filled in once when the cart
   // arrives; the operator can still change them before paying.
@@ -129,13 +149,19 @@ export default function CheckoutPage() {
   const shippingAmount = Number(shippingCost) || 0;
   const platformAmount = Number(platformFee) || 0;
   const grandTotal = Math.max(0, round2(subtotal + taxAmount + shippingAmount + platformAmount - discountAmount));
-  const chargesTouched = taxAmount !== (charges?.tax ?? 0) || shippingAmount !== (charges?.shippingCharge ?? 0) || platformAmount !== (charges?.platformFee ?? 0);
+  const chargesTouched =
+    taxAmount !== (charges?.tax ?? 0) || shippingAmount !== (charges?.shippingCharge ?? 0) || platformAmount !== (charges?.platformFee ?? 0);
 
   const currency = cart?.currency ?? 'INR';
   const symbol = currency === 'INR' ? '₹' : currency;
-  const money = (value: number) => `${currency === 'INR' ? '₹' : `${currency} `}${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  const currencyPrefix = ({ className }: { className?: string }) => <span className={cn(className, 'flex items-center justify-center text-sm font-medium')}>{symbol}</span>;
-  const percentPrefix = ({ className }: { className?: string }) => <span className={cn(className, 'flex items-center justify-center text-sm font-medium')}>%</span>;
+  const money = (value: number) =>
+    `${currency === 'INR' ? '₹' : `${currency} `}${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const currencyPrefix = ({ className }: { className?: string }) => (
+    <span className={cn(className, 'flex items-center justify-center text-sm font-medium')}>{symbol}</span>
+  );
+  const percentPrefix = ({ className }: { className?: string }) => (
+    <span className={cn(className, 'flex items-center justify-center text-sm font-medium')}>%</span>
+  );
   const discountLabel = discountMode === 'percent' && (Number(discountValue) || 0) > 0 ? `Discount (${Number(discountValue)}%)` : 'Discount';
 
   const isBusy = isPaying || createRazorpayOrderMutation.isPending || verifyPaymentMutation.isPending || directCheckoutMutation.isPending;
@@ -162,6 +188,7 @@ export default function CheckoutPage() {
       const response = await directCheckoutMutation.mutateAsync({
         customerId: data.customerId,
         notes: data.notes || null,
+        settlement: paymentMode === 'cash' ? 'cash' : 'credit',
         ...adjustmentsFrom(data),
       });
 
@@ -190,7 +217,7 @@ export default function CheckoutPage() {
       }
 
       const gatewayOrder = orderResponse.data.data;
-      const customerLabel = customerOptions.find((o: any) => o.value === data.customerId)?.label ?? '';
+      const customerLabel = (isCustomer ? selfCustomer?.label : customerOptions.find((o: any) => o.value === data.customerId)?.label) ?? '';
 
       const checkout = new Razorpay({
         key: gatewayOrder.keyId,
@@ -215,7 +242,10 @@ export default function CheckoutPage() {
 
             if (verifyResponse && verifyResponse.status === 201 && verifyResponse.data?.data) {
               const result = verifyResponse.data.data;
-              onCheckoutComplete(result.order.id, result.alreadyProcessed ? 'This payment was already recorded' : 'Payment successful and order placed');
+              onCheckoutComplete(
+                result.order.id,
+                result.alreadyProcessed ? 'This payment was already recorded' : 'Payment successful and order placed'
+              );
             } else {
               // The money may well have been taken, so never imply it was not.
               showError(verifyResponse, 'Payment taken but the order could not be recorded');
@@ -251,72 +281,30 @@ export default function CheckoutPage() {
     }
   };
 
-  const onSubmit = (data: CheckoutFormValues) => (paymentMode === 'direct' ? handleDirectCheckout(data) : handleRazorpayCheckout(data));
-
-  const header = (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-          <Receipt className="h-3.5 w-3.5" />
-          Step 2 of 3
-        </p>
-        <h1 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">Payment</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Pick the customer, confirm the charges, take payment.</p>
-      </div>
-      <div className="flex items-center gap-3">
-        <Steps current={1} />
-        <Button asChild variant="outline" size="sm" className="h-9 gap-1.5">
-          <Link href={`${areaRoot}/cart`}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to cart
-          </Link>
-        </Button>
-      </div>
-    </div>
-  );
+  const onSubmit = (data: CheckoutFormValues) => (paymentMode === 'razorpay' ? handleRazorpayCheckout(data) : handleDirectCheckout(data));
 
   if (isCartLoading) {
-    return (
-      <div className="mx-auto max-w-6xl space-y-5">
-        {header}
-        <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
-          <div className="space-y-5">
-            <Skeleton className="h-36 w-full rounded-xl" />
-            <Skeleton className="h-64 w-full rounded-xl" />
-            <Skeleton className="h-36 w-full rounded-xl" />
-          </div>
-          <Skeleton className="h-96 w-full rounded-xl" />
-        </div>
-      </div>
-    );
+    return <Skeleton className="h-96 w-full rounded-xl" />;
   }
 
   if (items.length === 0) {
-    return (
-      <div className="mx-auto max-w-6xl space-y-5">
-        {header}
-        <Card className="flex flex-col items-center justify-center gap-4 px-6 py-20 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl" aria-hidden />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
-              <ShoppingCart className="h-9 w-9" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold">Nothing to pay for</p>
-            <p className="max-w-sm text-sm text-muted-foreground">Your cart is empty. Add products first and come back here to take payment.</p>
-          </div>
-          <Button asChild className="mt-1">
-            <Link href={`${areaRoot}/purchase/`}>Browse products</Link>
-          </Button>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
+  // Cash is an operator claim that money changed hands, so customers never see it.
   const paymentModes: { id: PaymentMode; title: string; description: string; icon: typeof CreditCard }[] = [
     { id: 'razorpay', title: 'Pay online', description: 'Card, UPI or netbanking via Razorpay', icon: CreditCard },
-    { id: 'direct', title: 'Pay later', description: 'Place the order now and settle it from the order', icon: Wallet },
+    ...(!isCustomer
+      ? [
+          {
+            id: 'cash' as PaymentMode,
+            title: 'Cash',
+            description: 'Money received now - the order is confirmed and recorded as paid',
+            icon: Banknote,
+          },
+        ]
+      : []),
+    { id: 'direct', title: 'Pay-Later', description: 'On credit - place the order now, settle it later from the order', icon: Wallet },
   ];
 
   const chargeFields = [
@@ -326,56 +314,12 @@ export default function CheckoutPage() {
   ] as const;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      {header}
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid items-start gap-5 lg:grid-cols-[1fr_380px]">
-          <div className="min-w-0 space-y-4">
-            <Section step={1} title="Customer" hint="Who this order is for." icon={UserRound} done={!!selectedCustomer}>
-              <div className="grid gap-3 sm:grid-cols-[1fr_minmax(0,260px)]">
-                <FormField
-                  control={form.control}
-                  name="customerId"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormControl>
-                        <div className="flex">
-                          <SelectSearch
-                            placeholder="Search customer by name or email *"
-                            buttonClass="w-full"
-                            items={customerOptions}
-                            value={field.value}
-                            valueType="string"
-                            containerName="checkout-customer"
-                            onChange={(value) => field.onChange(value)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className={cn('flex h-10 items-center gap-2.5 rounded-md border px-2.5', selectedCustomer ? 'bg-muted/30' : 'border-dashed text-muted-foreground')}>
-                  {selectedCustomer ? (
-                    <>
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                        {selectedCustomer.label.slice(0, 1).toUpperCase()}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-medium leading-tight">{selectedCustomer.label}</p>
-                        <p className="truncate text-[11px] leading-tight text-muted-foreground">
-                          {[selectedCustomer.email, selectedCustomer.phone].filter(Boolean).join(' · ') || 'No contact details'}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-xs">No customer picked yet</span>
-                  )}
-                </div>
-              </div>
-            </Section>
-
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid items-start gap-5 lg:grid-cols-[1fr_400px]">
+        {/* Left: the items (passed in by the cart page) with the optional fields below them. */}
+        <div className="min-w-0 space-y-4">
+          {children}
+          {!isCustomer && (
             <Section
               step={2}
               title="Discount & charges"
@@ -384,7 +328,11 @@ export default function CheckoutPage() {
               done={discountAmount + taxAmount + shippingAmount + platformAmount > 0}
               action={
                 charges && chargesTouched ? (
-                  <button type="button" onClick={applyStoreCharges} className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline">
+                  <button
+                    type="button"
+                    onClick={applyStoreCharges}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  >
                     <RotateCcw className="h-3 w-3" />
                     Reset charges
                   </button>
@@ -415,7 +363,12 @@ export default function CheckoutPage() {
                               field.onChange(opt.value);
                               form.setValue('discountValue', 0, { shouldValidate: true });
                             }}
-                            className={cn('rounded px-2.5 py-1 font-medium transition-colors', field.value === opt.value ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+                            className={cn(
+                              'rounded px-2.5 py-1 font-medium transition-colors',
+                              field.value === opt.value
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                            )}
                           >
                             {opt.label}
                           </button>
@@ -459,7 +412,9 @@ export default function CheckoutPage() {
                           onClick={() => form.setValue('discountValue', pct, { shouldValidate: true })}
                           className={cn(
                             'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                            Number(discountValue) === pct ? 'border-primary bg-primary/10 text-primary' : 'bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                            Number(discountValue) === pct
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
                           )}
                         >
                           {pct}%
@@ -514,62 +469,109 @@ export default function CheckoutPage() {
                   <FormItem className="mt-3 space-y-1">
                     <FormLabel className="text-xs">Notes</FormLabel>
                     <FormControl>
-                      <Textarea rows={1} className="min-h-[40px] resize-none" placeholder="Anything to record against this order (optional)" {...field} />
+                      <Textarea
+                        rows={1}
+                        className="min-h-[40px] resize-none"
+                        placeholder="Anything to record against this order (optional)"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </Section>
+          )}
 
-            <Section step={3} title="Payment method" hint="How the money comes in." icon={CreditCard} done>
-              <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Payment method">
-                {paymentModes.map((mode) => {
-                  const Icon = mode.icon;
-                  const selected = paymentMode === mode.id;
-                  return (
-                    <button
-                      key={mode.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setPaymentMode(mode.id)}
-                      className={cn(
-                        'group relative flex items-center gap-3 rounded-lg border bg-background px-3 py-2.5 text-left transition-all duration-150',
-                        'hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        selected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-input hover:border-muted-foreground/40'
-                      )}
-                    >
-                      <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors', selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
-                        <Icon className="h-4 w-4" />
+          {isCustomer && (
+            <Section step={1} title="Notes" hint="Anything you want recorded against this order." icon={StickyNote} done>
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem className="space-y-1">
+                    <FormControl>
+                      <Textarea rows={2} className="min-h-[56px] resize-none" placeholder="e.g. Please deliver after 6pm (optional)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </Section>
+          )}
+        </div>
+
+        {/* Right: who pays and how, with the total. */}
+        <div className="min-w-0 space-y-4 lg:sticky lg:top-4">
+          {!isCustomer && (
+            <Section
+              step={1}
+              title="Customer"
+              hint={isCustomer ? 'This order goes to your account.' : 'Who this order is for.'}
+              icon={UserRound}
+              done={!!activeCustomer}
+            >
+              <div className="grid gap-3">
+                {!isCustomer && (
+                  <FormField
+                    control={form.control}
+                    name="customerId"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormControl>
+                          <div className="flex">
+                            <SelectSearch
+                              placeholder="Search customer by name or email *"
+                              buttonClass="w-full"
+                              items={customerOptions}
+                              value={field.value}
+                              valueType="string"
+                              containerName="checkout-customer"
+                              onChange={(value) => field.onChange(value)}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                <div
+                  className={cn(
+                    'flex h-10 items-center gap-2.5 rounded-md border px-2.5',
+                    activeCustomer ? 'bg-muted/30' : 'border-dashed text-muted-foreground'
+                  )}
+                >
+                  {activeCustomer ? (
+                    <>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        {activeCustomer.label.slice(0, 1).toUpperCase()}
                       </span>
-                      <span className="min-w-0 flex-1 pr-5">
-                        <span className="block text-sm font-semibold leading-tight">{mode.title}</span>
-                        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{mode.description}</span>
-                      </span>
-                      <span
-                        aria-hidden
-                        className={cn(
-                          'absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white transition-all duration-150',
-                          selected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
-                        )}
-                      >
-                        <Check className="h-3 w-3" strokeWidth={3} />
-                      </span>
-                    </button>
-                  );
-                })}
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-medium leading-tight">
+                          {activeCustomer.label}
+                          {isCustomer && <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">You</span>}
+                        </p>
+                        <p className="truncate text-[11px] leading-tight text-muted-foreground">
+                          {[activeCustomer.email, activeCustomer.phone].filter(Boolean).join(' · ') || 'No contact details'}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-xs">No customer picked yet</span>
+                  )}
+                </div>
               </div>
             </Section>
-          </div>
+          )}
 
-          <Card className="overflow-hidden border p-0 md:p-0 lg:sticky lg:top-[72px]">
+          <Card className="overflow-hidden border p-0 md:p-0">
             <div className="bg-gradient-to-br from-primary via-primary to-indigo-700 px-5 py-4 text-primary-foreground">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/80">Total due</p>
-                <Link href={`${areaRoot}/cart`} className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary-foreground hover:bg-white/25">
+                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium tabular-nums text-primary-foreground">
                   {items.length} {items.length === 1 ? 'product' : 'products'} · {cart?.totalQuantity ?? 0} qty
-                </Link>
+                </span>
               </div>
               <p className="mt-1 text-3xl font-bold tabular-nums leading-none">{money(grandTotal)}</p>
               {discountAmount > 0 && <p className="mt-1.5 text-[11px] text-primary-foreground/80">You are giving {money(discountAmount)} off.</p>}
@@ -604,7 +606,9 @@ export default function CheckoutPage() {
                     <Truck className="h-3.5 w-3.5" />
                     Shipping
                   </dt>
-                  <dd className={cn('tabular-nums', shippingAmount === 0 && 'font-medium text-emerald-600 dark:text-emerald-400')}>{shippingAmount > 0 ? money(shippingAmount) : 'Free'}</dd>
+                  <dd className={cn('tabular-nums', shippingAmount === 0 && 'font-medium text-emerald-600 dark:text-emerald-400')}>
+                    {shippingAmount > 0 ? money(shippingAmount) : 'Free'}
+                  </dd>
                 </div>
               </dl>
 
@@ -616,59 +620,66 @@ export default function CheckoutPage() {
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">Recomputed on the server from the cart before the order is created.</p>
 
-              <Button type="submit" size="lg" className="mt-4 w-full gap-2" loading={isBusy} disabled={isBusy}>
-                {paymentMode === 'direct' ? (
-                  <>
-                    <Wallet className="h-4 w-4" />
-                    Place order
-                  </>
-                ) : (
+              <div className="mt-4">
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Payment method</p>
+                <div className="flex w-full rounded-lg border bg-background p-1" role="radiogroup" aria-label="Payment method">
+                  {paymentModes.map((mode) => {
+                    const Icon = mode.icon;
+                    const selected = paymentMode === mode.id;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setPaymentMode(mode.id)}
+                        className={cn(
+                          'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition-colors',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          selected ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {mode.title}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">{paymentModes.find((mode) => mode.id === paymentMode)?.description}</p>
+              </div>
+
+              <Button type="submit" size="lg" className="mt-3 w-full gap-2" loading={isBusy} disabled={isBusy}>
+                {paymentMode === 'razorpay' ? (
                   <>
                     <CreditCard className="h-4 w-4" />
                     Pay {money(grandTotal)}
+                  </>
+                ) : paymentMode === 'cash' ? (
+                  <>
+                    <Banknote className="h-4 w-4" />
+                    Take {money(grandTotal)} in cash
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="h-4 w-4" />
+                    Place on Pay-Later
                   </>
                 )}
               </Button>
 
               <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
                 <Lock className="h-3 w-3 shrink-0" />
-                {paymentMode === 'direct' ? 'No payment is recorded; settle it later from the order.' : 'Secured by Razorpay. Card, UPI and netbanking.'}
+                {paymentMode === 'direct'
+                  ? 'No payment is recorded; settle the udhari later from the order.'
+                  : paymentMode === 'cash'
+                    ? 'A paid cash payment is recorded against the order.'
+                    : 'Secured by Razorpay. Card, UPI and netbanking.'}
               </p>
             </div>
           </Card>
-        </form>
-      </Form>
-    </div>
-  );
-}
-
-const STEPS = ['Cart', 'Payment', 'Order'];
-
-// Three-dot progress so the operator sees where payment sits between the cart and the finished order.
-function Steps({ current }: { current: number }) {
-  return (
-    <ol className="hidden items-center gap-2 text-[11px] font-medium text-muted-foreground md:flex" aria-label="Progress">
-      {STEPS.map((label, i) => {
-        const state = i < current ? 'done' : i === current ? 'current' : 'todo';
-        return (
-          <li key={label} className="flex items-center gap-2">
-            <span
-              className={cn(
-                'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold',
-                state === 'done' && 'bg-emerald-500 text-white',
-                state === 'current' && 'bg-primary text-primary-foreground',
-                state === 'todo' && 'border bg-background text-muted-foreground'
-              )}
-              aria-current={state === 'current' ? 'step' : undefined}
-            >
-              {state === 'done' ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
-            </span>
-            <span className={cn(state === 'current' && 'text-foreground')}>{label}</span>
-            {i < STEPS.length - 1 && <span className="h-px w-5 bg-border" aria-hidden />}
-          </li>
-        );
-      })}
-    </ol>
+        </div>
+      </form>
+    </Form>
   );
 }
 
@@ -687,7 +698,12 @@ function Section({ step, title, hint, icon: Icon, done, action, children }: Sect
   return (
     <Card className="border p-0 md:p-0">
       <div className="flex items-center gap-3 border-b px-4 py-3 sm:px-5">
-        <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold', done ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary')}>
+        <span
+          className={cn(
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+            done ? 'bg-emerald-500 text-white' : 'bg-primary/10 text-primary'
+          )}
+        >
           {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : step}
         </span>
         <div className="min-w-0 flex-1">

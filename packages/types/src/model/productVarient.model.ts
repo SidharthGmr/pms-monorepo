@@ -3,12 +3,13 @@ import { Status } from "../enum/status.enum";
 export interface ProductVariantModel {
   productId: number;
   storeCode: string;
-  name: string;
+  /** Derived from the product and the picked options when absent - the admin never types it. */
+  name?: string;
   slug?: string;
   sku?: string;
   barcode?: string | null;
   attributes?: (attributesModelRow | undefined)[];
-  description: string;
+  description?: string;
   seoTitle?: string | null;
   seoDescription?: string | null;
   images: string[];

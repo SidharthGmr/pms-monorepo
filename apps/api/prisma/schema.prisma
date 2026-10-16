@@ -750,6 +750,7 @@ enum PaymentMethod {
   UPI
   BANK_TRANSFER
   ONLINE
+  PAY_LATER
 }
 
 // Messages from the public contact form. storeCode is optional because the storefront has no

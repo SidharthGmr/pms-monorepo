@@ -70,6 +70,8 @@ import CmsPageService from '@/services/CmsPageService';
 import ICmsPageService from '@/services/interfaces/ICmsPageService';
 import NotificationService from '@/services/NotificationService';
 import INotificationService from '@/services/interfaces/INotificationService';
+import CatalogService from '@/services/CatalogService';
+import ICatalogService from '@/services/interfaces/ICatalogService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -109,6 +111,7 @@ container.bind<IMediaService>(TYPES.IMediaService).to(MediaService);
 container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
 container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
+container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 
 export { container };
 

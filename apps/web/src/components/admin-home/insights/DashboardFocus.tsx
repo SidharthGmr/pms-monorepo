@@ -187,7 +187,7 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
             </Link>
           </Button>
           <Button asChild size="sm" className="h-9">
-            <Link href="/admin/checkout">
+            <Link href="/admin/cart">
               <Plus className="h-4 w-4" />
               New sale
             </Link>
@@ -307,14 +307,17 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
           </Panel>
 
           {/* 2. The only part of the page that asks for a decision, so it comes before the figures. */}
-          <section {...enter(1)}>
-            <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              Needs attention
-              {!checking && tasks.length > 0 && (
+          <Panel
+            {...enter(8)}
+            title="Needs attention"
+            icon={Boxes}
+            bodyClassName="px-3 py-3 sm:px-3"
+            action={
+              !checking && tasks.length > 0 ? (
                 <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>
-              )}
-            </h2>
-
+              ) : undefined
+            }
+          >
             {checking ? (
               <div className="grid gap-3 lg:grid-cols-3">
                 {Array.from({ length: 2 }).map((_, index) => (
@@ -363,7 +366,7 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
                 ))}
               </ul>
             )}
-          </section>
+          </Panel>
         </div>
       </section>
     </div>

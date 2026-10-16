@@ -1,5 +1,7 @@
 
 
+import { ProductVariantInlineModel } from '@pms/types';
+
 export interface CreateProductModel {
   name: string;
   parentId?: number | null;
@@ -15,6 +17,7 @@ export interface CreateProductModel {
   images?: string[];
   status?: string;
   displayOrder?: number | null;
+  variants?: ProductVariantInlineModel[];
 }
 
 export interface UpdateProductModel extends Partial<CreateProductModel> { }

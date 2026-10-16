@@ -15,7 +15,10 @@ export interface CheckoutModel extends CheckoutAdjustmentsModel {
  * Body for POST /checkout/direct. No payment is taken and no payment row is
  * written - the order is created exactly as the POS screen creates it.
  */
-export interface DirectCheckoutModel extends CheckoutModel { }
+export interface DirectCheckoutModel extends CheckoutModel {
+  /** 'cash' records a paid CASH payment and confirms the order; 'credit' (udhari) places it unpaid. */
+  settlement?: 'cash' | 'credit';
+}
 
 /**
  * Body for POST /checkout/razorpay/payments/verify. The three razorpay_* fields

@@ -8,7 +8,7 @@ import { Boxes, FolderTree, PackagePlus, Plus, ShoppingBag, Tags, UserPlus } fro
 import Link from 'next/link';
 
 const ACTIONS = [
-  { label: 'New sale', hint: 'Take payment for the cart', href: '/admin/checkout', icon: ShoppingBag },
+  { label: 'New sale', hint: 'Take payment for the cart', href: '/admin/cart', icon: ShoppingBag },
   { label: 'Add product', hint: 'Create a product and its variants', href: '/admin/products/add/', icon: PackagePlus },
   { label: 'Receive stock', hint: 'Book a purchase from a supplier', href: '/admin/stock-purchase/', icon: Boxes },
   { label: 'Add category', href: '/admin/categories/', icon: FolderTree },

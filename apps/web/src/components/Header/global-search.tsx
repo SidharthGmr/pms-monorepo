@@ -17,7 +17,7 @@ interface PageEntry {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'New sale', href: '/admin/checkout', icon: ShoppingBag, keywords: 'checkout pay order' },
+  { label: 'New sale', href: '/admin/cart', icon: ShoppingBag, keywords: 'checkout pay order' },
   { label: 'Add product', href: '/admin/products/add/', icon: PackagePlus, keywords: 'create product' },
   { label: 'Receive stock', href: '/admin/stock-purchase/', icon: Boxes, keywords: 'inventory purchase' },
   { label: 'Add category', href: '/admin/categories/', icon: Plus, keywords: 'create category' },

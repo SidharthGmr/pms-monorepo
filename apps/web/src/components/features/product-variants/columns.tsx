@@ -225,7 +225,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
             </Button>
             <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Price history">
               <Link
-                href={`/admin/product-variants/price-histories?productId=${row.original?.product?.id}&variantId=${row.original.id}`}
+                href={`/admin/price-histories?productId=${row.original?.product?.id}&variantId=${row.original.id}`}
                 aria-label={`Price history for ${row.original.name ?? row.original.sku}`}
               >
                 <History className="h-4 w-4" />

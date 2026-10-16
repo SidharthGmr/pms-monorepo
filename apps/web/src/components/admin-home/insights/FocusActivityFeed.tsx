@@ -1,5 +1,6 @@
 'use client';
 import { toneFor } from '@/components/features/orders/order-status';
+import OrderStatusMenu from '@/components/features/orders/status-menu';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -12,7 +13,7 @@ import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllPurchases } from '@/hooks/service-hooks/usePurchaseService';
 import { cn } from '@/lib/utils';
 import { isToday, isYesterday } from 'date-fns';
-import { Activity, AlertTriangle, Banknote, ChevronRight, CreditCard, RotateCcw, ShoppingBag, Truck } from 'lucide-react';
+import { Activity, AlertTriangle, Banknote, ChevronRight, CreditCard, RotateCcw, ShoppingBag, Truck, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { formatMoney } from './format';
@@ -33,11 +34,13 @@ interface FeedItem {
   /** Line count, plus who recorded a purchase. */
   detail: string;
   /** How a sale was paid. Empty on purchases. */
-  payment: 'Cash' | 'Online' | '';
+  payment: 'Cash' | 'Online' | 'Udhari' | '';
   amount: number;
   status: string;
   at: Date;
   href: string;
+  /** The full order, so the status chip can change it in place. Absent on purchases. */
+  order?: OrderDto;
 }
 
 const FILTERS: { value: Filter; label: string }[] = [
@@ -48,11 +51,12 @@ const FILTERS: { value: Filter; label: string }[] = [
 
 const lineCount = (n: number | undefined) => (n ? `${n} item${n === 1 ? '' : 's'}` : '');
 
-// Storefront checkouts always record a payment (method ONLINE); counter sales record none, so
-// an order without one was taken at the till and reads as cash.
-const paymentLabel = (o: OrderDto): 'Cash' | 'Online' => {
+// Every checkout records a payment now: CASH or legacy none reads as cash, PAY_LATER is
+// udhari on credit, anything else came through the gateway.
+const paymentLabel = (o: OrderDto): 'Cash' | 'Online' | 'Udhari' => {
   const method = o.payments?.[0]?.method;
   if (!method || method === 'CASH') return 'Cash';
+  if (method === 'PAY_LATER') return 'Udhari';
   return 'Online';
 };
 
@@ -84,6 +88,7 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
       status: String(o.status ?? ''),
       at: new Date(o.createdAt),
       href: `/admin/orders/${o.id}`,
+      order: o,
     }));
     const purchaseItems: FeedItem[] = ((purchases.data?.data?.data?.data as PurchaseDto[] | undefined) ?? []).map((p) => ({
       key: `p-${p.id}`,
@@ -242,15 +247,19 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
                         <span className="truncate font-mono" title={item.reference}>
                           {item.reference}
                         </span>
-                        {item.status && (
-                          <>
-                            <span className={cn('h-1 w-1 shrink-0 rounded-full', tone.dot)} aria-hidden />
-                            <span className="shrink-0">{tone.label}</span>
-                          </>
+                        {isOrder && item.order ? (
+                          <OrderStatusMenu order={item.order} className="-my-1 shrink-0" />
+                        ) : (
+                          item.status && (
+                            <>
+                              <span className={cn('h-1 w-1 shrink-0 rounded-full', tone.dot)} aria-hidden />
+                              <span className="shrink-0">{tone.label}</span>
+                            </>
+                          )
                         )}
                         {item.payment && (
                           <span className="flex shrink-0 items-center gap-1" title={`Paid ${item.payment.toLowerCase()}`}>
-                            · {item.payment === 'Cash' ? <Banknote className="h-3 w-3" aria-hidden /> : <CreditCard className="h-3 w-3" aria-hidden />}
+                            · {item.payment === 'Cash' ? <Banknote className="h-3 w-3" aria-hidden /> : item.payment === 'Udhari' ? <Wallet className="h-3 w-3" aria-hidden /> : <CreditCard className="h-3 w-3" aria-hidden />}
                             {item.payment}
                           </span>
                         )}

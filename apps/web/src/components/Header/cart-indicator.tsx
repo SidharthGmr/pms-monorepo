@@ -170,7 +170,7 @@ export function CartIndicator() {
                   </Link>
                 </Button>
                 <Button asChild size="sm" className="flex-1 gap-1.5">
-                  <Link href={`${base}/checkout`} onClick={() => setOpen(false)}>
+                  <Link href={`${base}/cart`} onClick={() => setOpen(false)}>
                     {t('cart.checkout')}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

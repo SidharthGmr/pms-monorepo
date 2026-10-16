@@ -21,7 +21,7 @@ export interface OrderDto {
   items?: OrderItemDto[];
   /** Newest first. Storefront checkouts always write one (ONLINE); counter sales write none. */
   payments?: {
-    method: 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'ONLINE';
+    method: 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'ONLINE' | 'PAY_LATER';
     status: string;
     amount?: number;
   }[];

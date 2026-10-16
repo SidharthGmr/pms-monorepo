@@ -3,17 +3,16 @@ import { KeyboardEvent, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, ArrowRight, Lock, Minus, Package, Plus, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Minus, Package, Plus, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react';
 import { CartItemDto } from '@pms/types';
 import ConfirmBox from '@/components/common/confirm-box';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
+import CheckoutPanel from '@/components/features/checkout';
 import { useClearCart, useGetActiveCart, useRemoveCartVariant, useUpdateCartVariantQuantity } from '@/hooks/service-hooks/useCartService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -30,7 +29,6 @@ export default function CartPage() {
   // Mounted under both /admin and /dashboard, which middleware.ts gates by role, so keep links inside the current area.
   const area = pathname?.startsWith('/dashboard') ? '/dashboard' : '/admin';
   const browseHref = `${area}/purchase/`;
-  const checkoutHref = `${area}/checkout`;
 
   const { data: cartResponse, isLoading, isError, isFetching } = useGetActiveCart();
   const cart = cartResponse?.data?.data ?? null;
@@ -86,7 +84,6 @@ export default function CartPage() {
   // Server-computed from the store's charge settings; checkout starts from the same figures.
   const charges = cart?.charges;
   const subtotal = cart?.totalAmount ?? 0;
-  const estimatedTotal = charges?.grandTotal ?? subtotal;
   const untilFreeShipping = charges && charges.freeShippingAbove !== null && !charges.shippingWaived ? Math.max(0, charges.freeShippingAbove - subtotal) : null;
 
   if (isError) {
@@ -132,7 +129,7 @@ export default function CartPage() {
       </Card>
 
       {isLoading ? (
-        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+        <div className="grid gap-5 lg:grid-cols-[1fr_400px]">
           <Card className={cn(FLUSH_CARD, 'divide-y overflow-hidden')}>
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center gap-4 p-4">
@@ -168,7 +165,7 @@ export default function CartPage() {
           </Button>
         </Card>
       ) : (
-        <div className="grid items-start gap-5 lg:grid-cols-[1fr_340px]">
+        <CheckoutPanel>
           <Card className={cn(FLUSH_CARD, 'overflow-hidden', isFetching && !isMutating && 'opacity-80 transition-opacity')}>
             <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2.5">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Items</p>
@@ -201,83 +198,17 @@ export default function CartPage() {
             </ul>
           </Card>
 
-          <Card className="lg:sticky lg:top-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold">Order summary</h2>
-              {cart?.status && (
-                <Badge variant="green" className="px-1.5 py-0 text-[10px] capitalize">
-                  {String(cart.status).toLowerCase()}
-                </Badge>
-              )}
-            </div>
-
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Products</dt>
-                <dd className="font-medium tabular-nums">{items.length}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Total quantity</dt>
-                <dd className="font-medium tabular-nums">{cart?.totalQuantity ?? 0}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotal</dt>
-                <dd className="font-medium tabular-nums">{money(subtotal)}</dd>
-              </div>
-              {charges && charges.taxRate > 0 && (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Tax ({charges.taxRate}%)</dt>
-                  <dd className="font-medium tabular-nums">{money(charges.tax)}</dd>
-                </div>
-              )}
-              {charges && charges.platformFee > 0 && (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Platform fee</dt>
-                  <dd className="font-medium tabular-nums">{money(charges.platformFee)}</dd>
-                </div>
-              )}
-              {charges && (charges.shippingCharge > 0 || charges.shippingWaived) && (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Shipping</dt>
-                  <dd className={cn('font-medium tabular-nums', charges.shippingWaived && 'text-emerald-600 dark:text-emerald-400')}>
-                    {charges.shippingWaived ? 'Free' : money(charges.shippingCharge)}
-                  </dd>
-                </div>
-              )}
-            </dl>
-
-            <Separator className="my-3" />
-
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm font-semibold">Estimated total</span>
-              <span className="text-2xl font-bold tabular-nums text-primary">{money(estimatedTotal)}</span>
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {untilFreeShipping !== null && untilFreeShipping > 0
-                ? `Add ${money(untilFreeShipping)} more for free shipping.`
-                : charges?.shippingWaived
-                  ? 'Free shipping applied to this order.'
-                  : 'Tax, platform fee and shipping are included. Discounts are applied at checkout.'}
+          {untilFreeShipping !== null && untilFreeShipping > 0 && (
+            <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] font-medium text-primary">
+              Add {money(untilFreeShipping)} more for free shipping.
             </p>
-
-            {unpriced > 0 && (
-              <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
-                {unpriced} {unpriced === 1 ? 'item has' : 'items have'} no price recorded and {unpriced === 1 ? 'is' : 'are'} not included in the total.
-              </p>
-            )}
-
-            <Button asChild size="lg" className="mt-4 w-full gap-2" disabled={isMutating}>
-              <Link href={checkoutHref}>
-                Continue to checkout
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-              <Lock className="h-3 w-3" />
-              Secure checkout · {currency}
+          )}
+          {unpriced > 0 && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+              {unpriced} {unpriced === 1 ? 'item has' : 'items have'} no price recorded and {unpriced === 1 ? 'is' : 'are'} not included in the total.
             </p>
-          </Card>
-        </div>
+          )}
+        </CheckoutPanel>
       )}
 
       <ConfirmBox

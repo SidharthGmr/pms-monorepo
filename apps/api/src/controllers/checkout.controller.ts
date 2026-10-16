@@ -3,6 +3,7 @@ import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '../dtos/checkout.dto';
 import { CustomResponse } from '@pms/types';
+import { Role } from '../enum/user.enum';
 import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '../models/checkout.model';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { CheckoutContext } from '../services/interfaces/Icheckout.service';
@@ -35,6 +36,12 @@ export class CheckoutController {
     };
   }
 
+  // Discounts and charge overrides are an operator tool. A customer checks out at the
+  // store-computed charges, whatever their request claims.
+  private adjustmentsFor(req: Request, source: any): CheckoutAdjustmentsModel {
+    return req.user?.role === Role.USER ? {} : this.adjustmentsFrom(source);
+  }
+
   private adjustmentsFrom(body: any): CheckoutAdjustmentsModel {
     return {
       ...(body?.discount !== undefined && { discount: Number(body.discount) }),
@@ -48,7 +55,7 @@ export class CheckoutController {
     const { ctx, error } = await this.buildContext(req);
     if (!ctx) return res.status(400).json({ success: false, message: error });
 
-    const adjustments = this.adjustmentsFrom(req.query);
+    const adjustments = this.adjustmentsFor(req, req.query);
     const summary = await this.unitOfService.Checkout.getSummary(ctx, adjustments);
     return res.status(200).json({ success: true, message: 'Checkout summary fetched successfully', data: summary });
   };
@@ -59,26 +66,32 @@ export class CheckoutController {
 
     // The amount is intentionally ignored if the client sends one; it is derived
     // from the persisted cart so it cannot be tampered with.
-    const order = await this.unitOfService.Checkout.createRazorpayOrder(ctx, this.adjustmentsFrom(req.body));
+    const order = await this.unitOfService.Checkout.createRazorpayOrder(ctx, this.adjustmentsFor(req, req.body));
     return res.status(201).json({ success: true, message: 'Payment order created successfully', data: order });
   };
+
+  // A customer checks out their own account - whatever customerId the body claims. Staff and
+  // admins place orders for the customer they picked.
+  private resolveCustomerId = (req: Request, bodyCustomerId: string | undefined): string | undefined =>
+    req.user?.role === Role.USER ? (req.user?.userId as string | undefined) : bodyCustomerId;
 
   verifyRazorpayPayment = async (req: Request, res: Response): Promise<Response<CustomResponse<CheckoutResultDto>>> => {
     const { ctx, error } = await this.buildContext(req);
     if (!ctx) return res.status(400).json({ success: false, message: error });
 
     const body = req.body as Partial<VerifyRazorpayPaymentModel>;
-    if (!body.customerId) {
+    const customerId = this.resolveCustomerId(req, body.customerId);
+    if (!customerId) {
       return res.status(400).json({ success: false, message: 'customerId is required.' });
     }
 
     const model: VerifyRazorpayPaymentModel = {
-      customerId: body.customerId,
+      customerId,
       notes: body.notes ?? null,
       razorpay_order_id: body.razorpay_order_id ?? '',
       razorpay_payment_id: body.razorpay_payment_id ?? '',
       razorpay_signature: body.razorpay_signature ?? '',
-      ...this.adjustmentsFrom(body),
+      ...this.adjustmentsFor(req, body),
     };
 
     const result = await this.unitOfService.Checkout.completeRazorpayCheckout(ctx, model);
@@ -94,14 +107,17 @@ export class CheckoutController {
     if (!ctx) return res.status(400).json({ success: false, message: error });
 
     const body = req.body as Partial<DirectCheckoutModel>;
-    if (!body.customerId) {
+    const customerId = this.resolveCustomerId(req, body.customerId);
+    if (!customerId) {
       return res.status(400).json({ success: false, message: 'customerId is required.' });
     }
 
     const model: DirectCheckoutModel = {
-      customerId: body.customerId,
+      customerId,
       notes: body.notes ?? null,
-      ...this.adjustmentsFrom(body),
+      // A customer cannot mark their own order as cash-paid; that is the operator's call.
+      settlement: req.user?.role !== Role.USER && body.settlement === 'cash' ? 'cash' : 'credit',
+      ...this.adjustmentsFor(req, body),
     };
 
     const result = await this.unitOfService.Checkout.checkoutDirect(ctx, model);

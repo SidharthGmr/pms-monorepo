@@ -33,4 +33,5 @@ export const TYPES = {
   ISubscriberService: Symbol.for('ISubscriberService'),
   ICmsPageService: Symbol.for('ICmsPageService'),
   INotificationService: Symbol.for('INotificationService'),
+  ICatalogService: Symbol.for('ICatalogService'),
 };

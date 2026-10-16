@@ -29,6 +29,7 @@ import contactMessageRouter from "./contactMessageRoutes";
 import subscriberRouter from "./subscriberRoutes";
 import cmsPageRouter from "./cmsPageRoutes";
 import notificationRouter from "./notificationRoutes";
+import catalogRouter from "./catalogRoutes";
 
 const routes = express.Router();
 
@@ -62,5 +63,6 @@ routes.use("/contact-messages", contactMessageRouter);
 routes.use("/subscribers", subscriberRouter);
 routes.use("/cms-pages", cmsPageRouter);
 routes.use("/notifications", notificationRouter);
+routes.use("/catalog", catalogRouter);
 
 export default routes;

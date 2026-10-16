@@ -160,19 +160,32 @@ export default function NotificationList() {
             {notifications.map((notification) => {
               const Icon = notificationIcon(notification.type);
               return (
-                <li key={notification.id} className={cn('group relative', !notification.isRead && 'bg-primary/[0.04]')}>
+                <li
+                  key={notification.id}
+                  className={cn('group relative border-l-2', notification.isRead ? 'border-l-transparent' : 'border-l-primary bg-primary/[0.05]')}
+                >
                   <button
                     type="button"
                     onClick={() => openNotification(notification)}
-                    className="flex w-full gap-4 p-4 pr-12 text-left transition-colors hover:bg-muted/50 sm:pr-14"
+                    className={cn(
+                      'flex w-full gap-4 p-4 pr-12 text-left transition-all hover:bg-muted/50 sm:pr-14',
+                      notification.isRead && 'opacity-55 hover:opacity-100'
+                    )}
                   >
-                    <span className={cn('mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full', notificationTone(notification.type))}>
+                    <span
+                      className={cn(
+                        'mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                        notification.isRead ? 'bg-muted text-muted-foreground' : notificationTone(notification.type)
+                      )}
+                    >
                       <Icon className="h-5 w-5" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         {!notification.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />}
-                        <span className="min-w-0 flex-1 text-sm font-semibold leading-snug">{notification.title}</span>
+                        <span className={cn('min-w-0 flex-1 text-sm leading-snug', notification.isRead ? 'font-medium text-muted-foreground' : 'font-semibold')}>
+                          {notification.title}
+                        </span>
                       </span>
                       <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{notification.message}</span>
                       <span className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground/70">

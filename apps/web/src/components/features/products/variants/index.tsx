@@ -31,7 +31,7 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
   const [pageSize, setPageSize] = useState<number>(config.recordPerPage);
 
   // Add/edit live on the store-wide variant screens; the product is carried in the query.
-  const openAdd = () => router.push(`/admin/product-variants/add?productId=${productId}`);
+  const openAdd = () => router.push(`/admin/products/variants/add?productId=${productId}`);
   const columns = useProductVariantColumns((variant) => router.push(`/admin/products/variants/${variant.id}?edit=1`));
 
   const { data: productResponse } = useGetProductById(productId);
@@ -96,7 +96,7 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
             </Button>
           )}
           <Button asChild variant="outline" className="h-9 gap-1.5">
-            <Link href={`/admin/product-variants/price-histories?productId=${productId}`}>
+            <Link href={`/admin/price-histories?productId=${productId}`}>
               <History className="h-4 w-4" />
               Price history
             </Link>

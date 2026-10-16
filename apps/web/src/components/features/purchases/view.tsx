@@ -8,7 +8,8 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useGetPurchaseById } from '@/hooks/service-hooks/usePurchaseService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ArrowLeft, BadgeAlert, ExternalLink, Package, Truck } from 'lucide-react';
+import { ArrowLeft, BadgeAlert, ExternalLink, Package, TriangleAlert, Truck } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatPurchaseAmount, purchaseStatusVariant } from './format';
 
@@ -78,18 +79,27 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
-      <PageHeader title="Purchase History" description="View past stock additions and invoices" variant="back" />
+      <PageHeader
+        title="Purchase details"
+        description={purchase.invoiceNumber ? `Invoice ${purchase.invoiceNumber}` : `Purchase #${purchase.id}`}
+        variant="back"
+      />
 
       <Card className="">
         {/* Document masthead */}
         <div className="flex flex-col gap-4 border-b bg-muted/20 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Purchase Invoice</p>
-            <p className="font-mono text-2xl font-bold tracking-tight text-foreground">{purchase.invoiceNumber || `Purchase #${purchase.id}`}</p>
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Truck className="h-5 w-5" />
+            </span>
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Purchase Invoice</p>
+              <p className="font-mono text-2xl font-bold tracking-tight text-foreground">{purchase.invoiceNumber || `Purchase #${purchase.id}`}</p>
+            </div>
           </div>
           <div className="space-y-1.5 sm:text-right">
             <div className="flex items-center gap-2 sm:justify-end">
-              <span className="font-mono text-sm font-semibold text-primary">#{purchase.id}</span>
+              {purchase.invoiceNumber && <span className="font-mono text-sm font-semibold text-primary">#{purchase.id}</span>}
               <Badge variant={purchaseStatusVariant(purchase.status)}>{purchase.status || '—'}</Badge>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -119,18 +129,20 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
           <Field label="Store">
             <code className="font-mono text-xs font-medium uppercase">{purchase.storeCode}</code>
           </Field>
-          <Field label="Created At">{formatDate(purchase.createdAt)}</Field>
-          <Field label="Updated At">{formatDate(purchase.updatedAt)}</Field>
+          <Field label="Recorded">{formatDate(purchase.createdAt)}</Field>
+          {purchase.updatedAt && formatDate(purchase.updatedAt) !== formatDate(purchase.createdAt) && (
+            <Field label="Last updated">{formatDate(purchase.updatedAt)}</Field>
+          )}
           <Field label="Invoice File">
             {purchase.invoiceUrl ? (
               <a
                 href={purchase.invoiceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-primary underline underline-offset-2"
+                className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                View
+                View invoice
               </a>
             ) : (
               '—'
@@ -143,8 +155,8 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/10 hover:bg-muted/10">
-                <TableHead className="px-6 py-3 text-xs font-semibold uppercase tracking-wider">Product</TableHead>
-                <TableHead className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Slug</TableHead>
+                <TableHead className="w-10 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
+                <TableHead className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Product</TableHead>
                 <TableHead className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">Qty</TableHead>
                 <TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider">Cost Price</TableHead>
                 <TableHead className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider">Total</TableHead>
@@ -153,7 +165,7 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center font-medium text-muted-foreground">
+                  <TableCell colSpan={5} className="py-12 text-center font-medium text-muted-foreground" >
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <Package className="h-8 w-8 text-muted-foreground/40" />
                       <span>No items recorded for this purchase.</span>
@@ -161,15 +173,28 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
                   </TableCell>
                 </TableRow>
               ) : (
-                items.map((item) => (
+                items.map((item, index) => (
                   <TableRow key={item.id} className="transition-colors hover:bg-muted/5">
-                    <TableCell className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.product?.name || `Product #${item.productId}`}</span>
-                        {/* <span className="text-xs text-muted-foreground">ID: {item.productId}</span> */}
+                    <TableCell className="px-4 py-4 font-mono text-xs text-muted-foreground">{index + 1}</TableCell>
+                    <TableCell className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
+                          {item.product?.images?.[0] ? (
+                            // Product images come from arbitrary CDNs; next/image would need each host allow-listed.
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.product.images[0]} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <Package className="h-4 w-4 text-muted-foreground/50" />
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <Link href={`/admin/products/${item.productId}`} className="font-medium hover:text-primary hover:underline">
+                            {item.product?.name || `Product #${item.productId}`}
+                          </Link>
+                          {item.product?.slug && <p className="truncate font-mono text-xs text-muted-foreground">/{item.product.slug}</p>}
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-4 py-4 text-sm text-muted-foreground">{item.product?.slug || '—'}</TableCell>
                     <TableCell className="px-4 py-4 text-center">
                       <span className="inline-flex min-w-8 items-center justify-center rounded-md bg-muted/60 px-2.5 py-1 text-xs font-semibold">
                         {item.quantity}
@@ -195,7 +220,10 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
               <span className="font-mono text-2xl font-bold tracking-tight text-primary">{formatPurchaseAmount(purchase.totalAmount)}</span>
             </div>
             {itemsTotal !== purchase.totalAmount && (
-              <p className="text-right text-[10px] text-muted-foreground">Recorded total differs from the sum of items</p>
+              <p className="flex items-center justify-end gap-1 text-right text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                <TriangleAlert className="h-3 w-3" />
+                Recorded total differs from the sum of items ({formatPurchaseAmount(itemsTotal)})
+              </p>
             )}
           </div>
         </div>
@@ -208,16 +236,6 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
           </div>
         )}
 
-        {/* Document actions */}
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t px-6 py-4">
-          {purchase.invoiceUrl && (
-            <Button variant="outline" size="sm" className="h-9 border-primary/20 font-medium text-primary shadow-sm hover:bg-primary/5" asChild>
-              <a href={purchase.invoiceUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="mr-2 h-4 w-4" /> View Invoice
-              </a>
-            </Button>
-          )}
-        </div>
       </Card>
     </div>
   );

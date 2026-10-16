@@ -1,7 +1,7 @@
 import { Prisma, Status } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum } from '@pms/types';
 import { toVariantResponse, VariantRatingDto } from '../dtos/product-variant.dto';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
@@ -14,6 +14,25 @@ import { IProductVariantService } from './interfaces/Iproduct-variant.service';
 export class ProductVariantService implements IProductVariantService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
 
+  private async deriveVariantName(
+    transactionClient: Prisma.TransactionClient,
+    storeCode: string,
+    productId: number,
+    attributes: ProductVariantModel["attributes"]
+  ): Promise<string> {
+    const product = await transactionClient.product.findFirst({ where: { id: productId, storeCode }, select: { name: true } });
+    const base = product?.name ?? `Product ${productId}`;
+
+    const valueIds = (attributes ?? []).map((row) => Number(row?.attributeValueId)).filter((value) => Number.isInteger(value) && value > 0);
+    if (valueIds.length === 0) return base;
+
+    const entries = await transactionClient.masterEntry.findMany({ where: { id: { in: valueIds }, storeCode }, select: { id: true, value: true } });
+    const valueById = new Map(entries.map((entry) => [entry.id, entry.value]));
+    const picked = valueIds.map((value) => valueById.get(value)).filter((value): value is string => !!value);
+
+    return picked.length ? `${base} - ${picked.join(" / ")}` : base;
+  }
+
   async create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
 
@@ -24,7 +43,13 @@ export class ProductVariantService implements IProductVariantService {
         attributes: data.attributes,
       });
 
-      const slug = await resolveVariantSlug(transactionClient, { storeCode, name: data.name, slug: data.slug });
+      // The admin picks options and a price; the name and description follow from the product
+      // plus those picks ("Classic Tee - RED / M"), matching how a variant created alongside
+      // its product is named.
+      const name = data.name?.trim() || (await this.deriveVariantName(transactionClient, storeCode, data.productId, data.attributes));
+      const description = data.description?.trim() || name;
+
+      const slug = await resolveVariantSlug(transactionClient, { storeCode, name, slug: data.slug });
 
       const variant = await transactionClient.productVariant.create({
         data: {
@@ -33,17 +58,17 @@ export class ProductVariantService implements IProductVariantService {
           createdById: userId,
           sku,
           slug,
-          name: data.name,
-          description: data.description,
+          name,
+          description,
           attributes: (data.attributes ?? []) as any,
           images: data.images ?? [],
           isActive: data.isActive ?? true,
-          status: data.status as Status,
+          status: (data.status || StatusEnum.Published) as Status,
           metadata: { ...data } as any,
           ...(data.seoTitle !== undefined && { seoTitle: data.seoTitle }),
           ...(data.seoDescription !== undefined && { seoDescription: data.seoDescription }),
           ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
-          ...(data.barcode !== undefined && { barcode: data.barcode }),
+          barcode: data.barcode?.trim() || null,
           ...(data.lowStockThreshold != null && { lowStockThreshold: data.lowStockThreshold }),
           ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
         },
@@ -124,7 +149,7 @@ export class ProductVariantService implements IProductVariantService {
         data: {
           ...(data.name !== undefined && { name: data.name }),
           ...(data.sku !== undefined && { sku: data.sku }),
-          ...(data.barcode !== undefined && { barcode: data.barcode }),
+          ...(data.barcode !== undefined && { barcode: data.barcode?.trim() || null }),
           ...(data.attributes !== undefined && { attributes: data.attributes as any }),
           ...(data.images !== undefined && { images: data.images }),
           ...(data.description !== undefined && { description: data.description }),

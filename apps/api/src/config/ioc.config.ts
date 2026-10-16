@@ -156,6 +156,11 @@ import { INotificationService } from '../services/interfaces/Inotification.servi
 import { NotificationService } from '../services/notification.service';
 import { INotificationRepository } from '../repository/interfaces/inotification.repository';
 import { NotificationRepository } from '../repository/notification.repository';
+import { CatalogController } from '../controllers/catalog.controller';
+import { ICatalogService } from '../services/interfaces/Icatalog.service';
+import { CatalogService } from '../services/catalog.service';
+import { ICatalogRepository } from '../repository/interfaces/icatalog.repository';
+import { CatalogRepository } from '../repository/catalog.repository';
 import { PriceHistoryController } from '../controllers/price-history.controller';
 import { IPriceHistoryService } from '../services/interfaces/Iprice-history.service';
 import { PriceHistoryService } from '../services/price-history.service';
@@ -194,6 +199,7 @@ container.bind<ContactMessageController>(TYPES.ContactMessageController).to(Cont
 container.bind<SubscriberController>(TYPES.SubscriberController).to(SubscriberController);
 container.bind<CmsPageController>(TYPES.CmsPageController).to(CmsPageController);
 container.bind<NotificationController>(TYPES.NotificationController).to(NotificationController);
+container.bind<CatalogController>(TYPES.CatalogController).to(CatalogController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -225,6 +231,7 @@ container.bind<IContactMessageService>(TYPES.IContactMessageService).to(ContactM
 container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
 container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
+container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -255,6 +262,7 @@ container.bind<IContactMessageRepository>(TYPES.IContactMessageRepository).to(Co
 container.bind<ISubscriberRepository>(TYPES.ISubscriberRepository).to(SubscriberRepository);
 container.bind<ICmsPageRepository>(TYPES.ICmsPageRepository).to(CmsPageRepository);
 container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepository);
+container.bind<ICatalogRepository>(TYPES.ICatalogRepository).to(CatalogRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

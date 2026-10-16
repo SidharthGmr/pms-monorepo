@@ -275,6 +275,44 @@ productRouter.get('/:id', authenticateToken, asyncHandler(productController.getB
  *                 nullable: true
  *                 example: 1
  *                 description: Sorting order (optional)
+ *               variants:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required: [sellingPrice]
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     attributes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         required: [attributeid, attributeValueId]
+ *                         properties:
+ *                           attributeid:
+ *                             type: integer
+ *                           attributeValueId:
+ *                             type: integer
+ *                     sellingPrice:
+ *                       type: number
+ *                     offerPrice:
+ *                       type: number
+ *                     costPrice:
+ *                       type: number
+ *                     compareAtPrice:
+ *                       type: number
+ *                     stockQuantity:
+ *                       type: integer
+ *                     isActive:
+ *                       type: boolean
+ *                     isOffer:
+ *                       type: boolean
+ *                     effectiveFrom:
+ *                       type: string
+ *                       format: date-time
+ *                     effectiveTo:
+ *                       type: string
+ *                       format: date-time
  *             example:
  *               name: "iPhone 15 Pro"
  *               slug: "iphone-15-pro"
