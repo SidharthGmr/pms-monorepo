@@ -43,3 +43,6 @@ next-env.d.ts
 # Security review reports stay local until their findings are fixed - the repo is public
 # and a committed report would document unpatched holes in the live API.
 REVIEW-REPORT-*
+
+.vercel
+.env*

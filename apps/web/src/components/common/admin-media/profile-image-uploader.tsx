@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, DragEvent } from "react";
 import { Camera, Loader2, Trash2, Link as LinkIcon, User } from "lucide-react";
+import { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from "@/components/common/admin-media/camera-capture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -22,6 +23,8 @@ interface ProfileImageUploaderProps {
 export function ProfileImageUploader({ value, onChange, className, showUrlInput = true, folder }: ProfileImageUploaderProps) {
   const { uploadUrl, isUploading } = useImageUpload(folder ? { folder } : undefined);
   const [isDragging, setIsDragging] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const cameraMode = useCameraAvailability();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (file: File) => {
@@ -30,6 +33,16 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
       onChange(url);
       toast.success("Profile image uploaded successfully");
     }
+    return !!url;
+  };
+
+  const takePhoto = async () => {
+    if (cameraMode === "native") {
+      const file = await openNativeCamera("user");
+      if (file) await handleUpload(file);
+      return;
+    }
+    setCameraOpen(true);
   };
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -95,6 +108,22 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
           )}
         </div>
 
+        {cameraMode && cameraMode !== "none" && !isUploading && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              void takePhoto();
+            }}
+            className="absolute -bottom-1 -left-1 h-8 w-8 rounded-full shadow-md scale-90 hover:scale-100 transition-transform"
+            title="Take Photo"
+          >
+            <Camera className="h-4 w-4" />
+          </Button>
+        )}
+
         {value && !isUploading && (
           <Button
             type="button"
@@ -111,6 +140,21 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
           </Button>
         )}
       </div>
+
+      {cameraOpen && (
+        <CameraCaptureDialog
+          isOpen={cameraOpen}
+          onClose={() => setCameraOpen(false)}
+          label="profile photo"
+          facingMode="user"
+          busy={isUploading}
+          onCapture={async (file) => {
+            const uploaded = await handleUpload(file);
+            if (uploaded) setCameraOpen(false);
+            return uploaded;
+          }}
+        />
+      )}
 
       {/* Manual URL Input Option */}
       {showUrlInput && (

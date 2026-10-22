@@ -20,7 +20,7 @@ import { CartIndicator } from '../cart-indicator';
 import { GlobalSearch } from '../global-search';
 import { NotificationBell } from '../notification-bell';
 import { QuickCreate } from '../quick-create';
-import { SettingsDrawer } from '../settings-drawer';
+import { SettingsMenu } from '../settings-menu';
 
 const ICON = '/logo.png';
 const ICON_LIGHT = '/logo-light.png';
@@ -66,7 +66,7 @@ export default function HeaderDashboard() {
         <Separator orientation="vertical" className="hidden h-5 sm:block" />
         <CartIndicator />
         <NotificationBell />
-        <SettingsDrawer />
+        <SettingsMenu />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-9 gap-2 rounded-full bg-muted/70 px-1 pr-1 hover:bg-muted md:pr-3" aria-label="Account menu">

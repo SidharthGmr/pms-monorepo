@@ -1,11 +1,12 @@
 'use client';
+import CameraCaptureButton, { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from '@/components/common/admin-media/camera-capture';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetAllMedia, useImageUpload } from '@/hooks/service-hooks/useMediaService';
 import { cn } from '@/lib/utils';
-import { Check, FolderOpen, ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
+import { Camera, Check, FolderOpen, ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 interface ImagePickerProps {
@@ -19,20 +20,37 @@ interface ImagePickerProps {
 }
 
 /**
- * Single-image form field: preview, replace and remove, with two sources - a direct upload
- * (useImageUpload, Cloudinary via /api/admin-media) and "Choose from gallery", a dialog over
- * the same media library the Media page manages (useGetAllMedia).
+ * Single-image form field: preview, replace and remove, with three sources - a direct upload
+ * (useImageUpload, Cloudinary via /api/admin-media), "Take photo" on any device with a camera
+ * (CameraCaptureButton, same upload path), and "Choose from gallery", a dialog over the same
+ * media library the Media page manages (useGetAllMedia).
  */
 export default function ImagePicker({ value, onChange, label = 'image', maxSizeMb = 5, disabled, className }: ImagePickerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const cameraMode = useCameraAvailability();
   const { uploadUrl, isUploading } = useImageUpload({ maxSizeMb });
+
+  const uploadAndSet = async (file: File) => {
+    const url = await uploadUrl(file);
+    if (url) onChange(url);
+    return !!url;
+  };
+
+  const retakePhoto = async () => {
+    if (cameraMode === 'native') {
+      const file = await openNativeCamera();
+      if (file) await uploadAndSet(file);
+      return;
+    }
+    setCameraOpen(true);
+  };
 
   const pickFile = async (files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
-    const url = await uploadUrl(file);
-    if (url) onChange(url);
+    await uploadAndSet(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -47,6 +65,12 @@ export default function ImagePicker({ value, onChange, label = 'image', maxSizeM
               <Upload className="h-3.5 w-3.5" />
               Replace
             </Button>
+            {cameraMode && cameraMode !== 'none' && (
+              <Button type="button" size="sm" variant="secondary" className="h-8 gap-1" disabled={disabled} onClick={() => void retakePhoto()}>
+                <Camera className="h-3.5 w-3.5" />
+                Retake
+              </Button>
+            )}
             <Button type="button" size="icon" variant="destructive" className="h-8 w-8" disabled={disabled} onClick={() => onChange(null)} title={`Remove ${label}`}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
@@ -64,6 +88,7 @@ export default function ImagePicker({ value, onChange, label = 'image', maxSizeM
           {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
           {isUploading ? 'Uploading…' : 'Upload image'}
         </Button>
+        <CameraCaptureButton onCapture={uploadAndSet} label={label} busy={isUploading} disabled={disabled || isUploading} />
         <Button type="button" size="sm" variant="outline" className="h-8 gap-1.5" disabled={disabled} onClick={() => setGalleryOpen(true)}>
           <FolderOpen className="h-3.5 w-3.5" />
           Choose from gallery
@@ -71,6 +96,20 @@ export default function ImagePicker({ value, onChange, label = 'image', maxSizeM
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => void pickFile(e.target.files)} />
+
+      {cameraOpen && (
+        <CameraCaptureDialog
+          isOpen={cameraOpen}
+          onClose={() => setCameraOpen(false)}
+          label={label}
+          busy={isUploading}
+          onCapture={async (file) => {
+            const uploaded = await uploadAndSet(file);
+            if (uploaded) setCameraOpen(false);
+            return uploaded;
+          }}
+        />
+      )}
 
       {galleryOpen && (
         <GalleryDialog
@@ -140,7 +179,12 @@ function GalleryDialog({ isOpen, selected, onClose, onSelect }: GalleryDialogPro
                   title={item.public_id}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.secure_url} alt="" loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                  <img
+                    src={item.secure_url}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                  />
                   {isSelected && (
                     <span className="absolute right-1 top-1 rounded-full bg-primary p-0.5 text-primary-foreground">
                       <Check className="h-3 w-3" />

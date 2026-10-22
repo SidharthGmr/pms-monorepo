@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useRef, useState, DragEvent } from 'react';
-import { ImagePlus, Loader2, Star, UploadCloud, X } from 'lucide-react';
+import { Camera, ImagePlus, Loader2, Star, UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from '@/components/common/admin-media/camera-capture';
+import { Button } from '@/components/ui/button';
 import { useImageUpload } from '@/hooks/service-hooks/useMediaService';
 import { cn } from '@/lib/utils';
 
@@ -23,22 +25,39 @@ const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/g
 export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5, folder }: ProductImageUploaderProps) {
   const { uploadUrls, isUploading } = useImageUpload({ maxSizeMb, ...(folder ? { folder } : {}) });
   const [isDragging, setIsDragging] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const cameraMode = useCameraAvailability();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleFiles = async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return false;
 
     try {
       const uploaded = await uploadUrls(files);
       if (uploaded.length) {
         onChange([...value, ...uploaded]);
         toast.success(`${uploaded.length} image${uploaded.length === 1 ? '' : 's'} uploaded`);
+        return true;
       }
+      return false;
     } finally {
       // Reset so selecting the SAME file again still fires onChange.
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  // A shot keeps its place in the list like any other upload: appended, and primary only if it
+  // happens to be the first image.
+  const takePhoto = async () => {
+    if (cameraMode === 'native') {
+      const file = await openNativeCamera();
+      if (file) await handleFiles([file]);
+      return;
+    }
+    setCameraOpen(true);
+  };
+
+  const hasCamera = cameraMode !== null && cameraMode !== 'none';
 
   const removeImage = (index: number) => {
     const updated = [...value];
@@ -102,6 +121,13 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5, fold
       </div>
       )}
 
+      {value.length === 0 && hasCamera && (
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" disabled={isUploading} onClick={() => void takePhoto()}>
+          <Camera className="h-3.5 w-3.5" />
+          Take photo
+        </Button>
+      )}
+
       {/* Previews */}
       {value.length > 0 && (
         <div
@@ -160,7 +186,32 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5, fold
             {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
             <span className="text-[10px] font-medium">{isUploading ? 'Uploading…' : 'Add more'}</span>
           </button>
+
+          {hasCamera && (
+            <button
+              type="button"
+              onClick={() => !isUploading && void takePhoto()}
+              className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-muted/30 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+            >
+              <Camera className="h-5 w-5" />
+              <span className="text-[10px] font-medium">Take photo</span>
+            </button>
+          )}
         </div>
+      )}
+
+      {cameraOpen && (
+        <CameraCaptureDialog
+          isOpen={cameraOpen}
+          onClose={() => setCameraOpen(false)}
+          label="product photo"
+          busy={isUploading}
+          onCapture={async (file) => {
+            const uploaded = await handleFiles([file]);
+            if (uploaded) setCameraOpen(false);
+            return uploaded;
+          }}
+        />
       )}
     </div>
   );

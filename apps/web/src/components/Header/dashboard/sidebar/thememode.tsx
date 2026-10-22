@@ -6,13 +6,28 @@ import { useTheme } from '@/context/theme-provider';
 import { BsFillMoonStarsFill } from 'react-icons/bs';
 import { IoMdSunny } from 'react-icons/io';
 
-/** Shared with the account menu, which carries the same choices on phones. */
-export const THEMES = [
+/** Light/dark/system on their own: picking one of these steps off any color palette. */
+export const THEME_MODES = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
-  { value: 'red', label: 'Red' },
-  { value: 'green', label: 'Green' },
   { value: 'system', label: 'System' },
+] as const;
+
+/** Light palettes with their swatches: one swatch recolors --primary alone, two set the
+ *  --primary/--secondary pair. 'light' doubles as the stock palette. */
+export const THEME_COLORS = [
+  { value: 'light', label: 'Default', swatches: ['hsl(214 85% 19%)', 'hsl(170 91% 36%)'] },
+  { value: 'red', label: 'Red', swatches: ['hsl(0 72% 51%)'] },
+  { value: 'green', label: 'Green', swatches: ['hsl(142 71% 45%)'] },
+  { value: 'sunset', label: 'Sunset', swatches: ['hsl(25 95% 53%)', 'hsl(347 77% 50%)'] },
+  { value: 'royal', label: 'Royal', swatches: ['hsl(262 83% 58%)', 'hsl(38 92% 50%)'] },
+] as const;
+
+/** Flat list for menus that offer every value in one run, e.g. the account menu on phones. */
+export const THEMES = [
+  ...THEME_MODES.slice(0, 2),
+  ...THEME_COLORS.slice(1).map(({ value, label }) => ({ value, label })),
+  THEME_MODES[2],
 ] as const;
 
 export function ModeToggle() {

@@ -1,4 +1,5 @@
 'use client';
+import ImageWithFallback from '@/components/common/image-with-fallback';
 import { PageHeader } from '@/components/common/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -179,13 +180,11 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
                     <TableCell className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
-                          {item.product?.images?.[0] ? (
-                            // Product images come from arbitrary CDNs; next/image would need each host allow-listed.
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.product.images[0]} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <Package className="h-4 w-4 text-muted-foreground/50" />
-                          )}
+                          <ImageWithFallback
+                            src={item.product?.images?.[0]}
+                            className="h-full w-full object-cover"
+                            fallback={<Package className="h-4 w-4 text-muted-foreground/50" />}
+                          />
                         </span>
                         <div className="min-w-0">
                           <Link href={`/admin/products/${item.productId}`} className="font-medium hover:text-primary hover:underline">

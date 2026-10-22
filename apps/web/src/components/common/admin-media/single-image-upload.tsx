@@ -1,5 +1,6 @@
 'use client';
 
+import CameraCaptureButton from '@/components/common/admin-media/camera-capture';
 import { Button } from '@/components/ui/button';
 import { useImageUpload } from '@/hooks/service-hooks/useMediaService';
 import { cn } from '@/lib/utils';
@@ -46,13 +47,15 @@ export function SingleImageUpload({ value, onChange, folder, maxSizeMb = 5, hint
   };
 
   const handleFile = async (file: File | undefined) => {
-    if (!file || locked) return;
+    if (!file || locked) return false;
     try {
       const uploaded = await upload(file);
       if (uploaded?.secure_url) {
         onChange(uploaded.secure_url);
         toast.success('Image uploaded');
+        return true;
       }
+      return false;
     } finally {
       // Reset so picking the SAME file again still fires onChange.
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -95,6 +98,7 @@ export function SingleImageUpload({ value, onChange, folder, maxSizeMb = 5, hint
                 <RefreshCw className="h-3.5 w-3.5" />
                 Replace
               </Button>
+              <CameraCaptureButton onCapture={handleFile} label="photo" busy={isUploading} disabled={locked} text="Retake" />
               <Button type="button" variant="ghost" size="sm" onClick={() => onChange('')} disabled={locked} className="h-8 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive">
                 <Trash2 className="h-3.5 w-3.5" />
                 Remove
@@ -129,6 +133,8 @@ export function SingleImageUpload({ value, onChange, folder, maxSizeMb = 5, hint
           </div>
         </div>
       )}
+
+      {!value && <CameraCaptureButton onCapture={handleFile} label="photo" busy={isUploading} disabled={locked} />}
     </div>
   );
 }

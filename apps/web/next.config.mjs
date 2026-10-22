@@ -23,12 +23,14 @@ const remotePatterns = [
 
 // Sent on every response. HSTS is only meaningful over TLS, which every
 // production host provides; sending it in development would pin localhost.
+// camera=(self) is what lets the in-app capture dialog open a live stream; every other
+// powerful feature stays off.
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(self)' },
+  { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=(), payment=(self)' },
   ...(isProduction ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }] : []),
 ];
 

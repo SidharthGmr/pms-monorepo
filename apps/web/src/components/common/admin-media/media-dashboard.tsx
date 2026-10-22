@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Upload, File, Video, Copy, Check, Trash2, ExternalLink, RefreshCw, FolderOpen, User, Search } from 'lucide-react';
+import CameraCaptureButton from '@/components/common/admin-media/camera-capture';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -393,9 +394,20 @@ export default function AdminMediaDashboard() {
               <p className="text-sm text-muted-foreground max-w-sm mb-4">
                 Support images, videos, and raw documents. Folder creation is automated for your admin profile.
               </p>
-              <Button variant="secondary" size="sm" type="button">
-                Browse Files
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button variant="secondary" size="sm" type="button" onClick={() => fileInputRef.current?.click()}>
+                  Browse Files
+                </Button>
+                <CameraCaptureButton
+                  label="photo"
+                  text="Take photo"
+                  className="h-9"
+                  busy={uploadingFiles.length > 0}
+                  onCapture={async (file) => {
+                    await uploadMultipleFiles([file]);
+                  }}
+                />
+              </div>
 
               {/* Upload Progress List */}
               {uploadingFiles.length > 0 && (

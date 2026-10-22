@@ -1,4 +1,5 @@
 'use client';
+import ImageWithFallback from '@/components/common/image-with-fallback';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -498,12 +499,11 @@ function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boo
             <li key={product.id}>
               <Link href={`/admin/products?search=${encodeURIComponent(product.name)}`} className="group flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-                  {product.images?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.images[0]} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <Boxes className="h-4 w-4 text-muted-foreground/50" />
-                  )}
+                  <ImageWithFallback
+                    src={product.images?.[0]}
+                    className="h-full w-full object-cover"
+                    fallback={<Boxes className="h-4 w-4 text-muted-foreground/50" />}
+                  />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2 text-xs">
