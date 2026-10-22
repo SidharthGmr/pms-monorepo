@@ -39,3 +39,7 @@ next-env.d.ts
 # npm auth tokens must never be committed
 .npmrc
 .env*
+
+# Security review reports stay local until their findings are fixed - the repo is public
+# and a committed report would document unpatched holes in the live API.
+REVIEW-REPORT-*.md
