@@ -50,6 +50,11 @@ export class SupplierController {
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<SupplierDto>>> => {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+    const storeCode = req.user?.storeCode;
+    const existing = await this.unitOfService.Supplier.getById(id);
+    if (storeCode && existing && existing.storeCode !== storeCode) {
+      return res.status(403).json({ success: false, message: 'This supplier belongs to another store' });
+    }
     const body = req.body as CreateSupplierDto;
     const data = await this.unitOfService.Supplier.update(id, body);
     return res.status(200).json({ success: true, message: 'Supplier updated successfully', data });
@@ -58,7 +63,12 @@ export class SupplierController {
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<SupplierDto>>> => {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+    const storeCode = req.user?.storeCode;
+    const existing = await this.unitOfService.Supplier.getById(id);
+    if (storeCode && existing && existing.storeCode !== storeCode) {
+      return res.status(403).json({ success: false, message: 'This supplier belongs to another store' });
+    }
     const data = await this.unitOfService.Supplier.delete(id);
-    return res.status(204).json({ success: true, message: 'Supplier deleted successfully', data });
+    return res.status(200).json({ success: true, message: 'Supplier deleted successfully', data });
   };
 }

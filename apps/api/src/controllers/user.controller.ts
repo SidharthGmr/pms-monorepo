@@ -12,6 +12,26 @@ export class UserController {
   }
 
 
+
+  /**
+   * Admin boundary for user-management endpoints: a SUPER_ADMIN may act on anyone;
+   * an ADMIN only on non-super-admin accounts inside their own store.
+   */
+  private async assertCanManage(req: Request, targetUserId: string): Promise<UserDto> {
+    const target = await this.unitOfService.User.getUserById(targetUserId);
+    if (!target) {
+      throw new CustomError('User not found', 404);
+    }
+    if (req.user?.role === Role.SUPER_ADMIN) return target;
+    if (target.role === Role.SUPER_ADMIN) {
+      throw new CustomError('Only a super admin can manage a super admin account', 403);
+    }
+    if (!req.user?.storeCode || target.storeCode !== req.user.storeCode) {
+      throw new CustomError('This user belongs to another store', 403);
+    }
+    return target;
+  }
+
   getAllUsers = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<UserDto>>>> => {
     const filters: UserFilterParams = Object.fromEntries(
       Object.entries({
@@ -75,6 +95,10 @@ export class UserController {
     // rather than on the route - every caller reads its own profile through this same handler.
     const isSelf = userId === req.user?.userId;
     const isAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === Role.ADMIN;
+    if (!isSelf && isAdmin) {
+      // Throws 403/404 when the target is outside the admin's reach.
+      await this.assertCanManage(req, userId);
+    }
     if (!isSelf && !isAdmin) {
       return res.status(403).json({
         success: false,
@@ -140,6 +164,8 @@ export class UserController {
       };
       return res.status(400).json(response);
     }
+    await this.assertCanManage(req, userId);
+
     const updatedData = req.body as UpdateUserDto;
     const user = await this.unitOfService.User.update(userId, updatedData);
 
@@ -165,6 +191,8 @@ export class UserController {
       };
       return res.status(400).json(response);
     }
+    await this.assertCanManage(req, userId);
+
     const updatedData = req.body as UpdateUserDto;
     const user = await this.unitOfService.User.updateStatus(userId, updatedData);
 
@@ -232,6 +260,11 @@ export class UserController {
       };
       return res.status(400).json(response);
     }
+    if (req.user?.userId === userId) {
+      throw new CustomError('You cannot delete your own account', 403);
+    }
+    await this.assertCanManage(req, userId);
+
     const user = await this.unitOfService.User.delete(userId);
     if (!user) {
       throw new CustomError('User not found', 404);
@@ -271,40 +304,6 @@ export class UserController {
     return res.status(200).json(response);
   };
 
-  assignStore = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
-    const userId = req.user?.userId;
-    const storeId = Number(req.body.storeId);
-
-    if (!userId) {
-      throw new CustomError('userId is required', 400);
-    }
-
-    if (storeId === undefined || storeId === null) {
-      throw new CustomError('storeId is required', 400);
-    }
-
-
-    // Verify store exists
-    const store = await this.unitOfService.Store.getById(storeId);
-    if (!store) {
-      throw new CustomError('Store not found', 404);
-    }
-
-    // Update user with storeId
-    const user = await this.unitOfService.User.update(userId, { storeId });
-
-    if (!user) {
-      throw new CustomError('Failed to assign store', 500);
-    }
-
-    const response: CustomResponse<UserDto> = {
-      success: true,
-      message: 'Store assigned successfully',
-      data: user,
-    };
-
-    return res.status(200).json(response);
-  };
 
   updateRole = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto>>> => {
     const paramUserId = req.params.userId;
@@ -318,6 +317,14 @@ export class UserController {
       };
       return res.status(400).json(response);
     }
+
+    if (req.user?.userId === userId) {
+      throw new CustomError('You cannot change your own role', 403);
+    }
+    if (role === Role.SUPER_ADMIN && req.user?.role !== Role.SUPER_ADMIN) {
+      throw new CustomError('Only a super admin can grant the super admin role', 403);
+    }
+    await this.assertCanManage(req, userId);
 
     const user = await this.unitOfService.User.updateRole(userId, role);
     if (!user) {

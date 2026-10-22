@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const PaymentMethodEnum = z.enum(["CASH", "CARD", "UPI", "BANK_TRANSFER", "ONLINE"]);
+const PaymentMethodEnum = z.enum(["CASH", "CARD", "UPI", "BANK_TRANSFER", "ONLINE", "PAY_LATER"]);
 const PaymentStatusEnum = z.enum(["PENDING", "PARTIAL", "PAID", "OVERDUE", "CANCELLED"]);
 
 export const createPaymentSchema = z.object({
@@ -10,7 +10,7 @@ export const createPaymentSchema = z.object({
     method: PaymentMethodEnum,
     status: PaymentStatusEnum.optional(),
     transactionId: z.string().optional(),
-    paymentDate: z.string().optional(),
+    paymentDate: z.coerce.date().optional(),
     remarks: z.string().optional(),
   }),
 });

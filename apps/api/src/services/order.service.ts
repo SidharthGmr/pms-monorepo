@@ -15,7 +15,7 @@ import { generateOrderNumber } from "../utils/authHelpers.service";
 import { payablePrice } from "../utils/variant-pricing";
 import { INotificationService } from "./interfaces/Inotification.service";
 import { IOrderService } from "./interfaces/Iorder.service";
-import { OrderStatus, Role } from "@prisma/client";
+import { OrderStatus, Prisma, Role } from "@prisma/client";
 
 @injectable()
 export class OrderService implements IOrderService {
@@ -41,8 +41,10 @@ export class OrderService implements IOrderService {
   // Every read and write here is batched so the transaction runs a fixed handful of queries
   // however many lines the order has. The database is remote, and the earlier one-query-per-line
   // version timed out on carts of only a few items.
-  async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string): Promise<OrderDto> {
-    const order = await this.unitOfWork.transaction(async (transactionClient) => {
+  async create(data: CreateOrderModel, storeCode: string, createdById: string, createdByName: string, tx?: Prisma.TransactionClient): Promise<OrderDto> {
+    // Checkout joins its own transaction (order + payment + cart-clear commit together);
+    // a direct POST /orders still opens one of its own.
+    const run = async (transactionClient: Prisma.TransactionClient) => {
       const orderDate = data.orderDate ? new Date(data.orderDate) : new Date();
       const items = data.items ?? [];
       const variantIds = [...new Set(items.map((item) => item.variantId))];
@@ -51,6 +53,10 @@ export class OrderService implements IOrderService {
       let calculatedTotalAmount = 0;
 
       if (items.length > 0) {
+        // Serialise competing sales of the same variants: without this row lock two
+        // transactions both read the same stock sum and both pass the check below.
+        await transactionClient.$queryRaw`SELECT id FROM "ProductVariant" WHERE id IN (${Prisma.join(variantIds)}) FOR UPDATE`;
+
         const [variants, stockRows, prices] = await Promise.all([
           transactionClient.productVariant.findMany({
             where: { id: { in: variantIds } },
@@ -114,6 +120,9 @@ export class OrderService implements IOrderService {
       const tax = data.tax || 0;
       const shippingCost = data.shippingCost || 0;
       const grandTotal = calculatedTotalAmount + tax + shippingCost - discount;
+      if (grandTotal < 0) {
+        throw new ClientError('The discount cannot be larger than the order total.');
+      }
 
       const order = await transactionClient.order.create({
         data: {
@@ -160,7 +169,9 @@ export class OrderService implements IOrderService {
       }
 
       return order;
-    });
+    };
+
+    const order = tx ? await run(tx) : await this.unitOfWork.transaction(run);
 
     // Fired only after the transaction has committed, and never awaited: the admin's copy of
     // the order must not be able to slow a sale down or roll one back.
@@ -215,9 +226,10 @@ export class OrderService implements IOrderService {
     }
   }
 
-  async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {
+  async update(id: number, data: UpdateOrderDto, storeCode?: string): Promise<OrderDto> {
     const existing = await this.unitOfWork.Order.findById(id);
     if (!existing) throw new NotFoundError("Order not found");
+    if (storeCode && existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
     return this.unitOfWork.Order.update(id, data);
   }
 
@@ -229,14 +241,37 @@ export class OrderService implements IOrderService {
     if (storeCode && existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
     if (existing.status === status) return existing;
 
-    const updated = await this.unitOfWork.Order.updateStatus(id, status);
+    // Leaving the sold pool (cancel/return) hands the units back; nothing else moves stock here.
+    const DEAD_STATES: OrderStatus[] = [OrderStatus.CANCELLED, OrderStatus.RETURNED];
+    const restock = DEAD_STATES.includes(status) && !DEAD_STATES.includes(existing.status);
+
+    const updated = await this.unitOfWork.transaction(async (transactionClient) => {
+      if (restock) {
+        const items = await transactionClient.orderItem.findMany({ where: { orderId: id } });
+        if (items.length > 0) {
+          await transactionClient.stockHistory.createMany({
+            data: items.map((item) => ({
+              productId: item.productId,
+              variantId: item.variantId,
+              storeCode: existing.storeCode,
+              createdById: existing.createdById ?? existing.customerId,
+              quantity: item.quantity,
+              reason: `Order #${existing.orderNumber} ${status.toLowerCase()}`,
+            })),
+          });
+        }
+      }
+      return transactionClient.order.update({ where: { id }, data: { status } });
+    });
+
     void this.notificationService.notifyOrderStatusChanged(updated, existing.status);
     return updated;
   }
 
-  async delete(id: number): Promise<OrderDto> {
+  async delete(id: number, storeCode?: string): Promise<OrderDto> {
     const existing = await this.unitOfWork.Order.findById(id);
     if (!existing) throw new NotFoundError("Order not found");
+    if (storeCode && existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
     return this.unitOfWork.Order.delete(id);
   }
 }

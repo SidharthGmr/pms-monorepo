@@ -6,6 +6,10 @@ import { StoreController } from "../controllers/store.controller";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { Role } from "@prisma/client";
+
+const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
 const storeRouter = Router();
 
@@ -147,7 +151,7 @@ storeRouter.get("/:id", authenticateToken, asyncHandler(storeController.getById)
  *       400: { description: Bad Request }
  *       500: { description: Server error }
  */
-storeRouter.post("/", authenticateToken, [validate(createStoreSchema)], asyncHandler(storeController.create));
+storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [validate(createStoreSchema)], asyncHandler(storeController.create));
 
 /**
  * @swagger
@@ -190,7 +194,7 @@ storeRouter.post("/", authenticateToken, [validate(createStoreSchema)], asyncHan
  *       404: { description: Store not found }
  *       500: { description: Server error }
  */
-storeRouter.put("/:id", authenticateToken, [validate(updateStoreSchema)], asyncHandler(storeController.update));
+storeRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), [validate(updateStoreSchema)], asyncHandler(storeController.update));
 
 /**
  * @swagger
@@ -219,6 +223,6 @@ storeRouter.put("/:id", authenticateToken, [validate(updateStoreSchema)], asyncH
  *       404: { description: Store not found }
  *       500: { description: Server error }
  */
-storeRouter.delete("/:id", authenticateToken, asyncHandler(storeController.delete));
+storeRouter.delete("/:id", authenticateToken, authorization([Role.SUPER_ADMIN]), asyncHandler(storeController.delete));
 
 export default storeRouter;

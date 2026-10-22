@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config';
@@ -14,6 +15,14 @@ import { isExpired } from '../utils/timeExpiry.util';
 import { generateStoreCode, nowISO } from '../utils/authHelpers.service';
 import { dispatchEmailAsync } from '../utils/email/emailDispatcher.util';
 import { clientIpAddress } from '../utils/token.util';
+
+/** OTP comparison must not leak how many leading digits matched. */
+const constantTimeEquals = (expected: string, presented: string): boolean => {
+  const a = Buffer.from(expected, 'utf8');
+  const b = Buffer.from(presented, 'utf8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+};
 
 /** Audit fields recorded against the session the request opens. */
 const sessionContext = (req: Request): SessionContext => ({
@@ -395,7 +404,7 @@ export class AccountController {
       });
     }
 
-    if (user.emailVerificationToken !== otp) {
+    if (!constantTimeEquals(user.emailVerificationToken, otp)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid OTP',
@@ -435,7 +444,6 @@ export class AccountController {
     if (!userId) {
       throw new CustomError('Invalid verification token', 401);
     }
-    console.log("userId", userId)
 
     const user = await this.unitOfService.User.getUserById(userId);
     if (!user) {
@@ -579,6 +587,10 @@ export class AccountController {
     if (!updatedUser) {
       throw new CustomError('Password reset failed', 500);
     }
+
+    // A reset usually means the old credential can no longer be trusted, so every
+    // existing session (and the refresh tokens inside them) dies with it.
+    await this.unitOfService.UserSession.revokeAllForUser(user.userId);
 
     const response: CustomResponse<UserDto> = {
       success: true,

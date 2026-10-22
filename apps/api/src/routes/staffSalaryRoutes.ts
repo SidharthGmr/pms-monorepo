@@ -4,8 +4,12 @@ import { TYPES } from "../config/ioc.types";
 import { StaffSalaryController } from "../controllers/staff-salary.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
 import { createStaffSalarySchema, updateStaffSalarySchema } from "../schemas/staffSalarySchema";
+
+const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
 const staffSalaryRouter = Router();
 const staffSalaryController = container.get<StaffSalaryController>(TYPES.StaffSalaryController);
@@ -36,7 +40,7 @@ const staffSalaryController = container.get<StaffSalaryController>(TYPES.StaffSa
  *       200:
  *         description: Staff salaries fetched successfully
  */
-staffSalaryRouter.get("/", authenticateToken, asyncHandler(staffSalaryController.getAll));
+staffSalaryRouter.get("/", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffSalaryController.getAll));
 
 /**
  * @swagger
@@ -62,7 +66,7 @@ staffSalaryRouter.get("/", authenticateToken, asyncHandler(staffSalaryController
  *       200:
  *         description: Staff salaries fetched successfully
  */
-staffSalaryRouter.get("/staff/:staffId", authenticateToken, asyncHandler(staffSalaryController.getByStaffId));
+staffSalaryRouter.get("/staff/:staffId", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffSalaryController.getByStaffId));
 
 /**
  * @swagger
@@ -90,7 +94,7 @@ staffSalaryRouter.get("/staff/:staffId", authenticateToken, asyncHandler(staffSa
  *       404:
  *         description: Staff salary not found
  */
-staffSalaryRouter.get("/:id", authenticateToken, asyncHandler(staffSalaryController.getById));
+staffSalaryRouter.get("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffSalaryController.getById));
 
 /**
  * @swagger
@@ -146,7 +150,7 @@ staffSalaryRouter.get("/:id", authenticateToken, asyncHandler(staffSalaryControl
  *       201:
  *         description: Staff salary created successfully
  */
-staffSalaryRouter.post("/", authenticateToken, validate(createStaffSalarySchema), asyncHandler(staffSalaryController.create));
+staffSalaryRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(createStaffSalarySchema), asyncHandler(staffSalaryController.create));
 
 /**
  * @swagger
@@ -196,7 +200,7 @@ staffSalaryRouter.post("/", authenticateToken, validate(createStaffSalarySchema)
  *       200:
  *         description: Staff salary updated successfully
  */
-staffSalaryRouter.put("/:id", authenticateToken, validate(updateStaffSalarySchema), asyncHandler(staffSalaryController.update));
+staffSalaryRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffSalarySchema), asyncHandler(staffSalaryController.update));
 
 /**
  * @swagger
@@ -222,6 +226,6 @@ staffSalaryRouter.put("/:id", authenticateToken, validate(updateStaffSalarySchem
  *       200:
  *         description: Staff salary deleted successfully
  */
-staffSalaryRouter.delete("/:id", authenticateToken, asyncHandler(staffSalaryController.delete));
+staffSalaryRouter.delete("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffSalaryController.delete));
 
 export default staffSalaryRouter;

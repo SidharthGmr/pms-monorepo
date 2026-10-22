@@ -101,7 +101,7 @@ export class WishlistController {
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
 
     const data = await this.unitOfService.Wishlist.remove(id, this.actor(req));
-    return res.status(204).json({ success: true, message: 'Removed from wishlist', data });
+    return res.status(200).json({ success: true, message: 'Removed from wishlist', data });
   };
 
   deleteByProduct = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
@@ -113,7 +113,7 @@ export class WishlistController {
     if (variantId !== undefined && isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variantId' });
 
     const data = await this.unitOfService.Wishlist.removeByProduct(productId, this.actor(req).userId, variantId);
-    return res.status(204).json({ success: true, message: 'Removed from wishlist', data });
+    return res.status(200).json({ success: true, message: 'Removed from wishlist', data });
   };
 
   deleteByVariant = async (req: Request, res: Response): Promise<Response<CustomResponse<WishlistDto>>> => {
@@ -121,6 +121,6 @@ export class WishlistController {
     if (isNaN(variantId)) return res.status(400).json({ success: false, message: 'Invalid variantId' });
 
     const data = await this.unitOfService.Wishlist.removeByVariant(variantId, this.actor(req).userId);
-    return res.status(204).json({ success: true, message: 'Removed from wishlist', data });
+    return res.status(200).json({ success: true, message: 'Removed from wishlist', data });
   };
 }

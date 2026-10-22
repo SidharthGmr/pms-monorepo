@@ -348,7 +348,6 @@ userRouter.put('/profile', authenticateToken, validate(updateProfileSchema), asy
  *       401:
  *         description: Unauthorized
  */
-userRouter.patch('/assign-store', authenticateToken, asyncHandler(usersController.assignStore));
 
 
 

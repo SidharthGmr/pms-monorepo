@@ -87,7 +87,8 @@ export class StaffController {
   };
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<StaffDto>>> => {
-    const body = req.body as CreateStaffDto;
+    // The tenant key comes from the token, never the body.
+    const body = { ...(req.body as CreateStaffDto), storeCode: req.user?.storeCode } as CreateStaffDto;
     const staff = await this.unitOfService.Staff.create(body);
     return res.status(201).json({ success: true, message: "Staff created successfully", data: staff });
   };
@@ -96,6 +97,10 @@ export class StaffController {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
 
+    const existingStoreCheck = await this.unitOfService.Staff.getById(id);
+    if (req.user?.storeCode && existingStoreCheck && existingStoreCheck.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "This staff record belongs to another store" });
+    }
     const body = req.body as UpdateStaffDto;
     const staff = await this.unitOfService.Staff.update(id, body);
     return res.status(200).json({ success: true, message: "Staff updated successfully", data: staff });
@@ -105,6 +110,10 @@ export class StaffController {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
 
+    const existingStoreCheck = await this.unitOfService.Staff.getById(id);
+    if (req.user?.storeCode && existingStoreCheck && existingStoreCheck.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "This staff record belongs to another store" });
+    }
     const staff = await this.unitOfService.Staff.delete(id);
     return res.status(200).json({ success: true, message: "Staff deleted successfully", data: staff });
   };

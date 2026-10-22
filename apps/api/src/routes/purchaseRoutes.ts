@@ -4,8 +4,12 @@ import { TYPES } from '../config/ioc.types';
 import { PurchaseController } from '../controllers/purchase.controller';
 import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
+import authorization from '../middleware/authorization.middleware';
+import { Role } from '@prisma/client';
 import { validate } from '../middleware/validate';
 import { CreatePurchaseValidator } from '@pms/types';
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 const router = Router();
 const purchaseController = container.get<PurchaseController>(TYPES.PurchaseController);
@@ -75,7 +79,7 @@ const purchaseController = container.get<PurchaseController>(TYPES.PurchaseContr
  *       400:
  *         description: Validation error
  */
-router.post('/', authenticateToken, validate(CreatePurchaseValidator), asyncHandler(purchaseController.create));
+router.post('/', authenticateToken, authorization(STAFF_ROLES), validate(CreatePurchaseValidator), asyncHandler(purchaseController.create));
 
 /**
  * @swagger

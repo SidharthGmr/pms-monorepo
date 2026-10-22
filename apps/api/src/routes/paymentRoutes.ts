@@ -4,8 +4,12 @@ import { TYPES } from "../config/ioc.types";
 import { PaymentController } from "../controllers/payment.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
 import { createPaymentSchema, updatePaymentSchema } from "../schemas/paymentSchema";
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 const paymentRouter = Router();
 const paymentController = container.get<PaymentController>(TYPES.PaymentController);
@@ -41,7 +45,7 @@ const paymentController = container.get<PaymentController>(TYPES.PaymentControll
  *       200:
  *         description: Payments fetched successfully
  */
-paymentRouter.get("/order/:orderId", authenticateToken, asyncHandler(paymentController.getByOrderId));
+paymentRouter.get("/order/:orderId", authenticateToken, authorization(STAFF_ROLES), asyncHandler(paymentController.getByOrderId));
 
 /**
  * @swagger
@@ -69,7 +73,7 @@ paymentRouter.get("/order/:orderId", authenticateToken, asyncHandler(paymentCont
  *       404:
  *         description: Payment not found
  */
-paymentRouter.get("/:id", authenticateToken, asyncHandler(paymentController.getById));
+paymentRouter.get("/:id", authenticateToken, authorization(STAFF_ROLES), asyncHandler(paymentController.getById));
 
 /**
  * @swagger
@@ -118,7 +122,7 @@ paymentRouter.get("/:id", authenticateToken, asyncHandler(paymentController.getB
  *       201:
  *         description: Payment created successfully
  */
-paymentRouter.post("/", authenticateToken, validate(createPaymentSchema), asyncHandler(paymentController.create));
+paymentRouter.post("/", authenticateToken, authorization(STAFF_ROLES), validate(createPaymentSchema), asyncHandler(paymentController.create));
 
 /**
  * @swagger
@@ -163,7 +167,7 @@ paymentRouter.post("/", authenticateToken, validate(createPaymentSchema), asyncH
  *       200:
  *         description: Payment updated successfully
  */
-paymentRouter.put("/:id", authenticateToken, validate(updatePaymentSchema), asyncHandler(paymentController.update));
+paymentRouter.put("/:id", authenticateToken, authorization(STAFF_ROLES), validate(updatePaymentSchema), asyncHandler(paymentController.update));
 
 /**
  * @swagger
@@ -189,6 +193,6 @@ paymentRouter.put("/:id", authenticateToken, validate(updatePaymentSchema), asyn
  *       200:
  *         description: Payment deleted successfully
  */
-paymentRouter.delete("/:id", authenticateToken, asyncHandler(paymentController.delete));
+paymentRouter.delete("/:id", authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), asyncHandler(paymentController.delete));
 
 export default paymentRouter;

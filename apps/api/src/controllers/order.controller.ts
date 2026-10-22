@@ -54,6 +54,18 @@ export class OrderController {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
     const order = await this.unitOfService.Order.getById(id);
+
+    // Same rule as the list endpoints: staff read their own store, a customer only their own order.
+    if (order) {
+      if (this.isStaff(req)) {
+        if (req.user?.storeCode && order.storeCode !== req.user.storeCode) {
+          return res.status(403).json({ success: false, message: "This order belongs to another store" });
+        }
+      } else if (order.customerId !== req.user?.userId) {
+        return res.status(403).json({ success: false, message: "You can only view your own orders" });
+      }
+    }
+
     return res.status(200).json({ success: true, message: "Order fetched successfully", data: order });
   };
 
@@ -66,10 +78,22 @@ export class OrderController {
       return res.status(400).json(MISSING_STORE_CODE);
     }
 
-    const createdById = body.createdById || req.user?.userId;
-    const createdByName = body.createdByName || req.user?.name;
+    // The audit trail always comes from the token, never the body.
+    const createdById = req.user?.userId;
+    const createdByName = req.user?.name;
 
-    const order = await this.unitOfService.Order.create(body, storeCode, createdById as string, createdByName as string);
+    const isStaff = this.isStaff(req);
+    const { status, orderDate, createdById: _ignoredId, createdByName: _ignoredName, ...rest } = body;
+    const model: CreateOrderModel = {
+      ...rest,
+      // A customer orders for themselves; staff order for the customer they picked.
+      customerId: isStaff ? body.customerId : (req.user?.userId as string),
+      // Status and backdating are operator tools; a customer's order starts PENDING today.
+      ...(isStaff && status !== undefined && { status }),
+      ...(isStaff && orderDate !== undefined && { orderDate }),
+    };
+
+    const order = await this.unitOfService.Order.create(model, storeCode, createdById as string, createdByName as string);
     return res.status(201).json({ success: true, message: "Order created successfully", data: order });
   };
 
@@ -77,7 +101,7 @@ export class OrderController {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
     const body = req.body as UpdateOrderDto;
-    const order = await this.unitOfService.Order.update(id, body);
+    const order = await this.unitOfService.Order.update(id, body, req.user?.storeCode || undefined);
     return res.status(200).json({ success: true, message: "Order updated successfully", data: order });
   };
 
@@ -93,7 +117,7 @@ export class OrderController {
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
-    const order = await this.unitOfService.Order.delete(id);
+    const order = await this.unitOfService.Order.delete(id, req.user?.storeCode || undefined);
     return res.status(200).json({ success: true, message: "Order deleted successfully", data: order });
   };
 }

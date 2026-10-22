@@ -5,6 +5,8 @@ const OrderStatusEnum = z.enum(["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", 
 export const createOrderSchema = z.object({
   body: z.object({
     customerId: z.string().min(1, "Customer ID is required"),
+    // Staff-only in the controller; declared here so the sanitizer lets it through.
+    orderDate: z.coerce.date().optional(),
     discount: z.number().nonnegative().optional(),
     tax: z.number().nonnegative().optional(),
     shippingCost: z.number().nonnegative().optional(),

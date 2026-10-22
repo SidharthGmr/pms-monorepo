@@ -10,14 +10,18 @@ export class StaffAttendanceController {
   ) {}
 
   getAll = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<StaffAttendanceDto>>>> => {
-    const records = await this.unitOfService.StaffAttendance.getAll();
+    // Attendance stays inside the store; a super admin without a store sees all.
+    const all = await this.unitOfService.StaffAttendance.getAll();
+    const storeCode = req.user?.storeCode;
+    const records = storeCode ? all.filter((row) => row.storeCode === storeCode) : all;
     return res.status(200).json({ success: true, message: "Staff attendance records fetched successfully", data: { totalRecord: records.length, data: records } });
   };
 
   getByStaffId = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<StaffAttendanceDto>>>> => {
     const staffId = parseInt(req.params["staffId"] as string);
     if (isNaN(staffId)) return res.status(400).json({ success: false, message: "Invalid staffId" });
-    const records = await this.unitOfService.StaffAttendance.getByStaffId(staffId);
+    const allForStaff = await this.unitOfService.StaffAttendance.getByStaffId(staffId);
+    const records = req.user?.storeCode ? allForStaff.filter((row) => row.storeCode === req.user?.storeCode) : allForStaff;
     return res.status(200).json({ success: true, message: "Staff attendance records fetched successfully", data: { totalRecord: records.length, data: records } });
   };
 
@@ -29,7 +33,7 @@ export class StaffAttendanceController {
   };
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<StaffAttendanceDto>>> => {
-    const body = req.body as CreateStaffAttendanceDto;
+    const body = { ...(req.body as CreateStaffAttendanceDto), storeCode: req.user?.storeCode } as CreateStaffAttendanceDto;
     const record = await this.unitOfService.StaffAttendance.create(body);
     return res.status(201).json({ success: true, message: "Staff attendance record created successfully", data: record });
   };
@@ -37,6 +41,10 @@ export class StaffAttendanceController {
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<StaffAttendanceDto>>> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+    const existingStoreCheck = await this.unitOfService.StaffAttendance.getById(id);
+    if (req.user?.storeCode && existingStoreCheck && existingStoreCheck.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "This record belongs to another store" });
+    }
     const body = req.body as UpdateStaffAttendanceDto;
     const record = await this.unitOfService.StaffAttendance.update(id, body);
     return res.status(200).json({ success: true, message: "Staff attendance record updated successfully", data: record });
@@ -45,6 +53,10 @@ export class StaffAttendanceController {
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<StaffAttendanceDto>>> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+    const existingStoreCheck = await this.unitOfService.StaffAttendance.getById(id);
+    if (req.user?.storeCode && existingStoreCheck && existingStoreCheck.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "This record belongs to another store" });
+    }
     const record = await this.unitOfService.StaffAttendance.delete(id);
     return res.status(200).json({ success: true, message: "Staff attendance record deleted successfully", data: record });
   };

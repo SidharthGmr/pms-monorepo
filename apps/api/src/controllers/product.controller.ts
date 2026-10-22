@@ -93,12 +93,16 @@ export class ProductController {
     if (!isAdmin && existingProduct.createdById !== req.user?.userId) {
       return res.status(403).json({ success: false, message: "Not enough permissions to delete this product" });
     }
+    // Even an admin stays inside their own store; only a super admin crosses stores.
+    if (req.user?.role !== 'SUPER_ADMIN' && req.user?.storeCode && existingProduct.storeCode !== req.user.storeCode) {
+      return res.status(403).json({ success: false, message: "This product belongs to another store" });
+    }
     if (req.user?.storeCode && existingProduct.storeCode !== req.user.storeCode) {
       return res.status(403).json({ success: false, message: "Not enough permissions to delete this product" });
     }
 
     const product = await this.unitOfService.Product.delete(id, userId);
-    return res.status(204).json({ success: true, message: "Product deleted successfully", data: product });
+    return res.status(200).json({ success: true, message: "Product deleted successfully", data: product });
   };
 
 

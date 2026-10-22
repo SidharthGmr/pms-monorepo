@@ -256,7 +256,7 @@ orderRouter.post("/", authenticateToken, validate(createOrderSchema), asyncHandl
  *       200:
  *         description: Order updated successfully
  */
-orderRouter.put("/:id", authenticateToken, validate(updateOrderSchema), asyncHandler(orderController.update));
+orderRouter.put("/:id", authenticateToken, authorization(STAFF_ROLES), validate(updateOrderSchema), asyncHandler(orderController.update));
 
 /**
  * @swagger
@@ -325,6 +325,6 @@ orderRouter.patch("/:id/status", authenticateToken, authorization(STAFF_ROLES), 
  *       200:
  *         description: Order deleted successfully
  */
-orderRouter.delete("/:id", authenticateToken, asyncHandler(orderController.delete));
+orderRouter.delete("/:id", authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), asyncHandler(orderController.delete));
 
 export default orderRouter;

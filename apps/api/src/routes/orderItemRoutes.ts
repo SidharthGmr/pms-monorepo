@@ -4,8 +4,12 @@ import { TYPES } from "../config/ioc.types";
 import { OrderItemController } from "../controllers/order-item.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
 import { createOrderItemSchema, updateOrderItemSchema } from "../schemas/orderItemSchema";
+
+const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 const orderItemRouter = Router();
 const orderItemController = container.get<OrderItemController>(TYPES.OrderItemController);
@@ -41,7 +45,7 @@ const orderItemController = container.get<OrderItemController>(TYPES.OrderItemCo
  *       200:
  *         description: Order items fetched successfully
  */
-orderItemRouter.get("/order/:orderId", authenticateToken, asyncHandler(orderItemController.getByOrderId));
+orderItemRouter.get("/order/:orderId", authenticateToken, authorization(STAFF_ROLES), asyncHandler(orderItemController.getByOrderId));
 
 /**
  * @swagger
@@ -69,7 +73,7 @@ orderItemRouter.get("/order/:orderId", authenticateToken, asyncHandler(orderItem
  *       404:
  *         description: Order item not found
  */
-orderItemRouter.get("/:id", authenticateToken, asyncHandler(orderItemController.getById));
+orderItemRouter.get("/:id", authenticateToken, authorization(STAFF_ROLES), asyncHandler(orderItemController.getById));
 
 /**
  * @swagger
@@ -110,7 +114,7 @@ orderItemRouter.get("/:id", authenticateToken, asyncHandler(orderItemController.
  *       201:
  *         description: Order item created successfully
  */
-orderItemRouter.post("/", authenticateToken, validate(createOrderItemSchema), asyncHandler(orderItemController.create));
+orderItemRouter.post("/", authenticateToken, authorization(STAFF_ROLES), validate(createOrderItemSchema), asyncHandler(orderItemController.create));
 
 /**
  * @swagger
@@ -149,7 +153,7 @@ orderItemRouter.post("/", authenticateToken, validate(createOrderItemSchema), as
  *       200:
  *         description: Order item updated successfully
  */
-orderItemRouter.put("/:id", authenticateToken, validate(updateOrderItemSchema), asyncHandler(orderItemController.update));
+orderItemRouter.put("/:id", authenticateToken, authorization(STAFF_ROLES), validate(updateOrderItemSchema), asyncHandler(orderItemController.update));
 
 /**
  * @swagger
@@ -175,6 +179,6 @@ orderItemRouter.put("/:id", authenticateToken, validate(updateOrderItemSchema), 
  *       200:
  *         description: Order item deleted successfully
  */
-orderItemRouter.delete("/:id", authenticateToken, asyncHandler(orderItemController.delete));
+orderItemRouter.delete("/:id", authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), asyncHandler(orderItemController.delete));
 
 export default orderItemRouter;

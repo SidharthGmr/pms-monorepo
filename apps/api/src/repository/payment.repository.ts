@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
 
 import { IPaymentRepository } from "./interfaces/ipayment.repository";
@@ -16,8 +17,8 @@ export class PaymentRepository implements IPaymentRepository {
     return prisma.payment.findUnique({ where: { transactionId } });
   }
 
-  async create(data: CreatePaymentDto): Promise<PaymentDto> {
-    return prisma.payment.create({ data });
+  async create(data: CreatePaymentDto, tx: Prisma.TransactionClient = prisma): Promise<PaymentDto> {
+    return tx.payment.create({ data });
   }
 
   async update(id: number, data: UpdatePaymentDto): Promise<PaymentDto> {

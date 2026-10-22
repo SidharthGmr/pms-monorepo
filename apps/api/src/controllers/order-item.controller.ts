@@ -47,6 +47,11 @@ export class OrderItemController {
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderItemDto>>> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+    const storeCode = req.user?.storeCode;
+    const existing = await this.unitOfService.OrderItem.getById(id);
+    if (storeCode && existing && existing.storeCode !== storeCode) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this order item" });
+    }
     const body = req.body as UpdateOrderItemDto;
     const item = await this.unitOfService.OrderItem.update(id, body);
     return res.status(200).json({ success: true, message: "Order item updated successfully", data: item });
@@ -55,6 +60,11 @@ export class OrderItemController {
   delete = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderItemDto>>> => {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
+    const storeCode = req.user?.storeCode;
+    const existing = await this.unitOfService.OrderItem.getById(id);
+    if (storeCode && existing && existing.storeCode !== storeCode) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this order item" });
+    }
     const item = await this.unitOfService.OrderItem.delete(id);
     return res.status(200).json({ success: true, message: "Order item deleted successfully", data: item });
   };

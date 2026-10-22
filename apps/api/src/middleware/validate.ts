@@ -15,7 +15,19 @@ export const validate =
       params: req.params,
     });
 
-    if (result.success) return next();
+    if (result.success) {
+      // Replace the request parts with the PARSED values: zod strips keys the schema does not
+      // declare, which is what stops a body from smuggling extra columns (role, storeCode,
+      // isActive, ...) past validation and into a Prisma spread.
+      const data = result.data as { body?: unknown; query?: unknown; params?: unknown };
+      if (data.body !== undefined) req.body = data.body;
+      if (data.query !== undefined) {
+        // Express 5 exposes req.query through a getter, so it cannot be assigned directly.
+        Object.defineProperty(req, 'query', { value: data.query, writable: true, configurable: true });
+      }
+      if (data.params !== undefined) req.params = data.params as typeof req.params;
+      return next();
+    }
 
     return res.status(400).json(toValidationResponse(result.error));
   };

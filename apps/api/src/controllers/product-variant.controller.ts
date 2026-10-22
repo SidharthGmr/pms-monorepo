@@ -144,7 +144,9 @@ export class ProductVariantController {
     );
 
     const result = await this.unitOfService.ProductVariant.getAll(filters);
-    return res.status(200).json({ success: true, message: 'Product variants fetched successfully', data: result });
+    // The storefront needs what things sell for, never what the store paid for them.
+    const data = (result.data ?? []).map((variant) => ({ ...variant, costPrice: null }));
+    return res.status(200).json({ success: true, message: 'Product variants fetched successfully', data: { ...result, data } });
   };
 
   getHistory = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<ProductVariantResponseDto>>>> => {

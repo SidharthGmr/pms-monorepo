@@ -1,8 +1,8 @@
 import crypto from "crypto";
 
+/** 6 digits from crypto.randomInt - uniform, unlike the old 4-digit modulo draw. */
 export const generateOtp = () => {
-  const buffer = crypto.randomBytes(2);
-  const otp = ((buffer.readUInt16BE(0) % 9000) + 1000).toString(); // 4-digit
+  const otp = crypto.randomInt(100000, 1000000).toString();
 
   return { otp };
 };

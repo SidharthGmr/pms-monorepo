@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from '@pms/types';
 
 export interface IPaymentRepository {
@@ -8,7 +9,7 @@ export interface IPaymentRepository {
    * idempotent: a replayed gateway callback must not create a second order.
    */
   findByTransactionId(transactionId: string): Promise<PaymentDto | null>;
-  create(data: CreatePaymentDto): Promise<PaymentDto>;
+  create(data: CreatePaymentDto, tx?: Prisma.TransactionClient): Promise<PaymentDto>;
   update(id: number, data: UpdatePaymentDto): Promise<PaymentDto>;
   delete(id: number): Promise<PaymentDto>;
 }

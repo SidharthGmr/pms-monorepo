@@ -29,6 +29,13 @@ export class PurchaseService implements IPurchaseService {
         throw new NotFoundError('User not found');
       }
 
+      // Money comes from the lines, not from whatever the client typed into the totals.
+      const lines = data.items.map((item) => ({
+        ...item,
+        totalPrice: Math.round(item.quantity * item.costPrice * 100) / 100,
+      }));
+      const computedTotal = Math.round(lines.reduce((sum, line) => sum + line.totalPrice, 0) * 100) / 100;
+
       const purchase = await transactionClient.purchase.create({
         data: {
           storeCode: storeCode,
@@ -37,11 +44,11 @@ export class PurchaseService implements IPurchaseService {
           invoiceUrl: data.invoiceUrl || '',
           supplierId: data.supplierId || null,
           supplierName: data.supplierName || '',
-          totalAmount: data.totalAmount || 0,
+          totalAmount: computedTotal,
           notes: data.notes ?? null,
           purchaseDate: data.purchaseDate || new Date(),
           items: {
-            create: data.items.map((item) => ({
+            create: lines.map((item) => ({
               productId: productIdByVariant.get(item.variantId)!,
               variantId: item.variantId,
               quantity: item.quantity,

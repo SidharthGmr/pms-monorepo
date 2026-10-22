@@ -14,18 +14,18 @@ export default withAuth(function middleware(req) {
     }
   }
 
-  const rolesObject = (req.nextauth.token?.role || '') as string;
-  const roles = rolesObject;
+  const role = (req.nextauth.token?.role || '') as string;
 
-  // Role-based page restrictions
+  // Role-based page restrictions. Exact matches only - a substring check would let any
+  // future role that contains another one (SUPER_ADMIN contains ADMIN) inherit its pages.
   const accessControlMap: Record<string, Roles[]> = {
     '/superadmin/': [Roles.SUPER_ADMIN],
-    '/admin/': [Roles.ADMIN],
+    '/admin/': [Roles.ADMIN, Roles.SUPER_ADMIN],
     '/dashboard/': [Roles.USER, Roles.STAFF],
   };
 
   for (const [prefix, requiredRoles] of Object.entries(accessControlMap)) {
-    if (pageUrl.startsWith(prefix) && !requiredRoles.some(role => roles.includes(role))) {
+    if (pageUrl.startsWith(prefix) && !requiredRoles.some((allowed) => allowed === role)) {
       const redirectUrl = new URL('/access-denied', req.url);
       redirectUrl.searchParams.set('fromMiddleware', 'true');
       return NextResponse.redirect(redirectUrl);
@@ -47,7 +47,6 @@ export const config = {
     '/superadmin/:path*',
     '/dashboard/:path*',
     '/account/myprofile',
-    '/student/:path*',
     '/access-denied',
     '/access-denied/',
   ],

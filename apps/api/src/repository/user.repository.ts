@@ -108,7 +108,15 @@ export class UserRepository implements IUserRepository {
 
   async update(userId: string, data: UpdateUserDto): Promise<UserDto> {
     // Profile fields have to be routed to the related `UserProfile` row.
-    const { userName, profileImageUrl, dateOfBirth, address, city, state, country, pincode, bio, storeId, ...userFields } = data;
+    const { userName, profileImageUrl, dateOfBirth, address, city, state, country, pincode, bio } = data;
+    // Whitelist, never spread: this method serves self-service profile edits, so privileged
+    // columns (role, status, isActive, isEmailVerified, storeCode, password, token, ...)
+    // must be unreachable from here whatever the body carried.
+    const userFields: { name?: string; phone?: string | null; updatedAt?: Date | null } = {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.phone !== undefined && { phone: data.phone }),
+      ...(data.updatedAt !== undefined && { updatedAt: data.updatedAt }),
+    };
     const profileFields = { userName, profileImageUrl, dateOfBirth, address, city, state, country, pincode, bio };
     const hasProfileUpdate = Object.values(profileFields).some((value) => value !== undefined);
 

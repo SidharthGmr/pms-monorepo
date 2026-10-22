@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { getRazorpayClient, getRazorpayCredentials } from '../config/razorpay';
@@ -153,37 +153,57 @@ export class CheckoutService implements ICheckoutService {
       );
     }
 
-    const order = await this.orderService.create(
-      {
-        customerId: model.customerId,
-        discount,
-        tax,
-        shippingCost: shippingCost + platformFee,
-        notes: model.notes ?? null,
-        // Paid up front, so the order does not sit in PENDING awaiting money.
-        status: OrderStatus.CONFIRMED,
-        // The cart is already variant-keyed, so the chosen size/colour carries through to the
-        // order line instead of being flattened back to the product.
-        items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
-      },
-      ctx.storeCode,
-      ctx.userId,
-      ctx.userName
-    );
+    // One transaction for all three writes: a paid gateway charge must never end up as an
+    // order with no payment row, or a cleared cart with no order. The unique index on
+    // `transactionId` doubles as the idempotency gate for two concurrent verifies.
+    try {
+      return await this.unitOfWork.transaction(async (transactionClient) => {
+        const order = await this.orderService.create(
+          {
+            customerId: model.customerId,
+            discount,
+            tax,
+            shippingCost: shippingCost + platformFee,
+            notes: model.notes ?? null,
+            // Paid up front, so the order does not sit in PENDING awaiting money.
+            status: OrderStatus.CONFIRMED,
+            // The cart is already variant-keyed, so the chosen size/colour carries through to the
+            // order line instead of being flattened back to the product.
+            items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+          },
+          ctx.storeCode,
+          ctx.userId,
+          ctx.userName,
+          transactionClient
+        );
 
-    const payment = await this.unitOfWork.Payment.create({
-      orderId: order.id,
-      storeCode: ctx.storeCode,
-      amount: order.grandTotal,
-      method: PaymentMethod.ONLINE,
-      status: PaymentStatus.PAID,
-      transactionId: razorpay_payment_id,
-      remarks: `Razorpay ${razorpay_order_id}`,
-    });
+        const payment = await this.unitOfWork.Payment.create(
+          {
+            orderId: order.id,
+            storeCode: ctx.storeCode,
+            amount: order.grandTotal,
+            method: PaymentMethod.ONLINE,
+            status: PaymentStatus.PAID,
+            transactionId: razorpay_payment_id,
+            remarks: `Razorpay ${razorpay_order_id}`,
+          },
+          transactionClient
+        );
 
-    await this.unitOfWork.Cart.clearItems(cart.id);
+        await this.unitOfWork.Cart.clearItems(cart.id, transactionClient);
 
-    return { order, payment, alreadyProcessed: false };
+        return { order, payment, alreadyProcessed: false };
+      });
+    } catch (error) {
+      // A concurrent verify won the race: its payment row owns the transactionId, so hand
+      // back the order it created instead of a 500.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const winner = await this.unitOfWork.Payment.findByTransactionId(razorpay_payment_id);
+        const winnerOrder = winner && (await this.unitOfWork.Order.findById(winner.orderId));
+        if (winner && winnerOrder) return { order: winnerOrder, payment: winner, alreadyProcessed: true };
+      }
+      throw error;
+    }
   }
 
   async checkoutDirect(ctx: CheckoutContext, model: DirectCheckoutModel): Promise<CheckoutResultDto> {
@@ -191,39 +211,47 @@ export class CheckoutService implements ICheckoutService {
     const { discount, tax, shippingCost, platformFee } = this.totalsFrom(cart, model);
     const paidInCash = model.settlement === 'cash';
 
-    const order = await this.orderService.create(
-      {
-        customerId: model.customerId,
-        discount,
-        tax,
-        shippingCost: shippingCost + platformFee,
-        notes: model.notes ?? null,
-        // Cash settles on the spot, so the order is confirmed; udhari (credit) has no money
-        // moved yet and stays PENDING until it is settled from the order.
-        status: paidInCash ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
-        // The cart is already variant-keyed, so the chosen size/colour carries through to the
-        // order line instead of being flattened back to the product.
-        items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
-      },
-      ctx.storeCode,
-      ctx.userId,
-      ctx.userName
-    );
+    // Same atomicity rule as the gateway path: the order, its settlement record and the
+    // cart-clear land together or not at all.
+    return this.unitOfWork.transaction(async (transactionClient) => {
+      const order = await this.orderService.create(
+        {
+          customerId: model.customerId,
+          discount,
+          tax,
+          shippingCost: shippingCost + platformFee,
+          notes: model.notes ?? null,
+          // Cash settles on the spot, so the order is confirmed; udhari (credit) has no money
+          // moved yet and stays PENDING until it is settled from the order.
+          status: paidInCash ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
+          // The cart is already variant-keyed, so the chosen size/colour carries through to the
+          // order line instead of being flattened back to the product.
+          items: cart.items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+        },
+        ctx.storeCode,
+        ctx.userId,
+        ctx.userName,
+        transactionClient
+      );
 
-    // Cash is money in hand, recorded paid. Udhari files a PAY_LATER payment that stays
-    // PENDING, so the order carries how it will be settled instead of looking unpaid by accident.
-    const payment = await this.unitOfWork.Payment.create({
-      orderId: order.id,
-      storeCode: ctx.storeCode,
-      amount: order.grandTotal,
-      method: paidInCash ? PaymentMethod.CASH : PaymentMethod.PAY_LATER,
-      status: paidInCash ? PaymentStatus.PAID : PaymentStatus.PENDING,
-      transactionId: null,
-      remarks: paidInCash ? 'Cash taken at checkout' : 'Udhari - to be settled',
+      // Cash is money in hand, recorded paid. Udhari files a PAY_LATER payment that stays
+      // PENDING, so the order carries how it will be settled instead of looking unpaid by accident.
+      const payment = await this.unitOfWork.Payment.create(
+        {
+          orderId: order.id,
+          storeCode: ctx.storeCode,
+          amount: order.grandTotal,
+          method: paidInCash ? PaymentMethod.CASH : PaymentMethod.PAY_LATER,
+          status: paidInCash ? PaymentStatus.PAID : PaymentStatus.PENDING,
+          transactionId: null,
+          remarks: paidInCash ? 'Cash taken at checkout' : 'Udhari - to be settled',
+        },
+        transactionClient
+      );
+
+      await this.unitOfWork.Cart.clearItems(cart.id, transactionClient);
+
+      return { order, payment, alreadyProcessed: false };
     });
-
-    await this.unitOfWork.Cart.clearItems(cart.id);
-
-    return { order, payment, alreadyProcessed: false };
   }
 }

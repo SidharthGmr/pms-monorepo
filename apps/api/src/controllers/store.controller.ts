@@ -4,7 +4,7 @@ import { TYPES } from "../config/ioc.types";
 import IUnitOfService from "../services/interfaces/iunitof.service";
 
 import { CustomResponse, ListResponseDto, StoreDto, CreateStoreDto, UpdateStoreDto, StoreFilterParams } from '@pms/types';
-import { Status } from "@prisma/client";
+import { Role, Status } from "@prisma/client";
 
 export class StoreController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -48,6 +48,17 @@ export class StoreController {
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
 
     const body = req.body as UpdateStoreDto;
+
+    // A super admin manages every store; an admin only their own, and the code -
+    // the tenant key every row hangs off - never changes through this endpoint.
+    if (req.user?.role !== Role.SUPER_ADMIN) {
+      const existing = await this.unitOfService.Store.getById(id);
+      if (!existing || existing.code !== req.user?.storeCode) {
+        return res.status(403).json({ success: false, message: "You can only update your own store" });
+      }
+      delete body.code;
+    }
+
     const store = await this.unitOfService.Store.update(id, body);
     return res.status(200).json({ success: true, message: "Store updated successfully", data: store });
   };

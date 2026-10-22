@@ -4,8 +4,12 @@ import { TYPES } from "../config/ioc.types";
 import { StaffAttendanceController } from "../controllers/staff-attendance.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
 import { createStaffAttendanceSchema, updateStaffAttendanceSchema } from "../schemas/staffAttendanceSchema";
+
+const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
 const staffAttendanceRouter = Router();
 const staffAttendanceController = container.get<StaffAttendanceController>(TYPES.StaffAttendanceController);
@@ -36,7 +40,7 @@ const staffAttendanceController = container.get<StaffAttendanceController>(TYPES
  *       200:
  *         description: Staff attendance records fetched successfully
  */
-staffAttendanceRouter.get("/", authenticateToken, asyncHandler(staffAttendanceController.getAll));
+staffAttendanceRouter.get("/", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffAttendanceController.getAll));
 
 /**
  * @swagger
@@ -62,7 +66,7 @@ staffAttendanceRouter.get("/", authenticateToken, asyncHandler(staffAttendanceCo
  *       200:
  *         description: Staff attendance records fetched successfully
  */
-staffAttendanceRouter.get("/staff/:staffId", authenticateToken, asyncHandler(staffAttendanceController.getByStaffId));
+staffAttendanceRouter.get("/staff/:staffId", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffAttendanceController.getByStaffId));
 
 /**
  * @swagger
@@ -90,7 +94,7 @@ staffAttendanceRouter.get("/staff/:staffId", authenticateToken, asyncHandler(sta
  *       404:
  *         description: Record not found
  */
-staffAttendanceRouter.get("/:id", authenticateToken, asyncHandler(staffAttendanceController.getById));
+staffAttendanceRouter.get("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffAttendanceController.getById));
 
 /**
  * @swagger
@@ -141,7 +145,7 @@ staffAttendanceRouter.get("/:id", authenticateToken, asyncHandler(staffAttendanc
  *       201:
  *         description: Staff attendance record created successfully
  */
-staffAttendanceRouter.post("/", authenticateToken, validate(createStaffAttendanceSchema), asyncHandler(staffAttendanceController.create));
+staffAttendanceRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(createStaffAttendanceSchema), asyncHandler(staffAttendanceController.create));
 
 /**
  * @swagger
@@ -185,7 +189,7 @@ staffAttendanceRouter.post("/", authenticateToken, validate(createStaffAttendanc
  *       200:
  *         description: Staff attendance record updated successfully
  */
-staffAttendanceRouter.put("/:id", authenticateToken, validate(updateStaffAttendanceSchema), asyncHandler(staffAttendanceController.update));
+staffAttendanceRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffAttendanceSchema), asyncHandler(staffAttendanceController.update));
 
 /**
  * @swagger
@@ -211,6 +215,6 @@ staffAttendanceRouter.put("/:id", authenticateToken, validate(updateStaffAttenda
  *       200:
  *         description: Staff attendance record deleted successfully
  */
-staffAttendanceRouter.delete("/:id", authenticateToken, asyncHandler(staffAttendanceController.delete));
+staffAttendanceRouter.delete("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffAttendanceController.delete));
 
 export default staffAttendanceRouter;

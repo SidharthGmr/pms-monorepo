@@ -4,8 +4,12 @@ import { TYPES } from "../config/ioc.types";
 import { StaffController } from "../controllers/staff.controller";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
+import authorization from "../middleware/authorization.middleware";
+import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
 import { createStaffSchema, updateStaffSchema } from "../schemas/staffSchema";
+
+const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
 const staffRouter = Router();
 const staffController = container.get<StaffController>(TYPES.StaffController);
@@ -59,7 +63,7 @@ const staffController = container.get<StaffController>(TYPES.StaffController);
  *             schema:
  *               $ref: '#/components/schemas/Staff'
  */
-staffRouter.get("/", authenticateToken, asyncHandler(staffController.getAll));
+staffRouter.get("/", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffController.getAll));
 
 /**
  * @swagger
@@ -87,7 +91,7 @@ staffRouter.get("/", authenticateToken, asyncHandler(staffController.getAll));
  *       200:
  *         description: Staff count fetched successfully
  */
-staffRouter.get("/count", authenticateToken, asyncHandler(staffController.getCount));
+staffRouter.get("/count", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffController.getCount));
 
 /**
  * @swagger
@@ -112,7 +116,7 @@ staffRouter.get("/count", authenticateToken, asyncHandler(staffController.getCou
  *       200:
  *         description: Staff members fetched successfully
  */
-staffRouter.get("/store/:storeCode", authenticateToken, asyncHandler(staffController.getByStoreCode));
+staffRouter.get("/store/:storeCode", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffController.getByStoreCode));
 
 /**
  * @swagger
@@ -139,7 +143,7 @@ staffRouter.get("/store/:storeCode", authenticateToken, asyncHandler(staffContro
  *       404:
  *         description: Staff not found
  */
-staffRouter.get("/user/:userId", authenticateToken, asyncHandler(staffController.getByUserId));
+staffRouter.get("/user/:userId", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffController.getByUserId));
 
 /**
  * @swagger
@@ -168,7 +172,7 @@ staffRouter.get("/user/:userId", authenticateToken, asyncHandler(staffController
  *             schema:
  *               $ref: '#/components/schemas/Staff'
  */
-staffRouter.get("/:id", authenticateToken, asyncHandler(staffController.getById));
+staffRouter.get("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffController.getById));
 
 /**
  * @swagger
@@ -194,7 +198,7 @@ staffRouter.get("/:id", authenticateToken, asyncHandler(staffController.getById)
  *       201:
  *         description: Staff created successfully
  */
-staffRouter.post("/", authenticateToken, validate(createStaffSchema), asyncHandler(staffController.create));
+staffRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(createStaffSchema), asyncHandler(staffController.create));
 
 /**
  * @swagger
@@ -225,7 +229,7 @@ staffRouter.post("/", authenticateToken, validate(createStaffSchema), asyncHandl
  *       200:
  *         description: Staff updated successfully
  */
-staffRouter.put("/:id", authenticateToken, validate(updateStaffSchema), asyncHandler(staffController.update));
+staffRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffSchema), asyncHandler(staffController.update));
 
 /**
  * @swagger
@@ -250,6 +254,6 @@ staffRouter.put("/:id", authenticateToken, validate(updateStaffSchema), asyncHan
  *       200:
  *         description: Staff deleted successfully
  */
-staffRouter.delete("/:id", authenticateToken, asyncHandler(staffController.delete));
+staffRouter.delete("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(staffController.delete));
 
 export default staffRouter;
