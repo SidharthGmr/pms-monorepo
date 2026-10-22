@@ -18,10 +18,9 @@ import { usePathname } from 'next/navigation';
 import { BreadCrumb } from '../breadcrumb';
 import { CartIndicator } from '../cart-indicator';
 import { GlobalSearch } from '../global-search';
-import { LanguageSwitcher } from '../language-switcher';
 import { NotificationBell } from '../notification-bell';
 import { QuickCreate } from '../quick-create';
-import { ModeToggle } from './sidebar/thememode';
+import { SettingsDrawer } from '../settings-drawer';
 
 const ICON = '/logo.png';
 const ICON_LIGHT = '/logo-light.png';
@@ -51,7 +50,7 @@ export default function HeaderDashboard() {
       {/* While the sidebar is docked the toggle leads the bar; below 1200px it moves to the far right. */}
       <SidebarTrigger className="-ml-1 hidden h-8 w-8 rounded-lg sidebar:flex" />
 
-      <Link href="/" className="flex items-center sidebar:hidden" title={config.appName}>
+      <Link href="/" className="hidden items-center min-[400px]:flex sidebar:hidden" title={config.appName}>
         <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain dark:hidden" />
         <Image src={ICON_LIGHT} width={28} height={28} alt={config.appName} className="hidden h-7 w-7 object-contain dark:block" />
       </Link>
@@ -61,14 +60,13 @@ export default function HeaderDashboard() {
         <BreadCrumb />
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+      <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <GlobalSearch />
         <QuickCreate />
         <Separator orientation="vertical" className="hidden h-5 sm:block" />
         <CartIndicator />
         <NotificationBell />
-        <LanguageSwitcher />
-        <ModeToggle />
+        <SettingsDrawer />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-9 gap-2 rounded-full bg-muted/70 px-1 pr-1 hover:bg-muted md:pr-3" aria-label="Account menu">

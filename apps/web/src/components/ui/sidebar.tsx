@@ -158,6 +158,9 @@ const Sidebar = React.forwardRef<
         <SheetContent
           data-sidebar="sidebar"
           data-mobile="true"
+          // Radix focuses the first focusable on open, which lands on the menu search and pops
+          // the keyboard. People open the sheet to read the menu; search is a tap away if wanted.
+          onOpenAutoFocus={(event) => event.preventDefault()}
           className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={
             {

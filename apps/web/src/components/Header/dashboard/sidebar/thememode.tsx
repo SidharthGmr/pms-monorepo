@@ -6,7 +6,8 @@ import { useTheme } from '@/context/theme-provider';
 import { BsFillMoonStarsFill } from 'react-icons/bs';
 import { IoMdSunny } from 'react-icons/io';
 
-const THEMES = [
+/** Shared with the account menu, which carries the same choices on phones. */
+export const THEMES = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
   { value: 'red', label: 'Red' },

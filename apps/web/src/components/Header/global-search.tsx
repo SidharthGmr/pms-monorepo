@@ -83,12 +83,12 @@ export function GlobalSearch() {
         type="button"
         variant="outline"
         onClick={() => setOpen(true)}
-        className="hidden h-9 w-9 justify-start gap-2 rounded-lg px-0 text-muted-foreground sm:inline-flex md:w-56 md:px-3 lg:w-64"
+        className="inline-flex h-9 w-9 justify-start gap-2 rounded-lg px-0 text-muted-foreground sidebar:w-64 sidebar:px-3"
         aria-label="Search pages and actions"
       >
         <Search className="h-4 w-4 shrink-0" />
-        <span className="hidden flex-1 text-left text-sm font-normal md:inline">Search pages…</span>
-        <kbd className="pointer-events-none hidden select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground md:inline-flex">
+        <span className="hidden flex-1 text-left text-sm font-normal sidebar:inline">Search pages…</span>
+        <kbd className="pointer-events-none hidden select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sidebar:inline-flex">
           Ctrl K
         </kbd>
       </Button>
