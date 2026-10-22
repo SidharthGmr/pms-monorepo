@@ -1,4 +1,4 @@
-import { CreateSubscriberModel, CustomResponse as Response, ListResponseDto, SubscriberDto, SubscriberFilterParams } from '@pms/types';
+import { CustomResponse as Response, CreateSubscriberModel, ListResponseDto, SubscriberDto, SubscriberFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface ISubscriberService {

@@ -1,5 +1,5 @@
-import { StaffDto } from "../../dtos/staff.dto";
-import { StaffFilterParams } from "../../params/staff.params";
+import { StaffDto, StaffFilterParams } from '@pms/types';
+
 
 export interface IStaffRepository {
     findAll(filters?: StaffFilterParams): Promise<StaffDto[]>;

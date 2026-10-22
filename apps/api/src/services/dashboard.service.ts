@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { IDashboardService } from './interfaces/Idashboard.service';
-import { DashboardSummaryDto } from '../dtos/dashboard.dto';
+import { DashboardSummaryDto } from '@pms/types';
 
 @injectable()
 export class DashboardService implements IDashboardService {

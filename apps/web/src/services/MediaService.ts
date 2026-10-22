@@ -1,7 +1,8 @@
-import { DeleteMediaResponse, ListMediaResponse, UploadMediaResponse } from '@/dtos/media.dto';
+
 import axios from 'axios';
 import { injectable } from 'inversify';
 import IMediaService, { UploadMediaOptions } from './interfaces/IMediaService';
+import { DeleteMediaResponse, ListMediaResponse, UploadMediaResponse } from '@pms/types';
 
 const BASE = '/api/admin-media';
 

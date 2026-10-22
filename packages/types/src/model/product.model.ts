@@ -41,3 +41,11 @@ export interface ProductModel {
   variants?: ProductVariantInlineModel[];
 }
 
+
+/**
+ * What the admin product form posts. `storeCode` is stamped from the token server-side,
+ * so the client never sends it.
+ */
+export type CreateProductModel = Omit<ProductModel, 'storeCode'> & { storeCode?: string };
+
+export type UpdateProductModel = Partial<CreateProductModel>;

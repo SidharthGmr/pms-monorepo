@@ -1,5 +1,5 @@
-import { OrderItemDto, UpdateOrderItemDto } from "../../dtos/order-item.dto";
-import { CreateOrderItemModel } from "../../models/order-item.model";
+import { OrderItemDto, UpdateOrderItemDto, CreateOrderItemModel } from '@pms/types';
+
 
 export interface IOrderItemService {
   getByOrderId(orderId: number): Promise<OrderItemDto[]>;

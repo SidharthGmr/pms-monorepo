@@ -3,14 +3,15 @@ import ActionTooltip from '@/components/common/tooltip-action-button';
 import { Badge } from '@/components/ui/badge';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { WishlistDto } from '@/dtos/wishlist.dto';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
+import { WishlistDto, StatusValues } from '@pms/types';
 
 interface WishlistColumnOptions {
   removeRecord: (id: number) => void;

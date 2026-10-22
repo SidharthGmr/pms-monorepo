@@ -1,8 +1,6 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "@pms/types";
-import { MasterEntryDto } from "../dtos/master-entry.dto";
-import { MasterEntryFilterParams } from "../params/master-entry.params";
+import { ListResponseDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
 import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
 
 const entryInclude = {
@@ -48,7 +46,7 @@ export class MasterEntryRepository implements IMasterEntryRepository {
                 ];
             }
 
-            if (filters.status !== undefined) {
+            if (filters.status != null) {
                 where.status = filters.status;
                 delete where.NOT;
             }

@@ -2,10 +2,11 @@
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Roles } from '@/enums/roles.enum';
+
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { Boxes, FolderTree, PackagePlus, Plus, ShoppingBag, Tags, UserPlus } from 'lucide-react';
 import Link from 'next/link';
+import { Roles } from '@pms/types';
 
 const ACTIONS = [
   { label: 'New sale', hint: 'Take payment for the cart', href: '/admin/cart', icon: ShoppingBag },

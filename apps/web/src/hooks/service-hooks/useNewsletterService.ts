@@ -1,10 +1,11 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { NewsletterModel } from '@/models/newsletter.model';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 
+import { NewsletterModel } from '@pms/types';
 
 const useCreateNewsletter = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

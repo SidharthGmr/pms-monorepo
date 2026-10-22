@@ -1,7 +1,4 @@
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { PriceHistoryDto, PriceHistorySummaryDto } from '@/dtos/price-history.dto';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '@/models/price-history.model';
-import { PriceHistoryFilterParams } from '@/params/price-history.params';
+import { CustomResponse as Response, ListResponseDto, PriceHistoryDto, PriceHistorySummaryDto, CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IPriceHistoryService {

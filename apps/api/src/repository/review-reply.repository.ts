@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "@pms/types";
-import { ReviewReplyDto } from "../dtos/review.dto";
-import { ReviewReplyFilterParams } from "../params/review.params";
+import { ListResponseDto, ReviewReplyDto, ReviewReplyFilterParams } from '@pms/types';
 import { IReviewReplyRepository } from "./interfaces/ireview-reply.repository";
 import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 

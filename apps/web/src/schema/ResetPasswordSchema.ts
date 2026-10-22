@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import ResetPasswordModel from '@/models/ResetPasswordModel';
+import { ResetPasswordModel } from '@pms/types';
 
 const ResetPasswordSchema: Yup.ObjectSchema<ResetPasswordModel> = Yup.object().shape({
     otp: Yup.string()

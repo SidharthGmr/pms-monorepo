@@ -1,5 +1,6 @@
-import { IssuedTokens, RotatedTokens, SessionContext, UserSessionDto } from '../../dtos/user-session.dto';
+
 import { AccessTokenClaims } from '../../utils/token.util';
+import { IssuedTokens, RotatedTokens, SessionContext, UserSessionDto } from '@pms/types';
 
 export interface IUserSessionService {
   issue(claims: AccessTokenClaims, context?: SessionContext): Promise<IssuedTokens>;

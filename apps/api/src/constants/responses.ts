@@ -1,6 +1,4 @@
-import { CustomResponse } from '@pms/types';
-import PlainDto from '../dtos/plain.dto';
-
+import { CustomResponse, PlainDto } from '@pms/types';
 /**
  * Shared bodies for the two guards every store-scoped controller repeats. `storeCode` and
  * `userId` both come off the JWT, so a request missing either is rejected before the service

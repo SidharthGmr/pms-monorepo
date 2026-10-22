@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { CreateStaffModel } from '@/models/staff.model';
+import { CreateStaffModel } from '@pms/types';
 
 const StaffSchema: Yup.ObjectSchema<CreateStaffModel> = Yup.object().shape({
     position: Yup.string().nullable().optional(),

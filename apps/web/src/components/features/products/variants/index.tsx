@@ -4,7 +4,7 @@ import { CustomDataTable } from '@/components/Table/data-table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import config from '@/config';
-import { ProductVariantDto } from '@/dtos/product-variant.dto';
+
 import { cn } from '@/lib/utils';
 import { useGetProductById } from '@/hooks/service-hooks/useProductService';
 import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantService';
@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useProductVariantColumns } from './variant-columns';
+import { ProductVariantResponseDto } from '@pms/types';
 
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
 const FLUSH_CARD = 'p-0 md:p-0';
@@ -39,7 +40,7 @@ export default function ProductVariants({ productId }: ProductVariantsProps) {
 
   const productName = productResponse?.data?.data?.name ?? '';
   const result = listQuery.data?.data?.data;
-  const variants: ProductVariantDto[] = useMemo(() => result?.data ?? [], [result]);
+  const variants: ProductVariantResponseDto[] = useMemo(() => result?.data ?? [], [result]);
   const total = result?.totalRecord ?? 0;
 
   const table = useCustomDataTable({

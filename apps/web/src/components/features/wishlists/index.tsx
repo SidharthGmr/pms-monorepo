@@ -6,18 +6,19 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { WishlistDto } from '@/dtos/wishlist.dto';
+
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { useGetAllWishlists, useRemoveFromWishlist } from '@/hooks/service-hooks/useWishlistService';
-import { WishlistFilterParams } from '@/params/wishlist.params';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useWishlistColumns } from './columns';
 import WishlistFilter from './filter';
+import { WishlistDto, WishlistFilterParams } from '@pms/types';
 
 /**
  * Staff view of every customer's saved products - a demand signal for what people want

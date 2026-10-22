@@ -1,5 +1,6 @@
-import ChangePasswordModel from '@/models/ChangePasswordModel';
+
 import * as Yup from 'yup';
+import { ChangePasswordModel } from '@pms/types';
 
 const ChangePasswordSchema: Yup.ObjectSchema<ChangePasswordModel> = Yup.object().shape({
   OldPassword: Yup.string()

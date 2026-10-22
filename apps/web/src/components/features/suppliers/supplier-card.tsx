@@ -3,10 +3,11 @@
 import StatusBadge from '@/components/common/status-badge';
 import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
-import { SupplierDto } from '@/dtos/supplier.dto';
+
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Mail, MapPin, Pencil, Phone, Trash2, UserRound } from 'lucide-react';
+import { SupplierDto } from '@pms/types';
 
 const TONES = [
   'bg-sky-500/15 text-sky-700 dark:text-sky-300',

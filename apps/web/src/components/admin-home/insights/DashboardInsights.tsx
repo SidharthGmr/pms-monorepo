@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardSummaryDto } from '@/dtos/dashboard-summary.dto';
+
 import { useGetDashboardSummary } from '@/hooks/service-hooks/useDashboardService';
 import { useGetLowStockProducts } from '@/hooks/service-hooks/useProductService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
@@ -30,6 +30,7 @@ import { CHART_COLORS, ComparisonBars, DonutChart } from './charts';
 import { formatCount, formatMoney, percentOf } from './format';
 import SalesTrend from './SalesTrend';
 import { Accent, ACCENT, EmptyLine, Initials, Panel, Segmented, SURFACE, TrendChip, trendPct } from './widgets';
+import { DashboardSummaryDto } from '@pms/types';
 
 interface LowStockProduct {
   id: number;
@@ -85,7 +86,8 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
     };
   }, [summary, dayOfMonth, daysInMonth]);
 
-  const stockUnits = useMemo(() => (summary?.products ?? []).reduce((n, p) => n + (p.stock ?? 0), 0), [summary]);
+  // Stock lives per variant, so the product rows carry none - the distribution is where the API reports it.
+  const stockUnits = useMemo(() => (summary?.productDistribution ?? []).reduce((n, d) => n + (d.stock ?? 0), 0), [summary]);
 
   if (summaryQuery.isError) {
     return (
@@ -266,7 +268,7 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
             title="Stock watch"
             icon={AlertTriangle}
             count={lowStockQuery.isLoading ? undefined : lowStock.length}
-            hint={isLoading ? undefined : `${formatCount(stockUnits)} units on hand across recent products.`}
+            hint={isLoading ? undefined : `${formatCount(stockUnits)} units on hand across the catalogue.`}
             href="/admin/stock-purchase"
             cta="Receive stock"
           >
@@ -590,7 +592,7 @@ interface Person {
   id: number;
   name: string;
   sub: string;
-  when: string;
+  when: Date | string;
   active: boolean;
   badge: string | null;
 }

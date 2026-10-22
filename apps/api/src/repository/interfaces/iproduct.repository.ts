@@ -1,8 +1,5 @@
 
-import { ListResponseDto, ProductResponseDto } from '@pms/types';
-import { LowStockItemDto } from '../../dtos/low-stock.dto';
-import { ProductFilterParams } from '../../params/product.params';
-
+import { ListResponseDto, ProductResponseDto, LowStockItemDto, ProductFilterParams } from '@pms/types';
 export interface IProductRepository {
   findAll(filters?: ProductFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<ProductResponseDto>>;
   findById(id: number): Promise<ProductResponseDto | null>;

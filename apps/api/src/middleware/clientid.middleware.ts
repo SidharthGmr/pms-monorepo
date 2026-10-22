@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { timingSafeEqual } from "crypto";
-import { CustomResponse } from "@pms/types";
-import PlainDto from "../dtos/plain.dto";
+import { CustomResponse, PlainDto } from '@pms/types';
 import env, { isLocalMode } from "../config/env";
 
 /** Constant-time compare so a wrong clientId cannot be recovered byte-by-byte from response timing. */

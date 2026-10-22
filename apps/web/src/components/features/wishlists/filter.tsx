@@ -2,13 +2,14 @@
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Roles } from '@/enums/roles.enum';
+
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
+import { Roles } from '@pms/types';
 
 interface WishlistFilterProps<TData> {
   table: Table<TData>;

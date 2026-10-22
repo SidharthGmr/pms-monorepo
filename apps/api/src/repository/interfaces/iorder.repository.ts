@@ -1,9 +1,8 @@
-import { CreateOrderModel } from "../../models/order.model";
-import { OrderDto, UpdateOrderDto } from "../../dtos/order.dto";
-import { OrderStatus } from "@prisma/client";
-import { OrderFilterParams } from "../../params/order.params";
-import { ListResponseDto } from "@pms/types";
 
+
+import { OrderStatus } from "@prisma/client";
+
+import { ListResponseDto, OrderDto, UpdateOrderDto, OrderFilterParams } from '@pms/types';
 export interface IOrderRepository {
   findAll(filters?: OrderFilterParams): Promise<ListResponseDto<OrderDto>>;
   findByCustomerId(customerId: string): Promise<OrderDto[]>;

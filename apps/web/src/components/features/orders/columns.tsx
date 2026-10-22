@@ -1,5 +1,5 @@
 'use client';
-import { OrderDto } from '@/dtos/order.dto';
+
 import { formatPrice } from '@/lib/format-price';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -7,6 +7,7 @@ import { Receipt } from 'lucide-react';
 import { useMemo } from 'react';
 import { OrderRowActions } from './row-action';
 import OrderStatusMenu from './status-menu';
+import { OrderDto } from '@pms/types';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 

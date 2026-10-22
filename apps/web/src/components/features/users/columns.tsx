@@ -3,8 +3,8 @@ import ActiveStatusToggle from '@/components/common/active-status-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UserDto } from '@/dtos/UserDto';
-import { Roles } from '@/enums/roles.enum';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -12,6 +12,7 @@ import { BsEnvelope, BsPhone } from 'react-icons/bs';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { Badge } from '../../ui/badge';
 import { UserRowActions } from './row-action';
+import { UserDto, Roles } from '@pms/types';
 
 // Roles read faster when each keeps its own colour across the table.
 const roleVariant = (role?: string): 'violet' | 'indigo' | 'teal' | 'zinc' => {

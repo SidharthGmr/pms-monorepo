@@ -3,7 +3,7 @@ import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
+
 import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { ReceiveStockFormValues } from '@/schema/receiveStockSchema';
 import { Check, Trash2 } from 'lucide-react';
 import { ComponentProps, forwardRef, useEffect, useMemo, useState } from 'react';
 import { Control, useFormContext, useWatch } from 'react-hook-form';
+import { ProductVariantListItemDto } from '@pms/types';
 
 interface PurchaseItemRowProps {
   control: Control<ReceiveStockFormValues>;

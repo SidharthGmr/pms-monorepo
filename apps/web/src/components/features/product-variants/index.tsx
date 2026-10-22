@@ -9,8 +9,8 @@ import config from '@/config';
 import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { cn } from '@/lib/utils';
-import { ProductVariantFilterParams } from '@/params/product-variant.params';
-import { ProductVariantListItemDto } from '@pms/types';
+
+import { ProductVariantListItemDto, ProductVariantFilterParams } from '@pms/types';
 import { Layers } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';

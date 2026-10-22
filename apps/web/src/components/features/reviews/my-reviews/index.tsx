@@ -10,8 +10,8 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ReviewDto } from '@/dtos/review.dto';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import { useDeleteReview, useGetAllReviews } from '@/hooks/service-hooks/useReviewService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
@@ -19,6 +19,7 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { MessageSquare, ShieldCheck, Star } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import RateProductDialog from '../rate-product-dialog';
+import { ReviewDto, StatusValues } from '@pms/types';
 
 const statusVariant = (status: string) => {
   if (status === StatusValues.Published) return 'green';

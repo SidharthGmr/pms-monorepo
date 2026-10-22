@@ -2,9 +2,7 @@ import { Role } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, ListResponseDto } from '@pms/types';
-import { CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto } from '../dtos/review.dto';
-import { ReviewReplyFilterParams } from '../params/review.params';
+import { CustomResponse, ListResponseDto, CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto, ReviewReplyFilterParams } from '@pms/types';
 import { ReviewActor } from '../services/interfaces/Ireview.service';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 

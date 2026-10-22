@@ -1,7 +1,8 @@
 import { Role, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { DashboardSummaryDto } from '../dtos/dashboard.dto';
+
 import { IDashboardRepository } from './interfaces/idashboard.repository';
+import { DashboardSummaryDto } from '@pms/types';
 
 const RECENT_LIMIT = 5;
 

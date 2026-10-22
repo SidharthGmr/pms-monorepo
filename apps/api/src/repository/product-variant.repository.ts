@@ -1,10 +1,16 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ListResponseDto, ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
-import { ProductVariantInternalDto, VariantRatingDto } from '../dtos/product-variant.dto';
-import { ProductVariantFilterParams } from '../params/product-variant.params';
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantResponseDto, ProductVariantInternalDto, VariantRatingDto, ProductVariantFilterParams } from '@pms/types';
 import { EffectivePrice, priceForVariant, pricesForVariants, stockForVariant, stockForVariants } from '../utils/variant-pricing';
 import { IProductVariantRepository } from './interfaces/iproduct-variant.repository';
+
+/** Id list filters arrive as a comma-separated query string from the web client. */
+function toIdList(value?: number[] | string): number[] {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : value.split(',');
+  return raw.map((v) => Number(v)).filter((v) => Number.isFinite(v));
+}
+
 
 const SORTABLE_COLUMNS = new Set(['sku', 'name', 'createdAt', 'id']);
 
@@ -85,14 +91,17 @@ export class ProductVariantRepository implements IProductVariantRepository {
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
       if (filters.sku) where.sku = { equals: filters.sku, mode: 'insensitive' };
       if (filters.productId !== undefined) where.productId = filters.productId;
-      if (filters.productIds?.length) where.productId = { in: filters.productIds };
+      const productIds = toIdList(filters.productIds);
+      if (productIds.length) where.productId = { in: productIds };
       if (filters.isActive !== undefined) where.isActive = filters.isActive;
       if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured;
       const productWhere: Prisma.productWhereInput = {};
       if (filters.categoryId !== undefined) productWhere.categoryId = filters.categoryId;
-      if (filters.categoryIds?.length) productWhere.categoryId = { in: filters.categoryIds };
+      const categoryIds = toIdList(filters.categoryIds);
+      if (categoryIds.length) productWhere.categoryId = { in: categoryIds };
       if (filters.brandNameId !== undefined) productWhere.brandNameId = filters.brandNameId;
-      if (filters.brandNameIds?.length) productWhere.brandNameId = { in: filters.brandNameIds };
+      const brandNameIds = toIdList(filters.brandNameIds);
+      if (brandNameIds.length) productWhere.brandNameId = { in: brandNameIds };
       if (filters.publishedOnly) {
         productWhere.status = Status.Published;
         productWhere.deletedAt = null;
@@ -108,10 +117,10 @@ export class ProductVariantRepository implements IProductVariantRepository {
         ];
       }
 
-      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+      if (filters.startDate != null || filters.endDate != null) {
         where.createdAt = {
-          ...(filters.startDate !== undefined && { gte: filters.startDate }),
-          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+          ...(filters.startDate != null && { gte: new Date(filters.startDate) }),
+          ...(filters.endDate != null && { lte: new Date(filters.endDate) }),
         };
       }
     }

@@ -39,7 +39,7 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
   const { data: response, isLoading, isError } = useGetPurchaseById(id);
   const purchase = response?.data?.data;
 
-  const formatDate = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as unknown as Date, true) : '—');
+  const formatDate = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as unknown as Date, true) : '—');
 
   if (isLoading) {
     return (

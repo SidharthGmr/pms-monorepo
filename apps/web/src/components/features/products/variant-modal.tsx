@@ -13,9 +13,10 @@ import { useProductVariantColumns } from './variants/variant-columns';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
-import { ProductVariantDto } from '@/dtos/product-variant.dto';
+
 import config from '@/config';
 import { Layers, Plus, Tag, TrendingUp, Wallet, X } from 'lucide-react';
+import { ProductVariantResponseDto } from '@pms/types';
 
 interface ProductVariantModalProps {
   productId: number;
@@ -25,7 +26,7 @@ interface ProductVariantModalProps {
 }
 
 export default function ProductVariantModal({ productId, productName, isOpen, onClose }: ProductVariantModalProps) {
-  const [data, setData] = useState<ProductVariantDto[]>([]);
+  const [data, setData] = useState<ProductVariantResponseDto[]>([]);
   const [recordCount, setRecordCount] = useState<number>(0);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -55,7 +56,7 @@ export default function ProductVariantModal({ productId, productName, isOpen, on
     }
   }, [variantResponse]);
 
-  const { sorting, onSortingChange } = useTanstackTableSorting<ProductVariantDto>('effectiveFrom', 'desc', columns);
+  const { sorting, onSortingChange } = useTanstackTableSorting<ProductVariantResponseDto>('effectiveFrom', 'desc', columns);
   const { onPaginationChange, pagination } = useTanstackTablePagination(filterParams.recordPerPage);
 
   const table = useCustomDataTable({

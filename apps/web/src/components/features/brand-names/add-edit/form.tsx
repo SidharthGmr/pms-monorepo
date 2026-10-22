@@ -2,7 +2,7 @@
 import { forwardRef, KeyboardEvent, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { ChevronDown, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { BrandNameDto, brandNameFields, CreateBrandNameModel } from '@pms/types';
+import { BrandNameDto, brandNameFields, CreateBrandNameModel, StatusValues } from '@pms/types';
 import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
 import StatusCards from '@/components/common/status-cards';
 import ConfirmBox from '@/components/common/confirm-box';
@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useCreateBrandName, useGetBrandNameById, useUpdateBrandName } from '@/hooks/service-hooks/useBrandNameService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';

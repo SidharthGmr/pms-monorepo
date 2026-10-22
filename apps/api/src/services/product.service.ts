@@ -1,11 +1,11 @@
 
 import { Prisma } from "@prisma/client";
 import { inject, injectable } from "inversify";
-import { LowStockItemDto } from "../dtos/low-stock.dto";
+
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto, ProductModel, ProductResponseDto, ProductVariantInlineModel, StatusEnum } from "@pms/types";
+import { ListResponseDto, ProductModel, ProductResponseDto, ProductVariantInlineModel, StatusEnum, LowStockItemDto, ProductFilterParams } from '@pms/types';
 import NotFoundError from "../exceptions/not-found-error";
-import { ProductFilterParams } from "../params/product.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { pricesForVariants, stockForVariants } from "../utils/variant-pricing";
 import { resolveVariantSku, resolveVariantSlug } from "../utils/variant-sku";

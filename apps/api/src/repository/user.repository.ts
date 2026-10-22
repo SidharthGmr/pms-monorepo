@@ -1,9 +1,9 @@
 import { Status, Role, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { UpdateUserDto, UserDto } from "../dtos/user.dto";
-import { ListResponseDto } from "@pms/types";
+
+import { ListResponseDto, UpdateUserDto, UserDto, UserFilterParams } from '@pms/types';
 import { IUserRepository } from "./interfaces/iuser.repository";
-import { UserFilterParams } from "../params/user.params";
+
 import { toUserDto, userProfileInclude } from "./user-profile.mapper";
 
 const SORTABLE_COLUMNS = new Set(['name', 'email', 'role', 'status', 'isActive', 'lastLoginAt', 'createdAt', 'updatedAt']);

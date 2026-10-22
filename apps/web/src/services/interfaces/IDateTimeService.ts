@@ -1,9 +1,9 @@
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
 
 export default interface IDateTimeService {
-  convertToLocalDate(dateTimeOffset: Date, displayTime?: boolean, timezone?: string): string;
+  convertToLocalDate(dateTimeOffset: Date | string, displayTime?: boolean, timezone?: string): string;
   convertTimeToAmPm(time: string | null): string;
   getMonths(): DropdownBasicDto[];
-  calculateDateDiff(fromDate: Date, toDate: Date): { year: number; month: number; days: number };
-  formatDate(date: Date): string;
+  calculateDateDiff(fromDate: Date | string, toDate: Date | string): { year: number; month: number; days: number };
+  formatDate(date: Date | string): string;
 }

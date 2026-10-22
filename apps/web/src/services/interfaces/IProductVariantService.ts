@@ -1,19 +1,9 @@
 import { AxiosResponse } from 'axios';
-import { ProductVariantDto } from '@/dtos/product-variant.dto';
-import {
-  CustomResponse as Response,
-  ListResponseDto,
-  ProductVariantCreateRequest,
-  ProductVariantListItemDto,
-  ProductVariantListItemDto as VariantDetailDto,
-  ProductVariantUpdateRequest,
-} from '@pms/types';
-import { RateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
-import { ProductVariantFilterParams } from '@/params/product-variant.params';
 
+import { CustomResponse as Response, ListResponseDto, ProductVariantCreateRequest, ProductVariantListItemDto, ProductVariantUpdateRequest, ProductVariantResponseDto, RateProductVariantModel, VariantRatingDto, ProductVariantFilterParams, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
 export default interface IProductVariantService {
-  create(model: ProductVariantCreateRequest): Promise<AxiosResponse<Response<ProductVariantDto>>>;
-  update(id: number, model: ProductVariantUpdateRequest): Promise<AxiosResponse<Response<ProductVariantDto>>>;
+  create(model: ProductVariantCreateRequest): Promise<AxiosResponse<Response<ProductVariantResponseDto>>>;
+  update(id: number, model: ProductVariantUpdateRequest): Promise<AxiosResponse<Response<ProductVariantResponseDto>>>;
 
   getById(id: number | string): Promise<AxiosResponse<Response<VariantDetailDto>>>;
 
@@ -29,8 +19,8 @@ export default interface IProductVariantService {
   getByProductId(
     productId: number | string,
     params?: { page?: number; recordPerPage?: number }
-  ): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantDto>>>>;
+  ): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantResponseDto>>>>;
 
   /** The variant effective on a given date (defaults to now). */
-  getEffective(productId: number | string, date?: string): Promise<AxiosResponse<Response<ProductVariantDto>>>;
+  getEffective(productId: number | string, date?: string): Promise<AxiosResponse<Response<ProductVariantResponseDto>>>;
 }

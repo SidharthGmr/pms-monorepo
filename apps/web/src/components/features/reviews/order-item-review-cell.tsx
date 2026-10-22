@@ -1,10 +1,11 @@
 'use client';
 import StarRating from '@/components/common/star-rating';
 import { Button } from '@/components/ui/button';
-import { ReviewDto } from '@/dtos/review.dto';
+
 import { Star } from 'lucide-react';
 import { useState } from 'react';
 import RateProductDialog from './rate-product-dialog';
+import { ReviewDto } from '@pms/types';
 
 interface OrderItemReviewCellProps {
   orderId: number;

@@ -1,10 +1,11 @@
 'use client';
 
 import { SelectSearch } from '@/components/common/select-search';
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
-import { MasterEntryDto } from '@/dtos/master-entry.dto';
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
+
 import { useMasterEntriesByCode } from '@/hooks/service-hooks/useMasterEntryService';
 import { useMemo } from 'react';
+import { MasterEntryDto } from '@pms/types';
 
 interface MasterEntrySelectProps {
   /** Stable code of the master attribute whose values fill this dropdown, e.g. "SIZE". */

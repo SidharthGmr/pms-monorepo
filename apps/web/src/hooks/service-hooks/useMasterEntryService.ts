@@ -1,10 +1,11 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateMasterAttributeModel, CreateMasterEntryModel } from '@/models/master-entry.model';
-import { MasterAttributeFilterParams, MasterEntryFilterParams } from '@/params/master-entry.params';
+
+
 import IMasterAttributeService from '@/services/interfaces/IMasterAttributeService';
 import IMasterEntryService from '@/services/interfaces/IMasterEntryService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateMasterAttributeModel, CreateMasterEntryModel, MasterAttributeFilterParams, MasterEntryFilterParams } from '@pms/types';
 
 const attributeService = () => container.get<IMasterAttributeService>(TYPES.IMasterAttributeService);
 const entryService = () => container.get<IMasterEntryService>(TYPES.IMasterEntryService);

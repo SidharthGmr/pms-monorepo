@@ -5,12 +5,12 @@ import { useMemo } from 'react';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { StaffSalaryDto } from '@/dtos/staff-salary.dto';
+
 import { Badge } from '../../ui/badge';
 import ActionTooltip from '@/components/common/tooltip-action-button';
-import { PaymentStatus } from '@/enums/payment-status.enum';
-import StaffSalaryListRowActions from './row-action';
 
+import StaffSalaryListRowActions from './row-action';
+import { StaffSalaryDto, PaymentStatusEnum } from '@pms/types';
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const useStaffSalaryColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
@@ -129,10 +129,10 @@ export const useStaffSalaryColumns = (editRecord: (id: number) => void, deleteRe
           const status = row.original.status;
           let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
 
-          if (status === PaymentStatus.Paid) variant = 'default';
-          else if (status === PaymentStatus.Pending) variant = 'secondary';
-          else if (status === PaymentStatus.PartiallyPaid) variant = 'outline';
-          else if (status === PaymentStatus.Overdue) variant = 'destructive';
+          if (status === PaymentStatusEnum.Paid) variant = 'default';
+          else if (status === PaymentStatusEnum.Pending) variant = 'secondary';
+          else if (status === PaymentStatusEnum.Partial) variant = 'outline';
+          else if (status === PaymentStatusEnum.Overdue) variant = 'destructive';
 
           return <Badge variant={variant}>{status}</Badge>;
         },

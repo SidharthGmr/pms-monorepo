@@ -4,9 +4,9 @@ import ActiveStatusToggle from '@/components/common/active-status-toggle';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UserDto } from '@/dtos/UserDto';
-import { Roles } from '@/enums/roles.enum';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -15,6 +15,7 @@ import { BsEnvelope, BsPhone } from 'react-icons/bs';
 import UserTableDetail from '@/components/common/table-user-details';
 import ActionTooltip from '@/components/common/tooltip-action-button';
 import { DataTableColumnHeader } from '@/components/Table/data-table-column-header';
+import { UserDto, Roles, StatusValues } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

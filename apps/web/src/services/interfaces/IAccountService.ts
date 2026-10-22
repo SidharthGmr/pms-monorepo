@@ -1,12 +1,12 @@
-import { LoginDto, refreshTokenResponseDto } from '@/dtos/LoginDto';
-import PlainDto from '@/dtos/PlainDto';
-import { UserDto } from '@/dtos/UserDto';
-import LoginModel from '@/models/LoginModel';
-import VerifyTokenModel from '@/models/VerifyTokenModel';
-import ForgotPasswordModel from '@/models/ForgotPasswordModel';
-import ResetPasswordTokenModel from '@/models/ResetPasswordTokenModel';
-import { CreateUserModel } from '@/models/user.model';
-import { CustomResponse as Response, UpdateProfileModel } from '@pms/types';
+
+
+
+
+
+
+
+
+import { CustomResponse as Response, UpdateProfileModel, LoginDto, refreshTokenResponseDto, PlainDto, UserDto, LoginModel, VerifyTokenModel, ForgotPasswordModel, ResetPasswordTokenModel, CreateUserModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IAccountService {

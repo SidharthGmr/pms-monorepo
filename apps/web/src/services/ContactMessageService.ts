@@ -1,13 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import {
-  ContactMessageDto,
-  ContactMessageFilterParams,
-  CreateContactMessageModel,
-  CustomResponse as Response,
-  ListResponseDto,
-  UpdateContactMessageStatusModel,
-} from '@pms/types';
+import { CustomResponse as Response, ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel, ListResponseDto, UpdateContactMessageStatusModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IContactMessageService from './interfaces/IContactMessageService';

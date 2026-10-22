@@ -1,10 +1,11 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { OrderDto } from '@/dtos/order.dto';
+
 import { formatPrice } from '@/lib/format-price';
 import { Eye, MessageCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { OrderDto } from '@pms/types';
 
 interface OrderRowActionsProps {
   order: OrderDto;

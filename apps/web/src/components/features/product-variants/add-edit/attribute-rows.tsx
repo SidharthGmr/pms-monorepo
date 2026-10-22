@@ -3,8 +3,8 @@ import MasterEntrySelect from '@/components/common/master-entry-select';
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { MasterAttributeDto, MasterEntryDto } from '@/dtos/master-entry.dto';
-import { ProductVariantModel } from '@pms/types';
+
+import { ProductVariantModel, MasterAttributeDto, MasterEntryDto } from '@pms/types';
 import { ChevronsUpDown, Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 

@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { CustomResponse } from "@pms/types";
-import PlainDto from "../dtos/plain.dto";
-
+import { CustomResponse, PlainDto } from '@pms/types';
 /**
  * Middleware to ensure the authenticated user has a store assigned.
  * Must be placed AFTER authenticateToken middleware.

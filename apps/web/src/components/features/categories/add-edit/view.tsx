@@ -2,12 +2,13 @@
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useGetCategoryById } from '@/hooks/service-hooks/useCategoryService';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Eye, EyeOff, FolderTree, ImageOff, Pencil, Trash2 } from 'lucide-react';
 import { ReactNode } from 'react';
+import { StatusValues } from '@pms/types';
 
 /** Same colours the list rows and cards use, so view and list read alike. */
 const STATUS_TONE: Record<string, { label: string; hint: string; icon: typeof Eye; pill: string }> = {

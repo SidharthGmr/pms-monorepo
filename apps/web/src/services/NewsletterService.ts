@@ -4,10 +4,9 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import INewsletterService from './interfaces/INewsletterService'; 
-import { NewsletterModel } from '@/models/newsletter.model';
-import { NewsletterDto } from '@/dtos/newsletter.dto';
-import { CustomResponse as Response } from '@pms/types';
 
+
+import { CustomResponse as Response, NewsletterModel, NewsletterDto } from '@pms/types';
 @injectable()
 export default class NewsletterService implements INewsletterService {
   private readonly httpService: IHttpService;

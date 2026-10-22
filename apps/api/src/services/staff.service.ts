@@ -2,8 +2,8 @@ import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 import IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IStaffService } from "./interfaces/Istaff.service";
-import { CreateStaffDto, StaffDto, UpdateStaffDto } from "../dtos/staff.dto";
-import { StaffFilterParams } from "../params/staff.params";
+
+import { CreateStaffDto, StaffDto, UpdateStaffDto, StaffFilterParams } from '@pms/types';
 
 @injectable()
 export class StaffService implements IStaffService {

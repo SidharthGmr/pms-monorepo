@@ -14,13 +14,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useCreateMasterEntry, useGetAllMasterAttributes, useGetMasterEntryById, useUpdateMasterEntry } from '@/hooks/service-hooks/useMasterEntryService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
-import { CreateMasterEntryModel } from '@/models/master-entry.model';
+
 import { MasterEntrySchema } from '@/schema/masterEntrySchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { StatusValues, CreateMasterEntryModel } from '@pms/types';
 
 /**
  * The dialog form for an option value, structured like the brand dialog: the required fields up
@@ -82,7 +83,7 @@ const MasterEntryForm = forwardRef<MasterEntryFormHandle, MasterEntryFormProps>(
         name: entry.name,
         value: entry.value,
         colorHex: entry.colorHex ?? '',
-        status: entry.status as string,
+        status: entry.status,
         displayOrder: entry.displayOrder ?? 0,
       });
     }

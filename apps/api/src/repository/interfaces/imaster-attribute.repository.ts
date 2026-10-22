@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { MasterAttributeDto } from "../../dtos/master-entry.dto";
-import { ListResponseDto } from "@pms/types";
-import { MasterAttributeFilterParams } from "../../params/master-entry.params";
 
+import { ListResponseDto, MasterAttributeDto, MasterAttributeFilterParams } from '@pms/types';
 export interface IMasterAttributeRepository {
     findAll(filters?: MasterAttributeFilterParams): Promise<ListResponseDto<MasterAttributeDto>>;
     /** Pass `tx` when reading back a row written inside an open transaction. */

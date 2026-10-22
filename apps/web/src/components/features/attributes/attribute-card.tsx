@@ -3,9 +3,9 @@
 import StatusBadge from '@/components/common/status-badge';
 import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { cn } from '@/lib/utils';
-import { AttributeDto } from '@pms/types';
+import { AttributeDto, StatusValues } from '@pms/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Pencil, Ruler, Trash2 } from 'lucide-react';
 import { KeyboardEvent } from 'react';

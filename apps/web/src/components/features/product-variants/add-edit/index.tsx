@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useGetAllMasterAttributes, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useCreateProductVariant, useGetProductVariantById, useUpdateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
@@ -21,7 +21,7 @@ import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductVariantCreateRequest, ProductVariantModel, ProductVariantUpdateRequest, productVariantValidator } from '@pms/types';
+import { ProductVariantCreateRequest, ProductVariantModel, ProductVariantUpdateRequest, productVariantValidator, StatusValues } from '@pms/types';
 import { ChevronDown, Loader2, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { KeyboardEvent, ReactNode, useEffect, useMemo, useState } from 'react';

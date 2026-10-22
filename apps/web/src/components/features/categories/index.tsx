@@ -2,14 +2,14 @@
 import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Eye, CornerDownRight, FolderTree, ImageOff, Pencil, Plus, Trash2 } from 'lucide-react';
-import { CategoryFilterParams, CategoryResponseDto, Status } from '@pms/types';
+import { CategoryFilterParams, CategoryResponseDto, Status, StatusValues } from '@pms/types';
 import { useDeleteCategory, useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import config from '@/config';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { cn } from '@/lib/utils';
 import ConfirmBox from '@/components/common/confirm-box';
 import CardAction from '@/components/common/card-action';

@@ -6,10 +6,10 @@ import { AUTH_CONTROL, AUTH_FIELD, AUTH_FIELD_INVALID, AUTH_LABEL, AuthAltAction
 import { toast } from '@/components/ui/use-toast';
 import { useRoleRedirect } from '@/hooks/use-role-base-redirection';
 import { cn } from '@/lib/utils';
-import { LoginModel } from '@/models/login.model';
+
 import LoginSchema from '@/schema/LoginSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { UserDto } from '@pms/types';
+import { UserDto, LoginModel } from '@pms/types';
 import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { getSession, signIn, useSession } from 'next-auth/react';
 import Link from 'next/link';

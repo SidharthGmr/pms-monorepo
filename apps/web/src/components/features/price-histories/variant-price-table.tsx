@@ -25,7 +25,7 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
   const rows = data?.data?.data?.data ?? [];
   const total = data?.data?.data?.totalRecord ?? 0;
 
-  const when = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as unknown as Date, true) : '—');
+  const when = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value, true) : '—');
 
   if (isPending) {
     return (

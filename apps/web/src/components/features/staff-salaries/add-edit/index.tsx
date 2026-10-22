@@ -10,20 +10,20 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { CreateStaffSalaryModel } from '@/models/staff-salary.model';
+
 import StaffSalarySchema from '@/schema/staffSalarySchema';
 import { useCreateStaffSalary, useGetStaffSalaryById, useUpdateStaffSalary } from '@/hooks/service-hooks/useStaffSalaryService';
 import { SelectSearch } from '@/components/common/select-search';
-import { PaymentStatus } from '@/enums/payment-status.enum';
-import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { CreateStaffSalaryModel, PaymentStatusEnum } from '@pms/types';
 interface ManageStaffSalaryProps {
   id?: number;
   isOpen: boolean;
   onClose: (refresh: boolean) => void;
 }
 
-const statusData = Object.values(PaymentStatus).map((status) => ({
+const statusData = Object.values(PaymentStatusEnum).map((status) => ({
   label: status,
   value: status,
 }));
@@ -70,7 +70,7 @@ export default function ManageStaffSalary({ id, isOpen, onClose }: ManageStaffSa
       advanceDeduction: undefined,
       netPayable: 0,
       paidAmount: undefined,
-      status: PaymentStatus.Pending,
+      status: PaymentStatusEnum.Pending,
       paymentDate: undefined,
       remarks: '',
       processedBy: undefined,

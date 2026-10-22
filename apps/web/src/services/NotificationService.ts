@@ -1,14 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import {
-  CustomResponse as Response,
-  ListResponseDto,
-  MarkNotificationsReadModel,
-  MarkNotificationsReadResultDto,
-  NotificationDto,
-  NotificationFilterParams,
-  NotificationSummaryDto,
-} from '@pms/types';
+import { CustomResponse as Response, ListResponseDto, MarkNotificationsReadModel, MarkNotificationsReadResultDto, NotificationDto, NotificationFilterParams, NotificationSummaryDto } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';

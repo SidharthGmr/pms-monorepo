@@ -2,12 +2,13 @@
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useGetAttributeById } from '@/hooks/service-hooks/useAttributeService';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Eye, EyeOff, Pencil, Ruler, Trash2 } from 'lucide-react';
 import { ReactNode } from 'react';
+import { StatusValues } from '@pms/types';
 
 /** Same colours and wording the status cards use, so view and edit read alike. */
 const STATUS_TONE: Record<string, { label: string; hint: string; icon: typeof Eye; pill: string }> = {

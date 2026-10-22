@@ -1,8 +1,6 @@
 import { Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ListResponseDto, ProductResponseDto } from '@pms/types';
-import { LowStockItemDto } from '../dtos/low-stock.dto';
-import { ProductFilterParams } from '../params/product.params';
+import { ListResponseDto, ProductResponseDto, LowStockItemDto, ProductFilterParams } from '@pms/types';
 import { IProductRepository } from './interfaces/iproduct.repository';
 
 
@@ -55,23 +53,23 @@ export class ProductRepository implements IProductRepository {
 
 
       if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
-      if (filters.categoryId !== undefined) where.categoryId = filters.categoryId;
-      if (filters.brandNameId !== undefined) where.brandNameId = filters.brandNameId;
+      if (filters.categoryId != null) where.categoryId = Number(filters.categoryId);
+      if (filters.brandNameId != null) where.brandNameId = Number(filters.brandNameId);
       if (filters.storeId !== undefined) where.store = { id: filters.storeId };
       if (filters.createdById !== undefined) where.createdById = filters.createdById;
 
-      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+      if (filters.startDate != null || filters.endDate != null) {
         where.createdAt = {
-          ...(filters.startDate !== undefined && { gte: filters.startDate }),
-          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+          ...(filters.startDate != null && { gte: new Date(filters.startDate) }),
+          ...(filters.endDate != null && { lte: new Date(filters.endDate) }),
         };
       }
     }
 
     const showAll = filters?.showAllRecords === true;
 
-    if (filters?.status !== undefined) {
-      where.status = filters.status;
+    if (filters?.status != null) {
+      where.status = filters.status as Status;
     } else if (!showAll) {
       where.NOT = { status: Status.Trash };
     }

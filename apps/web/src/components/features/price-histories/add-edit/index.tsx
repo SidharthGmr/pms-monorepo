@@ -11,13 +11,14 @@ import { TYPES } from '@/config/types';
 import { useCreatePriceHistory, useGetPriceHistoryById, useUpdatePriceHistory } from '@/hooks/service-hooks/usePriceHistoryService';
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantService';
-import { CreatePriceHistoryModel } from '@/models/price-history.model';
+
 import { PriceHistorySchema } from '@/schema/priceHistorySchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Resolver } from 'react-hook-form';
 import { formatPercent, marginPercent } from '../format';
+import { CreatePriceHistoryModel } from '@pms/types';
 
 interface ManagePriceHistoryProps {
   id?: number;
@@ -29,7 +30,7 @@ interface ManagePriceHistoryProps {
 }
 
 /** `datetime-local` wants `YYYY-MM-DDTHH:mm` in local time, not an ISO string. */
-const toLocalInputValue = (value?: string | null): string => {
+const toLocalInputValue = (value?: Date | string | null): string => {
   if (!value) return '';
   const date = new Date(value);
   if (isNaN(date.getTime())) return '';
@@ -65,7 +66,9 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
   );
 
   const form = useForm<CreatePriceHistoryModel>({
-    resolver: yupResolver(PriceHistorySchema),
+    // The schema covers the fields this form edits; the model also carries the ones the API
+    // stamps server-side (storeCode, createdById), which the resolver never sees.
+    resolver: yupResolver(PriceHistorySchema) as Resolver<CreatePriceHistoryModel>,
     defaultValues: {
       variantId: defaultVariantId ?? 0,
       sellingPrice: 0,
@@ -244,7 +247,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                 <FormItem>
                   <FormLabel>Effective From</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value)} />
+                    <Input type="datetime-local" value={toLocalInputValue(field.value)} onChange={(e) => field.onChange(e.target.value)} />
                   </FormControl>
                   <FormDescription>
                     {willBeScheduled

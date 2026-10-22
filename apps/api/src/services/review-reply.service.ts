@@ -1,11 +1,10 @@
 import { Role } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "@pms/types";
-import { CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto } from "../dtos/review.dto";
+import { ListResponseDto, CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto, ReviewReplyFilterParams } from '@pms/types';
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
-import { ReviewReplyFilterParams } from "../params/review.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IReviewReplyService } from "./interfaces/Ireview-reply.service";
 import { ReviewActor } from "./interfaces/Ireview.service";

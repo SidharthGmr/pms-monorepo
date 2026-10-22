@@ -1,9 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ListResponseDto } from '@pms/types';
-import { PriceHistoryDto, PriceHistorySummaryDto, PriceHistoryVariantScopeDto } from '../../dtos/price-history.dto';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../../models/price-history.model';
-import { PriceHistoryFilterParams } from '../../params/price-history.params';
-
+import { ListResponseDto, PriceHistoryDto, PriceHistorySummaryDto, PriceHistoryVariantScopeDto, CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 export interface IPriceHistoryRepository {
   findAll(filters?: PriceHistoryFilterParams): Promise<ListResponseDto<PriceHistoryDto>>;
 

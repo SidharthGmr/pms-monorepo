@@ -10,8 +10,7 @@ import { validate } from "../middleware/validate";
 import { createUserByAdminSchema, forgotPasswordSchema, loginSchema, refreshTokenSchema, resetPasswordSchema, signupSchema, verifyOtpSchema, verifyOtpByIdSchema, sendOtpSchema, verifyEmailTokenSchema } from "../schemas/userSchema";
 import { authLimiter, refreshLimiter } from "../middleware/rateLimiter.middleware";
 import authorization from "../middleware/authorization.middleware";
-import { Role } from "../enum/user.enum";
-
+import { Roles } from '@pms/types';
 const accountRouter = Router();
 
 const accountController = container.get<AccountController>(
@@ -172,7 +171,7 @@ accountRouter.post("/signup", authLimiter, validate(signupSchema), asyncHandler(
  *       409:
  *         description: User already exists
  */
-accountRouter.post('/create-user', authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), validate(createUserByAdminSchema), asyncHandler(accountController.createUser));
+accountRouter.post('/create-user', authenticateToken, authorization([Roles.SUPER_ADMIN, Roles.ADMIN]), validate(createUserByAdminSchema), asyncHandler(accountController.createUser));
 
 
 /**

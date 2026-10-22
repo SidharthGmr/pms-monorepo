@@ -7,8 +7,8 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { OrderDto } from '@/dtos/order.dto';
-import { PurchaseDto } from '@/dtos/purchase.dto';
+
+
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllPurchases } from '@/hooks/service-hooks/usePurchaseService';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ import { Activity, AlertTriangle, Banknote, ChevronRight, CreditCard, RotateCcw,
 import Link from 'next/link';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { formatMoney } from './format';
+import { OrderDto, PurchaseResponseDto } from '@pms/types';
 
 // The Focus cut of the feed. The shared ActivityFeed is one undifferentiated stream; this one
 // reads as a day book - each day opens with what it took and what it spent, so the rows beneath
@@ -90,7 +91,7 @@ export default function FocusActivityFeed({ limit = 6 }: { limit?: number }) {
       href: `/admin/orders/${o.id}`,
       order: o,
     }));
-    const purchaseItems: FeedItem[] = ((purchases.data?.data?.data?.data as PurchaseDto[] | undefined) ?? []).map((p) => ({
+    const purchaseItems: FeedItem[] = ((purchases.data?.data?.data?.data as PurchaseResponseDto[] | undefined) ?? []).map((p) => ({
       key: `p-${p.id}`,
       kind: 'purchase',
       title: p.supplierName || 'Supplier',

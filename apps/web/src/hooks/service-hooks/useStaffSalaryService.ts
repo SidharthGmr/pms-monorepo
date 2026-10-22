@@ -1,9 +1,10 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateStaffSalaryModel, UpdateStaffSalaryModel } from '@/models/staff-salary.model';
-import { StaffSalaryFilterParams } from '@/params/staff-salary.params';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateStaffSalaryModel, UpdateStaffSalaryModel, StaffSalaryFilterParams } from '@pms/types';
 
 const useCreateStaffSalary = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

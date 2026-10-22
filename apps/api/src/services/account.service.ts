@@ -3,10 +3,10 @@ import { users } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { OtpDto, UserDto } from "../dtos/user.dto";
-import { ResetPasswordModel } from "../models/forgot-password.model";
-import { LoginModel } from "../models/login.model";
-import { CreateUserModel } from "../models/user.model";
+
+
+
+
 import IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { createUserName, generateStoreCode, generateUserGUID } from "../utils/authHelpers.service";
 import { generateOtp } from "../utils/otp.util";
@@ -14,8 +14,7 @@ import { IAccountService } from "./interfaces/Iaccount.service";
 import { INotificationService } from "./interfaces/Inotification.service";
 import { getOtpExpiryDate } from "../utils/timeExpiry.util";
 import { toUserDto, userProfileInclude } from "../repository/user-profile.mapper";
-import { Role, Status, StatusEnum } from "@pms/types";
-
+import { Role, StatusEnum, UserDto, ResetPasswordTokenModel, CreateUserModel, Roles } from '@pms/types';
 @injectable()
 export class AccountService implements IAccountService {
   constructor(
@@ -36,7 +35,7 @@ export class AccountService implements IAccountService {
   async signup(data: CreateUserModel, role: Role) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const { otp } = generateOtp();
-    const storeCode = generateStoreCode(data.firstName);
+    const storeCode = generateStoreCode(data.firstName ?? data.email);
 
     const created = await this.unitOfWork.transaction(async (transactionClient) => {
       await transactionClient.store.create({
@@ -104,7 +103,7 @@ export class AccountService implements IAccountService {
           isActive: false,
           isEmailVerified: false,
           isPhoneVerified: false,
-          role: data.role || Role.user,
+          role: data.role || Roles.USER,
           storeCode: storeCode,
           UserProfile: {
             create: {
@@ -116,7 +115,7 @@ export class AccountService implements IAccountService {
         include: userProfileInclude,
       });
 
-      if (user.role === Role.staff) {
+      if (user.role === Roles.STAFF) {
         await transactionClient.staff.create({
           data: {
             userId: user.userId,
@@ -135,7 +134,7 @@ export class AccountService implements IAccountService {
       userId: created.userId,
       name: created.name ?? '',
       email: created.email ?? '',
-      role: String(created.role ?? data.role ?? Role.user),
+      role: String(created.role ?? data.role ?? Roles.USER),
     });
 
     return created;
@@ -219,7 +218,7 @@ export class AccountService implements IAccountService {
     return user;
   }
 
-  async resetPassword(userId: string, data: ResetPasswordModel): Promise<UserDto> {
+  async resetPassword(userId: string, data: ResetPasswordTokenModel): Promise<UserDto> {
 
     if (data.newPassword !== data.confirmPassword) {
       throw new Error("New password and confirm password do not match.");
@@ -261,6 +260,8 @@ export class AccountService implements IAccountService {
     return {
       id: user.id,
       userId: user.userId,
+      // The web client reads `usersId`; it is the same value as `userId`.
+      usersId: user.userId,
       name: user.name,
       userName: user.userName,
       email: user.email,

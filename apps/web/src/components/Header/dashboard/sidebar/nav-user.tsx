@@ -11,11 +11,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
-import { Roles } from '@/enums/roles.enum';
+
 import useLogout from '@/hooks/use-logout';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { ChevronsUpDown, LogOut, Store, UserRound } from 'lucide-react';
 import Link from 'next/link';
+import { Roles } from '@pms/types';
 
 export function NavUser() {
   const { currentUser } = useGetCurrentUser();

@@ -10,11 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useCreateSupplier, useGetSupplierById, useUpdateSupplier } from '@/hooks/service-hooks/useSupplierService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
-import { CreateSupplierModel } from '@/models/supplier.model';
+
 import SupplierSchema from '@/schema/supplierSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -22,6 +22,7 @@ import { ChevronDown, Truck } from 'lucide-react';
 import { KeyboardEvent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import SupplierView from './view';
+import { StatusValues, CreateSupplierModel } from '@pms/types';
 
 interface ManageSupplierProps {
   id?: number;

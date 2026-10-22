@@ -4,10 +4,9 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import { IPurchaseService } from './interfaces/IPurchaseService';
-import { PurchaseFilterParams } from '@/params/purchase.params';
-import { PurchaseDto } from '@/dtos/purchase.dto';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
+
+import { CustomResponse as Response, ListResponseDto, PurchaseFilterParams, PurchaseResponseDto } from '@pms/types';
 export interface CreatePurchaseItemModel {
   /** Stock is received against a specific SKU, so the API wants the variant, not the product. */
   variantId: number;
@@ -43,15 +42,15 @@ export default class PurchaseService implements IPurchaseService {
       .post<any, AxiosResponse<Response<any>>>('/purchases', model);
   }
 
-  getAll(params?: PurchaseFilterParams): Promise<AxiosResponse<Response<ListResponseDto<PurchaseDto>>>> {
+  getAll(params?: PurchaseFilterParams): Promise<AxiosResponse<Response<ListResponseDto<PurchaseResponseDto>>>> {
     return this.httpService
       .call()
-      .get<ListResponseDto<PurchaseDto>, AxiosResponse<Response<ListResponseDto<PurchaseDto>>>>('/purchases', { params });
+      .get<ListResponseDto<PurchaseResponseDto>, AxiosResponse<Response<ListResponseDto<PurchaseResponseDto>>>>('/purchases', { params });
   }
 
-  getById(id: number | string): Promise<AxiosResponse<Response<PurchaseDto>>> {
+  getById(id: number | string): Promise<AxiosResponse<Response<PurchaseResponseDto>>> {
     return this.httpService
       .call()
-      .get<PurchaseDto, AxiosResponse<Response<PurchaseDto>>>(`/purchases/${id}`);
+      .get<PurchaseResponseDto, AxiosResponse<Response<PurchaseResponseDto>>>(`/purchases/${id}`);
   }
 }

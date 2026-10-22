@@ -10,12 +10,13 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { CreateStoreModel } from '@/models/store.model';
+
 import StoreSchema from '@/schema/storeSchema';
 import { useCreateStore, useGetStoreById, useUpdateStore } from '@/hooks/service-hooks/useStoreService';
 import { SelectSearch } from '@/components/common/select-search';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { Checkbox } from '@/components/ui/checkbox';
+import { CreateStoreModel, StatusValues } from '@pms/types';
 
 interface ManageStoreProps {
   id?: number;

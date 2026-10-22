@@ -15,6 +15,11 @@ const config = {
   		}
   	},
   	extend: {
+  		// The dashboard sidebar docks at this width; below it the header hamburger opens it
+  		// as a sheet. Keep in sync with MOBILE_BREAKPOINT in src/hooks/use-mobile.tsx.
+  		screens: {
+  			sidebar: '1200px'
+  		},
   		fontFamily: {
   			sans: ['var(--font-outfit)', 'var(--font-jakarta)', 'var(--font-devanagari)', 'sans-serif']
   		},

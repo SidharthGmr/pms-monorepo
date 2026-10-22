@@ -1,8 +1,9 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
-import { ProductVariantSummaryDto } from '@/dtos/product.dto';
+
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
+import { ProductVariantSummaryDto } from '@pms/types';
 
 interface ProductVariantsStripProps {
   variants?: ProductVariantSummaryDto[] | null;
@@ -37,7 +38,7 @@ export default function ProductVariantsStrip({ variants }: ProductVariantsStripP
 
   if (real.length === 0) return null;
 
-  const prices = real.map((variant) => variant.sellingPrice);
+  const prices = real.map((variant) => variant.sellingPrice ?? 0);
   const low = Math.min(...prices);
   const high = Math.max(...prices);
   const shown = real.slice(0, MAX_SHOWN);
@@ -60,7 +61,7 @@ export default function ProductVariantsStrip({ variants }: ProductVariantsStripP
               key={variant.id}
               variant={soldOut ? 'zinc' : 'blue'}
               className={cn('font-normal', soldOut && 'opacity-60 line-through')}
-              title={`${describe(variant)} · ${money(variant.sellingPrice)} · ${variant.stockQuantity} in stock${
+              title={`${describe(variant)} · ${money(variant.sellingPrice ?? 0)} · ${variant.stockQuantity} in stock${
                 variant.sku ? ` · ${variant.sku}` : ''
               }`}
             >

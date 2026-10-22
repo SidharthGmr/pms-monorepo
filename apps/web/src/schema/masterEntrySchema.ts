@@ -1,3 +1,4 @@
+import { Status } from '@pms/types';
 import * as Yup from 'yup';
 
 /**
@@ -15,7 +16,7 @@ export const MasterAttributeSchema = Yup.object().shape({
   // Both scopes are optional - leaving them empty makes the attribute global.
   categoryId: Yup.number().nullable().optional(),
   brandNameId: Yup.number().nullable().optional(),
-  status: Yup.string().required('Status is required'),
+  status: Yup.mixed<Status>().oneOf(['Published', 'Draft', 'Trash']).required('Status is required'),
   displayOrder: Yup.number().nullable().optional(),
 });
 
@@ -27,6 +28,6 @@ export const MasterEntrySchema = Yup.object().shape({
     .matches(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, { message: 'Use a hex colour like #FF0000', excludeEmptyString: true })
     .nullable()
     .optional(),
-  status: Yup.string().required('Status is required'),
+  status: Yup.mixed<Status>().oneOf(['Published', 'Draft', 'Trash']).required('Status is required'),
   displayOrder: Yup.number().nullable().optional(),
 });

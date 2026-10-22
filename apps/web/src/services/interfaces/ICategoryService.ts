@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { CategoryModel, CategoryResponseDto, CustomResponse as Response, ListResponseDto } from '@pms/types';
+import { CustomResponse as Response, CategoryModel, CategoryResponseDto, ListResponseDto } from '@pms/types';
 import { CategoryFilterParams } from '@pms/types';
 
 export default interface ICategoryService {

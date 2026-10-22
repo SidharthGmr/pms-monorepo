@@ -15,15 +15,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateMasterAttribute, useGetMasterAttributeById, useUpdateMasterAttribute } from '@/hooks/service-hooks/useMasterEntryService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
-import { CreateMasterAttributeModel } from '@/models/master-entry.model';
+
 import { MasterAttributeSchema } from '@/schema/masterEntrySchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { StatusValues, CreateMasterAttributeModel } from '@pms/types';
 
 /**
  * The dialog form for a variant option, structured like the brand dialog: the required fields up
@@ -99,7 +100,7 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
         unit: attribute.unit ?? '',
         categoryId: attribute.categoryId ?? undefined,
         brandNameId: attribute.brandNameId ?? undefined,
-        status: attribute.status as string,
+        status: attribute.status,
         displayOrder: attribute.displayOrder ?? 0,
       });
     }

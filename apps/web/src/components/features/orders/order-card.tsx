@@ -2,7 +2,7 @@
 
 import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
-import { OrderDto } from '@/dtos/order.dto';
+
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -10,6 +10,7 @@ import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { KeyboardEvent } from 'react';
 import { toneFor } from './order-status';
 import OrderStatusMenu from './status-menu';
+import { OrderDto } from '@pms/types';
 
 interface OrderCardProps {
   order: OrderDto;

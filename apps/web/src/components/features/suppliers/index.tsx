@@ -2,9 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Truck } from 'lucide-react';
-import { Status } from '@pms/types';
-import { SupplierDto } from '@/dtos/supplier.dto';
-import { SupplierFilterParams } from '@/params/supplier.params';
+import { Status, SupplierDto, SupplierFilterParams } from '@pms/types';
 import { useDeleteSupplier, useGetAllSuppliers } from '@/hooks/service-hooks/useSupplierService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';

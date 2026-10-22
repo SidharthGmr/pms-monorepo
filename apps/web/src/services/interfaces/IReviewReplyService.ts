@@ -1,7 +1,4 @@
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { ReviewReplyDto } from '@/dtos/review.dto';
-import { CreateReviewReplyModel, UpdateReviewReplyModel } from '@/models/review.model';
-import { ReviewReplyFilterParams } from '@/params/review.params';
+import { CustomResponse as Response, ListResponseDto, ReviewReplyDto, CreateReviewReplyModel, UpdateReviewReplyModel, ReviewReplyFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IReviewReplyService {

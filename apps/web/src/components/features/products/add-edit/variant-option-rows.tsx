@@ -1,11 +1,12 @@
 'use client';
 import MasterEntrySelect from '@/components/common/master-entry-select';
 import { SelectSearch } from '@/components/common/select-search';
-import { MasterAttributeDto } from '@/dtos/master-entry.dto';
-import { CreateProductModel } from '@/models/product.model';
+
+
 import { X } from 'lucide-react';
 import { useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
+import { MasterAttributeDto, CreateProductModel } from '@pms/types';
 
 interface VariantOptionRowsProps {
   variantIndex: number;

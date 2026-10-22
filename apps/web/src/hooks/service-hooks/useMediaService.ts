@@ -1,11 +1,12 @@
 'use client';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UploadedMediaDto } from '@/dtos/media.dto';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { UploadedMediaDto } from '@pms/types';
 
 export const MEDIA_QUERY_KEY = ['MediaService.getAll'];
 

@@ -9,12 +9,13 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateStaff, useGetStaffById, useUpdateStaff } from '@/hooks/service-hooks/useStaffService';
-import { CreateStaffModel } from '@/models/staff.model';
+
 import StaffSchema from '@/schema/staffSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { CreateStaffModel } from '@pms/types';
 
 interface ManageStaffProps {
   id?: number;

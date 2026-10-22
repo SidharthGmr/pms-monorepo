@@ -1,14 +1,4 @@
-import {
-  CmsPageAccessDto,
-  CmsPageDto,
-  CmsPageFilterParams,
-  CmsPageListItemDto,
-  CmsPageUnlockResultDto,
-  CreateCmsPageModel,
-  CustomResponse as Response,
-  ListResponseDto,
-  UpdateCmsPageModel,
-} from '@pms/types';
+import { CustomResponse as Response, CmsPageAccessDto, CmsPageDto, CmsPageFilterParams, CmsPageListItemDto, CmsPageUnlockResultDto, CreateCmsPageModel, ListResponseDto, UpdateCmsPageModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface ICmsPageService {

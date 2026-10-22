@@ -4,11 +4,9 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import ISupplierService from './interfaces/ISupplierService';
-import { SupplierDto } from '@/dtos/supplier.dto';
-import { CreateSupplierModel } from '@/models/supplier.model';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { SupplierFilterParams } from '@/params/supplier.params';
 
+
+import { CustomResponse as Response, ListResponseDto, SupplierDto, CreateSupplierModel, SupplierFilterParams } from '@pms/types';
 @injectable()
 export default class SupplierService implements ISupplierService {
     private readonly httpService: IHttpService;

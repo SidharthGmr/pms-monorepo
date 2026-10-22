@@ -1,14 +1,14 @@
 'use client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { OrderDto } from '@/dtos/order.dto';
-import { OrderStatus } from '@/enums/order-status.enum';
+
+
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { cn } from '@/lib/utils';
 import { format, isSameDay, startOfDay, subDays } from 'date-fns';
 import { CalendarDays, LineChart, List } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { formatCount, formatMoney } from './format';
-
+import { OrderDto, OrderStatusEnum } from '@pms/types';
 // The Focus cut of the week's sales, in two readings of the same days. The list states every
 // amount exactly and survives a phone; the curve shows which way the week is going. The choice
 // is remembered per browser.
@@ -17,7 +17,7 @@ import { formatCount, formatMoney } from './format';
 // FETCH_LIMIT is comfortably above a week of orders for the stores this serves; if a store ever
 // outgrows it the panel says so rather than silently under-counting.
 const FETCH_LIMIT = 200;
-const EXCLUDED: string[] = [OrderStatus.Cancelled, OrderStatus.Returned];
+const EXCLUDED: string[] = [OrderStatusEnum.Cancelled, OrderStatusEnum.Returned];
 const STORAGE_KEY = 'dashboard.sales-trend.view';
 const PAD_TOP = 16;
 

@@ -1,10 +1,11 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateReviewModel, CreateReviewReplyModel, UpdateReviewModel, UpdateReviewReplyModel } from '@/models/review.model';
-import { ReviewFilterParams, ReviewReplyFilterParams } from '@/params/review.params';
+
+
 import IReviewReplyService from '@/services/interfaces/IReviewReplyService';
 import IReviewService from '@/services/interfaces/IReviewService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateReviewModel, CreateReviewReplyModel, UpdateReviewModel, UpdateReviewReplyModel, ReviewFilterParams, ReviewReplyFilterParams } from '@pms/types';
 
 const reviewService = () => container.get<IReviewService>(TYPES.IReviewService);
 const replyService = () => container.get<IReviewReplyService>(TYPES.IReviewReplyService);

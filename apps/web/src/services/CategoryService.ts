@@ -4,7 +4,7 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import ICategoryService from './interfaces/ICategoryService';
-import { CategoryModel, CategoryResponseDto, CustomResponse as Response, ListResponseDto } from '@pms/types';
+import { CustomResponse as Response, CategoryModel, CategoryResponseDto, ListResponseDto } from '@pms/types';
 import { CategoryFilterParams } from '@pms/types';
 
 @injectable()

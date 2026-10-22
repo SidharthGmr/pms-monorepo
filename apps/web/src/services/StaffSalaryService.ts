@@ -4,11 +4,10 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IStaffSalaryService from './interfaces/IStaffSalaryService';
-import { StaffSalaryDto } from '@/dtos/staff-salary.dto';
-import { CreateStaffSalaryModel, UpdateStaffSalaryModel } from '@/models/staff-salary.model';
-import { StaffSalaryFilterParams } from '@/params/staff-salary.params';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
+
+
+import { CustomResponse as Response, ListResponseDto, StaffSalaryDto, CreateStaffSalaryModel, UpdateStaffSalaryModel, StaffSalaryFilterParams } from '@pms/types';
 @injectable()
 export default class StaffSalaryService implements IStaffSalaryService {
     private readonly httpService: IHttpService;

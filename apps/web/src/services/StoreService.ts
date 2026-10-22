@@ -4,11 +4,10 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IStoreService from './interfaces/IStoreService';
-import { StoreDto } from '@/dtos/store.dto';
-import { CreateStoreModel, UpdateStoreModel } from '@/models/store.model';
-import { StoreFilterParams } from '@/params/store.params';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
+
+
+import { CustomResponse as Response, ListResponseDto, StoreDto, CreateStoreModel, UpdateStoreModel, StoreFilterParams } from '@pms/types';
 @injectable()
 export default class StoreService implements IStoreService {
     private readonly httpService: IHttpService;

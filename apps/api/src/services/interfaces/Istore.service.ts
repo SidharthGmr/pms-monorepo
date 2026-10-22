@@ -1,8 +1,4 @@
-import { ListResponseDto } from "@pms/types";
-import { StoreDto, CreateStoreDto, UpdateStoreDto } from "../../dtos/store.dto";
-import { StoreFilterParams } from "../../params/store.params";
-import { CreateStoreModel, UpdateStoreModel } from "../../models/store.model";
-
+import { ListResponseDto, StoreDto, StoreFilterParams, CreateStoreModel, UpdateStoreModel } from '@pms/types';
 export interface IStoreService {
   create(data: CreateStoreModel): Promise<StoreDto>;
   getAll(filters?: StoreFilterParams): Promise<ListResponseDto<StoreDto>>;

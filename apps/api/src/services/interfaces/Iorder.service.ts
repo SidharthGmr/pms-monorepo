@@ -1,9 +1,8 @@
-import { OrderDto, UpdateOrderDto } from "../../dtos/order.dto";
-import { OrderStatus } from "@prisma/client";
-import { CreateOrderModel } from "../../models/order.model";
-import { OrderFilterParams } from "../../params/order.params";
-import { ListResponseDto } from "@pms/types";
 
+import { OrderStatus } from "@prisma/client";
+
+
+import { ListResponseDto, OrderDto, UpdateOrderDto, CreateOrderModel, OrderFilterParams } from '@pms/types';
 export interface IOrderService {
   getAll(filters?: OrderFilterParams): Promise<ListResponseDto<OrderDto>>;
   getByCustomerId(customerId: string): Promise<OrderDto[]>;

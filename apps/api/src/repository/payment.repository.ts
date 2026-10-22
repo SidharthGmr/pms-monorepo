@@ -1,6 +1,7 @@
 import prisma from "../config/prisma";
-import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from "../dtos/payment.dto";
+
 import { IPaymentRepository } from "./interfaces/ipayment.repository";
+import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from '@pms/types';
 
 export class PaymentRepository implements IPaymentRepository {
   async findByOrderId(orderId: number): Promise<PaymentDto[]> {

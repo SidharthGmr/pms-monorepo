@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useGetAllAttributes } from '@/hooks/service-hooks/useAttributeService';
 import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
@@ -23,9 +23,9 @@ import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduc
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
-import { CreateProductModel } from '@/models/product.model';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { productFormFields } from '@pms/types';
+import { productFormFields, StatusValues, CreateProductModel } from '@pms/types';
 import { ArrowLeft, ChevronDown, Eye, EyeOff, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

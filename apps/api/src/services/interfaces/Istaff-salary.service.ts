@@ -1,4 +1,4 @@
-import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from "../../dtos/staff-salary.dto";
+import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from '@pms/types';
 
 export interface IStaffSalaryService {
   getAll(): Promise<StaffSalaryDto[]>;

@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, ListResponseDto } from '@pms/types';
-import { PriceHistoryDto, PriceHistorySummaryDto } from '../dtos/price-history.dto';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../models/price-history.model';
-import { PriceHistoryFilterParams } from '../params/price-history.params';
+import { CustomResponse, ListResponseDto, PriceHistoryDto, PriceHistorySummaryDto, CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 

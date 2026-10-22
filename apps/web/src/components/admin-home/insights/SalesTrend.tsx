@@ -1,19 +1,19 @@
 'use client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { OrderDto } from '@/dtos/order.dto';
-import { OrderStatus } from '@/enums/order-status.enum';
+
+
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { cn } from '@/lib/utils';
 import { format, isSameDay, startOfDay, subDays } from 'date-fns';
 import { BarChart3 } from 'lucide-react';
 import { useMemo } from 'react';
 import { formatCount, formatMoney } from './format';
-
+import { OrderDto, OrderStatusEnum } from '@pms/types';
 // The orders API has no date filter, so the newest orders are fetched and bucketed by day here.
 // FETCH_LIMIT is comfortably above a week of orders for the stores this serves; if a store ever
 // outgrows it the chart says so rather than silently under-counting.
 const FETCH_LIMIT = 200;
-const EXCLUDED: string[] = [OrderStatus.Cancelled, OrderStatus.Returned];
+const EXCLUDED: string[] = [OrderStatusEnum.Cancelled, OrderStatusEnum.Returned];
 
 interface DayBucket {
   date: Date;

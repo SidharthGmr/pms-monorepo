@@ -1,6 +1,4 @@
-import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationType } from "@pms/types";
-import { CreateNotificationModel } from "../../models/notification.model";
-
+import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationType, CreateNotificationModel } from '@pms/types';
 export interface INotificationRepository {
   createMany(notifications: CreateNotificationModel[]): Promise<number>;
   findAll(recipientId: string, filters?: NotificationFilterParams): Promise<ListResponseDto<NotificationDto>>;

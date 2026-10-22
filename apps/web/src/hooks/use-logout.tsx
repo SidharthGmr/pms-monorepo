@@ -1,10 +1,11 @@
 'use client';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UserDto } from '@/dtos/UserDto';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
+import { UserDto } from '@pms/types';
 
 export default function useLogout() {
   const { data: session, status } = useSession();

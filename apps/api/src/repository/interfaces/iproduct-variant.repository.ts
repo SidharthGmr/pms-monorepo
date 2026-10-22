@@ -1,8 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ListResponseDto, ProductVariantListItemDto, ProductVariantResponseDto } from '@pms/types';
-import { ProductVariantInternalDto, VariantRatingDto } from '../../dtos/product-variant.dto';
-import { ProductVariantFilterParams } from '../../params/product-variant.params';
-
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantResponseDto, ProductVariantInternalDto, VariantRatingDto, ProductVariantFilterParams } from '@pms/types';
 export interface IProductVariantRepository {
   findAll(filters?: ProductVariantFilterParams): Promise<ListResponseDto<ProductVariantListItemDto>>;
 

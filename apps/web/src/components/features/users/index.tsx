@@ -2,7 +2,7 @@
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UserDto } from '@/dtos/UserDto';
+
 import { useDeleteUserById, useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -17,8 +17,7 @@ import ConfirmBox from '../../common/confirm-box';
 import { toast } from '../../ui/use-toast';
 import { useUserColumns } from './columns';
 import UserListFilter from './filter';
-import { UserListParams } from '@pms/types';
-
+import { UserListParams, UserDto } from '@pms/types';
 export default function UserList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

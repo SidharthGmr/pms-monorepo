@@ -1,5 +1,6 @@
-import RecoverPasswordModel from '@/models/RecoverPasswordModel';
+
 import * as Yup from 'yup';
+import { RecoverPasswordModel } from '@pms/types';
 
 const RecoverPasswordSchema: Yup.ObjectSchema<RecoverPasswordModel> = Yup.object().shape({
   Email: Yup.string().required('Business Email is required'),

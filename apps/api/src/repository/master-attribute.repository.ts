@@ -1,8 +1,6 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "@pms/types";
-import { MasterAttributeDto } from "../dtos/master-entry.dto";
-import { MasterAttributeFilterParams } from "../params/master-entry.params";
+import { ListResponseDto, MasterAttributeDto, MasterAttributeFilterParams } from '@pms/types';
 import { IMasterAttributeRepository } from "./interfaces/imaster-attribute.repository";
 
 const attributeInclude = {
@@ -55,7 +53,7 @@ export class MasterAttributeRepository implements IMasterAttributeRepository {
                 ];
             }
 
-            if (filters.status !== undefined) {
+            if (filters.status != null) {
                 where.status = filters.status;
                 delete where.NOT;
             }

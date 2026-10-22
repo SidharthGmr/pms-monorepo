@@ -1,9 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { MasterEntryDto } from '@/dtos/master-entry.dto';
-import { CreateMasterEntryModel } from '@/models/master-entry.model';
-import { MasterEntryFilterParams } from '@/params/master-entry.params';
+import { CustomResponse as Response, ListResponseDto, MasterEntryDto, CreateMasterEntryModel, MasterEntryFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';

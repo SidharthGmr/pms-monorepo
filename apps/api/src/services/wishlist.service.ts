@@ -1,11 +1,10 @@
 import { Role, Status } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "@pms/types";
-import { WishlistDto } from "../dtos/wishlist.dto";
+import { ListResponseDto, WishlistDto, WishlistFilterParams } from '@pms/types';
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
-import { WishlistFilterParams } from "../params/wishlist.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { ReviewActor } from "./interfaces/Ireview.service";
 import { IWishlistService } from "./interfaces/Iwishlist.service";

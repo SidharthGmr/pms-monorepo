@@ -1,7 +1,5 @@
-import { CreateMasterAttributeDto, MasterAttributeDto } from "../../dtos/master-entry.dto";
-import { ListResponseDto } from "@pms/types";
-import { MasterAttributeFilterParams } from "../../params/master-entry.params";
 
+import { ListResponseDto, CreateMasterAttributeDto, MasterAttributeDto, MasterAttributeFilterParams } from '@pms/types';
 export interface IMasterAttributeService {
     getAll(filters?: MasterAttributeFilterParams): Promise<ListResponseDto<MasterAttributeDto>>;
     getById(id: number): Promise<MasterAttributeDto | null>;

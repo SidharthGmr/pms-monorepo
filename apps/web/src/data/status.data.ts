@@ -1,6 +1,5 @@
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
-import { StatusValues } from '@/enums/status-values.enum';
-
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
+import { StatusValues } from '@pms/types';
 
 const StatusData: DropdownBasicDto[] = [
   {

@@ -3,11 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { SideBarMenu } from '@/data/sidebarMenu';
-import { Roles } from '@/enums/roles.enum';
+
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { Boxes, PackagePlus, Plus, Search, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { Roles } from '@pms/types';
 
 interface PageEntry {
   label: string;

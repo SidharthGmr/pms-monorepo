@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { UserDto } from '../dtos/user.dto';
+import { UserDto } from '@pms/types';
 
 /**
  * Profile columns (userName, address, bio, ...) live in `UserProfile`, not `users`.

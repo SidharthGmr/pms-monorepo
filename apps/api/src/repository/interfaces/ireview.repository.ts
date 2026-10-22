@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { ReviewDto, ReviewSummaryDto } from "../../dtos/review.dto";
-import { ListResponseDto } from "@pms/types";
-import { ReviewFilterParams } from "../../params/review.params";
 
+import { ListResponseDto, ReviewDto, ReviewSummaryDto, ReviewFilterParams } from '@pms/types';
 export interface IReviewRepository {
     findAll(filters?: ReviewFilterParams): Promise<ListResponseDto<ReviewDto>>;
     /** Pass `tx` when reading back a row written inside an open transaction. */

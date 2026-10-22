@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { StaffSalaryDto } from '@/dtos/staff-salary.dto';
-import { StaffSalaryFilterParams } from '@/params/staff-salary.params';
+
+
 import { useGetAllStaffSalaries, useDeleteStaffSalary } from '@/hooks/service-hooks/useStaffSalaryService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
@@ -20,6 +20,7 @@ import { useStaffSalaryColumns } from './columns';
 import StaffSalaryListFilter from './filter';
 import ManageStaffSalary from './add-edit';
 import config from '@/config';
+import { StaffSalaryDto, StaffSalaryFilterParams } from '@pms/types';
 
 export default function StaffSalaryList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

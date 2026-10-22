@@ -2,9 +2,8 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { EmailModel } from '@/models/email.model';
-import { UserListParams } from '@pms/types';
 
+import { UserListParams, EmailModel } from '@pms/types';
 const useSendEmail = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

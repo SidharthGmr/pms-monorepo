@@ -1,8 +1,9 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { WishlistFilterParams } from '@/params/wishlist.params';
+
 import IWishlistService from '@/services/interfaces/IWishlistService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { WishlistFilterParams } from '@pms/types';
 
 const wishlistService = () => container.get<IWishlistService>(TYPES.IWishlistService);
 

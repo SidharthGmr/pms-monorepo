@@ -1,8 +1,7 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { SupplierDto } from "../dtos/supplier.dto";
-import { ListResponseDto } from "@pms/types";
-import { SupplierFilterParams } from "../params/supplier.params";
+
+import { ListResponseDto, SupplierDto, SupplierFilterParams } from '@pms/types';
 import { ISupplierRepository } from "./interfaces/isupplier.repository";
 
 const SORTABLE_COLUMNS = new Set(['name', 'status', 'displayOrder', 'createdAt', 'updatedAt']);
@@ -30,7 +29,7 @@ export class SupplierRepository implements ISupplierRepository {
                 ];
             }
 
-            if (filters.status !== undefined) {
+            if (filters.status != null) {
                 where.status = filters.status;
             } else {
                 where.NOT = { status: Status.Trash };

@@ -1,10 +1,11 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { OrderItemDto, UpdateOrderItemDto } from "../dtos/order-item.dto";
+
 import NotFoundError from "../exceptions/not-found-error";
-import { CreateOrderItemModel } from "../models/order-item.model";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IOrderItemService } from "./interfaces/Iorder-item.service";
+import { OrderItemDto, UpdateOrderItemDto, CreateOrderItemModel } from '@pms/types';
 
 @injectable()
 export class OrderItemService implements IOrderItemService {

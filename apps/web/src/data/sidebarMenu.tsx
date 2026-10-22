@@ -1,4 +1,4 @@
-import { Roles } from '@/enums/roles.enum';
+
 import {
   Bell,
   Boxes,
@@ -27,6 +27,7 @@ import {
   UserCog,
   Users,
 } from 'lucide-react';
+import { Roles } from '@pms/types';
 
 export interface SideBarMenuDto {
   id: string;

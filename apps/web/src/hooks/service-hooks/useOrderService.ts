@@ -1,9 +1,10 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel } from '@/models/order.model';
-import { OrderFilterParams } from '@/params/order.params';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel, OrderFilterParams } from '@pms/types';
 
 const useCreateOrder = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

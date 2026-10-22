@@ -1,24 +1,25 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ProductVariantDto } from '@/dtos/product-variant.dto';
+
 import { cn } from '@/lib/utils';
 import { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, Eye, History, ImageOff, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { ProductVariantResponseDto } from '@pms/types';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
 /** Matches CurrencyInput's locale and prefix, so the table and the form agree. */
 const money = (amount: number) => `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const viewHrefFor = (variant: ProductVariantDto) => `/admin/products/variants/${variant.id}`;
+const viewHrefFor = (variant: ProductVariantResponseDto) => `/admin/products/variants/${variant.id}`;
 
 // Table layout for one product's variants, matching the store-wide SKU list. Price changes go
 // through the ledger screen; "Edit" only touches the variant's safe fields.
-export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) => void) =>
-  useMemo<ColumnDef<ProductVariantDto>[]>(
+export const useProductVariantColumns = (onEdit?: (variant: ProductVariantResponseDto) => void) =>
+  useMemo<ColumnDef<ProductVariantResponseDto>[]>(
     () => [
       {
         id: 'variant',
@@ -181,7 +182,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantDto) =
             </Button>
             <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Price history">
               <Link
-                href={`/admin/price-histories?productId=${row.original.productId}&variantId=${row.original.id}`}
+                href={`/admin/price-histories?variantId=${row.original.id}`}
                 aria-label={`Price history for ${row.original.name ?? row.original.sku}`}
               >
                 <History className="h-4 w-4" />

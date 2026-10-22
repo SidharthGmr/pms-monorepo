@@ -7,13 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { Roles } from '@/enums/roles.enum';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import { useGetUserById } from '@/hooks/service-hooks/useUserList.service.hook';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { Role, UserDto } from '@pms/types';
+import { UserDto, Roles, StatusValues } from '@pms/types';
 import {
   AlertTriangle,
   BadgeCheck,
@@ -199,14 +199,14 @@ export default function EachUserDetails({ userId }: { userId: string }) {
               <Field label="Username" value={user.userName ? `@${user.userName}` : '—'} />
               <Field label="Account status" value={status ? <Badge variant={statusBadge[status] ?? 'zinc'}>{status}</Badge> : '—'} />
               <Field label="Active" value={<Flag value={user.isActive} yes="Active" no="Inactive" />} />
-              <Field label="Signed up in store" value={<Flag value={user.isRegisterbyShop} />} />
+              <Field label="Signed up in store" value={<Flag value={user.isRegisteredByShop} />} />
               <Field label="Store code" value={<span className="font-mono text-xs">{dash(user.storeCode)}</span>} />
               <Field label="Created" value={date(user.createdAt, true)} />
               <Field label="Last updated" value={date(user.updatedAt, true)} />
             </dl>
           </Panel>
 
-          {user.role === Role.staff && (
+          {user.role === Roles.STAFF && (
             <Panel title="Staff record" icon={Clock}>
               <div className="grid gap-2 sm:grid-cols-2">
                 <StaffDetails userId={userId} />

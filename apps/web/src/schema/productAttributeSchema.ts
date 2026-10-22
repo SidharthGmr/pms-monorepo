@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { CreateProductAttributeModel } from '@/models/product-attribute.model';
+import { CreateProductAttributeModel } from '@pms/types';
 
 const ProductAttributeSchema: Yup.ObjectSchema<CreateProductAttributeModel> = Yup.object().shape({
     productId: Yup.number()

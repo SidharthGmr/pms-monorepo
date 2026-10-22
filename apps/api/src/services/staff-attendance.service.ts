@@ -1,9 +1,10 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { CreateStaffAttendanceDto, StaffAttendanceDto, UpdateStaffAttendanceDto } from "../dtos/staff-attendance.dto";
+
 import { IStaffAttendanceService } from "./interfaces/Istaff-attendance.service";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import NotFoundError from "../exceptions/not-found-error";
+import { CreateStaffAttendanceDto, StaffAttendanceDto, UpdateStaffAttendanceDto } from '@pms/types';
 
 @injectable()
 export class StaffAttendanceService implements IStaffAttendanceService {

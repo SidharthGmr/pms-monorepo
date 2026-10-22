@@ -1,4 +1,4 @@
-import { CreateStaffAttendanceDto, StaffAttendanceDto, UpdateStaffAttendanceDto } from "../../dtos/staff-attendance.dto";
+import { CreateStaffAttendanceDto, StaffAttendanceDto, UpdateStaffAttendanceDto } from '@pms/types';
 
 export interface IStaffAttendanceRepository {
   findAll(): Promise<StaffAttendanceDto[]>;

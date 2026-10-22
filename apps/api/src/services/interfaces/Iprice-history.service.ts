@@ -1,9 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ListResponseDto } from '@pms/types';
-import { PriceHistoryDto, PriceHistorySummaryDto } from '../../dtos/price-history.dto';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../../models/price-history.model';
-import { PriceHistoryFilterParams } from '../../params/price-history.params';
-
+import { ListResponseDto, PriceHistoryDto, PriceHistorySummaryDto, CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 /**
  * Every method takes the caller's `storeCode` (from the token) so the service can
  * reject rows belonging to another tenant - `PriceHistory` itself has no store

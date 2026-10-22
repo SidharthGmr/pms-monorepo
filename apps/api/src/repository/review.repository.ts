@@ -1,8 +1,6 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "@pms/types";
-import { ReviewDto, ReviewSummaryDto } from "../dtos/review.dto";
-import { ReviewFilterParams } from "../params/review.params";
+import { ListResponseDto, ReviewDto, ReviewSummaryDto, ReviewFilterParams } from '@pms/types';
 import { IReviewRepository } from "./interfaces/ireview.repository";
 import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 
@@ -70,7 +68,7 @@ export class ReviewRepository implements IReviewRepository {
                 ];
             }
 
-            if (filters.status !== undefined) {
+            if (filters.status != null) {
                 where.status = filters.status;
                 delete where.NOT;
             }

@@ -1,10 +1,9 @@
 import { Status } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "@pms/types";
-import { CreateMasterAttributeDto, MasterAttributeDto } from "../dtos/master-entry.dto";
+import { ListResponseDto, CreateMasterAttributeDto, MasterAttributeDto, MasterAttributeFilterParams } from '@pms/types';
 import NotFoundError from "../exceptions/not-found-error";
-import { MasterAttributeFilterParams } from "../params/master-entry.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IMasterAttributeService } from "./interfaces/Imaster-attribute.service";
 

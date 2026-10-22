@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/options';
-import { Roles } from '@/enums/roles.enum';
+
 import cloudinary from '@/lib/cloudinary';
+import { Roles } from '@pms/types';
 
 export const dynamic = 'force-dynamic';
 

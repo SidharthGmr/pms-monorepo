@@ -1,6 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, CustomResponse as Response, ListResponseDto } from '@pms/types';
-
+import { CustomResponse as Response, BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, ListResponseDto } from '@pms/types';
 export default interface IBrandNameService {
 
     create(model: CreateBrandNameModel): Promise<AxiosResponse<Response<BrandNameDto>>>;

@@ -9,8 +9,8 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { WishlistDto } from '@/dtos/wishlist.dto';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import { useAddToCart, useCartMembership } from '@/hooks/service-hooks/useCartService';
 import { useGetAllWishlists, useRemoveFromWishlist } from '@/hooks/service-hooks/useWishlistService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -20,6 +20,7 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Check, ChevronLeft, ChevronRight, Eye, Heart, ImageIcon, Loader2, ShoppingCart, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { WishlistDto, StatusValues } from '@pms/types';
 
 const GRID = 'grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3';
 

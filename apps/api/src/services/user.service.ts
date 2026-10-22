@@ -1,14 +1,13 @@
 import { Role as PrismaRole, Status as PrismaStatus, users } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { UpdateUserDto, UserDto } from "../dtos/user.dto";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import type { IDateTimeService } from "./interfaces/idatetime.service";
 import type { IUserService } from "./interfaces/Iuser.service";
-import { UserFilterParams } from "../params/user.params";
-import type { UserWithProfile } from "../repository/user-profile.mapper";
-import { ListResponseDto } from "@pms/types";
 
+import type { UserWithProfile } from "../repository/user-profile.mapper";
+import { ListResponseDto, UpdateUserDto, UserDto, UserFilterParams } from '@pms/types';
 @injectable()
 export class UserService implements IUserService {
   constructor(
@@ -131,6 +130,8 @@ export class UserService implements IUserService {
     return {
       id: user.id,
       userId: user.userId,
+      // The web client reads `usersId`; it is the same value as `userId`.
+      usersId: user.userId,
       name: user.name,
       userName: profile?.userName ?? '',
       email: user.email,

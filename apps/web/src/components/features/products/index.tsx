@@ -13,9 +13,9 @@ import { useDeleteProduct, useGetAllProducts } from '@/hooks/service-hooks/usePr
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { cn } from '@/lib/utils';
-import { ProductFilterParams } from '@/params/product.params';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductResponseDto, Status } from '@pms/types';
+import { ProductResponseDto, Status, ProductFilterParams } from '@pms/types';
 import { Package } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';

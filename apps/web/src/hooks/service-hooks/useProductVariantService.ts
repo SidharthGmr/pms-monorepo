@@ -1,9 +1,9 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { RateProductVariantModel, } from '@/models/product-variant.model';
-import { ProductVariantFilterParams } from '@/params/product-variant.params';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductVariantCreateRequest, ProductVariantUpdateRequest } from '@pms/types';
+import { ProductVariantCreateRequest, ProductVariantUpdateRequest, RateProductVariantModel, ProductVariantFilterParams } from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /** Public storefront listing - active variants of published products, no login needed. */

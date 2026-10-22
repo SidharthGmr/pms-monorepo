@@ -7,15 +7,16 @@ export interface PurchaseResponseDto {
   id: number;
   invoiceNumber: string | null;
   invoiceUrl: string | null;
+  supplierId?: string | null;
   supplierName: string | null;
   totalAmount: number;
   notes: string | null;
   storeCode: string;
   userId: string;
   status: PurchasedStatus;
-  purchaseDate: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  purchaseDate: Date | string;
+  createdAt: Date | string;
+  updatedAt: Date | string | null;
   user?: { name: string; email: string };
   items?: PurchaseItemResponseDto[];
 }

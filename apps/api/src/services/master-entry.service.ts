@@ -1,11 +1,10 @@
 import { Status } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto } from "@pms/types";
-import { CreateMasterEntryDto, MasterEntryDto } from "../dtos/master-entry.dto";
+import { ListResponseDto, CreateMasterEntryDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
-import { MasterEntryFilterParams } from "../params/master-entry.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IMasterEntryService } from "./interfaces/Imaster-entry.service";
 

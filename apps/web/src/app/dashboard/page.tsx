@@ -5,10 +5,11 @@ import CustomerDashboard from '@/components/features/customer-dashboard';
 import PublicVariantList from '@/components/features/public-variants';
 import ShopPage from '@/components/features/shop';
 import { CardDescription } from '@/components/ui/card';
-import { Roles } from '@/enums/roles.enum';
+
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Roles } from '@pms/types';
 
 export default function Dashboard() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import { UserSession } from '@prisma/client';
-import { CreateUserSessionDto, RotateUserSessionDto } from '../../dtos/user-session.dto';
+import { CreateUserSessionDto, RotateUserSessionDto } from '@pms/types';
 
 export interface IUserSessionRepository {
   create(data: CreateUserSessionDto): Promise<UserSession>;

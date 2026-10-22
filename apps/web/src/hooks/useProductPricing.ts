@@ -1,8 +1,9 @@
 'use client';
-import { ProductVariantListItemDto } from '@/dtos/product-variant.dto';
-import { ProductVariantSummaryDto } from '@/dtos/product.dto';
+
+
 import { useMemo } from 'react';
 import { useGetAllProductVariants } from './service-hooks/useProductVariantService';
+import { ProductVariantListItemDto, ProductVariantSummaryDto } from '@pms/types';
 
 /**
  * Money and stock for one product, aggregated from its variants.
@@ -47,11 +48,13 @@ function aggregate(variants: ProductVariantListItemDto[]): ProductPricingMap {
           {
             id: variant.id,
             sku: variant.sku ?? '',
+            name: variant.name ?? null,
             // The shared DTO types this as JsonValue; the chips only ever render scalars.
             attributes: (variant.attributes as Record<string, string | number | boolean> | null) ?? null,
             stockQuantity: variant.stockQuantity ?? 0,
             sellingPrice: variant.sellingPrice,
             costPrice: variant.costPrice ?? null,
+            lowStockThreshold: variant.lowStockThreshold ?? null,
           },
         ]
         : [];

@@ -7,16 +7,17 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateUserByAdmin } from '@/hooks/service-hooks/useUserList.service.hook';
-import { CreateUserModel } from '@/models/user.model';
+
 import UserSchema from '@/schema/userSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
+import { CreateUserModel, Role } from '@pms/types';
 
 interface ManageUserProps {
   isOpen: boolean;
   onClose: (refresh: boolean) => void;
-  role?: string;
+  role?: Role;
 }
 
 export default function ManageUser({ isOpen, onClose, role }: ManageUserProps) {
@@ -31,7 +32,7 @@ export default function ManageUser({ isOpen, onClose, role }: ManageUserProps) {
       email: '',
       phone: '',
       password: '',
-      isRegisterbyShop: false,
+      isRegisteredByShop: false,
       role: role,
     },
   });

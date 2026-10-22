@@ -7,13 +7,13 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useGetProductById } from '@/hooks/service-hooks/useProductService';
 import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductVariantListItemDto } from '@pms/types';
+import { ProductVariantListItemDto, StatusValues } from '@pms/types';
 import { AlertTriangle, ChevronLeft, ExternalLink, History, ImageOff, Layers, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

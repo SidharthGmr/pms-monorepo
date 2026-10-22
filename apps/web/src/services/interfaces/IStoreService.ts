@@ -1,9 +1,8 @@
 import { AxiosResponse } from 'axios';
-import { StoreDto } from '@/dtos/store.dto';
-import { CreateStoreModel, UpdateStoreModel } from '@/models/store.model';
-import { StoreFilterParams } from '@/params/store.params';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
+
+
+import { CustomResponse as Response, ListResponseDto, StoreDto, CreateStoreModel, UpdateStoreModel, StoreFilterParams } from '@pms/types';
 export default interface IStoreService {
     create(model: CreateStoreModel): Promise<AxiosResponse<Response<StoreDto>>>;
     getAll(params?: StoreFilterParams): Promise<AxiosResponse<Response<ListResponseDto<StoreDto>>>>;

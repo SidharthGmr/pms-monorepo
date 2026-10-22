@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { Roles } from '@/enums/roles.enum';
+
 import { useGetStaffByUserId } from '@/hooks/service-hooks/useStaffService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -14,6 +14,7 @@ import { AxiosError } from 'axios';
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import ManageStaff from './add-edit';
+import { Roles } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

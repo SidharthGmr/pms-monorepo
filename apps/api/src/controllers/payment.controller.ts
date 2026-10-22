@@ -2,9 +2,8 @@ import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import IUnitOfService from "../services/interfaces/iunitof.service";
-import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from "../dtos/payment.dto";
-import { CustomResponse, ListResponseDto } from "@pms/types";
 
+import { CustomResponse, ListResponseDto, CreatePaymentDto, PaymentDto, UpdatePaymentDto } from '@pms/types';
 export class PaymentController {
   constructor(
     private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)

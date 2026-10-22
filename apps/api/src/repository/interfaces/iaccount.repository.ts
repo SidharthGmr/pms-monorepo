@@ -1,5 +1,5 @@
+import { UserDto } from '@pms/types';
 
-import { UserDto } from "../../dtos/user.dto";
 
 export interface IAccountRepository {
   recordLogin(userId: string, ipAddress?: string | null): Promise<UserDto | null>;

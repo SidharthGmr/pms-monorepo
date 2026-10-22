@@ -6,20 +6,21 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ReviewDto } from '@/dtos/review.dto';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import { useDeleteReview, useGetAllReviews, useModerateReview } from '@/hooks/service-hooks/useReviewService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
 import { useTanstackTableSorting } from '@/hooks/use-tanstack-table-sorting';
-import { ReviewFilterParams } from '@/params/review.params';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useReviewColumns } from './columns';
 import ReviewFilter from './filter';
 import ReviewReplyDialog from './reply-dialog';
+import { ReviewDto, StatusValues, ReviewFilterParams, Status } from '@pms/types';
 
 export default function ReviewList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -36,7 +37,7 @@ export default function ReviewList() {
 
   const [filterParams, setFilterParams] = useState<ReviewFilterParams>({
     search: searchParams.get('search') || '',
-    status: searchParams.get('status') || '',
+    status: (searchParams.get('status') as Status) || undefined,
     productId: initialProductId,
     page: +(searchParams.get('page') || 1),
     recordPerPage: +(searchParams.get('recordPerPage') || config.recordPerPage),
@@ -99,7 +100,7 @@ export default function ReviewList() {
   const resetForm = () => {
     setFilterParams({
       search: '',
-      status: '',
+      status: undefined,
       productId: undefined,
       rating: undefined,
       isVerified: undefined,
@@ -134,7 +135,7 @@ export default function ReviewList() {
           table={table}
           resetForm={resetForm}
           onTextChange={(value) => setFilterParams((prev) => ({ ...prev, search: value || '', page: 1 }))}
-          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: value || '', page: 1 }))}
+          onStatusChange={(value) => setFilterParams((prev) => ({ ...prev, status: (value as Status) || undefined, page: 1 }))}
           onRatingChange={(rating) => setFilterParams((prev) => ({ ...prev, rating, page: 1 }))}
           onVerifiedChange={(isVerified) => setFilterParams((prev) => ({ ...prev, isVerified, page: 1 }))}
         />

@@ -3,7 +3,7 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { StoreDto } from '@/dtos/store.dto';
+import { StoreDto } from '@pms/types';
 
 interface StoreRowActionsProps<TData> {
   row: Row<TData>;

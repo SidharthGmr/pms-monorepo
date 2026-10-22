@@ -4,11 +4,10 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IStaffService from './interfaces/IStaffService';
-import { StaffDto } from '@/dtos/staff.dto';
-import { CreateStaffModel, UpdateStaffModel } from '@/models/staff.model';
-import { StaffFilterParams } from '@/params/staff.params';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
 
+
+
+import { CustomResponse as Response, ListResponseDto, StaffDto, CreateStaffModel, UpdateStaffModel, StaffFilterParams } from '@pms/types';
 @injectable()
 export default class StaffService implements IStaffService {
     private readonly httpService: IHttpService;

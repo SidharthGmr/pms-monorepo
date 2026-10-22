@@ -4,12 +4,13 @@ import CardAction from '@/components/common/card-action';
 import { Card } from '@/components/ui/card';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { PriceHistoryDto } from '@/dtos/price-history.dto';
+
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { CalendarClock, History, MessageSquare, Pencil, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { StateBadge } from './columns';
 import { formatPercent, formatPrice, marginPercent, priceState } from './format';
+import { PriceHistoryDto } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

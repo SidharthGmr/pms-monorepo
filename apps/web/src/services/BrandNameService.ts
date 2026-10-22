@@ -4,8 +4,7 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IBrandNameService from './interfaces/IBrandNameService';
-import { BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, CustomResponse as Response, ListResponseDto } from '@pms/types';
-
+import { CustomResponse as Response, BrandNameDto, BrandNameFilterParams, CreateBrandNameModel, ListResponseDto } from '@pms/types';
 @injectable()
 export default class BrandNameService implements IBrandNameService {
     private readonly httpService: IHttpService;

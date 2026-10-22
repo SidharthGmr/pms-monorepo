@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { MasterEntryDto } from "../../dtos/master-entry.dto";
-import { ListResponseDto } from "@pms/types";
-import { MasterEntryFilterParams } from "../../params/master-entry.params";
 
+import { ListResponseDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
 export interface IMasterEntryRepository {
     findAll(filters?: MasterEntryFilterParams): Promise<ListResponseDto<MasterEntryDto>>;
     /** Pass `tx` when reading back a row written inside an open transaction. */

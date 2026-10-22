@@ -8,18 +8,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { OrderStatus } from '@/enums/order-status.enum';
-import { Roles } from '@/enums/roles.enum';
+
+
 import { useCreateOrder, useGetOrderById, useUpdateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
-import { CreateOrderModel } from '@/models/order.model';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import { OrderStatus, Roles, CreateOrderModel, OrderStatusEnum } from '@pms/types';
 
 interface ManageOrderProps {
   id?: number;
@@ -32,7 +33,7 @@ const OrderSchema = Yup.object({
   discount: Yup.number().typeError('Enter a number').min(0).required().default(0),
   tax: Yup.number().typeError('Enter a number').min(0).required().default(0),
   shippingCost: Yup.number().typeError('Enter a number').min(0).required().default(0),
-  status: Yup.mixed<OrderStatus>().oneOf(Object.values(OrderStatus)).required(),
+  status: Yup.mixed<OrderStatus>().oneOf(Object.values(OrderStatusEnum)).required(),
   notes: Yup.string().optional(),
   items: Yup.array()
     .of(
@@ -81,7 +82,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
       discount: 0,
       tax: 0,
       shippingCost: 0,
-      status: OrderStatus.Pending,
+      status: OrderStatusEnum.Pending,
       notes: '',
       items: [{ variantId: undefined as any, quantity: 1 }],
     },
@@ -174,7 +175,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                       buttonClass="w-full"
                       placeholder="Select Status"
                       disableSearch={true}
-                      items={Object.values(OrderStatus).map((s) => ({
+                      items={Object.values(OrderStatusEnum).map((s) => ({
                         label: s.charAt(0) + s.slice(1).toLowerCase(),
                         value: s,
                       }))}

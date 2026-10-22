@@ -1,5 +1,5 @@
 'use client';
-import { UserDto } from '@/dtos/UserDto';
+
 import { Row } from '@tanstack/react-table';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
+import { UserDto } from '@pms/types';
 
 interface UserRowActionsProps {
   row: Row<UserDto>;

@@ -1,6 +1,4 @@
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { WishlistDto, WishlistHasDto, WishlistVariantHasDto } from '@/dtos/wishlist.dto';
-import { WishlistFilterParams } from '@/params/wishlist.params';
+import { CustomResponse as Response, ListResponseDto, WishlistDto, WishlistHasDto, WishlistVariantHasDto, WishlistFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IWishlistService {

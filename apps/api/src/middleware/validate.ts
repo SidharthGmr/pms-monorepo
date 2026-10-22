@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError, ZodType } from "zod";
-import { CustomResponse } from "@pms/types";
-import PlainDto from "../dtos/plain.dto";
-
+import { CustomResponse, PlainDto } from '@pms/types';
 /**
  * Wraps a schema shaped as `{ body?, query?, params? }` and rejects a bad request
  * with the same `{ success, message, errors }` envelope every other endpoint uses,

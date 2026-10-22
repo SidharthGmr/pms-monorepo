@@ -4,25 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import config from '@/config';
 import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
-import { ProductVariantFilterParams } from '@/params/product-variant.params';
+
 import { ChevronLeft, ChevronRight, Package, PackageX } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import PublicVariantFilter, { DEFAULT_SORT } from './filter';
 import VariantCard, { VariantCardSkeleton } from './variant-card';
 import ProductCarousel from './product-carousel';
-import { ProductVariantListItemDto } from '@pms/types';
-import { ProductDto } from '@/dtos/product.dto';
+import { ProductVariantListItemDto, ProductVariantFilterParams, ProductResponseDto } from '@pms/types';
 import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService';
 
 // The API takes comma-separated ids; the checkbox lists work with arrays.
-const toIds = (csv?: string): number[] =>
-  csv
-    ? csv
-        .split(',')
-        .map(Number)
-        .filter((n) => Number.isInteger(n) && n > 0)
-    : [];
+// The filter params type the id lists as a comma-separated string or an array, since the
+// API parses either; the sidebar always works in numbers.
+const toIds = (value?: number[] | string): number[] =>
+  (Array.isArray(value) ? value : (value ?? '').split(','))
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0);
 
 export default function PublicVariantList() {
   const searchParams = useSearchParams();
@@ -63,7 +61,7 @@ export default function PublicVariantList() {
   const hasFilters = !!filterParams.search || !!filterParams.categoryIds || !!filterParams.brandNameIds || !!filterParams.productIds;
 
   // A card click toggles that product in the same multi-select the sidebar checkbox list uses.
-  const toggleProduct = (product: ProductDto) => {
+  const toggleProduct = (product: ProductResponseDto) => {
     setFilterParams((prev) => {
       const ids = toIds(prev.productIds);
       const next = ids.includes(product.id) ? ids.filter((id) => id !== product.id) : [...ids, product.id];

@@ -1,6 +1,8 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Only the dashboard sidebar reads this: under it the sidebar is an off-canvas sheet
+// opened from the header hamburger. Keep in sync with the `sidebar` screen in tailwind.config.ts.
+const MOBILE_BREAKPOINT = 1200
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)

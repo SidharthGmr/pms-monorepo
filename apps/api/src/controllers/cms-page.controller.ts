@@ -1,16 +1,4 @@
-import {
-  CmsPageAccessDto,
-  CmsPageDto,
-  CmsPageFilterParams,
-  CmsPageListItemDto,
-  CmsPageSitemapEntryDto,
-  CmsPageUnlockResultDto,
-  CreateCmsPageModel,
-  CustomResponse,
-  ListResponseDto,
-  PageStatus,
-  UpdateCmsPageModel,
-} from '@pms/types';
+import { CmsPageAccessDto, CmsPageDto, CmsPageFilterParams, CmsPageListItemDto, CmsPageSitemapEntryDto, CmsPageUnlockResultDto, CreateCmsPageModel, CustomResponse, ListResponseDto, PageStatus, UpdateCmsPageModel } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';

@@ -1,12 +1,11 @@
 import { Prisma } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ListResponseDto } from '@pms/types';
-import { PriceHistoryDto, PriceHistorySummaryDto } from '../dtos/price-history.dto';
+import { ListResponseDto, PriceHistoryDto, PriceHistorySummaryDto, CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 import ForbiddenError from '../exceptions/forbidden-error';
 import NotFoundError from '../exceptions/not-found-error';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../models/price-history.model';
-import { PriceHistoryFilterParams } from '../params/price-history.params';
+
+
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { IPriceHistoryService } from './interfaces/Iprice-history.service';
 

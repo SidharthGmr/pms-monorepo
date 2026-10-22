@@ -3,12 +3,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
-import { UserDto } from '@/dtos/UserDto';
-import { Roles } from '@/enums/roles.enum';
+
+
 import { useUpdateUserActiveStatus } from '@/hooks/service-hooks/useUserList.service.hook';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { Dot } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { UserDto, Roles } from '@pms/types';
 
 export default function ActiveStatusToggle({ user }: { user: UserDto }) {
   const { currentUser } = useGetCurrentUser();

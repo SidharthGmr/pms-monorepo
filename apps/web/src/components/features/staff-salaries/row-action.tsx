@@ -3,7 +3,7 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { StaffSalaryDto } from '@/dtos/staff-salary.dto';
+import { StaffSalaryDto } from '@pms/types';
 
 interface StaffSalaryListRowActionsProps<TData> {
   row: Row<TData>;

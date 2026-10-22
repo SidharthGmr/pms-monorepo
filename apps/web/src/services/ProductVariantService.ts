@@ -4,18 +4,8 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IProductVariantService from './interfaces/IProductVariantService';
-import { ProductVariantDto } from '@/dtos/product-variant.dto';
-import {
-  CustomResponse as Response,
-  ListResponseDto,
-  ProductVariantCreateRequest,
-  ProductVariantListItemDto,
-  ProductVariantListItemDto as VariantDetailDto,
-  ProductVariantUpdateRequest,
-} from '@pms/types';
-import { RateProductVariantModel, VariantRatingDto } from '@/models/product-variant.model';
-import { ProductVariantFilterParams } from '@/params/product-variant.params';
 
+import { CustomResponse as Response, ListResponseDto, ProductVariantCreateRequest, ProductVariantListItemDto, ProductVariantUpdateRequest, ProductVariantResponseDto, RateProductVariantModel, VariantRatingDto, ProductVariantFilterParams, ProductVariantListItemDto as VariantDetailDto } from '@pms/types';
 @injectable()
 export default class ProductVariantService implements IProductVariantService {
   private readonly httpService: IHttpService;
@@ -32,12 +22,12 @@ export default class ProductVariantService implements IProductVariantService {
     return this.httpService.call().post<VariantRatingDto, AxiosResponse<Response<VariantRatingDto>>>(`/product-variants/rating/${id}`, model);
   }
 
-  create(model: ProductVariantCreateRequest): Promise<AxiosResponse<Response<ProductVariantDto>>> {
-    return this.httpService.call().post<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>('/product-variants', model);
+  create(model: ProductVariantCreateRequest): Promise<AxiosResponse<Response<ProductVariantResponseDto>>> {
+    return this.httpService.call().post<ProductVariantResponseDto, AxiosResponse<Response<ProductVariantResponseDto>>>('/product-variants', model);
   }
 
-  update(id: number, model: ProductVariantUpdateRequest): Promise<AxiosResponse<Response<ProductVariantDto>>> {
-    return this.httpService.call().put<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>(`/product-variants/${id}`, model);
+  update(id: number, model: ProductVariantUpdateRequest): Promise<AxiosResponse<Response<ProductVariantResponseDto>>> {
+    return this.httpService.call().put<ProductVariantResponseDto, AxiosResponse<Response<ProductVariantResponseDto>>>(`/product-variants/${id}`, model);
   }
 
   getAllPublic(params?: ProductVariantFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantListItemDto>>>> {
@@ -60,19 +50,19 @@ export default class ProductVariantService implements IProductVariantService {
   getByProductId(
     productId: number | string,
     params?: { page?: number; recordPerPage?: number }
-  ): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantDto>>>> {
+  ): Promise<AxiosResponse<Response<ListResponseDto<ProductVariantResponseDto>>>> {
     return this.httpService
       .call()
-      .get<ListResponseDto<ProductVariantDto>, AxiosResponse<Response<ListResponseDto<ProductVariantDto>>>>(
+      .get<ListResponseDto<ProductVariantResponseDto>, AxiosResponse<Response<ListResponseDto<ProductVariantResponseDto>>>>(
         `/product-variants/product/${productId}`,
         { params }
       );
   }
 
-  getEffective(productId: number | string, date?: string): Promise<AxiosResponse<Response<ProductVariantDto>>> {
+  getEffective(productId: number | string, date?: string): Promise<AxiosResponse<Response<ProductVariantResponseDto>>> {
     return this.httpService
       .call()
-      .get<ProductVariantDto, AxiosResponse<Response<ProductVariantDto>>>(`/product-variants/product/${productId}/effective`, {
+      .get<ProductVariantResponseDto, AxiosResponse<Response<ProductVariantResponseDto>>>(`/product-variants/product/${productId}/effective`, {
         params: date ? { date } : undefined,
       });
   }

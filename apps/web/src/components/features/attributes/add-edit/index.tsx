@@ -9,13 +9,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useCreateAttribute, useGetAttributeById, useUpdateAttribute } from '@/hooks/service-hooks/useAttributeService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { AttributeModel, attributeFields } from '@pms/types';
+import { AttributeModel, attributeFields, StatusValues } from '@pms/types';
 import { ChevronDown, Ruler } from 'lucide-react';
 import { KeyboardEvent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';

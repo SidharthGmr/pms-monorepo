@@ -1,13 +1,4 @@
-import {
-  CustomResponse,
-  ListResponseDto,
-  MarkNotificationsReadModel,
-  MarkNotificationsReadResultDto,
-  NotificationDto,
-  NotificationFilterParams,
-  NotificationSummaryDto,
-  NotificationType,
-} from '@pms/types';
+import { CustomResponse, ListResponseDto, MarkNotificationsReadModel, MarkNotificationsReadResultDto, NotificationDto, NotificationFilterParams, NotificationSummaryDto, NotificationType } from '@pms/types';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';

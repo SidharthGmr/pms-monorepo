@@ -3,8 +3,7 @@ import { useMemo } from 'react';
 import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
 import { SelectSearch } from '@/components/common/select-search';
 import { ListView } from '@/components/common/view-switch';
-import { Status } from '@pms/types';
-import { StatusValues } from '@/enums/status-values.enum';
+import { Status, StatusValues } from '@pms/types';
 import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
 
 export type { SortDirection };

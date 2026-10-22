@@ -4,13 +4,14 @@ import ActionTooltip from '@/components/common/tooltip-action-button';
 import { Badge } from '@/components/ui/badge';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ReviewDto } from '@/dtos/review.dto';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { MessageSquare, ShieldCheck } from 'lucide-react';
 import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
+import { ReviewDto, StatusValues } from '@pms/types';
 
 interface ReviewColumnOptions {
   replyRecord: (id: number) => void;

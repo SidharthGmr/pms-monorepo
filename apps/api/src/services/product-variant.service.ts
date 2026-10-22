@@ -1,11 +1,11 @@
 import { Prisma, Status } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum } from '@pms/types';
-import { toVariantResponse, VariantRatingDto } from '../dtos/product-variant.dto';
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, StatusEnum, VariantRatingDto, ProductVariantFilterParams } from '@pms/types';
+import { toVariantResponse } from '../utils/variant-response';
 import NotFoundError from '../exceptions/not-found-error';
 import ForbiddenError from '../exceptions/forbidden-error';
-import { ProductVariantFilterParams } from '../params/product-variant.params';
+
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { resolveVariantSku, resolveVariantSlug } from '../utils/variant-sku';
 import { IProductVariantService } from './interfaces/Iproduct-variant.service';

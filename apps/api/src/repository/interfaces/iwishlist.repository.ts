@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { WishlistDto } from "../../dtos/wishlist.dto";
-import { ListResponseDto } from "@pms/types";
-import { WishlistFilterParams } from "../../params/wishlist.params";
 
+import { ListResponseDto, WishlistDto, WishlistFilterParams } from '@pms/types';
 export interface IWishlistRepository {
     findAll(filters?: WishlistFilterParams): Promise<ListResponseDto<WishlistDto>>;
     /** Pass `tx` when reading back a row written inside an open transaction. */

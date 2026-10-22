@@ -37,3 +37,36 @@ export interface ProductVariantListItemDto extends ProductVariantResponseDto {
     category?: { name: string; images: string[] } | null;
   };
 }
+
+/**
+ * A variant row as the API reads it internally: the response fields plus the two columns
+ * the services need but the client must not see - `storeCode` for the store-ownership
+ * guards and `productId` for the NOT NULL stockHistory foreign key.
+ *
+ * Never return this from a controller; strip it with `toVariantResponse` first.
+ */
+export interface ProductVariantInternalDto extends ProductVariantResponseDto {
+  productId: number;
+  storeCode: string;
+}
+
+/** One `{ attribute, value }` pair on a variant, both sides being master-data ids. */
+export interface ProductVariantAttributeDto {
+  attributeid: number;
+  attributeValueId: number;
+}
+
+/** What a variant's rating looks like after a vote: the caller's own score plus the new average. */
+export interface VariantRatingDto {
+  variantId: number;
+  /** The star rating this user just gave, 1-5. */
+  userRating: number;
+  /** The variant's average across every rating, one decimal place. */
+  rating: number | null;
+  ratingCount: number;
+}
+
+/** Body accepted by POST /product-variants/rating/:id - only the score travels. */
+export interface RateProductVariantModel {
+  rating: number;
+}

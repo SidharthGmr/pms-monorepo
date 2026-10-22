@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import { CustomResponse, ListResponseDto } from "@pms/types";
-import { OrderItemDto, UpdateOrderItemDto } from "../dtos/order-item.dto";
-import { CreateOrderItemModel } from "../models/order-item.model";
+import { CustomResponse, ListResponseDto, OrderItemDto, UpdateOrderItemDto, CreateOrderItemModel } from '@pms/types';
 import IUnitOfService from "../services/interfaces/iunitof.service";
 import { MISSING_STORE_CODE } from '../constants/responses';
 

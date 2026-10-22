@@ -2,7 +2,7 @@
 import { Badge } from '@/components/ui/badge';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { PurchaseDto } from '@/dtos/purchase.dto';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { Package } from 'lucide-react';
@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { DataTableColumnHeader } from '../../Table/data-table-column-header';
 import { formatPurchaseAmount, purchaseStatusVariant } from './format';
 import PurchaseListRowActions from './row-action';
+import { PurchaseResponseDto } from '@pms/types';
 
 const initials = (name?: string) =>
   (name || '')
@@ -21,7 +22,7 @@ const initials = (name?: string) =>
     .join('') || '—';
 
 export const usePurchaseColumns = () =>
-  useMemo<ColumnDef<PurchaseDto>[]>(
+  useMemo<ColumnDef<PurchaseResponseDto>[]>(
     () => [
       {
         id: 'actions',

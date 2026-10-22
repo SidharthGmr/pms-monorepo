@@ -9,13 +9,13 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { OrderDto } from '@/dtos/order.dto';
-import { OrderStatus } from '@/enums/order-status.enum';
+
+
 import { useDeleteOrder, useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { cn } from '@/lib/utils';
-import { OrderFilterParams } from '@/params/order.params';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Receipt } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,6 +24,7 @@ import ManageOrder from './add-edit';
 import { useOrderColumns } from './columns';
 import OrderListFilter, { DEFAULT_ORDER_FILTER, OrderFilterValue, SortDirection } from './filter';
 import OrderCard from './order-card';
+import { OrderDto, OrderStatus, OrderFilterParams } from '@pms/types';
 
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
 const FLUSH_CARD = 'p-0 md:p-0';

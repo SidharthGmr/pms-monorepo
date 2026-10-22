@@ -1,6 +1,7 @@
 import prisma from "../config/prisma";
-import { CreateStaffAttendanceDto, StaffAttendanceDto, UpdateStaffAttendanceDto } from "../dtos/staff-attendance.dto";
+
 import { IStaffAttendanceRepository } from "./interfaces/istaff-attendance.repository";
+import { CreateStaffAttendanceDto, StaffAttendanceDto, UpdateStaffAttendanceDto } from '@pms/types';
 
 export class StaffAttendanceRepository implements IStaffAttendanceRepository {
   async findAll(): Promise<StaffAttendanceDto[]> {

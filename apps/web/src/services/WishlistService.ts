@@ -1,9 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { WishlistDto, WishlistHasDto, WishlistVariantHasDto } from '@/dtos/wishlist.dto';
-import { CreateWishlistModel } from '@/models/wishlist.model';
-import { WishlistFilterParams } from '@/params/wishlist.params';
+import { CustomResponse as Response, ListResponseDto, WishlistDto, WishlistHasDto, WishlistVariantHasDto, CreateWishlistModel, WishlistFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';

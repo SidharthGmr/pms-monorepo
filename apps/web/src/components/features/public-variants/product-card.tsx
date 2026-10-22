@@ -1,10 +1,11 @@
 'use client';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ProductDto } from '@/dtos/product.dto';
+
 import { cn } from '@/lib/utils';
 import { ArrowRight, Check, ImageOff } from 'lucide-react';
 import { KeyboardEvent } from 'react';
+import { ProductResponseDto } from '@pms/types';
 
 // `category` and `brandName` arrive as `{ id, name }` objects on the wire, while the web DTO
 // still types category as a string, so both shapes are accepted here.
@@ -16,9 +17,9 @@ const nameOf = (value: unknown): string | null => {
 };
 
 interface ProductCardProps {
-  product: ProductDto;
+  product: ProductResponseDto;
   selected?: boolean;
-  onSelect?: (product: ProductDto) => void;
+  onSelect?: (product: ProductResponseDto) => void;
 }
 
 export default function ProductCard({ product, selected = false, onSelect }: ProductCardProps) {

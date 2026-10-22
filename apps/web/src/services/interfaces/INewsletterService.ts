@@ -1,8 +1,7 @@
 import { AxiosResponse } from 'axios';  
-import { NewsletterModel } from '@/models/newsletter.model';
-import {   NewsletterDto } from '@/dtos/newsletter.dto';
-import { CustomResponse as Response } from '@pms/types';
 
+
+import { CustomResponse as Response, NewsletterModel, NewsletterDto } from '@pms/types';
 export default interface INewsletterService {
   create(model: NewsletterModel): Promise<AxiosResponse<Response<NewsletterDto>>>;
   getAll(): Promise<AxiosResponse<Response<NewsletterDto[]>>>;

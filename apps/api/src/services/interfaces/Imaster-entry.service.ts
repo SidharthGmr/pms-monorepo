@@ -1,7 +1,5 @@
-import { CreateMasterEntryDto, MasterEntryDto } from "../../dtos/master-entry.dto";
-import { ListResponseDto } from "@pms/types";
-import { MasterEntryFilterParams } from "../../params/master-entry.params";
 
+import { ListResponseDto, CreateMasterEntryDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
 export interface IMasterEntryService {
     getAll(filters?: MasterEntryFilterParams): Promise<ListResponseDto<MasterEntryDto>>;
     getById(id: number): Promise<MasterEntryDto | null>;

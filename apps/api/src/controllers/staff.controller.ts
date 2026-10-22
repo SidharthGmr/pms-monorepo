@@ -2,9 +2,7 @@ import { Request, Response } from "express";
 import { injectable } from "inversify";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import { CustomResponse, ListResponseDto } from "@pms/types";
-import { CreateStaffDto, StaffDto, UpdateStaffDto } from "../dtos/staff.dto";
-import { StaffFilterParams } from "../params/staff.params";
+import { CustomResponse, ListResponseDto, CreateStaffDto, StaffDto, UpdateStaffDto, StaffFilterParams } from '@pms/types';
 import IUnitOfService from "../services/interfaces/iunitof.service";
 
 @injectable()

@@ -4,9 +4,8 @@ import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
 import IHttpService from './interfaces/IHttpService';
 import IDashboardService from './interfaces/IDashboardService';
-import { DashboardSummaryDto } from '@/dtos/dashboard-summary.dto';
-import { CustomResponse as Response } from '@pms/types';
 
+import { CustomResponse as Response, DashboardSummaryDto } from '@pms/types';
 @injectable()
 export default class DashboardService implements IDashboardService {
     private readonly httpService: IHttpService;

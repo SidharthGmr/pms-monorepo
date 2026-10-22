@@ -48,10 +48,10 @@ export default function HeaderDashboard() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border/70 bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4">
-      {/* On desktop the sidebar toggle leads the bar; on iPad and phones it moves to the far right. */}
-      <SidebarTrigger className="-ml-1 hidden h-8 w-8 rounded-lg lg:flex" />
+      {/* While the sidebar is docked the toggle leads the bar; below 1200px it moves to the far right. */}
+      <SidebarTrigger className="-ml-1 hidden h-8 w-8 rounded-lg sidebar:flex" />
 
-      <Link href="/" className="flex items-center lg:hidden" title={config.appName}>
+      <Link href="/" className="flex items-center sidebar:hidden" title={config.appName}>
         <Image src={ICON} width={28} height={28} alt={config.appName} className="h-7 w-7 object-contain dark:hidden" />
         <Image src={ICON_LIGHT} width={28} height={28} alt={config.appName} className="hidden h-7 w-7 object-contain dark:block" />
       </Link>
@@ -130,7 +130,7 @@ export default function HeaderDashboard() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <SidebarTrigger className="h-8 w-8 rounded-lg lg:hidden" />
+        <SidebarTrigger className="h-8 w-8 rounded-lg sidebar:hidden" />
       </div>
     </header>
   );

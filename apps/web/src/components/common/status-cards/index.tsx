@@ -1,7 +1,8 @@
 'use client';
 import { cn } from '@/lib/utils';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { Check, Eye, EyeOff } from 'lucide-react';
+import { StatusValues } from '@pms/types';
 
 // The Published / Draft choice as two tap targets instead of a select, shared by the brand and
 // category forms. Each status owns its colour so the selected option reads as "green = live" or

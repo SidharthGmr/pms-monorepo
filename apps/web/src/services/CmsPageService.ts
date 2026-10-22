@@ -1,16 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import {
-  CmsPageAccessDto,
-  CmsPageDto,
-  CmsPageFilterParams,
-  CmsPageListItemDto,
-  CmsPageUnlockResultDto,
-  CreateCmsPageModel,
-  CustomResponse as Response,
-  ListResponseDto,
-  UpdateCmsPageModel,
-} from '@pms/types';
+import { CustomResponse as Response, CmsPageAccessDto, CmsPageDto, CmsPageFilterParams, CmsPageListItemDto, CmsPageUnlockResultDto, CreateCmsPageModel, ListResponseDto, UpdateCmsPageModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import ICmsPageService from './interfaces/ICmsPageService';

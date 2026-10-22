@@ -2,12 +2,13 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ReviewDto } from '@/dtos/review.dto';
+
 import { useGetPublicProductReviews, useGetPublicReviewSummary } from '@/hooks/service-hooks/useReviewService';
 import { useLocale } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { BadgeCheck, MessageSquare, Star, Store } from 'lucide-react';
 import { useState } from 'react';
+import { ReviewDto } from '@pms/types';
 
 /**
  * The reviews block of the demo PDP, read entirely through the existing public review

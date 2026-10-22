@@ -1,4 +1,4 @@
-import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from "../../dtos/payment.dto";
+import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from '@pms/types';
 
 export interface IPaymentRepository {
   findByOrderId(orderId: number): Promise<PaymentDto[]>;

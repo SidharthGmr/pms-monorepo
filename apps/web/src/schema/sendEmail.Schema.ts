@@ -1,7 +1,7 @@
- import { sendEmailModel } from '@/models/sendEmail.model';
+ import { EmailModel } from '@pms/types';
 import * as Yup from 'yup';
 
-const sendEmailSchema: Yup.ObjectSchema<sendEmailModel> = Yup.object().shape({
+const sendEmailSchema: Yup.ObjectSchema<EmailModel> = Yup.object().shape({
   userId: Yup.string().required('User ID is required'),
   newsletterId: Yup.number().optional(),
   recipient: Yup.string().required('Recipient Email is required'),

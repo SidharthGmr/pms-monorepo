@@ -2,11 +2,12 @@
 import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { Table } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
+import { StatusValues } from '@pms/types';
 
 interface ReviewFilterProps<TData> {
   table: Table<TData>;

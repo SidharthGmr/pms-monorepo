@@ -1,6 +1,5 @@
-import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '@/dtos/checkout.dto';
-import { CustomResponse as Response } from '@pms/types';
-import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@/models/checkout.model';
+
+import { CustomResponse as Response, CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto, CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface ICheckoutService {

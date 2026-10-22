@@ -1,5 +1,5 @@
-import { CreateStaffDto, StaffDto, UpdateStaffDto } from "../../dtos/staff.dto";
-import { StaffFilterParams } from "../../params/staff.params";
+import { CreateStaffDto, StaffDto, UpdateStaffDto, StaffFilterParams } from '@pms/types';
+
 
 export interface IStaffService {
     getAll(filters?: StaffFilterParams): Promise<StaffDto[]>;

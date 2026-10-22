@@ -4,15 +4,11 @@ import jwt from 'jsonwebtoken';
 import config from '../config';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse } from '@pms/types';
-import { LoginResponseDto, refreshTokenResponseDto } from '../dtos/loginResponse.dto';
-import { SessionContext, UserSessionDto } from '../dtos/user-session.dto';
-import { UserDto } from '../dtos/user.dto';
-import { Role } from '../enum/user.enum';
+import { CustomResponse, LoginResponseDto, refreshTokenResponseDto, SessionContext, UserSessionDto, UserDto, Role, ResetPasswordTokenModel, LoginModel, CreateUserModel, Roles } from '@pms/types';
 import CustomError from '../exceptions/custom-error';
-import { ResetPasswordModel } from '../models/forgot-password.model';
-import { LoginModel } from '../models/login.model';
-import { CreateUserModel } from '../models/user.model';
+
+
+
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { isExpired } from '../utils/timeExpiry.util';
 import { generateStoreCode, nowISO } from '../utils/authHelpers.service';
@@ -120,7 +116,7 @@ export class AccountController {
       throw new CustomError('User already exists', 409);
     }
 
-    const newUser = await this.unitOfService.Account.signup(data, Role.ADMIN);
+    const newUser = await this.unitOfService.Account.signup(data, Roles.ADMIN);
 
     if (!newUser) {
       throw new CustomError('User creation failed', 400);
@@ -391,7 +387,7 @@ export class AccountController {
       });
     }
 
-    if (isExpired(user.emailVerificationExpires, 1)) {
+    if (isExpired(new Date(user.emailVerificationExpires), 1)) {
       return res.status(400).json({
         success: false,
         message: 'OTP expired. Please resend OTP',
@@ -536,7 +532,7 @@ export class AccountController {
   };
 
   resetPassword = async (req: Request, res: Response): Promise<Response<CustomResponse<UserDto | null>>> => {
-    const data = req.body as ResetPasswordModel;
+    const data = req.body as ResetPasswordTokenModel;
 
     if (!data.token) {
       throw new CustomError('Token is required', 400);

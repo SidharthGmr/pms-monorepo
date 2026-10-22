@@ -2,9 +2,7 @@ import { Status } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, ListResponseDto } from '@pms/types';
-import { CreateMasterAttributeDto, MasterAttributeDto } from '../dtos/master-entry.dto';
-import { MasterAttributeFilterParams } from '../params/master-entry.params';
+import { CustomResponse, ListResponseDto, CreateMasterAttributeDto, MasterAttributeDto, MasterAttributeFilterParams } from '@pms/types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE } from '../constants/responses';
 

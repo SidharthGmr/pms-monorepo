@@ -1,6 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { AttributeDto, AttributeFilterParams, AttributeModel, CustomResponse as Response, ListResponseDto } from '@pms/types';
-
+import { CustomResponse as Response, AttributeDto, AttributeFilterParams, AttributeModel, ListResponseDto } from '@pms/types';
 export default interface IAttributeService {
     create(model: AttributeModel): Promise<AxiosResponse<Response<AttributeDto>>>;
     getAll(params?: AttributeFilterParams): Promise<AxiosResponse<Response<ListResponseDto<AttributeDto>>>>;

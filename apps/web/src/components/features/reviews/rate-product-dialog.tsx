@@ -9,11 +9,12 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateReview, useUpdateReview } from '@/hooks/service-hooks/useReviewService';
-import { CreateReviewModel } from '@/models/review.model';
+
 import ReviewSchema from '@/schema/reviewSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
+import { CreateReviewModel } from '@pms/types';
 
 interface RateProductDialogProps {
   /** Required to create - the API only accepts a review for a product on your own order. */

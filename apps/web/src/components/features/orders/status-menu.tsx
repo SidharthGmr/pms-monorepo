@@ -4,21 +4,22 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { OrderDto } from '@/dtos/order.dto';
-import { OrderStatus } from '@/enums/order-status.enum';
+
+
 import { useUpdateOrderStatus } from '@/hooks/service-hooks/useOrderService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { ORDER_STATUS_TONE, toneFor } from './order-status';
+import { OrderDto, OrderStatus, OrderStatusEnum } from '@pms/types';
 
 // The order of the workflow, not of the enum: a dispatcher reads down this list.
-const STATUS_FLOW: OrderStatus[] = [OrderStatus.Pending, OrderStatus.Confirmed, OrderStatus.Shipped, OrderStatus.Delivered, OrderStatus.Cancelled, OrderStatus.Returned];
+const STATUS_FLOW: OrderStatus[] = [OrderStatusEnum.Pending, OrderStatusEnum.Confirmed, OrderStatusEnum.Shipped, OrderStatusEnum.Delivered, OrderStatusEnum.Cancelled, OrderStatusEnum.Returned];
 
 // Cancelling or returning is not part of walking an order forward, and both are awkward to undo
 // once stock and money have been reconciled against them, so they ask first.
-const NEEDS_CONFIRMATION: OrderStatus[] = [OrderStatus.Cancelled, OrderStatus.Returned];
+const NEEDS_CONFIRMATION: OrderStatus[] = [OrderStatusEnum.Cancelled, OrderStatusEnum.Returned];
 
 interface OrderStatusMenuProps {
   order: OrderDto;

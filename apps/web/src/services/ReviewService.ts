@@ -1,9 +1,6 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { ReviewDto, ReviewSummaryDto } from '@/dtos/review.dto';
-import { CreateReviewModel, UpdateReviewModel } from '@/models/review.model';
-import { ReviewFilterParams } from '@/params/review.params';
+import { CustomResponse as Response, ListResponseDto, ReviewDto, ReviewSummaryDto, CreateReviewModel, UpdateReviewModel, ReviewFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';

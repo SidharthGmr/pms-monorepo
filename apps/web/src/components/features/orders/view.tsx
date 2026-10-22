@@ -9,10 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { OrderItemDto } from '@/dtos/order-item.dto';
+
 import { useGetOrderById } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllReviews } from '@/hooks/service-hooks/useReviewService';
-import { Roles } from '@/enums/roles.enum';
+
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,7 @@ import { useRouter } from 'next/navigation';
 import React, { ReactNode, useState } from 'react';
 import BillReceipt from './bill-receipt';
 import { amountInWords, downloadInvoicePdf } from './invoice-pdf';
+import { OrderItemDto, Roles } from '@pms/types';
 
 interface OrderDetailsViewProps {
   id: number;

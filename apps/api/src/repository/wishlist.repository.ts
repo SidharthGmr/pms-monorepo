@@ -1,8 +1,6 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { ListResponseDto } from "@pms/types";
-import { WishlistDto } from "../dtos/wishlist.dto";
-import { WishlistFilterParams } from "../params/wishlist.params";
+import { ListResponseDto, WishlistDto, WishlistFilterParams } from '@pms/types';
 import { IWishlistRepository } from "./interfaces/iwishlist.repository";
 import { toUserSummary, userSummarySelect } from "./user-profile.mapper";
 
@@ -46,7 +44,7 @@ export class WishlistRepository implements IWishlistRepository {
 
             if (filters.userId !== undefined) where.userId = filters.userId;
             if (filters.productId !== undefined) where.productId = filters.productId;
-            if (filters.variantId !== undefined) where.variantId = filters.variantId;
+            if (filters.variantId !== undefined && filters.variantId !== 'null') where.variantId = Number(filters.variantId);
             if (filters.storeCode !== undefined) where.storeCode = filters.storeCode;
 
             if (filters.search) {

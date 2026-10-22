@@ -2,9 +2,8 @@ import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import IUnitOfService from "../services/interfaces/iunitof.service";
-import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from "../dtos/staff-salary.dto";
-import { CustomResponse, ListResponseDto } from "@pms/types";
 
+import { CustomResponse, ListResponseDto, CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from '@pms/types';
 export class StaffSalaryController {
   constructor(
     private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)

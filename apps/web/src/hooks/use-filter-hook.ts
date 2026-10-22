@@ -1,4 +1,4 @@
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
 import { useEffect, useState } from 'react';
 
 interface FilterHookProps<T> {

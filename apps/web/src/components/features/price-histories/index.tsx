@@ -9,14 +9,14 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { PriceHistoryDto } from '@/dtos/price-history.dto';
-import { Roles } from '@/enums/roles.enum';
+
+
 import { useDeletePriceHistory, useGetAllPriceHistories } from '@/hooks/service-hooks/usePriceHistoryService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { cn } from '@/lib/utils';
-import { PriceHistoryFilterParams } from '@/params/price-history.params';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Tags } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -27,6 +27,7 @@ import PriceHistoryFilter, { DEFAULT_PRICE_FILTER, PriceHistoryFilterValue, Sort
 import PriceCard from './price-card';
 import PriceTimeline from './price-timeline';
 import PriceHistorySummary from './summary';
+import { PriceHistoryDto, Roles, PriceHistoryFilterParams } from '@pms/types';
 
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
 const FLUSH_CARD = 'p-0 md:p-0';

@@ -7,8 +7,8 @@ import { Badge, BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UserDto } from '@/dtos/UserDto';
-import { Roles } from '@/enums/roles.enum';
+
+
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { getAvatarSoftColor, getInitialName } from '@/utils/avatar-color';
@@ -17,6 +17,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { BadgeCheck, Mail, Pencil, Phone, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { UserDto, Roles } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

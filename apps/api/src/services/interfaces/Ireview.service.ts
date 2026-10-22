@@ -1,8 +1,6 @@
 import { Role } from "@prisma/client";
-import { CreateReviewDto, ReviewDto, ReviewSummaryDto, UpdateReviewDto } from "../../dtos/review.dto";
-import { ListResponseDto } from "@pms/types";
-import { ReviewFilterParams } from "../../params/review.params";
 
+import { ListResponseDto, CreateReviewDto, ReviewDto, ReviewSummaryDto, UpdateReviewDto, ReviewFilterParams } from '@pms/types';
 /** Identity of the caller, so the service can enforce owner-or-staff rules. */
 export interface ReviewActor {
     userId: string;

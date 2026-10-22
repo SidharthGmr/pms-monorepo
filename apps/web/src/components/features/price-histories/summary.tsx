@@ -36,7 +36,7 @@ export default function PriceHistorySummary({ variantId }: PriceHistorySummaryPr
       ? ((summary.currentPrice - summary.firstPrice) / summary.firstPrice) * 100
       : null;
 
-  const formatDate = (value?: string | null) =>
+  const formatDate = (value?: Date | string | null) =>
     value ? unitOfService.DateTimeService.convertToLocalDate(value as unknown as Date, true) : '—';
 
   return (

@@ -1,12 +1,11 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { SupplierDto, CreateSupplierDto } from "../dtos/supplier.dto";
+
 import NotFoundError from "../exceptions/not-found-error";
-import { SupplierFilterParams } from "../params/supplier.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { ISupplierService } from "./interfaces/Isupplier.service";
-import { ListResponseDto, StatusEnum } from "@pms/types";
-
+import { ListResponseDto, StatusEnum, SupplierDto, CreateSupplierDto, SupplierFilterParams } from '@pms/types';
 @injectable()
 export class SupplierService implements ISupplierService {
   constructor(

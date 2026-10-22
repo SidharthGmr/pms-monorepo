@@ -1,9 +1,10 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateSupplierModel } from '@/models/supplier.model';
-import { SupplierFilterParams } from '@/params/supplier.params';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateSupplierModel, SupplierFilterParams } from '@pms/types';
 
 const useCreateSupplier = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

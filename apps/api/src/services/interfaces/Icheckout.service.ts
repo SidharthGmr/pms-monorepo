@@ -1,6 +1,7 @@
-import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '../../dtos/checkout.dto';
-import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '../../models/checkout.model';
+
+
 import { CartOwner } from '../../repository/interfaces/icart.repository';
+import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto, CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@pms/types';
 
 export interface CheckoutContext {
   owner: CartOwner;

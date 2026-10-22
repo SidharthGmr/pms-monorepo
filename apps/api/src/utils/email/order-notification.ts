@@ -1,7 +1,8 @@
 import env from '../../config/env';
-import { OrderDto } from '../../dtos/order.dto';
+
 import logger from '../logger';
 import { dispatchEmailAsync } from './emailDispatcher.util';
+import { OrderDto } from '@pms/types';
 
 /**
  * Mails the store a copy of every order the moment it is placed. The recipient is the store's

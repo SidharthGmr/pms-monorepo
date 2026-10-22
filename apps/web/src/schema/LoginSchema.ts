@@ -1,6 +1,7 @@
-import { LoginModel } from '@/models/login.model';
+
 import * as Yup from 'yup';
 import { emailField } from './customeSchema';
+import { LoginModel } from '@pms/types';
 
 const LoginSchema: Yup.ObjectSchema<LoginModel> = Yup.object().shape({
   email: emailField(),

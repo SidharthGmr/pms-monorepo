@@ -1,11 +1,4 @@
-import {
-  ContactMessageDto,
-  ContactMessageFilterParams,
-  CreateContactMessageModel,
-  CustomResponse,
-  ListResponseDto,
-  UpdateContactMessageStatusModel,
-} from '@pms/types';
+import { ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel, CustomResponse, ListResponseDto, UpdateContactMessageStatusModel } from '@pms/types';
 import { ContactMessageStatus } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';

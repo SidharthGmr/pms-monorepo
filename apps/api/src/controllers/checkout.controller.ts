@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '../dtos/checkout.dto';
-import { CustomResponse } from '@pms/types';
-import { Role } from '../enum/user.enum';
-import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '../models/checkout.model';
+
+import { CustomResponse, CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto, CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel, Roles } from '@pms/types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { CheckoutContext } from '../services/interfaces/Icheckout.service';
 
@@ -39,7 +37,7 @@ export class CheckoutController {
   // Discounts and charge overrides are an operator tool. A customer checks out at the
   // store-computed charges, whatever their request claims.
   private adjustmentsFor(req: Request, source: any): CheckoutAdjustmentsModel {
-    return req.user?.role === Role.USER ? {} : this.adjustmentsFrom(source);
+    return req.user?.role === Roles.USER ? {} : this.adjustmentsFrom(source);
   }
 
   private adjustmentsFrom(body: any): CheckoutAdjustmentsModel {
@@ -73,7 +71,7 @@ export class CheckoutController {
   // A customer checks out their own account - whatever customerId the body claims. Staff and
   // admins place orders for the customer they picked.
   private resolveCustomerId = (req: Request, bodyCustomerId: string | undefined): string | undefined =>
-    req.user?.role === Role.USER ? (req.user?.userId as string | undefined) : bodyCustomerId;
+    req.user?.role === Roles.USER ? (req.user?.userId as string | undefined) : bodyCustomerId;
 
   verifyRazorpayPayment = async (req: Request, res: Response): Promise<Response<CustomResponse<CheckoutResultDto>>> => {
     const { ctx, error } = await this.buildContext(req);
@@ -116,7 +114,7 @@ export class CheckoutController {
       customerId,
       notes: body.notes ?? null,
       // A customer cannot mark their own order as cash-paid; that is the operator's call.
-      settlement: req.user?.role !== Role.USER && body.settlement === 'cash' ? 'cash' : 'credit',
+      settlement: req.user?.role !== Roles.USER && body.settlement === 'cash' ? 'cash' : 'credit',
       ...this.adjustmentsFor(req, body),
     };
 

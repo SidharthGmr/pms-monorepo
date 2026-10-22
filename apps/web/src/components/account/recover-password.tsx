@@ -5,13 +5,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from '@/components/ui/use-toast';
 import { useForgotPassword } from '@/hooks/service-hooks/useAccountService';
 import { cn } from '@/lib/utils';
-import ForgotPasswordModel from '@/models/ForgotPasswordModel';
+
 import ForgotPasswordSchema from '@/schema/ForgotPasswordSchema';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ArrowRight, KeyRound, Mail, MailCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AUTH_CONTROL, AUTH_FIELD, AUTH_FIELD_INVALID, AUTH_LABEL, AuthAltAction, AuthCard, AuthCardHeader, AuthDivider, AuthFootnote } from './auth-ui';
+import { ForgotPasswordModel } from '@pms/types';
 
 export default function RecoverPasswordModule() {
   const [isLoading, setIsLoading] = useState(false);

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Skeleton } from '@/components/ui/skeleton';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { PriceHistoryDto } from '@/dtos/price-history.dto';
+
 import { useGetPriceHistoryByVariant, useGetPriceHistorySummary } from '@/hooks/service-hooks/usePriceHistoryService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Flag, Minus, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import { StateBadge } from './columns';
 import { formatPercent, formatPrice, marginPercent, priceState } from './format';
+import { PriceHistoryDto } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -38,7 +39,7 @@ export default function PriceTimeline({ isOpen, variantId, title, sku, onClose, 
   const total = listResponse?.data?.data?.totalRecord ?? 0;
   const summary = summaryResponse?.data?.data;
 
-  const when = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as unknown as Date, true) : '—');
+  const when = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value, true) : '—');
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>

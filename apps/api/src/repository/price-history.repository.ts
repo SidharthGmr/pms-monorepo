@@ -1,9 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
-import { ListResponseDto } from '@pms/types';
-import { PriceHistoryDto, PriceHistorySummaryDto, PriceHistoryVariantScopeDto } from '../dtos/price-history.dto';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '../models/price-history.model';
-import { PriceHistoryFilterParams } from '../params/price-history.params';
+import { ListResponseDto, PriceHistoryDto, PriceHistorySummaryDto, PriceHistoryVariantScopeDto, CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 import { EFFECTIVE_ORDER, effectiveOn } from '../utils/variant-pricing';
 import { IPriceHistoryRepository } from './interfaces/iprice-history.repository';
 
@@ -341,10 +338,10 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
    * price stage correctly - the outgoing row stays in force right up to the changeover.
    */
   async create(data: CreatePriceHistoryModel, tx: Prisma.TransactionClient = prisma): Promise<PriceHistoryDto> {
-    const effectiveFrom = data.effectiveFrom ?? new Date();
+    const effectiveFrom = data.effectiveFrom ? new Date(data.effectiveFrom) : new Date();
     // `productId` is denormalised onto the row, so it is read off the variant rather than trusted
     // from the caller - a price can only ever belong to its variant's product.
-    const variant = await tx.productVariant.findUnique({ where: { id: data.variantId }, select: { productId: true } });
+    const variant = await tx.productVariant.findUnique({ where: { id: data.variantId }, select: { productId: true, storeCode: true } });
     if (!variant) throw new Error(`Variant ${data.variantId} not found`);
 
     await tx.priceHistory.updateMany({
@@ -356,7 +353,7 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
       data: {
         variantId: data.variantId,
         productId: variant.productId,
-        storeCode: data.storeCode,
+        storeCode: data.storeCode ?? variant.storeCode,
         sellingPrice: data.sellingPrice,
         offerPrice: data.offerPrice ?? null,
         costPrice: data.costPrice ?? null,
@@ -364,9 +361,9 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
         effectiveFrom,
         // Usually null: the next price to arrive closes this row via the updateMany above.
         // An explicit value time-boxes it, and the variant is unpriced once it passes.
-        effectiveTo: data.effectiveTo ?? null,
+        effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
         reason: data.reason ?? null,
-        createdById: data.createdById,
+        createdById: data.createdById as string,
       },
       include: priceHistoryInclude,
     });
@@ -388,8 +385,8 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
           ...(data.offerPrice !== undefined && { offerPrice: data.offerPrice }),
           ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
           ...(data.compareAtPrice !== undefined && { compareAtPrice: data.compareAtPrice }),
-          ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo }),
-          ...(data.effectiveFrom !== undefined && { effectiveFrom: data.effectiveFrom }),
+          ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null }),
+          ...(data.effectiveFrom != null && { effectiveFrom: new Date(data.effectiveFrom) }),
           ...(data.reason !== undefined && { reason: data.reason || null }),
           ...(data.updatedById !== undefined && { updatedById: data.updatedById }),
         },

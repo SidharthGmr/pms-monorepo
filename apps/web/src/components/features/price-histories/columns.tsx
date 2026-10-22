@@ -3,13 +3,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { PriceHistoryDto } from '@/dtos/price-history.dto';
+
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ColumnDef } from '@tanstack/react-table';
 import { History, Package, Pencil, Trash2, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 import { formatPercent, formatPrice, marginPercent, priceState, PriceState } from './format';
+import { PriceHistoryDto } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -125,7 +126,7 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, viewTimeline,
         header: () => <span className={HEADER}>In force</span>,
         cell: ({ row }) => {
           const state = priceState(row.original);
-          const when = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as unknown as Date, true) : '—');
+          const when = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value, true) : '—');
 
           return (
             <div className="flex flex-col gap-1">

@@ -3,15 +3,15 @@ import { Fragment, useMemo } from 'react';
 import Link from 'next/link';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { Activity, ArrowRight, ShoppingBag, Truck } from 'lucide-react';
-import { OrderDto } from '@/dtos/order.dto';
-import { PurchaseDto } from '@/dtos/purchase.dto';
-import { OrderStatus } from '@/enums/order-status.enum';
+
+
+
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllPurchases } from '@/hooks/service-hooks/usePurchaseService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatMoney } from './format';
-
+import { OrderDto, PurchaseResponseDto, OrderStatusEnum } from '@pms/types';
 type FeedItem = {
   key: string;
   kind: 'order' | 'purchase';
@@ -24,12 +24,12 @@ type FeedItem = {
 };
 
 const ORDER_STATUS_STYLE: Record<string, string> = {
-  [OrderStatus.Pending]: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  [OrderStatus.Confirmed]: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
-  [OrderStatus.Shipped]: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
-  [OrderStatus.Delivered]: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  [OrderStatus.Cancelled]: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
-  [OrderStatus.Returned]: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300',
+  [OrderStatusEnum.Pending]: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  [OrderStatusEnum.Confirmed]: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
+  [OrderStatusEnum.Shipped]: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
+  [OrderStatusEnum.Delivered]: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  [OrderStatusEnum.Cancelled]: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
+  [OrderStatusEnum.Returned]: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300',
 };
 
 const dayLabel = (d: Date) => (isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'EEE, d MMM'));
@@ -51,7 +51,7 @@ export default function ActivityFeed({ limit = 8 }: { limit?: number }) {
       at: new Date(o.createdAt),
       href: `/admin/orders/${o.id}`,
     }));
-    const purchaseItems: FeedItem[] = ((purchases.data?.data?.data?.data as PurchaseDto[] | undefined) ?? []).map((p) => ({
+    const purchaseItems: FeedItem[] = ((purchases.data?.data?.data?.data as PurchaseResponseDto[] | undefined) ?? []).map((p) => ({
       key: `p-${p.id}`,
       kind: 'purchase',
       title: p.invoiceNumber || `Purchase #${p.id}`,

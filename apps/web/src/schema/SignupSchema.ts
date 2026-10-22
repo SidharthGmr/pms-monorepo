@@ -1,5 +1,6 @@
-import SignupModel from '@/models/SignupModel';
+
 import * as Yup from 'yup';
+import { SignupModel } from '@pms/types';
 
 const SignupSchema: Yup.ObjectSchema<SignupModel> = Yup.object().shape({
   name: Yup.string().required('Username is required'),

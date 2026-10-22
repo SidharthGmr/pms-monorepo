@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { OrderStatus } from '@/enums/order-status.enum';
+
 import { useCreateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { formatPrice } from '@/lib/format-price';
@@ -16,7 +16,7 @@ import { ArrowLeft, Banknote, CheckCircle2, CreditCard, ImageOff, Printer, QrCod
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PaymentMethod, PosCartLine } from './types';
-
+import { OrderStatusEnum } from '@pms/types';
 const METHODS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'CASH', label: 'Cash', icon: Banknote },
   { value: 'UPI', label: 'UPI', icon: QrCode },
@@ -73,7 +73,7 @@ export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScre
       discount: discountAmount,
       tax: 0,
       shippingCost: 0,
-      status: OrderStatus.Confirmed,
+      status: OrderStatusEnum.Confirmed,
       notes: [`POS sale · paid by ${method}`, notes.trim()].filter(Boolean).join('\n'),
       items: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity })),
     });

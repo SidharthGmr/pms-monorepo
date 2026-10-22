@@ -1,17 +1,18 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PurchaseDto } from '@/dtos/purchase.dto';
+
 import { Row } from '@tanstack/react-table';
 import { ExternalLink, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { PurchaseResponseDto } from '@pms/types';
 
 interface PurchaseListRowActionsProps<TData> {
   row: Row<TData>;
 }
 
 export default function PurchaseListRowActions<TData>({ row }: PurchaseListRowActionsProps<TData>) {
-  const purchase = row.original as PurchaseDto;
+  const purchase = row.original as PurchaseResponseDto;
 
   return (
     <TooltipProvider>

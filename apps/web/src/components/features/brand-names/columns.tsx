@@ -2,11 +2,11 @@
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Eye, ImageOff, Pencil, Trash2 } from 'lucide-react';
-import { BrandNameDto } from '@pms/types';
+import { BrandNameDto, StatusValues } from '@pms/types';
 import RecordTimestamps from '@/components/common/record-timestamps';
 import StatusBadge from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { cn } from '@/lib/utils';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';

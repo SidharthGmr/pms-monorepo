@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardSummaryDto } from '@/dtos/dashboard-summary.dto';
+
 import { useGetDashboardSummary } from '@/hooks/service-hooks/useDashboardService';
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useGetLowStockProducts } from '@/hooks/service-hooks/useProductService';
@@ -31,6 +31,7 @@ import FocusActivityFeed from './FocusActivityFeed';
 import { formatCount, formatMoney } from './format';
 import FocusSalesTrend from './FocusSalesTrend';
 import { Accent, ACCENT, EmptyLine, Panel, SURFACE, TrendChip, trendPct } from './widgets';
+import { DashboardSummaryDto } from '@pms/types';
 
 interface LowStockProduct {
   id: number;

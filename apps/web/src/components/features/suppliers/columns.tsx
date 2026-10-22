@@ -5,8 +5,9 @@ import { Eye, Mail, MapPin, Pencil, Phone, Trash2 } from 'lucide-react';
 import RecordTimestamps from '@/components/common/record-timestamps';
 import StatusBadge from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
-import { SupplierDto } from '@/dtos/supplier.dto';
+
 import { cn } from '@/lib/utils';
+import { SupplierDto } from '@pms/types';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 

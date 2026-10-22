@@ -6,10 +6,11 @@ import Link from 'next/link';
 import RecordTimestamps from '@/components/common/record-timestamps';
 import StatusBadge from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
-import { MasterEntryDto } from '@/dtos/master-entry.dto';
-import { StatusValues } from '@/enums/status-values.enum';
+
+
 import { cn } from '@/lib/utils';
 import { HEX_COLOR } from './add-edit/form';
+import { MasterEntryDto, StatusValues } from '@pms/types';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 

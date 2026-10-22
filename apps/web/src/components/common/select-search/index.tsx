@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
 import { cn } from '@/lib/utils';
 import { CaretSortIcon, CheckIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import React, { useEffect, useMemo, useState } from 'react';

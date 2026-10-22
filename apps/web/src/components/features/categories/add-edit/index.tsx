@@ -12,13 +12,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { useCreateCategory, useGetAllCategories, useGetCategoryById, useUpdateCategory } from '@/hooks/service-hooks/useCategoryService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { CategoryModel, CategoryResponseDto, categoryFields } from '@pms/types';
+import { CategoryModel, CategoryResponseDto, categoryFields, StatusValues } from '@pms/types';
 import { ChevronDown, FolderTree } from 'lucide-react';
 import { KeyboardEvent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';

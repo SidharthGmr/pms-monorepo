@@ -1,4 +1,4 @@
-import { CatalogFacetsDto, CatalogFilterParams, CatalogProductDto, CustomResponse as Response, ListResponseDto } from '@pms/types';
+import { CustomResponse as Response, CatalogFacetsDto, CatalogFilterParams, CatalogProductDto, ListResponseDto } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface ICatalogService {

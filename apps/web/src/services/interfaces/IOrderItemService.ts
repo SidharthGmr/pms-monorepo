@@ -1,6 +1,5 @@
-import { OrderItemDto } from '@/dtos/order-item.dto';
-import { CustomResponse as Response } from '@pms/types';
-import { CreateOrderItemModel, UpdateOrderItemModel } from '@/models/order-item.model';
+
+import { CustomResponse as Response, OrderItemDto, CreateOrderItemModel, UpdateOrderItemModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IOrderItemService {

@@ -1,8 +1,8 @@
 import { injectable } from "inversify";
 import prisma from "../config/prisma";
-import { StaffDto } from "../dtos/staff.dto";
+
 import { IStaffRepository } from "./interfaces/istaff.repository";
-import { StaffFilterParams } from "../params/staff.params";
+import { StaffDto, StaffFilterParams } from '@pms/types';
 
 @injectable()
 export class StaffRepository implements IStaffRepository {

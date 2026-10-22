@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { IoClose } from 'react-icons/io5';

@@ -1,7 +1,7 @@
 import { UserSession } from '@prisma/client';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
-import { IssuedTokens, RotatedTokens, SessionContext, UserSessionDto } from '../dtos/user-session.dto';
+
 import CustomError from '../exceptions/custom-error';
 import IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import {
@@ -15,6 +15,7 @@ import {
   verifySessionToken,
 } from '../utils/token.util';
 import { IUserSessionService } from './interfaces/Iuser-session.service';
+import { IssuedTokens, RotatedTokens, SessionContext, UserSessionDto } from '@pms/types';
 
 /** `ipAddress` is VarChar(64) in the schema; long forwarded chains must not blow the insert up. */
 const IP_MAX_LENGTH = 64;

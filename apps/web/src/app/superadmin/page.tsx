@@ -1,9 +1,9 @@
 import config from '@/config';
-import { Roles } from '@/enums/roles.enum';
+
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../api/auth/[...nextauth]/options';
-import { UserDto } from '@pms/types';
+import { UserDto, Roles } from '@pms/types';
 import GetAllUsersListingWrapper from '@/components/features/get-all-users/listing-wrapper';
 
 export const metadata: Metadata = {

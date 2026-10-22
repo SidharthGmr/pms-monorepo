@@ -1,12 +1,13 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import LoginModel from '@/models/LoginModel';
-import VerifyTokenModel from '@/models/VerifyTokenModel';
-import ForgotPasswordModel from '@/models/ForgotPasswordModel';
-import ResetPasswordTokenModel from '@/models/ResetPasswordTokenModel';
-import { CreateUserModel } from '@/models/user.model';
+
+
+
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { LoginModel, VerifyTokenModel, ForgotPasswordModel, ResetPasswordTokenModel, CreateUserModel } from '@pms/types';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 

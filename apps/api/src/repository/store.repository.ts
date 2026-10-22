@@ -1,10 +1,9 @@
 import { Prisma, Status } from "@prisma/client";
 import prisma from "../config/prisma";
-import { StoreDto, CreateStoreDto } from "../dtos/store.dto";
-import { StoreFilterParams } from "../params/store.params";
-import NotFoundError from "../exceptions/not-found-error";
-import { ListResponseDto } from "@pms/types";
 
+
+import NotFoundError from "../exceptions/not-found-error";
+import { ListResponseDto, StoreDto, CreateStoreDto, StoreFilterParams } from '@pms/types';
 export class StoreRepository {
   async create(data: CreateStoreDto): Promise<StoreDto> {
     const store = await prisma.store.create({
@@ -35,13 +34,13 @@ export class StoreRepository {
         ];
       }
 
-      if (filters.isActive !== undefined) {
+      if (filters.isActive != null) {
         where.isActive = filters.isActive;
       }
     }
 
     // Exclude trashed stores by default; allow explicit status filtering.
-    if (filters?.status !== undefined) {
+    if (filters?.status != null) {
       where.status = filters.status;
     } else {
       where.NOT = { status: Status.Trash };

@@ -1,6 +1,7 @@
-import RegistrationModel from '@/models/registration-model';
+
 import * as Yup from 'yup';
 import { confirmPasswordField, emailField, nameField, passwordField } from './customeSchema';
+import { RegistrationModel } from '@pms/types';
 
 const RegistrationSchema: Yup.ObjectSchema<RegistrationModel> = Yup.object().shape({
   name: nameField(),

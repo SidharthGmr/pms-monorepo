@@ -6,13 +6,14 @@ import CardAction from '@/components/common/card-action';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { UserDto } from '@/dtos/UserDto';
-import { Roles } from '@/enums/roles.enum';
+
+
 import { cn } from '@/lib/utils';
 import { getAvatarSoftColor, getInitialName } from '@/utils/avatar-color';
 import { formatDistanceToNow } from 'date-fns';
 import { BadgeCheck, Mail, Pencil, Phone, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { UserDto, Roles } from '@pms/types';
 
 type BadgeVariant = BadgeProps['variant'];
 

@@ -2,11 +2,9 @@ import { Role, Status } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, ListResponseDto } from '@pms/types';
-import { UpdateUserDto, UserDto } from '../dtos/user.dto';
+import { CustomResponse, ListResponseDto, UpdateUserDto, UserDto, UserFilterParams } from '@pms/types';
 import CustomError from '../exceptions/custom-error';
 import IUnitOfService from '../services/interfaces/iunitof.service';
-import { UserFilterParams } from '../params/user.params';
 
 export class UserController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {

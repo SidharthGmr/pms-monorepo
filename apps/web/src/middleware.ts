@@ -1,6 +1,7 @@
-import { Roles } from '@/enums/roles.enum';
+
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { Roles } from '@pms/types';
 
 export default withAuth(function middleware(req) {
   const pageUrl = req.nextUrl.pathname.toLowerCase();

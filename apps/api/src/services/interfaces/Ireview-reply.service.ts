@@ -1,6 +1,5 @@
-import { CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto } from "../../dtos/review.dto";
-import { ListResponseDto } from "@pms/types";
-import { ReviewReplyFilterParams } from "../../params/review.params";
+
+import { ListResponseDto, CreateReviewReplyDto, ReviewReplyDto, UpdateReviewReplyDto, ReviewReplyFilterParams } from '@pms/types';
 import { ReviewActor } from "./Ireview.service";
 
 export interface IReviewReplyService {

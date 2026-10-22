@@ -7,16 +7,31 @@ import { ReactNode } from 'react';
 
 // The shared look of every account card: field rows, headings, dividers and the secondary link button.
 // Login, sign-up and the password flows compose these so one change restyles them all.
-export const AUTH_FIELD = 'flex h-11 items-center gap-2.5 rounded-xl border bg-background px-3 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20';
+export const AUTH_FIELD =
+  'flex h-11 items-center gap-2.5 rounded-xl border bg-background px-3 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20';
 export const AUTH_CONTROL = 'h-full w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/70 disabled:cursor-not-allowed';
 export const AUTH_FIELD_INVALID = 'border-destructive focus-within:border-destructive focus-within:ring-destructive/20';
 export const AUTH_LABEL = 'text-xs font-semibold uppercase tracking-wide text-muted-foreground';
 
 export function AuthCard({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('rounded-2xl border bg-card/95 p-6 shadow-[0_24px_60px_-28px_hsl(var(--primary)/0.45)] backdrop-blur sm:p-8', className)}>{children}</div>;
+  return (
+    <div className={cn('rounded-2xl border bg-card/95 p-6 shadow-[0_24px_60px_-28px_hsl(var(--primary)/0.45)] backdrop-blur sm:p-8', className)}>
+      {children}
+    </div>
+  );
 }
 
-export function AuthCardHeader({ eyebrow, title, description, icon: Icon }: { eyebrow: string; title: string; description: string; icon: LucideIcon }) {
+export function AuthCardHeader({
+  eyebrow,
+  title,
+  description,
+  icon: Icon,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}) {
   return (
     <>
       <div className="flex items-start justify-between gap-3">

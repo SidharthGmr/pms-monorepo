@@ -1,7 +1,4 @@
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { OrderDto } from '@/dtos/order.dto';
-import { CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel } from '@/models/order.model';
-import { OrderFilterParams } from '@/params/order.params';
+import { CustomResponse as Response, ListResponseDto, OrderDto, CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel, OrderFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IOrderService {

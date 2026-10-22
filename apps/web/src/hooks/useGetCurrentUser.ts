@@ -1,6 +1,7 @@
-import { UserDto } from '@/dtos/UserDto';
+
 import { useSession } from 'next-auth/react';
 import { useEffect, useState, useMemo } from 'react';
+import { UserDto } from '@pms/types';
 
 const useGetCurrentUser = () => {
   const { data: session, status } = useSession();

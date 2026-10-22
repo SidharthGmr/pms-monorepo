@@ -1,9 +1,10 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreatePriceHistoryModel, UpdatePriceHistoryModel } from '@/models/price-history.model';
-import { PriceHistoryFilterParams } from '@/params/price-history.params';
+
+
 import IPriceHistoryService from '@/services/interfaces/IPriceHistoryService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreatePriceHistoryModel, UpdatePriceHistoryModel, PriceHistoryFilterParams } from '@pms/types';
 
 const priceHistoryService = () => container.get<IPriceHistoryService>(TYPES.IPriceHistoryService);
 

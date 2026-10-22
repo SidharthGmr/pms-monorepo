@@ -1,7 +1,8 @@
 'use client';
 
-import { Roles } from '@/enums/roles.enum';
+
 import { useRouter } from 'next/navigation';
+import { Roles } from '@pms/types';
 
 /** Where a signed-in user belongs. Exported so links can point at it without a redirect. */
 export function dashboardPathFor(roles: string[]): string {

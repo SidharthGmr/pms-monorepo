@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { cn } from '@/lib/utils';
-import { CreateUserModel } from '@/models/user.model';
+
 import SignupSchema from '@/schema/userSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AUTH_CONTROL, AUTH_FIELD, AUTH_FIELD_INVALID, AUTH_LABEL, AuthAltAction, AuthCard, AuthCardHeader, AuthDivider, AuthFootnote } from './auth-ui';
+import { CreateUserModel } from '@pms/types';
 
 export default function RegisterModule() {
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +31,7 @@ export default function RegisterModule() {
       email: '',
       phone: '',
       password: '',
-      isRegisterbyShop: false,
+      isRegisteredByShop: false,
     },
   });
 
@@ -173,7 +174,7 @@ export default function RegisterModule() {
 
           <FormField
             control={control}
-            name="isRegisterbyShop"
+            name="isRegisteredByShop"
             render={({ field }) => (
               <FormItem className="flex items-center gap-3 rounded-xl border bg-muted/30 px-3 py-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">

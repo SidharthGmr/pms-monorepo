@@ -1,4 +1,4 @@
-import { OrderItemDto, UpdateOrderItemDto } from "../../dtos/order-item.dto";
+import { OrderItemDto, UpdateOrderItemDto } from '@pms/types';
 
 export interface IOrderItemRepository {
   findByOrderId(orderId: number): Promise<OrderItemDto[]>;

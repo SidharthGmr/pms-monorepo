@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Plus, Users } from 'lucide-react';
 import { useState } from 'react';
 import GetAllUserss from '.';
+import { Role } from '@pms/types';
 import ManageUser from './add-edit';
 
-export default function GetAllUsersListingWrapper({ role }: { role?: string }) {
+export default function GetAllUsersListingWrapper({ role }: { role?: Role }) {
   const [showAddModal, setShowAddModal] = useState(false);
 
   return (

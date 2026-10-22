@@ -10,13 +10,13 @@ import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { UserDto } from '@/dtos/UserDto';
+
 import { useDeleteUserById, useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { UserListParams } from '@pms/types';
+import { UserListParams, UserDto } from '@pms/types';
 import { Users } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';

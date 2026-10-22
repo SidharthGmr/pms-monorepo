@@ -1,8 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { OrderItemDto } from '@/dtos/order-item.dto';
-import { CustomResponse as Response } from '@pms/types';
-import { CreateOrderItemModel, UpdateOrderItemModel } from '@/models/order-item.model';
+
+import { CustomResponse as Response, OrderItemDto, CreateOrderItemModel, UpdateOrderItemModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';

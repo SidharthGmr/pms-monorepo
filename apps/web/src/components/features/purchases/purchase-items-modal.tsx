@@ -6,13 +6,14 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { PurchaseDto } from '@/dtos/purchase.dto';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ExternalLink } from 'lucide-react';
 import { formatPurchaseAmount, purchaseStatusVariant } from './format';
+import { PurchaseResponseDto } from '@pms/types';
 
 interface PurchaseItemsModalProps {
-  purchase: PurchaseDto;
+  purchase: PurchaseResponseDto;
   isOpen: boolean;
   onClose: () => void;
 }

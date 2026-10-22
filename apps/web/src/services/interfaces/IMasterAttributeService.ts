@@ -1,7 +1,4 @@
-import { CustomResponse as Response, ListResponseDto } from '@pms/types';
-import { MasterAttributeDto } from '@/dtos/master-entry.dto';
-import { CreateMasterAttributeModel } from '@/models/master-entry.model';
-import { MasterAttributeFilterParams } from '@/params/master-entry.params';
+import { CustomResponse as Response, ListResponseDto, MasterAttributeDto, CreateMasterAttributeModel, MasterAttributeFilterParams } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IMasterAttributeService {

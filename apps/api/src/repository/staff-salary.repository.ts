@@ -1,6 +1,7 @@
 import prisma from "../config/prisma";
-import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from "../dtos/staff-salary.dto";
+
 import { IStaffSalaryRepository } from "./interfaces/istaff-salary.repository";
+import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from '@pms/types';
 
 export class StaffSalaryRepository implements IStaffSalaryRepository {
   async findAll(): Promise<StaffSalaryDto[]> {

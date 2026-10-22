@@ -3,11 +3,10 @@ import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
 import { getRazorpayClient, getRazorpayCredentials } from '../config/razorpay';
 import { TYPES } from '../config/ioc.types';
-import { CartDto } from '@pms/types';
-import { CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto } from '../dtos/checkout.dto';
+import { CartDto, CheckoutResultDto, CheckoutSummaryDto, RazorpayOrderDto, CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@pms/types';
 import ClientError from '../exceptions/client-error';
 import NotFoundError from '../exceptions/not-found-error';
-import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '../models/checkout.model';
+
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { CheckoutContext, ICheckoutService } from './interfaces/Icheckout.service';
 import { IOrderService } from './interfaces/Iorder.service';

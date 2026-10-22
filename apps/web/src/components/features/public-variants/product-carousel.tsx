@@ -1,19 +1,20 @@
 'use client';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { ProductDto } from '@/dtos/product.dto';
+
 import { cn } from '@/lib/utils';
 import Autoplay from 'embla-carousel-autoplay';
 import { useMemo, useRef } from 'react';
 import ProductCard, { ProductCardSkeleton } from './product-card';
+import { ProductResponseDto } from '@pms/types';
 
 const SLIDE = 'pl-2.5 basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-1/6 xl:basis-[12.5%]';
 const SKELETON_COUNT = 6;
 
 interface ProductCarouselProps {
-  products: ProductDto[];
+  products: ProductResponseDto[];
   loading?: boolean;
   selectedIds?: number[];
-  onSelect?: (product: ProductDto) => void;
+  onSelect?: (product: ProductResponseDto) => void;
   title?: string;
   description?: string;
   className?: string;

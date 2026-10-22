@@ -4,10 +4,11 @@ import { DateRangePicker } from '@/components/common/date-range-picker';
 import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
 import { ListView } from '@/components/common/view-switch';
 import { SelectSearch } from '@/components/common/select-search';
-import { Roles } from '@/enums/roles.enum';
+
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
+import { Roles } from '@pms/types';
 
 export type { SortDirection };
 

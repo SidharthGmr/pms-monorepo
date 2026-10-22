@@ -5,9 +5,10 @@ import { useMemo } from 'react';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { StoreDto } from '@/dtos/store.dto';
+
 import StoreRowActions from './row-action';
 import { Badge } from '@/components/ui/badge';
+import { StoreDto } from '@pms/types';
 
 export const useStoreColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
   useMemo<ColumnDef<StoreDto>[]>(

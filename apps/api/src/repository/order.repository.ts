@@ -1,10 +1,8 @@
 import { OrderStatus, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
-import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
-import { ListResponseDto } from "@pms/types";
-import { CreateOrderModel } from "../models/order.model";
+
+import { ListResponseDto, OrderDto, UpdateOrderDto, OrderFilterParams } from '@pms/types';
 import { IOrderRepository } from "./interfaces/iorder.repository";
-import { OrderFilterParams } from "../params/order.params";
 
 const SORTABLE_COLUMNS = new Set(['orderNumber', 'grandTotal', 'status', 'createdAt', 'updatedAt', 'id']);
 
@@ -25,7 +23,7 @@ export class OrderRepository implements IOrderRepository {
         where.storeCode = filters.storeCode;
       }
       if (filters.status) {
-        where.status = filters.status;
+        where.status = filters.status as OrderStatus;
       }
 
       // The order number is what staff read off a bill; the customer columns are what they
@@ -39,10 +37,10 @@ export class OrderRepository implements IOrderRepository {
         ];
       }
 
-      if (filters.startDate !== undefined || filters.endDate !== undefined) {
+      if (filters.startDate != null || filters.endDate != null) {
         where.createdAt = {
-          ...(filters.startDate !== undefined && { gte: filters.startDate }),
-          ...(filters.endDate !== undefined && { lte: filters.endDate }),
+          ...(filters.startDate != null && { gte: new Date(filters.startDate) }),
+          ...(filters.endDate != null && { lte: new Date(filters.endDate) }),
         };
       }
     }

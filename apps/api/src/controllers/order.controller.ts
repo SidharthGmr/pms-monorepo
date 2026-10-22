@@ -2,10 +2,7 @@ import { OrderStatus, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import { CustomResponse, ListResponseDto } from "@pms/types";
-import { OrderDto, UpdateOrderDto, UpdateOrderStatusDto } from "../dtos/order.dto";
-import { CreateOrderModel } from "../models/order.model";
-import { OrderFilterParams } from "../params/order.params";
+import { CustomResponse, ListResponseDto, OrderDto, UpdateOrderDto, UpdateOrderStatusDto, CreateOrderModel, OrderFilterParams } from '@pms/types';
 import IUnitOfService from "../services/interfaces/iunitof.service";
 import { MISSING_STORE_CODE } from '../constants/responses';
 

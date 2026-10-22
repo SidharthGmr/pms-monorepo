@@ -7,14 +7,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { ReviewDto } from '@/dtos/review.dto';
+
 import { useCreateReviewReply, useDeleteReviewReply, useUpdateReviewReply } from '@/hooks/service-hooks/useReviewService';
-import { CreateReviewReplyModel } from '@/models/review.model';
+
 import { ReviewReplySchema } from '@/schema/reviewSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { ReviewDto, CreateReviewReplyModel } from '@pms/types';
 
 interface ReviewReplyDialogProps {
   review: ReviewDto;

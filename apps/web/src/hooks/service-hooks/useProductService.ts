@@ -1,9 +1,10 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CreateProductModel, UpdateProductModel } from '@/models/product.model';
-import { ProductFilterParams } from '@/params/product.params';
+
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreateProductModel, UpdateProductModel, ProductFilterParams } from '@pms/types';
 
 const useCreateProduct = () => {
     const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

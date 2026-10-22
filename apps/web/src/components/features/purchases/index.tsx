@@ -3,8 +3,8 @@ import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CalendarDays, ExternalLink, Eye, Package, PackagePlus, Receipt, Truck } from 'lucide-react';
-import { PurchaseDto } from '@/dtos/purchase.dto';
-import { PurchaseFilterParams } from '@/params/purchase.params';
+
+
 import { useGetAllPurchases } from '@/hooks/service-hooks/usePurchaseService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { container } from '@/config/ioc';
@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { usePurchaseColumns } from './columns';
 import PurchaseFilter, { DEFAULT_PURCHASE_FILTER, PurchaseFilterValue, SortDirection } from './filter';
 import { formatPurchaseAmount, purchaseStatusLabel, purchaseStatusVariant } from './format';
+import { PurchaseResponseDto, PurchaseFilterParams } from '@pms/types';
 
 const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3';
 
@@ -80,7 +81,7 @@ export default function PurchasesList() {
 
   const listQuery = useGetAllPurchases(params);
   const result = listQuery.data?.data?.data;
-  const purchases: PurchaseDto[] = useMemo(() => result?.data ?? [], [result]);
+  const purchases: PurchaseResponseDto[] = useMemo(() => result?.data ?? [], [result]);
   const total = result?.totalRecord ?? 0;
   const pageTotal = useMemo(() => purchases.reduce((sum, p) => sum + Number(p.totalAmount ?? 0), 0), [purchases]);
 
@@ -114,7 +115,7 @@ export default function PurchasesList() {
     setPage(1);
   };
 
-  const formatDate = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
+  const formatDate = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
 
   const isFiltered = filter.search !== '' || !!filter.dateRange;
   const showSkeleton = listQuery.isPending;
@@ -199,8 +200,8 @@ export default function PurchasesList() {
 }
 
 interface PurchaseCardProps {
-  purchase: PurchaseDto;
-  formatDate: (value?: string | null) => string;
+  purchase: PurchaseResponseDto;
+  formatDate: (value?: Date | string | null) => string;
   onOpen: () => void;
 }
 

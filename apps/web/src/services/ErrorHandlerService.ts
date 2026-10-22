@@ -3,9 +3,7 @@ import { injectable } from 'inversify';
 
 import config from '@/config';
 import IErrorHandlerService from './interfaces/IErrorHandlerService';
-import { CustomResponse as Response } from '@pms/types';
-import PlainDto from '@/dtos/PlainDto';
-
+import { CustomResponse as Response, PlainDto } from '@pms/types';
 @injectable()
 export default class ErrorHandlerService implements IErrorHandlerService {
   constructor() { }

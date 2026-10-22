@@ -1,7 +1,8 @@
 import prisma from "../config/prisma";
-import { UserDto } from "../dtos/user.dto";
+
 import { IAccountRepository } from "./interfaces/iaccount.repository";
 import { toUserDto, userProfileInclude } from "./user-profile.mapper";
+import { UserDto } from '@pms/types';
 
 export class AccountRepository implements IAccountRepository {
 

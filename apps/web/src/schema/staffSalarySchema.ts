@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { CreateStaffSalaryModel } from '@/models/staff-salary.model';
+import { CreateStaffSalaryModel } from '@pms/types';
 
 const StaffSalarySchema: Yup.ObjectSchema<CreateStaffSalaryModel> = Yup.object().shape({
     staffId: Yup.number().typeError('Staff ID must be a number').required('Staff ID is required'),

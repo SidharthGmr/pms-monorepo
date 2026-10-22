@@ -1,8 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto } from '@pms/types';
-import { VariantRatingDto } from '../../dtos/product-variant.dto';
-import { ProductVariantFilterParams } from '../../params/product-variant.params';
-
+import { ListResponseDto, ProductVariantListItemDto, ProductVariantModel, ProductVariantResponseDto, VariantRatingDto, ProductVariantFilterParams } from '@pms/types';
 export interface IProductVariantService {
   create(data: ProductVariantModel, userId: string, storeCode: string): Promise<ProductVariantResponseDto>;
   update(data: ProductVariantModel, id: number, storeCode: string): Promise<ProductVariantResponseDto>;

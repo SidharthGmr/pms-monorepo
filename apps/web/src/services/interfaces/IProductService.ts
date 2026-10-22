@@ -1,9 +1,8 @@
 import { AxiosResponse } from 'axios';
-import { ProductDto } from '@/dtos/product.dto';
-import { CreateProductModel, UpdateProductModel } from '@/models/product.model';
-import { ProductFilterParams } from '@/params/product.params';
-import { CustomResponse as Response, ListResponseDto, ProductResponseDto } from '@pms/types';
 
+
+
+import { CustomResponse as Response, ListResponseDto, ProductResponseDto, CreateProductModel, UpdateProductModel, ProductFilterParams } from '@pms/types';
 export interface AddStockModel {
     /**
      * Which variant receives the stock. Stock is held per variant - Small and Large keep
@@ -18,13 +17,13 @@ export interface AddStockModel {
 }
 
 export default interface IProductService {
-    create(model: CreateProductModel): Promise<AxiosResponse<Response<ProductDto>>>;
+    create(model: CreateProductModel): Promise<AxiosResponse<Response<ProductResponseDto>>>;
     getAll(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductResponseDto>>>>;
-    getAllPublic(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;
+    getAllPublic(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductResponseDto>>>>;
     getById(id: number | string): Promise<AxiosResponse<Response<ProductResponseDto>>>;
-    update(id: number | string, model: UpdateProductModel): Promise<AxiosResponse<Response<ProductDto>>>;
-    getLowStock(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductDto>>>>;
-    addStock(id: number | string, model: AddStockModel): Promise<AxiosResponse<Response<ProductDto>>>;
+    update(id: number | string, model: UpdateProductModel): Promise<AxiosResponse<Response<ProductResponseDto>>>;
+    getLowStock(params?: ProductFilterParams): Promise<AxiosResponse<Response<ListResponseDto<ProductResponseDto>>>>;
+    addStock(id: number | string, model: AddStockModel): Promise<AxiosResponse<Response<ProductResponseDto>>>;
     /** Pass `variantId` to narrow the movements to a single variant. */
     getStockHistory(id: number | string, params?: { page?: number, recordPerPage?: number, variantId?: number }): Promise<AxiosResponse<Response<ListResponseDto<any>>>>;
     delete(id: number | string): Promise<AxiosResponse<Response<void>>>;

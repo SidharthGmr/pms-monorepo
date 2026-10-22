@@ -3,7 +3,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { CreatePurchaseModel } from '@/services/PurchaseService';
 import { IPurchaseService } from '@/services/interfaces/IPurchaseService';
-import { PurchaseFilterParams } from '@/params/purchase.params';
+import { PurchaseFilterParams } from '@pms/types';
 
 export const useCreatePurchase = () => {
   const queryClient = useQueryClient();

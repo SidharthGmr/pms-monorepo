@@ -2,8 +2,9 @@
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import ListToolbar, { SortDirection, SortOption, StatusOption } from '@/components/common/list-toolbar';
 import { ListView } from '@/components/common/view-switch';
-import { OrderStatus } from '@/enums/order-status.enum';
+
 import { DateRange } from 'react-day-picker';
+import { OrderStatus, OrderStatusEnum } from '@pms/types';
 
 export type { SortDirection };
 
@@ -28,12 +29,12 @@ export const DEFAULT_ORDER_FILTER: OrderFilterValue = {
 // The same tones the detail page and the bill use, so one order reads alike everywhere.
 const STATUS_OPTIONS: StatusOption<OrderStatus | null>[] = [
   { label: 'All', value: null },
-  { label: 'Pending', value: OrderStatus.Pending, dot: 'bg-amber-500' },
-  { label: 'Confirmed', value: OrderStatus.Confirmed, dot: 'bg-sky-500' },
-  { label: 'Shipped', value: OrderStatus.Shipped, dot: 'bg-indigo-500' },
-  { label: 'Delivered', value: OrderStatus.Delivered, dot: 'bg-emerald-500' },
-  { label: 'Cancelled', value: OrderStatus.Cancelled, dot: 'bg-rose-500' },
-  { label: 'Returned', value: OrderStatus.Returned, dot: 'bg-orange-500' },
+  { label: 'Pending', value: OrderStatusEnum.Pending, dot: 'bg-amber-500' },
+  { label: 'Confirmed', value: OrderStatusEnum.Confirmed, dot: 'bg-sky-500' },
+  { label: 'Shipped', value: OrderStatusEnum.Shipped, dot: 'bg-indigo-500' },
+  { label: 'Delivered', value: OrderStatusEnum.Delivered, dot: 'bg-emerald-500' },
+  { label: 'Cancelled', value: OrderStatusEnum.Cancelled, dot: 'bg-rose-500' },
+  { label: 'Returned', value: OrderStatusEnum.Returned, dot: 'bg-orange-500' },
 ];
 
 // Mirrors SORTABLE_COLUMNS in order.repository.ts - anything else falls back to createdAt.

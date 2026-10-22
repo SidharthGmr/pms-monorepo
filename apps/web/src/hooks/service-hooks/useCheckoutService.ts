@@ -1,8 +1,9 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@/models/checkout.model';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckoutAdjustmentsModel, DirectCheckoutModel, VerifyRazorpayPaymentModel } from '@pms/types';
 
 const SUMMARY_KEY = 'CheckoutService.getSummary';
 

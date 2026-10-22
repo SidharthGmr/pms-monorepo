@@ -3,9 +3,7 @@ import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
-import { Status } from '@pms/types';
-import { MasterEntryDto } from '@/dtos/master-entry.dto';
-import { MasterEntryFilterParams } from '@/params/master-entry.params';
+import { Status, MasterEntryDto, MasterEntryFilterParams, StatusValues } from '@pms/types';
 import { useDeleteMasterEntry, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -13,7 +11,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import config from '@/config';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { cn } from '@/lib/utils';
 import { CustomDataTable } from '@/components/Table/data-table';
 import ConfirmBox from '@/components/common/confirm-box';
@@ -141,7 +139,7 @@ export default function MasterEntryList() {
     closeDeleteModal(true);
   };
 
-  const formatDate = (value?: string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
+  const formatDate = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
 
   const isFiltered = filter.search !== '' || filter.status !== null || filter.attributeId !== undefined;
   const showSkeleton = listQuery.isPending;
@@ -275,7 +273,7 @@ export default function MasterEntryList() {
 
 interface EntryCardProps {
   entry: MasterEntryDto;
-  formatDate: (value?: string | null) => string;
+  formatDate: (value?: Date | string | null) => string;
   onEdit: () => void;
   onDelete: () => void;
 }

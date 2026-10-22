@@ -1,6 +1,7 @@
 import prisma from "../config/prisma";
-import { OrderItemDto, UpdateOrderItemDto } from "../dtos/order-item.dto";
+
 import { IOrderItemRepository } from "./interfaces/iorder-item.repository";
+import { OrderItemDto, UpdateOrderItemDto } from '@pms/types';
 
 export class OrderItemRepository implements IOrderItemRepository {
   async findByOrderId(orderId: number): Promise<OrderItemDto[]> {

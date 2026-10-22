@@ -1,11 +1,4 @@
-import {
-  ContactMessageDto,
-  ContactMessageFilterParams,
-  CreateContactMessageModel,
-  CustomResponse as Response,
-  ListResponseDto,
-  UpdateContactMessageStatusModel,
-} from '@pms/types';
+import { CustomResponse as Response, ContactMessageDto, ContactMessageFilterParams, CreateContactMessageModel, ListResponseDto, UpdateContactMessageStatusModel } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
 export default interface IContactMessageService {

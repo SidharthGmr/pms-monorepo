@@ -1,9 +1,6 @@
 import { Role, Status } from "@prisma/client";
-import { UpdateUserDto, UserDto } from "../../dtos/user.dto";
-import { ListResponseDto } from "@pms/types";
-import { CreateUserModel } from "../../models/user.model";
-import { UserFilterParams } from "../../params/user.params";
 
+import { ListResponseDto, UpdateUserDto, UserDto, UserFilterParams } from '@pms/types';
 export interface IUserService {
   getAll(filters: UserFilterParams): Promise<ListResponseDto<UserDto>>;
   getUserById(userId: string): Promise<UserDto | null>;

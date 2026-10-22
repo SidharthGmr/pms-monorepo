@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
-import { UserStatusDto } from '@/dtos/UserDto';
+
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useSession } from 'next-auth/react';
 import AlterBox from '../common/alert-box';
+import { UserStatusDto } from '@pms/types';
 
 interface CheckUserStatusProps {
   logout: () => Promise<void>;

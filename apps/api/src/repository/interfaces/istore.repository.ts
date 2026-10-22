@@ -1,7 +1,4 @@
-import { ListResponseDto } from "@pms/types";
-import { StoreDto, CreateStoreDto } from "../../dtos/store.dto";
-import { StoreFilterParams } from "../../params/store.params";
-
+import { ListResponseDto, StoreDto, CreateStoreDto, StoreFilterParams } from '@pms/types';
 export interface IStoreRepository {
   create(data: CreateStoreDto): Promise<StoreDto>;
   findAll(filters?: StoreFilterParams, page?: number, limit?: number, sortBy?: string, sortOrder?: 'asc' | 'desc'): Promise<ListResponseDto<StoreDto>>;

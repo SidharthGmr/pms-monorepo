@@ -4,7 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { OTPModel } from '@/models/otp.model';
+
 import { useSendOtp, useVerifyOtp } from '@/hooks/service-hooks/useUserList.service.hook';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { TYPES } from '@/config/types';
@@ -13,6 +13,7 @@ import { toast } from '@/components/ui/use-toast';
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
 import { CardTitle } from '@/components/ui/card';
 import OtpSchema from '@/schema/otp.Schema';
+import { OTPModel } from '@pms/types';
 
 export default function ManageVerify() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);

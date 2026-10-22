@@ -4,8 +4,8 @@ import StatusBadge from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { OrderDto } from '@/dtos/order.dto';
-import { OrderStatus } from '@/enums/order-status.enum';
+
+
 import { useGetActiveCart } from '@/hooks/service-hooks/useCartService';
 import { useGetOrdersByCustomerId } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllReviews } from '@/hooks/service-hooks/useReviewService';
@@ -14,7 +14,7 @@ import { useGetAllWishlists } from '@/hooks/service-hooks/useWishlistService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
-import { UserDto } from '@pms/types';
+import { UserDto, OrderDto, OrderStatusEnum } from '@pms/types';
 import { format } from 'date-fns';
 import { CalendarDays, ChevronRight, Heart, LucideIcon, Mail, MapPin, Package, Pencil, Phone, Receipt, ShoppingCart, Star, Wallet } from 'lucide-react';
 import Image from 'next/image';
@@ -25,7 +25,7 @@ import { toneFor } from '../orders/order-status';
 const COLLAPSED_COUNT = 6;
 
 // Cancelled and returned orders are not money spent, so they stay out of the total.
-const UNSPENT = new Set<string>([OrderStatus.Cancelled, OrderStatus.Returned]);
+const UNSPENT = new Set<string>([OrderStatusEnum.Cancelled, OrderStatusEnum.Returned]);
 
 const initials = (name?: string | null) =>
   (name || '')

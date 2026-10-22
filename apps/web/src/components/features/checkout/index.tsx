@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { Roles } from '@/enums/roles.enum';
+
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { useGetActiveCart } from '@/hooks/service-hooks/useCartService';
 import { useCheckoutDirect, useCreateRazorpayOrder, useVerifyRazorpayPayment } from '@/hooks/service-hooks/useCheckoutService';
@@ -25,6 +25,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
+import { Roles } from '@pms/types';
 
 type DiscountMode = 'flat' | 'percent';
 

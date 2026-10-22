@@ -1,15 +1,15 @@
 
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { OrderDto, UpdateOrderDto } from "../dtos/order.dto";
-import { ListResponseDto } from "@pms/types";
+
+import { ListResponseDto, OrderDto, UpdateOrderDto, CreateOrderModel, OrderFilterParams } from '@pms/types';
 import ClientError from "../exceptions/client-error";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
-import { CreateOrderModel } from "../models/order.model";
+
 import { notifyAdminOfNewOrder } from "../utils/email/order-notification";
 import logger from "../utils/logger";
-import { OrderFilterParams } from "../params/order.params";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
 import { payablePrice } from "../utils/variant-pricing";
@@ -93,8 +93,8 @@ export class OrderService implements IOrderService {
           }
           const unitPrice = payablePrice(
             {
-              effectiveFrom: priceRow.effectiveFrom,
-              effectiveTo: priceRow.effectiveTo,
+              effectiveFrom: new Date(priceRow.effectiveFrom),
+              effectiveTo: priceRow.effectiveTo != null ? new Date(priceRow.effectiveTo) : null,
               sellingPrice: priceRow.sellingPrice,
               offerPrice: priceRow.offerPrice,
               costPrice: priceRow.costPrice,

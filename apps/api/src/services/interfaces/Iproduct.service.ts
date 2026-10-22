@@ -1,7 +1,4 @@
-import { ListResponseDto, ProductModel, ProductResponseDto } from "@pms/types";
-import { LowStockItemDto } from "../../dtos/low-stock.dto";
-import { ProductFilterParams } from "../../params/product.params";
-
+import { ListResponseDto, ProductModel, ProductResponseDto, LowStockItemDto, ProductFilterParams } from '@pms/types';
 export interface IProductService {
 
   getAll(filters?: ProductFilterParams): Promise<ListResponseDto<ProductResponseDto>>;

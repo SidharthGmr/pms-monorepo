@@ -1,12 +1,11 @@
 import { Status } from "@prisma/client";
-import { LowStockItemDto } from "../dtos/low-stock.dto";
+
 import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
-import { CustomResponse, ListResponseDto, ProductModel, ProductResponseDto, ProductWithPriceResponseDto } from "@pms/types";
-import { Role } from "../enum/user.enum";
+import { CustomResponse, ListResponseDto, ProductModel, ProductResponseDto, LowStockItemDto, ProductFilterParams, Roles } from '@pms/types';
 import NotFoundError from "../exceptions/not-found-error";
-import { ProductFilterParams } from "../params/product.params";
+
 import IUnitOfService from "../services/interfaces/iunitof.service";
 import { MISSING_STORE_CODE } from '../constants/responses';
 
@@ -17,7 +16,7 @@ export class ProductController {
 
 
   getAll = async (req: Request, res: Response): Promise<Response<ListResponseDto<ProductResponseDto>>> => {
-    const isAdmin = req.user?.role === Role.SUPER_ADMIN || req.user?.role === Role.ADMIN || req.user?.role === Role.USER || req.user?.role === Role.STAFF;
+    const isAdmin = req.user?.role === Roles.SUPER_ADMIN || req.user?.role === Roles.ADMIN || req.user?.role === Roles.USER || req.user?.role === Roles.STAFF;
     const createdById = isAdmin ? undefined : req.user?.userId;
     const storeCode = req.user?.storeCode;
     if (!storeCode) {

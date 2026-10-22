@@ -10,8 +10,7 @@ import useFilterHook from '@/hooks/use-filter-hook';
 import { DateRange } from 'react-day-picker';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { useEffect, useState } from 'react';
-import { PaymentStatus } from '@/enums/payment-status.enum';
-
+import { PaymentStatusEnum } from '@pms/types';
 interface StaffSalaryListFilterProps<TData> {
   table: Table<TData>;
   onTextChange?: (q: string) => void;
@@ -23,7 +22,7 @@ interface StaffSalaryListFilterProps<TData> {
   onEndDateChanged?: (date: Date | undefined) => void;
 }
 
-const statusData = Object.values(PaymentStatus).map((status) => ({
+const statusData = Object.values(PaymentStatusEnum).map((status) => ({
   label: status,
   value: status,
 }));

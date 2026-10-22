@@ -2,12 +2,12 @@ import { injectable } from 'inversify';
 import IDateTimeService from './interfaces/IDateTimeService';
 import moment from 'moment';
 import 'moment-timezone';
-import DropdownBasicDto from '@/dtos/dropdown-basic.dto';
+import DropdownBasicDto from '@/types/dropdown-basic.dto';
 
 @injectable()
 export default class DateTimeService implements IDateTimeService {
   constructor() {}
-  convertToLocalDate(dateTimeOffset: Date, displayTime?: boolean, timezone?: string): string {
+  convertToLocalDate(dateTimeOffset: Date | string, displayTime?: boolean, timezone?: string): string {
     if (!timezone) {
       if (typeof window !== 'undefined') {
         const savedTimeZone = localStorage.getItem('utz') || '';
@@ -134,7 +134,7 @@ export default class DateTimeService implements IDateTimeService {
     };
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: Date | string): string {
     const now = moment();
     const inputDate = moment(date);
 

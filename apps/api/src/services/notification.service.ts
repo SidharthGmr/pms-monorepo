@@ -1,10 +1,10 @@
-import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationTypeEnum } from "@pms/types";
+import { ListResponseDto, NotificationDto, NotificationFilterParams, NotificationTypeEnum, OrderDto, CreateNotificationModel } from '@pms/types';
 import { OrderStatus, Role } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { OrderDto } from "../dtos/order.dto";
+
 import NotFoundError from "../exceptions/not-found-error";
-import { CreateNotificationModel } from "../models/notification.model";
+
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import logger from "../utils/logger";
 import { INotificationService, LowStockNotice, UserRegisteredNotice } from "./interfaces/Inotification.service";

@@ -2,14 +2,14 @@
 import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Eye, ImageOff, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
-import { BrandNameDto, BrandNameFilterParams, Status } from '@pms/types';
+import { BrandNameDto, BrandNameFilterParams, Status, StatusValues } from '@pms/types';
 import { useDeleteBrandName, useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import config from '@/config';
-import { StatusValues } from '@/enums/status-values.enum';
+
 import { cn } from '@/lib/utils';
 import ConfirmBox from '@/components/common/confirm-box';
 import { Card } from '@/components/ui/card';

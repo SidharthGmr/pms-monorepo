@@ -1,7 +1,5 @@
-import { SupplierDto, CreateSupplierDto } from "../../dtos/supplier.dto";
-import { ListResponseDto } from "@pms/types";
-import { SupplierFilterParams } from "../../params/supplier.params";
 
+import { ListResponseDto, SupplierDto, CreateSupplierDto, SupplierFilterParams } from '@pms/types';
 export interface ISupplierService {
     getAll(filters?: SupplierFilterParams): Promise<ListResponseDto<SupplierDto>>;
     getById(id: number): Promise<SupplierDto | null>;

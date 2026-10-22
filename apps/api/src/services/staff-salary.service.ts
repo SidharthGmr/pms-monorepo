@@ -1,9 +1,10 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from "../dtos/staff-salary.dto";
+
 import { IStaffSalaryService } from "./interfaces/Istaff-salary.service";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import NotFoundError from "../exceptions/not-found-error";
+import { CreateStaffSalaryDto, StaffSalaryDto, UpdateStaffSalaryDto } from '@pms/types';
 
 @injectable()
 export class StaffSalaryService implements IStaffSalaryService {

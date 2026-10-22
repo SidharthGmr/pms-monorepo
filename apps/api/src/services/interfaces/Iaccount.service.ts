@@ -1,8 +1,8 @@
 
 import { Role } from "@prisma/client";
-import { UserDto } from "../../dtos/user.dto";
-import { ResetPasswordModel } from "../../models/forgot-password.model";
-import { CreateUserModel } from "../../models/user.model";
+
+
+import { UserDto, ResetPasswordTokenModel, CreateUserModel } from '@pms/types';
 
 export interface IAccountService {
   recordLogin(userId: string, ipAddress?: string | null): Promise<UserDto | null>;
@@ -13,6 +13,6 @@ export interface IAccountService {
   updateEmailVerification(userId: string): Promise<UserDto>;
   sendVerificationOtp(userId: string): Promise<UserDto>;
   updateEmailStatus(email: string): Promise<UserDto | null>;
-  resetPassword(userId: string, data: ResetPasswordModel): Promise<UserDto>;
+  resetPassword(userId: string, data: ResetPasswordTokenModel): Promise<UserDto>;
   convertToDto(user: UserDto, includePassword: boolean, includeToken: boolean, includeRefreshToken: boolean, includeVerificationToken: boolean): UserDto;
 }

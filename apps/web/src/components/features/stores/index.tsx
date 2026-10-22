@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { StoreDto } from '@/dtos/store.dto';
+
 import { useGetAllStores, useDeleteStore } from '@/hooks/service-hooks/useStoreService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { useTanstackTablePagination } from '@/hooks/use-tanstack-table-pagination';
@@ -18,7 +18,7 @@ import StoreListFilter from './filter';
 import ManageStore from './add-edit';
 import config from '@/config';
 import { useSearchParams } from 'next/navigation';
-import { StoreFilterParams } from '@/params/store.params';
+import { StoreDto, StoreFilterParams } from '@pms/types';
 
 export default function StoreList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
