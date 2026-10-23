@@ -390,4 +390,34 @@ orderReturnRouter.patch('/:id/status', authenticateToken, authorization(STAFF_RO
  */
 orderReturnRouter.get('/returned-quantities/:orderId', authenticateToken, authorization(STAFF_ROLES), asyncHandler(orderReturnController.getReturnedQuantities));
 
+/**
+ * @swagger
+ * /order-returns/customer/{customerId}:
+ *   get:
+ *     summary: Get returns by customer ID
+ *     description: Staff may read any customer's returns; a plain customer may only read their own.
+ *     tags: [OrderReturn]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: path
+ *         name: customerId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Returns fetched
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: Customer asked for another customer's returns
+ */
+orderReturnRouter.get('/customer/:customerId', authenticateToken, asyncHandler(orderReturnController.getByCustomerId));
+
 export default orderReturnRouter;

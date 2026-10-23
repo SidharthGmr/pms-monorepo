@@ -108,6 +108,10 @@ export class OrderReturnRepository implements IOrderReturnRepository {
     return prisma.orderReturn.findUnique({ where: { id }, select: orderReturnSelect });
   }
 
+  async findByCustomerId(customerId: string): Promise<OrderReturnDto[]> {
+    return prisma.orderReturn.findMany({ where: { customerId }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], select: orderReturnSelect });
+  }
+
   async sumActiveByOrderItem(orderId: number, excludeReturnId?: number): Promise<ReturnedQuantityDto[]> {
     const rows = await prisma.orderReturnItem.groupBy({
       by: ['orderItemId'],

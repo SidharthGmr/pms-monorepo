@@ -49,4 +49,8 @@ export default class OrderReturnService implements IOrderReturnService {
   getReturnedQuantities(orderId: number | string): Promise<AxiosResponse<Response<ReturnedQuantityDto[]>>> {
     return this.httpService.call().get<ReturnedQuantityDto[], AxiosResponse<Response<ReturnedQuantityDto[]>>>(`/order-returns/returned-quantities/${orderId}`);
   }
+
+  getByCustomerId(customerId: string): Promise<AxiosResponse<Response<ListResponseDto<OrderReturnDto>>>> {
+    return this.httpService.call().get<ListResponseDto<OrderReturnDto>, AxiosResponse<Response<ListResponseDto<OrderReturnDto>>>>(`/order-returns/customer/${customerId}`);
+  }
 }

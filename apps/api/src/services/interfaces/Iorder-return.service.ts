@@ -9,4 +9,6 @@ export interface IOrderReturnService {
   updateStatus(id: number, data: OrderReturnStatusModel, storeCode: string, userId: string, isAdmin: boolean): Promise<OrderReturnDto>;
   /** Per order line, units already claimed by live returns - the dialog caps its steppers with this. */
   getReturnedQuantities(orderId: number, storeCode: string): Promise<ReturnedQuantityDto[]>;
+  /** Every return a customer has raised, newest first - the customer-facing account view. */
+  getByCustomerId(customerId: string): Promise<OrderReturnDto[]>;
 }

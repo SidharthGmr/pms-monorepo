@@ -3,6 +3,8 @@ import { ListResponseDto, OrderReturnDto, OrderReturnFilterParams, ReturnedQuant
 export interface IOrderReturnRepository {
   findAll(filters?: OrderReturnFilterParams): Promise<ListResponseDto<OrderReturnDto>>;
   findById(id: number): Promise<OrderReturnDto | null>;
+  /** Every return a customer has raised, newest first - the customer-facing account view. */
+  findByCustomerId(customerId: string): Promise<OrderReturnDto[]>;
   /** Per order line, units claimed by live returns - REJECTED and CANCELLED do not count. */
   sumActiveByOrderItem(orderId: number, excludeReturnId?: number): Promise<ReturnedQuantityDto[]>;
   /** Live returns on an order; used to block the whole-order RETURNED/CANCELLED restock path. */

@@ -298,6 +298,10 @@ export class OrderReturnService implements IOrderReturnService {
     return this.unitOfWork.OrderReturn.sumActiveByOrderItem(orderId);
   }
 
+  async getByCustomerId(customerId: string): Promise<OrderReturnDto[]> {
+    return this.unitOfWork.OrderReturn.findByCustomerId(customerId);
+  }
+
   // Stores rarely have their own inbox on file, so the store's admin user stands in for it -
   // the same fallback chain a new order's notification uses.
   private async mailStore(orderReturn: OrderReturnDto): Promise<void> {

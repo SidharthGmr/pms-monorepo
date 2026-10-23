@@ -12,11 +12,20 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { DASHBOARD_VARIANTS, setDashboardVariant, useDashboardVariant } from '@/hooks/use-dashboard-variant';
+import {
+  DASHBOARD_VARIANTS,
+  USER_DASHBOARD_VARIANTS,
+  setDashboardVariant,
+  setUserDashboardVariant,
+  useDashboardVariant,
+  useUserDashboardVariant,
+} from '@/hooks/use-dashboard-variant';
 import { useTheme } from '@/context/theme-provider';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { LOCALE_LABELS, LOCALES } from '@/i18n/config';
 import { useLocale } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
+import { Roles } from '@pms/types';
 import { Check, Languages, LayoutDashboard, Palette, Settings, SunMoon } from 'lucide-react';
 import { THEME_COLORS, THEME_MODES } from './dashboard/sidebar/thememode';
 
@@ -40,15 +49,25 @@ function Swatches({ colors }: { colors: readonly string[] }) {
  * The top-bar settings menu: a gear icon whose dropdown carries the theme, dashboard layout
  * and language choices, each behind a submenu so the closed menu stays four rows tall. Theme is
  * a single stored value, so picking a color palette implies light mode and picking Dark/System
- * steps off the palette. The dashboard rows drive the same store as the pill on the dashboard.
+ * steps off the palette. The Dashboard submenu is role-aware: admins choose between the admin
+ * layouts, customers between theirs, and other roles do not see it.
  */
 export function SettingsMenu() {
   const { locale, setLocale, t } = useLocale();
   const { theme, setTheme } = useTheme();
+  const { currentUser } = useGetCurrentUser();
   const dashboardVariant = useDashboardVariant();
+  const userDashboardVariant = useUserDashboardVariant();
 
   const mode = theme === 'dark' || theme === 'system' ? theme : 'light';
   const color = THEME_COLORS.some((option) => option.value === theme) ? theme : 'light';
+
+  // Each role sees only its own dashboard's layouts: admins pick between the admin dashboards,
+  // customers between theirs, and everyone else has a fixed view so the submenu disappears.
+  const role = currentUser?.role;
+  const roles: string[] = !role ? [] : Array.isArray(role) ? role.filter(Boolean) : [role];
+  const isAdmin = roles.some((item) => item === Roles.ADMIN || item === Roles.SUPER_ADMIN);
+  const isCustomer = !isAdmin && roles.some((item) => item === Roles.USER);
 
   return (
     <DropdownMenu>
@@ -93,24 +112,37 @@ export function SettingsMenu() {
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="gap-2">
-            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-            Dashboard
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-52 rounded-lg" sideOffset={6} collisionPadding={8}>
-            {DASHBOARD_VARIANTS.map((option) => (
-              <DropdownMenuItem key={option.value} onSelect={() => setDashboardVariant(option.value)} className="gap-2">
-                <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="min-w-0">
-                  <span className="block leading-tight">{option.label}</span>
-                  <span className="block text-[11px] leading-tight text-muted-foreground">{option.hint}</span>
-                </span>
-                <Tick on={dashboardVariant === option.value} />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        {(isAdmin || isCustomer) && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="gap-2">
+              <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+              Dashboard
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52 rounded-lg" sideOffset={6} collisionPadding={8}>
+              {isAdmin
+                ? DASHBOARD_VARIANTS.map((option) => (
+                    <DropdownMenuItem key={option.value} onSelect={() => setDashboardVariant(option.value)} className="gap-2">
+                      <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0">
+                        <span className="block leading-tight">{option.label}</span>
+                        <span className="block text-[11px] leading-tight text-muted-foreground">{option.hint}</span>
+                      </span>
+                      <Tick on={dashboardVariant === option.value} />
+                    </DropdownMenuItem>
+                  ))
+                : USER_DASHBOARD_VARIANTS.map((option) => (
+                    <DropdownMenuItem key={option.value} onSelect={() => setUserDashboardVariant(option.value)} className="gap-2">
+                      <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0">
+                        <span className="block leading-tight">{option.label}</span>
+                        <span className="block text-[11px] leading-tight text-muted-foreground">{option.hint}</span>
+                      </span>
+                      <Tick on={userDashboardVariant === option.value} />
+                    </DropdownMenuItem>
+                  ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
 
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="gap-2">

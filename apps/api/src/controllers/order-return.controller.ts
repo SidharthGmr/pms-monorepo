@@ -7,6 +7,7 @@ import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 
 const isAdminRole = (role?: string) => role === Role.ADMIN || role === Role.SUPER_ADMIN;
+const STAFF_ROLES: Role[] = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
 export class OrderReturnController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {}
@@ -103,5 +104,18 @@ export class OrderReturnController {
 
     const quantities = await this.unitOfService.OrderReturn.getReturnedQuantities(orderId, storeCode);
     return res.status(200).json({ success: true, message: 'Returned quantities fetched successfully', data: quantities });
+  };
+
+  getByCustomerId = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<OrderReturnDto>>>> => {
+    const customerId = req.params['customerId'] as string;
+
+    // Staff may read any customer's returns; a customer is pinned to their own - the same
+    // rule the orders endpoint applies.
+    if (!STAFF_ROLES.includes(req.user?.role as Role) && customerId !== req.user?.userId) {
+      return res.status(403).json({ success: false, message: 'You can only view your own returns' });
+    }
+
+    const orderReturns = await this.unitOfService.OrderReturn.getByCustomerId(customerId);
+    return res.status(200).json({ success: true, message: 'Returns fetched successfully', data: { totalRecord: orderReturns.length, data: orderReturns } });
   };
 }

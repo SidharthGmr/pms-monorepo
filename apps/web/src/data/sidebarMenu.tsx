@@ -65,11 +65,20 @@ export interface SideBarSubSubMenuDto {
 
 export const SideBarMenu: SideBarMenuDto[] = [
   {
-    // A customer's home is the shop, so the label says what the page actually is.
+    // A customer's home is their account overview; the shop itself lives on its own page.
+    id: 'customer-dashboard',
+    title: 'Dashboard',
+    icon: LayoutDashboard,
+    url: '/dashboard',
+    group: 'Shop',
+    isActive: false,
+    role: [Roles.USER],
+  },
+  {
     id: 'shop',
     title: 'Shop',
     icon: ShoppingBag,
-    url: '/dashboard',
+    url: '/dashboard/shop',
     group: 'Shop',
     isActive: false,
     role: [Roles.USER],

@@ -1,55 +1,35 @@
 'use client';
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 import { useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
-import { cn } from '@/lib/utils';
-import { format, isSameDay, startOfDay, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { BarChart3 } from 'lucide-react';
 import { useMemo } from 'react';
+import { bucketOrdersByDay, DayBucket, FETCH_LIMIT } from './daily-buckets';
+import DayColumns from './day-columns';
 import { formatCount, formatMoney } from './format';
-import { OrderDto, OrderStatusEnum } from '@pms/types';
-// The orders API has no date filter, so the newest orders are fetched and bucketed by day here.
-// FETCH_LIMIT is comfortably above a week of orders for the stores this serves; if a store ever
-// outgrows it the chart says so rather than silently under-counting.
-const FETCH_LIMIT = 200;
-const EXCLUDED: string[] = [OrderStatusEnum.Cancelled, OrderStatusEnum.Returned];
+import { OrderDto } from '@pms/types';
 
-interface DayBucket {
-  date: Date;
-  label: string;
-  sales: number;
-  orders: number;
-}
-
+/**
+ * The week's sales as the shared date-wise chart: the rupee series as a smoothed area, invoice
+ * counts as the volume strip beneath, and a readout that always names a date with both figures -
+ * the same component the Command dashboard uses, so the two dashboards read alike.
+ */
 export default function SalesTrend({ days = 7 }: { days?: number }) {
   const { data, isLoading, isError } = useGetAllOrders({ page: 1, recordPerPage: FETCH_LIMIT });
   const orders = useMemo(() => (data?.data?.data?.data as OrderDto[] | undefined) ?? [], [data]);
 
   const { buckets, truncated } = useMemo(() => {
-    const today = startOfDay(new Date());
-    const list: DayBucket[] = Array.from({ length: days }, (_, i) => {
-      const date = subDays(today, days - 1 - i);
-      return { date, label: format(date, 'EEE'), sales: 0, orders: 0 };
-    });
-    for (const order of orders) {
-      if (EXCLUDED.includes(order.status)) continue;
-      const at = new Date(order.createdAt);
-      const bucket = list.find((b) => isSameDay(b.date, at));
-      if (!bucket) continue;
-      bucket.sales += order.grandTotal ?? 0;
-      bucket.orders += 1;
-    }
+    const list = bucketOrdersByDay(orders, days);
     const oldest = orders.length ? new Date(orders[orders.length - 1].createdAt) : null;
-    const windowStart = list[0].date;
-    return { buckets: list, truncated: orders.length >= FETCH_LIMIT && !!oldest && oldest > windowStart };
+    return { buckets: list, truncated: orders.length >= FETCH_LIMIT && !!oldest && oldest > list[0].date };
   }, [orders, days]);
 
   const totals = useMemo(() => {
     const sales = buckets.reduce((n, b) => n + b.sales, 0);
     const count = buckets.reduce((n, b) => n + b.orders, 0);
     const best = buckets.reduce<DayBucket | null>((acc, b) => (b.sales > (acc?.sales ?? 0) ? b : acc), null);
-    return { sales, count, best, max: Math.max(1, ...buckets.map((b) => b.sales)) };
+    return { sales, count, best };
   }, [buckets]);
 
   if (isLoading) {
@@ -59,9 +39,10 @@ export default function SalesTrend({ days = 7 }: { days?: number }) {
           <Skeleton className="h-9 w-28" />
           <Skeleton className="h-9 w-20" />
         </div>
-        <div className="flex h-40 items-end gap-2">
+        <Skeleton className="h-28 w-full" />
+        <div className="flex items-end gap-1.5">
           {Array.from({ length: days }).map((_, i) => (
-            <Skeleton key={i} className="flex-1" style={{ height: `${30 + ((i * 37) % 60)}%` }} />
+            <Skeleton key={i} className="flex-1" style={{ height: `${12 + ((i * 11) % 20)}px` }} />
           ))}
         </div>
       </div>
@@ -87,7 +68,7 @@ export default function SalesTrend({ days = 7 }: { days?: number }) {
           <div>
             <dt className="text-[11px] text-muted-foreground">Best day</dt>
             <dd className="text-lg font-bold leading-tight sm:text-xl">
-              {format(totals.best.date, 'EEE')} <span className="text-sm font-medium text-muted-foreground">{formatMoney(totals.best.sales, true)}</span>
+              {format(totals.best.date, 'EEE, d MMM')} <span className="text-sm font-medium text-muted-foreground">{formatMoney(totals.best.sales, true)}</span>
             </dd>
           </div>
         )}
@@ -100,24 +81,7 @@ export default function SalesTrend({ days = 7 }: { days?: number }) {
           <p className="text-xs text-muted-foreground">Completed orders will chart here day by day.</p>
         </div>
       ) : (
-        <div role="img" aria-label={`Daily sales for the last ${days} days`} className="flex h-44 items-end gap-1.5 sm:gap-3">
-          {buckets.map((b) => {
-            const isToday = isSameDay(b.date, new Date());
-            const height = b.sales > 0 ? Math.max(4, (b.sales / totals.max) * 100) : 0;
-            return (
-              <div key={b.label + b.date.getDate()} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5" title={`${format(b.date, 'EEE d MMM')}: ${formatMoney(b.sales)} from ${b.orders} ${b.orders === 1 ? 'order' : 'orders'}`}>
-                <span className={cn('hidden text-[10px] font-medium tabular-nums text-muted-foreground sm:block', b.sales === 0 && 'invisible')}>{formatMoney(b.sales, true)}</span>
-                <div className="flex w-full flex-1 items-end rounded-md bg-muted/40">
-                  <div
-                    className={cn('w-full rounded-md transition-[height] duration-500', isToday ? 'bg-primary' : 'bg-primary/35 group-hover:bg-primary/60')}
-                    style={{ height: `${height}%` }}
-                  />
-                </div>
-                <span className={cn('text-[11px] tabular-nums', isToday ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{isToday ? 'Today' : b.label}</span>
-              </div>
-            );
-          })}
-        </div>
+        <DayColumns buckets={buckets} formatMoney={formatMoney} />
       )}
 
       {truncated && <p className="text-[11px] text-muted-foreground">Only the latest {FETCH_LIMIT} orders were counted, so earlier days may be under-reported.</p>}

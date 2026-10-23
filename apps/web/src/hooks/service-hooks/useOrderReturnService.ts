@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 const invalidateReturnQueries = (queryClient: ReturnType<typeof useQueryClient>) => {
   queryClient.invalidateQueries({ queryKey: ['OrderReturnService.getAll'] });
   queryClient.invalidateQueries({ queryKey: ['OrderReturnService.getById'] });
+  queryClient.invalidateQueries({ queryKey: ['OrderReturnService.getByCustomerId'] });
   queryClient.invalidateQueries({ queryKey: ['OrderReturnService.getReturnedQuantities'] });
   queryClient.invalidateQueries({ queryKey: ['OrderService.getAll'] });
   queryClient.invalidateQueries({ queryKey: ['OrderService.getById'] });
@@ -55,6 +56,16 @@ const useGetReturnedQuantities = (orderId: number | string, enabled: boolean = t
     queryKey: ['OrderReturnService.getReturnedQuantities', orderId],
     queryFn: () => unitOfService.OrderReturnService.getReturnedQuantities(orderId),
     enabled: enabled && !!orderId,
+  });
+};
+
+const useGetOrderReturnsByCustomerId = (customerId: string, enabled: boolean = true) => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  return useQuery({
+    queryKey: ['OrderReturnService.getByCustomerId', customerId],
+    queryFn: () => unitOfService.OrderReturnService.getByCustomerId(customerId),
+    enabled: enabled && !!customerId,
   });
 };
 
@@ -105,6 +116,7 @@ export {
   useCreateOrderReturn,
   useGetAllOrderReturns,
   useGetOrderReturnById,
+  useGetOrderReturnsByCustomerId,
   useGetReturnedQuantities,
   useUpdateOrderReturn,
   useUpdateOrderReturnStatus,

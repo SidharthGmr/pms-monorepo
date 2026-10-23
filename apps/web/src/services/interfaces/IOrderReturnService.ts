@@ -17,4 +17,5 @@ export default interface IOrderReturnService {
   delete(id: number | string): Promise<AxiosResponse<Response<OrderReturnDto>>>;
   updateStatus(id: number | string, model: OrderReturnStatusModel): Promise<AxiosResponse<Response<OrderReturnDto>>>;
   getReturnedQuantities(orderId: number | string): Promise<AxiosResponse<Response<ReturnedQuantityDto[]>>>;
+  getByCustomerId(customerId: string): Promise<AxiosResponse<Response<ListResponseDto<OrderReturnDto>>>>;
 }
