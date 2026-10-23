@@ -25,6 +25,7 @@ import {
   User,
   UserCircle,
   UserCog,
+  Undo2,
   Users,
 } from 'lucide-react';
 import { Roles } from '@pms/types';
@@ -199,6 +200,15 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'POS',
     icon: ScanBarcode,
     url: '/admin/pos/',
+    group: 'Sales',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'returns',
+    title: 'Returns',
+    icon: Undo2,
+    url: '/admin/returns/',
     group: 'Sales',
     role: [Roles.ADMIN],
     isActive: false,

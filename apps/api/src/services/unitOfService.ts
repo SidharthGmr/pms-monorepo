@@ -9,6 +9,7 @@ import { IProductVariantService } from "./interfaces/Iproduct-variant.service";
 import { IAttributeService } from "./interfaces/Iattribute.service";
 import { IStaffAttendanceService } from "./interfaces/Istaff-attendance.service";
 import { IOrderService } from "./interfaces/Iorder.service";
+import { IOrderReturnService } from "./interfaces/Iorder-return.service";
 import { IOrderItemService } from "./interfaces/Iorder-item.service";
 import { IPaymentService } from "./interfaces/Ipayment.service";
 import { IStaffSalaryService } from "./interfaces/Istaff-salary.service";
@@ -42,6 +43,7 @@ export default class UnitOfService implements IUnitOfService {
   public Attribute: IAttributeService;
   public StaffAttendance: IStaffAttendanceService;
   public Order: IOrderService;
+  public OrderReturn: IOrderReturnService;
   public OrderItem: IOrderItemService;
   public Payment: IPaymentService;
   public StaffSalary: IStaffSalaryService;
@@ -75,6 +77,7 @@ export default class UnitOfService implements IUnitOfService {
     attribute = container.get<IAttributeService>(TYPES.IAttributeService),
     staffAttendance = container.get<IStaffAttendanceService>(TYPES.IStaffAttendanceService),
     order = container.get<IOrderService>(TYPES.IOrderService),
+    orderReturn = container.get<IOrderReturnService>(TYPES.IOrderReturnService),
     orderItem = container.get<IOrderItemService>(TYPES.IOrderItemService),
     payment = container.get<IPaymentService>(TYPES.IPaymentService),
     staffSalary = container.get<IStaffSalaryService>(TYPES.IStaffSalaryService),
@@ -107,6 +110,7 @@ export default class UnitOfService implements IUnitOfService {
     this.Attribute = attribute;
     this.StaffAttendance = staffAttendance;
     this.Order = order;
+    this.OrderReturn = orderReturn;
     this.OrderItem = orderItem;
     this.Payment = payment;
     this.StaffSalary = staffSalary;

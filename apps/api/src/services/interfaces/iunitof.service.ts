@@ -6,6 +6,7 @@ import { IProductVariantService } from "./Iproduct-variant.service";
 import { IAttributeService } from "./Iattribute.service";
 import { IStaffAttendanceService } from "./Istaff-attendance.service";
 import { IOrderService } from "./Iorder.service";
+import { IOrderReturnService } from "./Iorder-return.service";
 import { IOrderItemService } from "./Iorder-item.service";
 import { IPaymentService } from "./Ipayment.service";
 import { IStaffSalaryService } from "./Istaff-salary.service";
@@ -39,6 +40,7 @@ export default interface IUnitOfService {
   Attribute: IAttributeService;
   StaffAttendance: IStaffAttendanceService;
   Order: IOrderService;
+  OrderReturn: IOrderReturnService;
   OrderItem: IOrderItemService;
   Payment: IPaymentService;
   StaffSalary: IStaffSalaryService;

@@ -17,6 +17,7 @@ import { ProductVariantController } from '../controllers/product-variant.control
 import { AttributeController } from '../controllers/attribute.controller';
 import { StaffAttendanceController } from '../controllers/staff-attendance.controller';
 import { OrderController } from '../controllers/order.controller';
+import { OrderReturnController } from '../controllers/order-return.controller';
 import { OrderItemController } from '../controllers/order-item.controller';
 import { PaymentController } from '../controllers/payment.controller';
 import { StaffSalaryController } from '../controllers/staff-salary.controller';
@@ -34,6 +35,7 @@ import { IProductVariantService } from '../services/interfaces/Iproduct-variant.
 import { IAttributeService } from '../services/interfaces/Iattribute.service';
 import { IStaffAttendanceService } from '../services/interfaces/Istaff-attendance.service';
 import { IOrderService } from '../services/interfaces/Iorder.service';
+import { IOrderReturnService } from '../services/interfaces/Iorder-return.service';
 import { IOrderItemService } from '../services/interfaces/Iorder-item.service';
 import { IPaymentService } from '../services/interfaces/Ipayment.service';
 import { IStaffSalaryService } from '../services/interfaces/Istaff-salary.service';
@@ -50,6 +52,7 @@ import { ProductVariantService } from '../services/product-variant.service';
 import { AttributeService } from '../services/attribute.service';
 import { StaffAttendanceService } from '../services/staff-attendance.service';
 import { OrderService } from '../services/order.service';
+import { OrderReturnService } from '../services/order-return.service';
 import { OrderItemService } from '../services/order-item.service';
 import { PaymentService } from '../services/payment.service';
 import { StaffSalaryService } from '../services/staff-salary.service';
@@ -66,6 +69,7 @@ import { ProductVariantRepository } from '../repository/product-variant.reposito
 import { AttributeRepository } from '../repository/attribute.repository';
 import { StaffAttendanceRepository } from '../repository/staff-attendance.repository';
 import { OrderRepository } from '../repository/order.repository';
+import { OrderReturnRepository } from '../repository/order-return.repository';
 import { OrderItemRepository } from '../repository/order-item.repository';
 import { PaymentRepository } from '../repository/payment.repository';
 import { StaffSalaryRepository } from '../repository/staff-salary.repository';
@@ -82,6 +86,7 @@ import { IProductVariantRepository } from '../repository/interfaces/iproduct-var
 import { IAttributeRepository } from '../repository/interfaces/iattribute.repository';
 import { IStaffAttendanceRepository } from '../repository/interfaces/istaff-attendance.repository';
 import { IOrderRepository } from '../repository/interfaces/iorder.repository';
+import { IOrderReturnRepository } from '../repository/interfaces/iorder-return.repository';
 import { IOrderItemRepository } from '../repository/interfaces/iorder-item.repository';
 import { IPaymentRepository } from '../repository/interfaces/ipayment.repository';
 import { IStaffSalaryRepository } from '../repository/interfaces/istaff-salary.repository';
@@ -178,6 +183,7 @@ container.bind<ProductVariantController>(TYPES.ProductVariantController).to(Prod
 container.bind<AttributeController>(TYPES.AttributeController).to(AttributeController);
 container.bind<StaffAttendanceController>(TYPES.StaffAttendanceController).to(StaffAttendanceController);
 container.bind<OrderController>(TYPES.OrderController).to(OrderController);
+container.bind<OrderReturnController>(TYPES.OrderReturnController).to(OrderReturnController);
 container.bind<OrderItemController>(TYPES.OrderItemController).to(OrderItemController);
 container.bind<PaymentController>(TYPES.PaymentController).to(PaymentController);
 container.bind<StaffSalaryController>(TYPES.StaffSalaryController).to(StaffSalaryController);
@@ -209,6 +215,7 @@ container.bind<IProductVariantService>(TYPES.IProductVariantService).to(ProductV
 container.bind<IAttributeService>(TYPES.IAttributeService).to(AttributeService);
 container.bind<IStaffAttendanceService>(TYPES.IStaffAttendanceService).to(StaffAttendanceService);
 container.bind<IOrderService>(TYPES.IOrderService).to(OrderService);
+container.bind<IOrderReturnService>(TYPES.IOrderReturnService).to(OrderReturnService);
 container.bind<IOrderItemService>(TYPES.IOrderItemService).to(OrderItemService);
 container.bind<IPaymentService>(TYPES.IPaymentService).to(PaymentService);
 container.bind<IStaffSalaryService>(TYPES.IStaffSalaryService).to(StaffSalaryService);
@@ -241,6 +248,7 @@ container.bind<IProductVariantRepository>(TYPES.IProductVariantRepository).to(Pr
 container.bind<IAttributeRepository>(TYPES.IAttributeRepository).to(AttributeRepository);
 container.bind<IStaffAttendanceRepository>(TYPES.IStaffAttendanceRepository).to(StaffAttendanceRepository);
 container.bind<IOrderRepository>(TYPES.IOrderRepository).to(OrderRepository);
+container.bind<IOrderReturnRepository>(TYPES.IOrderReturnRepository).to(OrderReturnRepository);
 container.bind<IOrderItemRepository>(TYPES.IOrderItemRepository).to(OrderItemRepository);
 container.bind<IPaymentRepository>(TYPES.IPaymentRepository).to(PaymentRepository);
 container.bind<IStaffSalaryRepository>(TYPES.IStaffSalaryRepository).to(StaffSalaryRepository);

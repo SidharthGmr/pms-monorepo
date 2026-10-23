@@ -15,6 +15,7 @@ export interface OrderDto {
   grandTotal: number;
   status: OrderStatus;
   notes?: string | null;
+  deliveredAt?: Date | string | null;
   createdById?: string | null;
   createdByName?: string | null;
   createdAt: Date | string;

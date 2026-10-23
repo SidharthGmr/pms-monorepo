@@ -104,8 +104,11 @@ export interface DashboardSummaryDto {
   brandTotal: number;
   customerTotal: number;
   staffTotal: number;
+  /** Net of completed refunds for the same window. */
   todaySale: number;
   totalMonthSale: number;
+  todayRefund: number;
+  totalMonthRefund: number;
   todayPurchase: number;
   totalMonthPurchase: number;
   todayOrderCount: number;

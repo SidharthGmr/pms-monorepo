@@ -11,6 +11,7 @@ import { IProductVariantRepository } from "./interfaces/iproduct-variant.reposit
 import { IAttributeRepository } from "./interfaces/iattribute.repository";
 import { IStaffAttendanceRepository } from "./interfaces/istaff-attendance.repository";
 import { IOrderRepository } from "./interfaces/iorder.repository";
+import { IOrderReturnRepository } from "./interfaces/iorder-return.repository";
 import { IOrderItemRepository } from "./interfaces/iorder-item.repository";
 import { IPaymentRepository } from "./interfaces/ipayment.repository";
 import { IStaffSalaryRepository } from "./interfaces/istaff-salary.repository";
@@ -43,6 +44,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Attribute: IAttributeRepository;
   public StaffAttendance: IStaffAttendanceRepository;
   public Order: IOrderRepository;
+  public OrderReturn: IOrderReturnRepository;
   public OrderItem: IOrderItemRepository;
   public Payment: IPaymentRepository;
   public StaffSalary: IStaffSalaryRepository;
@@ -75,6 +77,7 @@ export default class UnitOfWork implements IUnitOfWork {
     attribute = container.get<IAttributeRepository>(TYPES.IAttributeRepository),
     staffAttendance = container.get<IStaffAttendanceRepository>(TYPES.IStaffAttendanceRepository),
     order = container.get<IOrderRepository>(TYPES.IOrderRepository),
+    orderReturn = container.get<IOrderReturnRepository>(TYPES.IOrderReturnRepository),
     orderItem = container.get<IOrderItemRepository>(TYPES.IOrderItemRepository),
     payment = container.get<IPaymentRepository>(TYPES.IPaymentRepository),
     staffSalary = container.get<IStaffSalaryRepository>(TYPES.IStaffSalaryRepository),
@@ -106,6 +109,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Attribute = attribute;
     this.StaffAttendance = staffAttendance;
     this.Order = order;
+    this.OrderReturn = orderReturn;
     this.OrderItem = orderItem;
     this.Payment = payment;
     this.StaffSalary = staffSalary;

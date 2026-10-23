@@ -10,6 +10,7 @@ import IHttpService from './IHttpService';
 import INewsletterService from './INewsletterService';
 import IOrderItemService from './IOrderItemService';
 import IOrderService from './IOrderService';
+import IOrderReturnService from './IOrderReturnService';
 import IProductService from './IProductService';
 import IProductVariantService from './IProductVariantService';
 import ICartService from './ICartService';
@@ -52,6 +53,7 @@ export default interface IUnitOfService {
   StaffService: IStaffService;
   StoreService: IStoreService;
   OrderService: IOrderService;
+  OrderReturnService: IOrderReturnService;
   OrderItemService: IOrderItemService;
   SupplierService: ISupplierService;
   ReviewService: IReviewService;

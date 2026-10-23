@@ -60,6 +60,7 @@ model users {
   PriceHistory             PriceHistory[]
   VariantRating            VariantRating[]
   notifications            Notification[]
+  orderReturns             orderReturn[]
 
   @@index([userId])
   @@index([email])
@@ -152,6 +153,7 @@ model store {
   phone            String?
   email            String?
   isActive         Boolean           @default(true)
+  returnWindowDays Int               @default(3)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime?         @updatedAt
   status           Status            @default(Published)
@@ -179,6 +181,8 @@ model store {
   subscribers      Subscriber[]
   cmsPages         CmsPage[]
   notifications    Notification[]
+  orderReturns     orderReturn[]
+  orderReturnItems orderReturnItem[]
 }
 
 model category {
@@ -257,6 +261,7 @@ model product {
   variants       ProductVariant[]
   priceHistory   PriceHistory[]
   orderItems     orderItem[]
+  returnItems    orderReturnItem[]
   purchaseItems  purchaseItem[]
   stockHistories stockHistory[]
   reviews        Review[]
@@ -312,6 +317,7 @@ model ProductVariant {
   purchaseItems purchaseItem[]
   ratings       VariantRating[]
   wishlists     Wishlist[]
+  returnItems   orderReturnItem[]
 
   @@unique([storeCode, id])
   @@unique([storeCode, sku])
@@ -627,6 +633,7 @@ model order {
   grandTotal    Float       @default(0)
   status        OrderStatus @default(PENDING)
   notes         String?
+  deliveredAt   DateTime?
   createdById   String?
   createdByName String?
   createdAt     DateTime    @default(now())
@@ -637,6 +644,8 @@ model order {
   items         orderItem[]
   payments      payment[]
   Review        Review[]
+  returns         orderReturn[] @relation("OrderReturns")
+  exchangeReturns orderReturn[] @relation("ReturnExchangeOrder")
 
   @@index([customerId])
   @@index([orderNumber])
@@ -659,6 +668,7 @@ model orderItem {
   product     product        @relation(fields: [productId], references: [id])
   variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   store       store          @relation(fields: [storeCode], references: [code])
+  returnItems orderReturnItem[]
 
   @@index([orderId])
   @@index([productId])
@@ -922,4 +932,82 @@ enum NotificationType {
   ORDER_PLACED
   ORDER_STATUS_CHANGED
   LOW_STOCK
+}
+
+/// A return/exchange case (RMA): which sold lines are coming back, what happens to the money,
+/// and - for an exchange - the replacement order it spawned. Stock moves only when the goods
+/// are actually RECEIVED, and only for items still sellable.
+model orderReturn {
+  id                  Int            @id @default(autoincrement())
+  returnNumber        String         @unique
+  orderId             Int
+  storeCode           String
+  customerId          String
+  type                ReturnType
+  status              ReturnStatus   @default(REQUESTED)
+  reason              String
+  notes               String?
+  refundAmount        Float          @default(0)
+  refundMethod        PaymentMethod?
+  refundTransactionId String?
+  exchangeOrderId     Int?
+  requestedById       String
+  processedById       String?
+  resolvedAt          DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  order               order          @relation("OrderReturns", fields: [orderId], references: [id])
+  exchangeOrder       order?         @relation("ReturnExchangeOrder", fields: [exchangeOrderId], references: [id])
+  store               store          @relation(fields: [storeCode], references: [code])
+  customer            users          @relation(fields: [customerId], references: [userId])
+  items               orderReturnItem[]
+
+  @@index([storeCode])
+  @@index([orderId])
+  @@index([status])
+  @@index([returnNumber])
+}
+
+model orderReturnItem {
+  id          Int                 @id @default(autoincrement())
+  returnId    Int
+  orderItemId Int
+  productId   Int
+  variantId   Int
+  storeCode   String
+  quantity    Int
+  unitPrice   Float
+  amount      Float
+  condition   ReturnItemCondition @default(SELLABLE)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  return      orderReturn         @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  orderItem   orderItem           @relation(fields: [orderItemId], references: [id])
+  product     product             @relation(fields: [productId], references: [id])
+  variant     ProductVariant      @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  store       store               @relation(fields: [storeCode], references: [code])
+
+  @@index([returnId])
+  @@index([orderItemId])
+  @@index([variantId])
+  @@index([storeCode])
+}
+
+enum ReturnType {
+  REFUND
+  EXCHANGE
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  RECEIVED
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum ReturnItemCondition {
+  SELLABLE
+  DAMAGED
 }

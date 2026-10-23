@@ -1,6 +1,7 @@
 'use client';
 
 import OrderWhatsApp from '@/components/common/OrderWhatsApp';
+import CreateReturnDialog from '@/components/features/order-returns/create-return';
 import OrderItemReviewCell from '@/components/features/reviews/order-item-review-cell';
 import OrderStatusMenu from '@/components/features/orders/status-menu';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ import {
   Receipt,
   ShoppingBag,
   Truck,
+  Undo2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -86,6 +88,13 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
+
+  // Returns are raised at the counter by staff or admins, and only against a delivered order -
+  // the same rule the API enforces, so the button never leads to a guaranteed 400.
+  const canCreateReturn =
+    (currentUser?.role === Roles.ADMIN || currentUser?.role === Roles.SUPER_ADMIN || currentUser?.role === Roles.STAFF) &&
+    order?.status?.toUpperCase() === 'DELIVERED';
 
   const generatePdf = async () => {
     if (!order) return;
@@ -209,6 +218,13 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
 
               <OrderWhatsApp order={order} />
 
+              {canCreateReturn && (
+                <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background/60" onClick={() => setShowReturnDialog(true)}>
+                  <Undo2 className="h-3.5 w-3.5" />
+                  Return / Exchange
+                </Button>
+              )}
+
               {/* Moving the order through its stages is the page's one action; editing the
                   order's contents stays on the orders list. Customers see no control here. */}
               {canChangeStatus && (
@@ -219,7 +235,9 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
             </div>
           </div>
 
-          {/* Who it is from and who it is for, the way an invoice opens. */}
+          {showReturnDialog && <CreateReturnDialog order={order} isOpen={showReturnDialog} onClose={() => setShowReturnDialog(false)} />}
+
+      {/* Who it is from and who it is for, the way an invoice opens. */}
           <div className="grid grid-cols-1 gap-px bg-border/70 sm:grid-cols-2">
             <div className="bg-card px-4 py-3.5 sm:px-5">
               <p className={LABEL}>From</p>

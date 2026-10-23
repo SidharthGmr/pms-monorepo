@@ -14,6 +14,7 @@ import IHttpService from './interfaces/IHttpService';
 import INewsletterService from './interfaces/INewsletterService';
 import IOrderItemService from './interfaces/IOrderItemService';
 import IOrderService from './interfaces/IOrderService';
+import IOrderReturnService from './interfaces/IOrderReturnService';
 import IProductService from './interfaces/IProductService';
 import IProductVariantService from './interfaces/IProductVariantService';
 import ICartService from './interfaces/ICartService';
@@ -60,6 +61,7 @@ export default class UnitOfService implements IUnitOfService {
   public StaffService: IStaffService;
   public StoreService: IStoreService;
   public OrderService: IOrderService;
+  public OrderReturnService: IOrderReturnService;
   public OrderItemService: IOrderItemService;
   public SupplierService: ISupplierService;
   public ReviewService: IReviewService;
@@ -95,6 +97,7 @@ export default class UnitOfService implements IUnitOfService {
     staffService = container.get<IStaffService>(TYPES.IStaffService),
     storeService = container.get<IStoreService>(TYPES.IStoreService),
     orderService = container.get<IOrderService>(TYPES.IOrderService),
+    orderReturnService = container.get<IOrderReturnService>(TYPES.IOrderReturnService),
     orderItemService = container.get<IOrderItemService>(TYPES.IOrderItemService),
     supplierService = container.get<ISupplierService>(TYPES.ISupplierService),
     reviewService = container.get<IReviewService>(TYPES.IReviewService),
@@ -129,6 +132,7 @@ export default class UnitOfService implements IUnitOfService {
     this.StaffService = staffService;
     this.StoreService = storeService;
     this.OrderService = orderService;
+    this.OrderReturnService = orderReturnService;
     this.OrderItemService = orderItemService;
     this.SupplierService = supplierService;
     this.ReviewService = reviewService;

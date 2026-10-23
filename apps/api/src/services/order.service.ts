@@ -137,6 +137,7 @@ export class OrderService implements IOrderService {
           grandTotal,
           status: data.status || OrderStatus.PENDING,
           notes: data.notes || null,
+          deliveredAt: data.status === OrderStatus.DELIVERED ? orderDate : null,
           createdById,
           createdByName,
         },
@@ -245,6 +246,15 @@ export class OrderService implements IOrderService {
     const DEAD_STATES: OrderStatus[] = [OrderStatus.CANCELLED, OrderStatus.RETURNED];
     const restock = DEAD_STATES.includes(status) && !DEAD_STATES.includes(existing.status);
 
+    // A live return has already claimed (or restocked) some of these units, so the whole-order
+    // restock would hand the same stock back twice. Those orders settle through their returns.
+    if (restock) {
+      const activeReturns = await this.unitOfWork.OrderReturn.countActiveByOrder(id);
+      if (activeReturns > 0) {
+        throw new ClientError('This order has return requests; settle or cancel those instead of cancelling the whole order');
+      }
+    }
+
     const updated = await this.unitOfWork.transaction(async (transactionClient) => {
       if (restock) {
         const items = await transactionClient.orderItem.findMany({ where: { orderId: id } });
@@ -261,7 +271,10 @@ export class OrderService implements IOrderService {
           });
         }
       }
-      return transactionClient.order.update({ where: { id }, data: { status } });
+      return transactionClient.order.update({
+        where: { id },
+        data: { status, ...(status === OrderStatus.DELIVERED && !existing.deliveredAt && { deliveredAt: new Date() }) },
+      });
     });
 
     void this.notificationService.notifyOrderStatusChanged(updated, existing.status);

@@ -69,7 +69,9 @@ export class DashboardRepository implements IDashboardRepository {
       todayOrderCount,
       monthOrderCount,
       topProductsByOrder,
-      totalQuantityResult
+      totalQuantityResult,
+      todayRefundResult,
+      monthRefundResult
     ] = await Promise.all([
       prisma.product.count({ where: productWhere }),
       prisma.product.findMany({ where: productWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
@@ -116,8 +118,19 @@ export class DashboardRepository implements IDashboardRepository {
       prisma.orderItem.aggregate({
         _sum: { quantity: true },
         where: storeCode ? { storeCode } : {},
+      }),
+      prisma.orderReturn.aggregate({
+        _sum: { refundAmount: true },
+        where: { status: 'COMPLETED', resolvedAt: { gte: todayStart, lte: todayEnd }, ...(storeCode && { storeCode }) },
+      }),
+      prisma.orderReturn.aggregate({
+        _sum: { refundAmount: true },
+        where: { status: 'COMPLETED', resolvedAt: { gte: monthStart, lte: todayEnd }, ...(storeCode && { storeCode }) },
       })
     ]);
+
+    const todayRefund = todayRefundResult._sum.refundAmount || 0;
+    const totalMonthRefund = monthRefundResult._sum.refundAmount || 0;
 
     const totalQuantity = totalQuantityResult._sum.quantity || 0;
     const productIds = topProductsByOrder.map(p => p.productId);
@@ -153,8 +166,11 @@ export class DashboardRepository implements IDashboardRepository {
       brandTotal,
       customerTotal,
       staffTotal,
-      todaySale: todaySaleResult._sum.grandTotal || 0,
-      totalMonthSale: monthSaleResult._sum.grandTotal || 0,
+      // Net of completed refunds: money handed back is not revenue, however the sale ended up.
+      todaySale: (todaySaleResult._sum.grandTotal || 0) - todayRefund,
+      totalMonthSale: (monthSaleResult._sum.grandTotal || 0) - totalMonthRefund,
+      todayRefund,
+      totalMonthRefund,
       todayPurchase: todayPurchaseResult._sum.totalAmount || 0,
       totalMonthPurchase: monthPurchaseResult._sum.totalAmount || 0,
       todayOrderCount,
