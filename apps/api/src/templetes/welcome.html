@@ -1,48 +1,33 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="color-scheme" content="light" />
-<title>{{appName}}</title>
-</head>
-<body style="margin:0;padding:0;background:#eef1f6;">
-<span style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Welcome to {{PlatformName}}, {{Name}}!</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef1f6;">
-  <tr><td align="center" style="padding:32px 16px;">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+<!--preheader: Welcome to {{PlatformName}}, {{Name}} - your account is ready.-->
+<!--footer: You received this email because an account was created for you on {{PlatformName}}.-->
 
-      <tr><td bgcolor="#161f45" align="center" style="padding:22px 32px;border-radius:12px 12px 0 0;">
-        <a href="{{siteUrl}}" target="_blank" style="text-decoration:none;">
-          <img src="{{logoUrl}}" alt="{{appName}}" height="34" style="display:block;height:34px;border:0;outline:none;" />
-        </a>
-      </td></tr>
+<h1 class="ink" style="margin:0;font-size:22px;line-height:1.3;font-weight:700;letter-spacing:-0.2px;color:#0f172a;">Welcome, {{Name}}</h1>
+<p class="body-text" style="margin:14px 0 0 0;font-size:15px;line-height:1.7;color:#475569;">Your {{PlatformName}} account is ready. Sign in to browse the catalogue, follow your orders and keep your details up to date.</p>
 
-      <tr><td bgcolor="#ffffff" style="border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;">
-          <tr><td style="padding:32px;">
-<h1 style="margin:0 0 6px 0;font-size:20px;line-height:1.3;color:#0f172a;">Welcome, {{Name}}!</h1>
-<p style="margin:14px 0 0 0;font-size:14px;line-height:1.65;color:#475569;">Your {{PlatformName}} account is ready. Sign in to browse the catalog, track your orders and manage your profile.</p>
-
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto 8px auto;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0 0;">
   <tr>
-    <td bgcolor="#161f45" style="border-radius:8px;">
-      <a href="{{LoginLink}}" target="_blank" style="display:inline-block;padding:13px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">Sign in</a>
+    <td class="panel" bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="padding:0 0 10px 0;font-size:14px;line-height:1.6;color:#334155;"><strong style="color:#092a55;">Browse</strong> the full catalogue and check live availability.</td>
+        </tr>
+        <tr>
+          <td style="padding:0 0 10px 0;font-size:14px;line-height:1.6;color:#334155;"><strong style="color:#092a55;">Track</strong> every order from placed through to delivered.</td>
+        </tr>
+        <tr>
+          <td style="padding:0;font-size:14px;line-height:1.6;color:#334155;"><strong style="color:#092a55;">Manage</strong> your profile, addresses and wishlist in one place.</td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
-<p style="margin:14px 0 0 0;font-size:14px;line-height:1.65;color:#475569;color:#94a3b8;font-size:12px;text-align:center;">Questions? Write to <a href="mailto:{{SupportEmail}}" style="color:${NAVY};">{{SupportEmail}}</a> - we are happy to help.</p>
-          </td></tr>
-        </table>
-      </td></tr>
 
-      <tr><td align="center" style="padding:20px 32px 0 32px;font-family:Arial,Helvetica,sans-serif;">
-        <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.7;">You received this email because an account was created for you on {{PlatformName}}. Sent in {{Year}}.</p>
-        <p style="margin:6px 0 0 0;font-size:12px;color:#94a3b8;">&copy; {{year}} {{appName}} &middot; <a href="{{siteUrl}}" target="_blank" style="color:#94a3b8;text-decoration:underline;">{{siteUrl}}</a></p>
-      </td></tr>
-
-    </table>
-  </td></tr>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto 6px auto;">
+  <tr>
+    <td align="center" bgcolor="#092a55" style="border-radius:10px;background:#092a55;">
+      <a href="{{LoginLink}}" target="_blank" style="display:inline-block;padding:14px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">Sign in</a>
+    </td>
+  </tr>
 </table>
-</body>
-</html>
+
+<p class="muted" style="margin:20px 0 0 0;font-size:13px;line-height:1.7;text-align:center;color:#94a3b8;">Questions? Write to <a href="mailto:{{SupportEmail}}" style="color:#092a55;text-decoration:underline;">{{SupportEmail}}</a> - we are happy to help.</p>

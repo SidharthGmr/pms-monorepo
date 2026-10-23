@@ -12,13 +12,15 @@ import {
   ReturnStatusEnum,
   ReturnTypeEnum,
 } from '@pms/types';
-import { OrderStatus, Prisma, ReturnItemCondition, ReturnStatus } from '@prisma/client';
+import { OrderStatus, Prisma, ReturnItemCondition, ReturnStatus, Role } from '@prisma/client';
 
 import ClientError from '../exceptions/client-error';
 import ForbiddenError from '../exceptions/forbidden-error';
 import NotFoundError from '../exceptions/not-found-error';
 
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
+import { notifyAdminOfReturn, notifyCustomerOfReturnStatus } from '../utils/email/return-notification';
+import logger from '../utils/logger';
 import { ACTIVE_RETURN_STATUSES, orderReturnSelect } from '../repository/order-return.repository';
 import { IOrderReturnService } from './interfaces/Iorder-return.service';
 import { IOrderService } from './interfaces/Iorder.service';
@@ -136,6 +138,10 @@ export class OrderReturnService implements IOrderReturnService {
         select: orderReturnSelect,
       });
     });
+
+    // Fired only after the transaction has committed, and never awaited: the counter must not
+    // wait on SMTP, and a mail failure must not roll the return back.
+    void this.mailStore(orderReturnData);
 
     return orderReturnData;
   }
@@ -280,6 +286,8 @@ export class OrderReturnService implements IOrderReturnService {
       });
     });
 
+    void this.mailCustomer(orderReturnData);
+
     return orderReturnData;
   }
 
@@ -288,6 +296,31 @@ export class OrderReturnService implements IOrderReturnService {
     if (!order) throw new NotFoundError('Order not found');
     if (order.storeCode !== storeCode) throw new ForbiddenError('This order belongs to another store');
     return this.unitOfWork.OrderReturn.sumActiveByOrderItem(orderId);
+  }
+
+  // Stores rarely have their own inbox on file, so the store's admin user stands in for it -
+  // the same fallback chain a new order's notification uses.
+  private async mailStore(orderReturn: OrderReturnDto): Promise<void> {
+    try {
+      const store = await this.unitOfWork.Store.getByCode(orderReturn.storeCode);
+      let fallbackRecipient: string | undefined;
+      if (!store?.email) {
+        const admins = await this.unitOfWork.User.findAll({ storeCode: orderReturn.storeCode, role: Role.ADMIN, recordPerPage: 5 });
+        fallbackRecipient = (admins.data ?? []).find((admin) => !!admin.email)?.email ?? undefined;
+      }
+      await notifyAdminOfReturn(orderReturn, store?.name ?? orderReturn.storeCode, store?.email, fallbackRecipient);
+    } catch (error) {
+      logger.error('return store notification failed', { returnNumber: orderReturn.returnNumber, error: (error as Error)?.message });
+    }
+  }
+
+  private async mailCustomer(orderReturn: OrderReturnDto): Promise<void> {
+    try {
+      const store = await this.unitOfWork.Store.getByCode(orderReturn.storeCode);
+      await notifyCustomerOfReturnStatus(orderReturn, store?.name ?? orderReturn.storeCode);
+    } catch (error) {
+      logger.error('return customer notification failed', { returnNumber: orderReturn.returnNumber, error: (error as Error)?.message });
+    }
   }
 
   // Prices come from the sold lines, never the request: what was paid is what comes back.

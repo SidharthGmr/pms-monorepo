@@ -100,9 +100,9 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
     if (!order) return;
     try {
       setIsGeneratingPdf(true);
-      // Yield once so the button can paint its loading state before the synchronous draw.
+      // Yield once so the button can paint its loading state before the draw begins.
       await new Promise((resolve) => setTimeout(resolve, 0));
-      downloadInvoicePdf(order);
+      await downloadInvoicePdf(order);
     } catch (error) {
       console.error('Failed to generate PDF', error);
     } finally {

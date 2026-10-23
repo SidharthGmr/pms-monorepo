@@ -165,20 +165,24 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
             {greetingFor(today.getHours())}
             {firstName ? `, ${firstName}` : ''}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {isLoading ? (
-              <Skeleton className="h-4 w-72" />
-            ) : metrics.todayOrders > 0 ? (
-              <>
-                <strong className="font-semibold text-foreground">{formatCount(metrics.todayOrders)}</strong>{' '}
-                {metrics.todayOrders === 1 ? 'order' : 'orders'} today worth{' '}
-                <strong className="font-semibold text-foreground">{formatMoney(metrics.todaySale)}</strong> —{' '}
-                {metrics.todaySale >= metrics.avgDaySale ? 'ahead of a typical day this month.' : 'behind a typical day this month.'}
-              </>
-            ) : (
-              'No orders yet today. Start a sale, or see what needs attention below.'
-            )}
-          </p>
+          {/* The skeleton replaces the whole <p>: a div inside a paragraph is invalid HTML, the
+              parser closes the <p> early, and hydration fails on the mismatch. */}
+          {isLoading ? (
+            <Skeleton className="mt-1.5 h-4 w-72" />
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {metrics.todayOrders > 0 ? (
+                <>
+                  <strong className="font-semibold text-foreground">{formatCount(metrics.todayOrders)}</strong>{' '}
+                  {metrics.todayOrders === 1 ? 'order' : 'orders'} today worth{' '}
+                  <strong className="font-semibold text-foreground">{formatMoney(metrics.todaySale)}</strong> —{' '}
+                  {metrics.todaySale >= metrics.avgDaySale ? 'ahead of a typical day this month.' : 'behind a typical day this month.'}
+                </>
+              ) : (
+                'No orders yet today. Start a sale, or see what needs attention below.'
+              )}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {toolbar}

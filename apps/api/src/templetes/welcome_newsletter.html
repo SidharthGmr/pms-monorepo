@@ -1,53 +1,24 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="color-scheme" content="light" />
-<title>{{appName}}</title>
-</head>
-<body style="margin:0;padding:0;background:#eef1f6;">
-<span style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Welcome to {{PlatformName}}, {{FirstName}} - confirm with code {{OTP_CODE}}.</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eef1f6;">
-  <tr><td align="center" style="padding:32px 16px;">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+<!--preheader: You are subscribed to {{PlatformName}} - new arrivals and offers, no noise.-->
+<!--footer: You received this email because {{Email}} was subscribed on {{WebsiteUrl}}.-->
 
-      <tr><td bgcolor="#161f45" align="center" style="padding:22px 32px;border-radius:12px 12px 0 0;">
-        <a href="{{siteUrl}}" target="_blank" style="text-decoration:none;">
-          <img src="{{logoUrl}}" alt="{{appName}}" height="34" style="display:block;height:34px;border:0;outline:none;" />
-        </a>
-      </td></tr>
+<h1 class="ink" style="margin:0;font-size:22px;line-height:1.3;font-weight:700;letter-spacing:-0.2px;color:#0f172a;">You are on the list</h1>
+<p class="body-text" style="margin:14px 0 0 0;font-size:15px;line-height:1.7;color:#475569;">Thanks for subscribing to {{PlatformName}}. We will send new arrivals, restocks and the occasional offer - and nothing else.</p>
 
-      <tr><td bgcolor="#ffffff" style="border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;">
-          <tr><td style="padding:32px;">
-<h1 style="margin:0 0 6px 0;font-size:20px;line-height:1.3;color:#0f172a;">Welcome aboard, {{FirstName}}!</h1>
-<p style="margin:14px 0 0 0;font-size:14px;line-height:1.65;color:#475569;">Thanks for joining {{PlatformName}}. Use this code to confirm your subscription - it expires in <strong>{{OtpExpiryMinutes}} minutes</strong>.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:24px auto 4px auto;">
-  <tr><td align="center" bgcolor="#f1f5f9" style="border:1px dashed #cbd5e1;border-radius:10px;padding:16px 36px;">
-    <span style="font-family:'Courier New',monospace;font-size:30px;font-weight:bold;letter-spacing:8px;color:#161f45;">{{OTP_CODE}}</span>
-  </td></tr>
-</table>
-
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto 8px auto;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0 0;">
   <tr>
-    <td bgcolor="#161f45" style="border-radius:8px;">
-      <a href="{{LoginLink}}" target="_blank" style="display:inline-block;padding:13px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">Open your account</a>
+    <td class="panel" bgcolor="#f8fafc" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;">
+      <p class="muted" style="margin:0 0 4px 0;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;">Subscribed address</p>
+      <p class="ink" style="margin:0;font-size:15px;font-weight:700;color:#0f172a;word-break:break-all;">{{Email}}</p>
     </td>
   </tr>
 </table>
-<p style="margin:14px 0 0 0;font-size:14px;line-height:1.65;color:#475569;color:#94a3b8;font-size:12px;text-align:center;">Questions? Write to <a href="mailto:{{SupportEmail}}" style="color:${NAVY};">{{SupportEmail}}</a>.</p>
-          </td></tr>
-        </table>
-      </td></tr>
 
-      <tr><td align="center" style="padding:20px 32px 0 32px;font-family:Arial,Helvetica,sans-serif;">
-        <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.7;">You received this email because this address subscribed on {{WebsiteUrl}}. Sent in {{Year}}.</p>
-        <p style="margin:6px 0 0 0;font-size:12px;color:#94a3b8;">&copy; {{year}} {{appName}} &middot; <a href="{{siteUrl}}" target="_blank" style="color:#94a3b8;text-decoration:underline;">{{siteUrl}}</a></p>
-      </td></tr>
-
-    </table>
-  </td></tr>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto 6px auto;">
+  <tr>
+    <td align="center" bgcolor="#092a55" style="border-radius:10px;background:#092a55;">
+      <a href="{{siteUrl}}" target="_blank" style="display:inline-block;padding:14px 36px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">Start browsing</a>
+    </td>
+  </tr>
 </table>
-</body>
-</html>
+
+<p class="muted" style="margin:20px 0 0 0;font-size:13px;line-height:1.7;text-align:center;color:#94a3b8;">Changed your mind? Every email we send carries an unsubscribe link.</p>

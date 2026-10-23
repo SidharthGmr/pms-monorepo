@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="x-apple-disable-message-reformatting" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+<title>{{appName}}</title>
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
+<style>
+  /* Clients that honour <style> get a dark palette; everything else keeps the inline light
+     styles below, which is why every colour is also set inline. */
+  @media (prefers-color-scheme: dark) {
+    .bg { background:#0b1220 !important; }
+    .card { background:#111b2e !important; border-color:#1e293b !important; }
+    .ink { color:#f1f5f9 !important; }
+    .body-text { color:#cbd5e1 !important; }
+    .muted { color:#94a3b8 !important; }
+    .panel { background:#16233c !important; border-color:#24324d !important; }
+    .rule { border-color:#1e293b !important; }
+  }
+  @media only screen and (max-width:620px) {
+    .shell { width:100% !important; }
+    .pad { padding:26px 22px !important; }
+    .stack { display:block !important; width:100% !important; text-align:left !important; padding-left:0 !important; }
+  }
+  a { color:#092a55; }
+</style>
+</head>
+<body class="bg" style="margin:0;padding:0;background:#eef1f6;-webkit-font-smoothing:antialiased;">
+<span style="display:none;max-height:0;overflow:hidden;mso-hide:all;">{{preheader}}</span>
+<span style="display:none;max-height:0;overflow:hidden;mso-hide:all;">&#8199;&#847;&zwnj;&nbsp;&#8199;&#847;&zwnj;&nbsp;&#8199;&#847;&zwnj;&nbsp;&#8199;&#847;&zwnj;&nbsp;&#8199;&#847;&zwnj;&nbsp;</span>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background:#eef1f6;">
+  <tr><td align="center" style="padding:32px 16px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="shell" style="max-width:600px;width:100%;">
+
+      <!-- Masthead: deep navy with a teal hairline, the same pairing the app's own header uses. -->
+      <tr><td bgcolor="#092a55" align="center" style="padding:26px 32px 24px 32px;border-radius:14px 14px 0 0;background:#092a55;">
+        <a href="{{siteUrl}}" target="_blank" style="text-decoration:none;">
+          <img src="{{logoUrl}}" alt="{{appName}}" height="32" style="display:block;height:32px;border:0;outline:none;text-decoration:none;" />
+        </a>
+      </td></tr>
+      <tr><td style="font-size:0;line-height:0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td width="34%" bgcolor="#02a98f" height="3" style="background:#02a98f;font-size:0;line-height:0;">&nbsp;</td>
+            <td width="66%" bgcolor="#0b3a70" height="3" style="background:#0b3a70;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <tr><td bgcolor="#ffffff" class="card" style="background:#ffffff;border-radius:0 0 14px 14px;border:1px solid #e2e8f0;border-top:0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;">
+          <tr><td class="pad" style="padding:34px 36px;">
+{{content}}
+          </td></tr>
+        </table>
+      </td></tr>
+
+      <tr><td align="center" style="padding:22px 28px 0 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif;">
+        <p class="muted" style="margin:0;font-size:12px;line-height:1.7;color:#94a3b8;">{{footerNote}}</p>
+        <p class="muted" style="margin:8px 0 0 0;font-size:12px;line-height:1.7;color:#94a3b8;">
+          &copy; {{year}} {{appName}} &middot; <a href="{{siteUrl}}" target="_blank" style="color:#94a3b8;text-decoration:underline;">{{siteUrl}}</a>
+        </p>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

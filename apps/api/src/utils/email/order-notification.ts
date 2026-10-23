@@ -62,8 +62,10 @@ export const notifyAdminOfNewOrder = async (
       order.shippingCost > 0 ? adjustmentRow('Shipping & fees', money(order.shippingCost)) : '',
     ].join('');
 
+    // A self-contained block: the template drops this inside the card's own cell, so it cannot
+    // be a bare <tr> the way it was when the layout owned the surrounding table.
     const notesBlock = order.notes
-      ? `<tr><td style="padding:16px 32px 0 32px;"><p style="margin:0;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#94a3b8;font-weight:bold;">Notes</p><p style="margin:4px 0 0 0;font-size:12px;color:#64748b;">${esc(order.notes)}</p></td></tr>`
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 0 0;"><tr><td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;"><p style="margin:0 0 6px 0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#94a3b8;font-weight:700;">Notes</p><p style="margin:0;font-size:13px;line-height:1.7;color:#475569;">${esc(order.notes)}</p></td></tr></table>`
       : '';
 
     const totalQuantity = items.reduce((sum: number, item: any) => sum + Number(item.quantity ?? 0), 0);

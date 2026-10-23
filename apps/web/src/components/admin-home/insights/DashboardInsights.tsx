@@ -132,19 +132,23 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
                   {firstName ? `, ${firstName}` : ''}
                 </h1>
 
-                <p className="mt-1 max-w-xl text-sm text-primary-foreground/80">
-                  {isLoading ? (
-                    <Skeleton className="h-4 w-64 bg-white/20" />
-                  ) : metrics.todayOrders > 0 ? (
-                    <>
-                      <strong className="font-semibold text-primary-foreground">{formatCount(metrics.todayOrders)}</strong> {metrics.todayOrders === 1 ? 'order' : 'orders'} so far today, worth{' '}
-                      <strong className="font-semibold text-primary-foreground">{formatMoney(metrics.todaySale)}</strong>.{' '}
-                      {metrics.todaySale >= metrics.avgDaySale ? 'Ahead of a typical day this month.' : 'A slower start than a typical day this month.'}
-                    </>
-                  ) : (
-                    'No orders yet today. Start a sale, or check what is running low.'
-                  )}
-                </p>
+                {/* The skeleton replaces the whole <p>: a div inside a paragraph is invalid HTML,
+                    the parser closes the <p> early, and hydration fails on the mismatch. */}
+                {isLoading ? (
+                  <Skeleton className="mt-1.5 h-4 w-64 bg-white/20" />
+                ) : (
+                  <p className="mt-1 max-w-xl text-sm text-primary-foreground/80">
+                    {metrics.todayOrders > 0 ? (
+                      <>
+                        <strong className="font-semibold text-primary-foreground">{formatCount(metrics.todayOrders)}</strong> {metrics.todayOrders === 1 ? 'order' : 'orders'} so far today, worth{' '}
+                        <strong className="font-semibold text-primary-foreground">{formatMoney(metrics.todaySale)}</strong>.{' '}
+                        {metrics.todaySale >= metrics.avgDaySale ? 'Ahead of a typical day this month.' : 'A slower start than a typical day this month.'}
+                      </>
+                    ) : (
+                      'No orders yet today. Start a sale, or check what is running low.'
+                    )}
+                  </p>
+                )}
               </div>
 
               <div className="flex shrink-0 flex-wrap items-center gap-2">

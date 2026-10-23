@@ -12,11 +12,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { DASHBOARD_VARIANTS, setDashboardVariant, useDashboardVariant } from '@/hooks/use-dashboard-variant';
 import { useTheme } from '@/context/theme-provider';
 import { LOCALE_LABELS, LOCALES } from '@/i18n/config';
 import { useLocale } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { Check, Languages, Palette, Settings, SunMoon } from 'lucide-react';
+import { Check, Languages, LayoutDashboard, Palette, Settings, SunMoon } from 'lucide-react';
 import { THEME_COLORS, THEME_MODES } from './dashboard/sidebar/thememode';
 
 /** The check that marks the active row in every submenu. */
@@ -36,14 +37,15 @@ function Swatches({ colors }: { colors: readonly string[] }) {
 }
 
 /**
- * The top-bar settings menu: a gear icon whose dropdown carries the same theme and language
- * choices the bar used to show as separate icons, each behind a submenu so the closed menu
- * stays three rows tall. Theme is a single stored value, so picking a color palette implies
- * light mode and picking Dark/System steps off the palette.
+ * The top-bar settings menu: a gear icon whose dropdown carries the theme, dashboard layout
+ * and language choices, each behind a submenu so the closed menu stays four rows tall. Theme is
+ * a single stored value, so picking a color palette implies light mode and picking Dark/System
+ * steps off the palette. The dashboard rows drive the same store as the pill on the dashboard.
  */
 export function SettingsMenu() {
   const { locale, setLocale, t } = useLocale();
   const { theme, setTheme } = useTheme();
+  const dashboardVariant = useDashboardVariant();
 
   const mode = theme === 'dark' || theme === 'system' ? theme : 'light';
   const color = THEME_COLORS.some((option) => option.value === theme) ? theme : 'light';
@@ -86,6 +88,25 @@ export function SettingsMenu() {
                 <Swatches colors={option.swatches} />
                 {option.label}
                 <Tick on={color === option.value} />
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="gap-2">
+            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+            Dashboard
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-52 rounded-lg" sideOffset={6} collisionPadding={8}>
+            {DASHBOARD_VARIANTS.map((option) => (
+              <DropdownMenuItem key={option.value} onSelect={() => setDashboardVariant(option.value)} className="gap-2">
+                <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0">
+                  <span className="block leading-tight">{option.label}</span>
+                  <span className="block text-[11px] leading-tight text-muted-foreground">{option.hint}</span>
+                </span>
+                <Tick on={dashboardVariant === option.value} />
               </DropdownMenuItem>
             ))}
           </DropdownMenuSubContent>
