@@ -53,7 +53,12 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // Browsers already bypass their HTTP cache for a service worker script, but this keeps a
+      // proxy or a second CDN from pinning a bad worker that would then be hard to replace.
+      { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }] },
+    ];
   },
   async redirects() {
     return [
