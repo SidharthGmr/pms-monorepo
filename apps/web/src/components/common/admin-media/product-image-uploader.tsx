@@ -5,7 +5,8 @@ import { Camera, ImagePlus, Loader2, Star, UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from '@/components/common/admin-media/camera-capture';
 import { Button } from '@/components/ui/button';
-import { useImageUpload } from '@/hooks/service-hooks/useMediaService';
+import { useBlobUpload } from '@/hooks/service-hooks/useMediaService';
+import { BLOB_MAX_SIZE_MB } from '@/lib/blob-upload';
 import { cn } from '@/lib/utils';
 
 interface ProductImageUploaderProps {
@@ -18,12 +19,12 @@ interface ProductImageUploaderProps {
   folder?: string;
 }
 
-// Narrows the OS file picker. Size and MIME are enforced again by useImageUpload, which is
+// Narrows the OS file picker. Size and MIME are enforced again by useBlobUpload, which is
 // what catches a file dragged straight onto the dropzone.
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
-export function ProductImageUploader({ value = [], onChange, maxSizeMb = 5, folder }: ProductImageUploaderProps) {
-  const { uploadUrls, isUploading } = useImageUpload({ maxSizeMb, ...(folder ? { folder } : {}) });
+export function ProductImageUploader({ value = [], onChange, maxSizeMb = BLOB_MAX_SIZE_MB, folder }: ProductImageUploaderProps) {
+  const { uploadUrls, isUploading } = useBlobUpload({ kind: 'image', maxSizeMb, ...(folder ? { folder } : {}) });
   const [isDragging, setIsDragging] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const cameraMode = useCameraAvailability();

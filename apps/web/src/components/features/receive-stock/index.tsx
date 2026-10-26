@@ -1,7 +1,6 @@
 'use client';
 import { DragEvent, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import axios from 'axios';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useFieldArray, useForm } from 'react-hook-form';
 import {
@@ -42,7 +41,8 @@ import { cn } from '@/lib/utils';
 import { ReceiveStockFormValues, receiveStockSchema } from '@/schema/receiveStockSchema';
 import { PurchaseItemRow, PurchaseItemsHeader } from './purchase-item-row';
 
-const INVOICE_MAX_MB = 10;
+// Invoices go through /api/blob/upload, whose body Vercel caps at ~4.5MB.
+const INVOICE_MAX_MB = 4;
 const INVOICE_TYPES = ['application/pdf', 'image/'];
 
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant).
@@ -155,26 +155,12 @@ export default function ReceiveStockPage() {
   const isSubmitting = createPurchase.isPending || isUploading;
   const hasUnsavedInput = isDirty || Boolean(invoiceFile) || fields.length > 1;
 
-  const uploadInvoiceToCloudinary = async (file: File): Promise<string> => {
-    try {
-      const { data: signed } = await axios.get<{ data: { apiKey: string; cloudName: string; timestamp: number; folder: string; signature: string } }>(
-        '/api/images/sign-cloudinary-params'
-      );
-      const { apiKey, cloudName, timestamp, folder, signature } = signed.data;
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', String(timestamp));
-      formData.append('signature', signature);
-      formData.append('folder', folder);
-
-      const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, formData);
-      return res.data.secure_url;
-    } catch (error) {
-      console.error('Upload failed', error);
-      throw new Error('Failed to upload invoice');
+  const uploadInvoice = async (file: File): Promise<string> => {
+    const response = await unitOfService.MediaService.uploadBlob(file, { kind: 'any', folder: 'invoices' });
+    if (!response.success || !response.data?.url) {
+      throw new Error(response.message || 'Failed to upload invoice');
     }
+    return response.data.url;
   };
 
   // Stock lands on a SKU, so only the variant travels; the API derives the product from it.
@@ -182,7 +168,7 @@ export default function ReceiveStockPage() {
     try {
       setIsUploading(true);
       let invoiceUrl = '';
-      if (invoiceFile) invoiceUrl = await uploadInvoiceToCloudinary(invoiceFile);
+      if (invoiceFile) invoiceUrl = await uploadInvoice(invoiceFile);
 
       const formattedItems = data.items.map((item) => ({
         variantId: Number(item.variantId),

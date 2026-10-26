@@ -2,15 +2,16 @@
 
 import CameraCaptureButton from '@/components/common/admin-media/camera-capture';
 import { Button } from '@/components/ui/button';
-import { useImageUpload } from '@/hooks/service-hooks/useMediaService';
+import { useBlobUpload } from '@/hooks/service-hooks/useMediaService';
+import { BLOB_MAX_SIZE_MB } from '@/lib/blob-upload';
 import { cn } from '@/lib/utils';
 import { ImageOff, Loader2, RefreshCw, Trash2, UploadCloud } from 'lucide-react';
 import { DragEvent, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 /**
- * One image, one field. Uploads through `useImageUpload` into `folder` (a sub-folder of the
- * signed-in admin's own media folder, created on first upload) and hands the stored path back
+ * One image, one field. Uploads through `useBlobUpload` into `folder` (a sub-folder of the
+ * signed-in user's own blob prefix, created on first upload) and hands the stored path back
  * through `onChange`. Nothing is kept in local state: `value` is the single source of truth, so
  * it drops straight into a react-hook-form `FormField`.
  */
@@ -34,8 +35,17 @@ export interface SingleImageUploadProps {
   className?: string;
 }
 
-export function SingleImageUpload({ value, onChange, folder, maxSizeMb = 5, hint, alt = 'Uploaded image', disabled = false, className }: SingleImageUploadProps) {
-  const { upload, isUploading, progress } = useImageUpload({ maxSizeMb, ...(folder ? { folder } : {}) });
+export function SingleImageUpload({
+  value,
+  onChange,
+  folder,
+  maxSizeMb = BLOB_MAX_SIZE_MB,
+  hint,
+  alt = 'Uploaded image',
+  disabled = false,
+  className,
+}: SingleImageUploadProps) {
+  const { upload, isUploading, progress } = useBlobUpload({ kind: 'image', maxSizeMb, ...(folder ? { folder } : {}) });
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,8 +60,8 @@ export function SingleImageUpload({ value, onChange, folder, maxSizeMb = 5, hint
     if (!file || locked) return false;
     try {
       const uploaded = await upload(file);
-      if (uploaded?.secure_url) {
-        onChange(uploaded.secure_url);
+      if (uploaded?.url) {
+        onChange(uploaded.url);
         toast.success('Image uploaded');
         return true;
       }

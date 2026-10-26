@@ -6,34 +6,29 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { UploadedMediaDto } from '@pms/types';
+import { BlobFileDto } from '@pms/types';
+import { BLOB_MAX_SIZE_MB, isAllowedUploadType, UPLOAD_KIND_LABEL, UploadKind } from '@/lib/blob-upload';
 
 export const MEDIA_QUERY_KEY = ['MediaService.getAll'];
 
-export interface UseImageUploadOptions {
-  /** Rejected before the request is made. Defaults to 5MB. */
+export interface UseBlobUploadOptions {
+  /** Rejected before the request is made. Defaults to the server's own ceiling. */
   maxSizeMb?: number;
-  /** Leading part of the MIME type a file must match, e.g. `image`. Pass null to allow anything. */
-  accept?: string | null;
+  /** What the upload may be: image (default), doc, or any. The server enforces the same rule. */
+  kind?: UploadKind;
   /** Suppress the built-in toasts when the caller wants to report failures itself. */
   silent?: boolean;
-  /** Sub-folder to file uploads under, inside the caller's own media folder. Created on first
-   *  use. Leave unset to drop them straight into that folder. */
+  /** Sub-folder inside the caller's own blob prefix. Created on first use. */
   folder?: string;
 }
 
-const DEFAULTS: Required<Omit<UseImageUploadOptions, 'accept' | 'folder'>> & { accept: string | null } = {
-  maxSizeMb: 5,
-  accept: 'image',
-  silent: false,
-};
-
 /**
- * One place to upload a file to /api/admin-media/upload. Validation, progress and the error
- * toast live here so a page only deals with the URLs it gets back.
+ * One place to upload files to the private Vercel Blob store (/api/blob/upload). Validation,
+ * progress and the error toast live here so a page only deals with the URLs it gets back -
+ * and those URLs are this app's authenticated /api/blob/view route, not raw blob URLs.
  */
-export function useImageUpload(options?: UseImageUploadOptions) {
-  const settings = { ...DEFAULTS, ...options };
+export function useBlobUpload(options?: UseBlobUploadOptions) {
+  const settings = { maxSizeMb: BLOB_MAX_SIZE_MB, kind: 'image' as UploadKind, silent: false, ...options };
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -57,9 +52,9 @@ export function useImageUpload(options?: UseImageUploadOptions) {
   }, []);
 
   const upload = useCallback(
-    async (file: File, perCall?: { onProgress?: (percent: number) => void }): Promise<UploadedMediaDto | null> => {
-      if (settings.accept && !file.type.startsWith(settings.accept)) {
-        return fail(`${file.name}: only ${settings.accept} files are allowed`);
+    async (file: File, perCall?: { onProgress?: (percent: number) => void }): Promise<BlobFileDto | null> => {
+      if (!isAllowedUploadType(settings.kind, file)) {
+        return fail(`${file.name}: only ${UPLOAD_KIND_LABEL[settings.kind]} files are allowed`);
       }
       if (file.size > settings.maxSizeMb * 1024 * 1024) {
         return fail(`${file.name}: exceeds ${settings.maxSizeMb}MB`);
@@ -70,15 +65,16 @@ export function useImageUpload(options?: UseImageUploadOptions) {
       setProgress((current) => ({ ...current, [file.name]: 0 }));
 
       try {
-        const response = await unitOfService.MediaService.upload(file, {
+        const response = await unitOfService.MediaService.uploadBlob(file, {
           folder: settings.folder,
+          kind: settings.kind,
           onProgress: (percent) => {
             setProgress((current) => ({ ...current, [file.name]: percent }));
             perCall?.onProgress?.(percent);
           },
         });
 
-        if (response.success && response.data?.secure_url) return response.data;
+        if (response.success && response.data?.url) return response.data;
         return fail(response.message || `Failed to upload ${file.name}`);
       } catch (error) {
         return fail((error as Error)?.message || `Error uploading ${file.name}`);
@@ -88,14 +84,14 @@ export function useImageUpload(options?: UseImageUploadOptions) {
         if (activeRef.current === 0) setIsUploading(false);
       }
     },
-    [unitOfService, settings.accept, settings.maxSizeMb, settings.folder, fail, clearProgress]
+    [unitOfService, settings.kind, settings.maxSizeMb, settings.folder, fail, clearProgress]
   );
 
-  // Sequential on purpose: a dozen parallel Cloudinary uploads from one browser tab is how you
-  // get rate-limited, and the progress map stays readable this way.
+  // Sequential on purpose: a dozen parallel uploads from one browser tab makes the progress
+  // map unreadable and competes for the same upstream bandwidth anyway.
   const uploadMany = useCallback(
-    async (files: FileList | File[]): Promise<UploadedMediaDto[]> => {
-      const uploaded: UploadedMediaDto[] = [];
+    async (files: FileList | File[]): Promise<BlobFileDto[]> => {
+      const uploaded: BlobFileDto[] = [];
       for (const file of Array.from(files)) {
         const result = await upload(file);
         if (result) uploaded.push(result);
@@ -105,14 +101,14 @@ export function useImageUpload(options?: UseImageUploadOptions) {
     [upload]
   );
 
-  const uploadUrl = useCallback(async (file: File) => (await upload(file))?.secure_url ?? null, [upload]);
+  const uploadUrl = useCallback(async (file: File) => (await upload(file))?.url ?? null, [upload]);
 
-  const uploadUrls = useCallback(async (files: FileList | File[]) => (await uploadMany(files)).map((item) => item.secure_url), [uploadMany]);
+  const uploadUrls = useCallback(async (files: FileList | File[]) => (await uploadMany(files)).map((item) => item.url), [uploadMany]);
 
   return { upload, uploadMany, uploadUrl, uploadUrls, isUploading, progress };
 }
 
-/** Every file in the caller's Cloudinary folder (all admins' folders for a super admin). */
+/** Every file in the caller's blob folder (all users' folders for a super admin). */
 export function useGetAllMedia(enabled: boolean = true) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -127,14 +123,14 @@ export function useGetAllMedia(enabled: boolean = true) {
   });
 }
 
-/** Removes a file from Cloudinary and refreshes the list. The route refuses another admin's file. */
+/** Removes a file from the blob store and refreshes the list. The route refuses another user's file. */
 export function useDeleteMedia(options?: { silent?: boolean }) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (publicId: string) => {
-      const response = await unitOfService.MediaService.delete(publicId);
+    mutationFn: async (pathname: string) => {
+      const response = await unitOfService.MediaService.delete(pathname);
       if (!response.success) throw new Error(response.message || 'Failed to delete file');
       return response;
     },
@@ -148,4 +144,4 @@ export function useDeleteMedia(options?: { silent?: boolean }) {
   });
 }
 
-export default useImageUpload;
+export default useBlobUpload;

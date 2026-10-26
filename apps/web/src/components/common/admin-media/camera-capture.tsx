@@ -120,7 +120,7 @@ interface CameraCaptureDialogProps {
 /**
  * Live camera dialog: preview, shoot, retake, confirm. The confirmed still is handed back as a
  * JPEG File so the caller can push it through the same upload path as a picked file - this
- * component never talks to Cloudinary itself.
+ * component never talks to the storage backend itself.
  */
 export function CameraCaptureDialog({
   isOpen,

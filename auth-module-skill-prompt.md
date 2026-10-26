@@ -60,9 +60,10 @@ model UserSession {
 **`issue(claims, context)`** (login): `sid = randomUUID()` → sign access + refresh with that `sid` → insert the session row with both hashes, ip/userAgent, `expiresAt = refresh expiry` → return `{ accessToken, refreshToken, expiries }`.
 
 **`rotate(refreshToken, context)`** (the refresh endpoint — rotation with reuse detection):
+
 1. `verifySessionToken` → must be `type === 'refresh'` with a `sid`; else 401.
 2. Load the session by `sid`; reject if missing, `revokedAt` set, or expired.
-3. **Reuse detection**: if `session.refreshTokenHash !== hashToken(presentedToken)`, an *old* refresh token is being replayed — someone else already rotated it. **Revoke the whole session** and reject; the legitimate user logs in again, the thief is cut off.
+3. **Reuse detection**: if `session.refreshTokenHash !== hashToken(presentedToken)`, an _old_ refresh token is being replayed — someone else already rotated it. **Revoke the whole session** and reject; the legitimate user logs in again, the thief is cut off.
 4. Sign a fresh access+refresh pair on the same `sid`; overwrite both hashes and `expiresAt` in the session row. The old pair is now dead.
 
 **`validateAccessToken(sid, accessToken)`** (called by `authenticateToken` on every request): the session must exist, be unrevoked/unexpired, and its `accessTokenHash` must match the presented token's digest — this is what makes **logout and revocation immediate** instead of waiting out the token TTL.
@@ -71,17 +72,17 @@ model UserSession {
 
 ### 4. Endpoints (`/auth`) with their rate limiters
 
-| Route | Limiter | Behaviour |
-|---|---|---|
-| `POST /login` | `authLimiter` (~10/15min) | validate → bcrypt compare → `issue()` → return the contract in §5. Identical message for unknown email and wrong password. |
-| `POST /signup` | `authLimiter` | validate (strong password rule in the shared Zod schema) → hash → create with `role: USER` — **the role is never accepted from the body** (the validate middleware strips it; the service ignores it anyway). Send a verification OTP/link. |
-| `POST /refresh-token` | `refreshLimiter` (~60/15min — routine traffic, offices share IPs) | body `{ token }` → `rotate()` → `{ newToken, refreshToken }`. |
-| `POST /logout` | — (authenticated) | revoke the caller's `sid`. |
-| `POST /logout-all` | — (authenticated) | `revokeAllForUser` — "sign out everywhere". |
-| `POST /otp/send`, `POST /verify-otp` | `authLimiter` | email verification. OTP: 6 digits, short TTL, hashed at rest, single-use, attempts capped. |
-| `POST /verify-token` | `authLimiter` | email-verification link variant (separate JWT `type`, short TTL). |
-| `POST /forgot-password` | `authLimiter` | **Always respond 200 "if the account exists, an email was sent"** — never reveal whether an email is registered. The reset token is single-use, short TTL, its own `type`. |
-| `POST /reset-password` | `authLimiter` | verify reset token → `bcrypt.hash(newPassword, 10)` → **`revokeAllForUser`** (a password change kills every live session). |
+| Route                                | Limiter                                                           | Behaviour                                                                                                                                                                                                                                   |
+| ------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /login`                        | `authLimiter` (~10/15min)                                         | validate → bcrypt compare → `issue()` → return the contract in §5. Identical message for unknown email and wrong password.                                                                                                                  |
+| `POST /signup`                       | `authLimiter`                                                     | validate (strong password rule in the shared Zod schema) → hash → create with `role: USER` — **the role is never accepted from the body** (the validate middleware strips it; the service ignores it anyway). Send a verification OTP/link. |
+| `POST /refresh-token`                | `refreshLimiter` (~60/15min — routine traffic, offices share IPs) | body `{ token }` → `rotate()` → `{ newToken, refreshToken }`.                                                                                                                                                                               |
+| `POST /logout`                       | — (authenticated)                                                 | revoke the caller's `sid`.                                                                                                                                                                                                                  |
+| `POST /logout-all`                   | — (authenticated)                                                 | `revokeAllForUser` — "sign out everywhere".                                                                                                                                                                                                 |
+| `POST /otp/send`, `POST /verify-otp` | `authLimiter`                                                     | email verification. OTP: 6 digits, short TTL, hashed at rest, single-use, attempts capped.                                                                                                                                                  |
+| `POST /verify-token`                 | `authLimiter`                                                     | email-verification link variant (separate JWT `type`, short TTL).                                                                                                                                                                           |
+| `POST /forgot-password`              | `authLimiter`                                                     | **Always respond 200 "if the account exists, an email was sent"** — never reveal whether an email is registered. The reset token is single-use, short TTL, its own `type`.                                                                  |
+| `POST /reset-password`               | `authLimiter`                                                     | verify reset token → `bcrypt.hash(newPassword, 10)` → **`revokeAllForUser`** (a password change kills every live session).                                                                                                                  |
 
 Every endpoint: `validate(schema)` from the shared types package, `asyncHandler`, the standard `CustomResponse` envelope, and **log auth events** (login success/failure, refresh reuse detected, password reset) with `requestId`/`userId` — never log tokens, passwords or OTPs (the logger redacts those keys as a backstop).
 
@@ -111,11 +112,11 @@ Because the API **rotates** the refresh token on every use, the frontend must ha
 
 ### 7. Email delivery
 
-Verification/reset mail goes through one `EmailService` behind an interface (SMTP or an API provider), with templates kept server-side. Links are built from `APP_PUBLIC_URL` (env-validated, required in production) — never from the request's `Host` header, which an attacker controls (password-reset poisoning).
+Verification/reset mail goes through one `EmailService` behind an interface (SMTP or an API provider), with templates kept server-side. Links are built from `NEXT_PUBLIC_APP_NAME` (env-validated, required in production) — never from the request's `Host` header, which an attacker controls (password-reset poisoning).
 
 ### 8. Definition of done
 
-1. Signup → verify → login → authenticated call → refresh (token actually rotates — compare strings) → logout → the old access token now 401s *immediately*.
+1. Signup → verify → login → authenticated call → refresh (token actually rotates — compare strings) → logout → the old access token now 401s _immediately_.
 2. Replaying a used refresh token revokes the session (reuse detection fires); password reset kills all sessions.
 3. Wrong password, unknown email and unverified account produce non-enumerating messages; `forgot-password` returns 200 either way.
 4. Rate limits verified on login and refresh; role cannot be set via signup or profile-update bodies (Zod strips it — test it).

@@ -4,7 +4,7 @@
  * one-line change here instead of a hunt through the tree.
  *
  * Only NEXT_PUBLIC_* values are safe to read on the client; Next.js inlines them at
- * build time. Anything secret (Cloudinary API secret, NEXTAUTH_SECRET) must stay in
+ * build time. Anything secret (BLOB_READ_WRITE_TOKEN, NEXTAUTH_SECRET) must stay in
  * server-only code and must never be given the NEXT_PUBLIC_ prefix.
  */
 const config = {
@@ -21,7 +21,6 @@ const config = {
   isProduction: process.env.NODE_ENV === 'production',
   recaptchaSitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '',
   gtmId: process.env.NEXT_PUBLIC_GTM_ID || '',
-  cloudinaryCloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
 };
 
 export default config;

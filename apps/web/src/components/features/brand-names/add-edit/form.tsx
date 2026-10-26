@@ -4,7 +4,6 @@ import { ChevronDown, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { BrandNameDto, brandNameFields, CreateBrandNameModel, StatusValues } from '@pms/types';
 import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
-import StatusCards from '@/components/common/status-cards';
 import ConfirmBox from '@/components/common/confirm-box';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -20,6 +19,7 @@ import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import StatusSwitch from '@/components/common/status-switch';
 
 /**
  * One form, two homes: the Edit dialog and the inline "Add brand" panel above the list.
@@ -145,7 +145,8 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
   const title = isEdit ? 'Edit brand' : 'New brand';
   const subtitle = (
     <>
-      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> + <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
     </>
   );
 
@@ -155,8 +156,16 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
         <Sparkles className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
-        {isDialog ? <DialogTitle className="truncate text-base">{title}</DialogTitle> : <h2 className="truncate text-base font-semibold leading-none tracking-tight">{title}</h2>}
-        {isDialog ? <DialogDescription className="mt-1 text-xs">{subtitle}</DialogDescription> : <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+        {isDialog ? (
+          <DialogTitle className="truncate text-base">{title}</DialogTitle>
+        ) : (
+          <h2 className="truncate text-base font-semibold leading-none tracking-tight">{title}</h2>
+        )}
+        {isDialog ? (
+          <DialogDescription className="mt-1 text-xs">{subtitle}</DialogDescription>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+        )}
       </div>
     </div>
   );
@@ -179,7 +188,6 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
 
   const details = (
     <section className="space-y-5">
-
       <FormField
         control={form.control}
         name="name"
@@ -215,13 +223,12 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
           <FormItem>
             <FormLabel>Status *</FormLabel>
             <FormControl>
-              <StatusCards value={field.value} onChange={field.onChange} />
+              <StatusSwitch value={field.value} onChange={field.onChange} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
     </section>
   );
 
@@ -244,7 +251,9 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
       >
         <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Logo &amp; display order</span>
         {!optionalOpen && optionalSummary && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>}
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Optional</span>
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Optional
+        </span>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', optionalOpen && 'rotate-180')} />
       </button>
 
@@ -259,7 +268,12 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
               <FormItem>
                 <FormLabel>Logo</FormLabel>
                 <FormControl>
-                  <SingleImageUpload value={field.value?.[0] ?? ''} onChange={(path) => field.onChange(path ? [path] : [])} folder="brands" alt="Brand logo" />
+                  <SingleImageUpload
+                    value={field.value?.[0] ?? ''}
+                    onChange={(path) => field.onChange(path ? [path] : [])}
+                    folder="brands"
+                    alt="Brand logo"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -342,7 +356,11 @@ const BrandNameForm = forwardRef<BrandNameFormHandle, BrandNameFormProps>(functi
 
   return (
     <>
-      {isDialog ? <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">{header}</DialogHeader> : <div className="border-b bg-muted/30 px-5 py-4">{header}</div>}
+      {isDialog ? (
+        <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">{header}</DialogHeader>
+      ) : (
+        <div className="border-b bg-muted/30 px-5 py-4">{header}</div>
+      )}
 
       {body}
 
@@ -372,4 +390,3 @@ function DirtyNote({ dirty }: { dirty: boolean }) {
     </p>
   );
 }
-

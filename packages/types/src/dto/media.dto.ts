@@ -1,28 +1,28 @@
-export interface UploadedMediaDto {
-  public_id: string;
-  format: string;
-  version: number;
-  resource_type: string;
-  type: string;
-  created_at: string;
-  bytes: number;
-  width: number;
-  height: number;
-  folder: string;
+/**
+ * A file stored in the private Vercel Blob store. `url` is this app's authenticated
+ * serving route (/api/blob/view/<pathname>), not the blob's own URL - the store is
+ * private, so the raw blob URL is not fetchable by a browser.
+ */
+export interface BlobFileDto {
   url: string;
-  secure_url: string;
+  pathname: string;
+  contentType?: string;
+  size?: number;
+  /** ISO timestamp (Dates are serialized on the wire). */
+  uploadedAt?: Date | string;
 }
 
-export interface UploadMediaResponse {
+export interface BlobUploadResponse {
   success: boolean;
   message?: string;
-  data?: UploadedMediaDto;
+  data?: BlobFileDto;
 }
 
 export interface ListMediaResponse {
   success: boolean;
   message?: string;
-  images?: UploadedMediaDto[];
+  images?: BlobFileDto[];
+  /** The blob prefix the listing was scoped to, e.g. uploads/user_<id>/. */
   userFolder?: string;
   isSuperAdmin?: boolean;
 }
@@ -30,5 +30,4 @@ export interface ListMediaResponse {
 export interface DeleteMediaResponse {
   success: boolean;
   message?: string;
-  result?: { result?: string };
 }

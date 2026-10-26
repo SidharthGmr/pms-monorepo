@@ -5,10 +5,20 @@ import jwt from 'jsonwebtoken';
 import config from '../config';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, LoginResponseDto, refreshTokenResponseDto, SessionContext, UserSessionDto, UserDto, Role, ResetPasswordTokenModel, LoginModel, CreateUserModel, Roles } from '@pms/types';
+import {
+  CustomResponse,
+  LoginResponseDto,
+  refreshTokenResponseDto,
+  SessionContext,
+  UserSessionDto,
+  UserDto,
+  Role,
+  ResetPasswordTokenModel,
+  LoginModel,
+  CreateUserModel,
+  Roles,
+} from '@pms/types';
 import CustomError from '../exceptions/custom-error';
-
-
 
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { isExpired } from '../utils/timeExpiry.util';
@@ -147,7 +157,6 @@ export class AccountController {
       issuer: config.jwt.issuer,
     });
 
-
     const signupTokenUpdted = await this.unitOfService.Account.updateToken(newUser.userId, token);
     const otpUser = await this.unitOfService.User.getUserOtp(newUser.userId);
 
@@ -159,8 +168,11 @@ export class AccountController {
     // as the entire body and the template never rendered. The link now travels as template data.
     const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     // Email clients need absolute image URLs; the light logo cut reads on the navy masthead.
-    const siteUrl = (process.env.APP_PUBLIC_URL || process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || process.env.JWT_ISSUER || '').replace(/\/$/, '');
-    const expiresIn = String(config.jwt.emailVerifyExpires).replace(/^(\d+)([smhd])$/, (_, n, u) => `${n} ${({ s: 'second', m: 'minute', h: 'hour', d: 'day' } as Record<string, string>)[u]}${n === '1' ? '' : 's'}`);
+    const siteUrl = (process.env.NEXT_PUBLIC_APP_NAME || process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || process.env.JWT_ISSUER || '').replace(/\/$/, '');
+    const expiresIn = String(config.jwt.emailVerifyExpires).replace(
+      /^(\d+)([smhd])$/,
+      (_, n, u) => `${n} ${({ s: 'second', m: 'minute', h: 'hour', d: 'day' } as Record<string, string>)[u]}${n === '1' ? '' : 's'}`
+    );
 
     dispatchEmailAsync({
       userId: signupTokenUpdted.userId,
@@ -191,7 +203,6 @@ export class AccountController {
     //     Year: String(new Date().getFullYear()),
     //   },
     // });
-
 
     response = {
       success: true,
@@ -352,7 +363,6 @@ export class AccountController {
       },
     });
 
-
     const response: CustomResponse<UserDto> = {
       success: true,
       message: 'OTP sent successfully',
@@ -473,7 +483,6 @@ export class AccountController {
       message: 'Email verified successfully',
       data: updatedUser,
     });
-
   };
 
   forgotPassword = async (req: Request, res: Response): Promise<Response<CustomResponse<null>>> => {
@@ -511,8 +520,14 @@ export class AccountController {
         // as the entire body and the template never rendered. The link now travels as template data.
         const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         // Email clients need absolute image URLs; the light logo cut reads on the navy masthead.
-        const siteUrl = (process.env.APP_PUBLIC_URL || process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || process.env.JWT_ISSUER || '').replace(/\/$/, '');
-        const expiresIn = String(config.jwt.passwordResetExpires).replace(/^(\d+)([smhd])$/, (_, n, u) => `${n} ${({ s: 'second', m: 'minute', h: 'hour', d: 'day' } as Record<string, string>)[u]}${n === '1' ? '' : 's'}`);
+        const siteUrl = (process.env.NEXT_PUBLIC_APP_NAME || process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL || process.env.JWT_ISSUER || '').replace(
+          /\/$/,
+          ''
+        );
+        const expiresIn = String(config.jwt.passwordResetExpires).replace(
+          /^(\d+)([smhd])$/,
+          (_, n, u) => `${n} ${({ s: 'second', m: 'minute', h: 'hour', d: 'day' } as Record<string, string>)[u]}${n === '1' ? '' : 's'}`
+        );
 
         dispatchEmailAsync({
           userId: updatedUser.userId,
@@ -599,5 +614,4 @@ export class AccountController {
     };
     return res.status(200).json(response);
   };
-
 }

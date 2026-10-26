@@ -4,6 +4,7 @@ import ConfirmBox from '@/components/common/confirm-box';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { PriceInput } from '@/components/common/price-input';
 import { SelectSearch } from '@/components/common/select-search';
+import StatusSwitch from '@/components/common/status-switch';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,7 @@ import { zodResolver } from '@/lib/zod-resolver';
 
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFormFields, StatusValues, CreateProductModel } from '@pms/types';
-import { ArrowLeft, ChevronDown, Eye, EyeOff, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
@@ -472,33 +473,15 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                   <FormField
                     control={form.control}
                     name="status"
-                    render={({ field }) => {
-                      const published = field.value === StatusValues.Published;
-                      return (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <FormControl>
-                            <div className="flex h-10 items-center justify-between gap-2 rounded-lg border bg-background px-3">
-                              <span
-                                className={cn(
-                                  'flex min-w-0 items-center gap-2 text-sm font-medium',
-                                  published ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
-                                )}
-                              >
-                                {published ? <Eye className="h-4 w-4 shrink-0" /> : <EyeOff className="h-4 w-4 shrink-0" />}
-                                <span className="truncate">{published ? 'Published — visible in store' : 'Draft — hidden'}</span>
-                              </span>
-                              <Switch
-                                checked={published}
-                                onCheckedChange={(checked) => field.onChange(checked ? StatusValues.Published : StatusValues.Draft)}
-                                aria-label="Published"
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <FormControl>
+                          <StatusSwitch value={field.value} onChange={field.onChange} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
 

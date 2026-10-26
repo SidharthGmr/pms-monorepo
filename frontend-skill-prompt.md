@@ -191,31 +191,47 @@ Conventions: queryKey = `'<Service>.<method>'` + its params (so any param change
 - Standard add/edit pattern: a `Manage<X>` dialog (shadcn `Dialog` + `Form`) that takes an optional existing `XDto`; on submit calls `useCreateX`/`useUpdateX`, reads failures through `ErrorHandlerService`, resets and closes on success (list refreshes via invalidation). The listing page pairs it with a table driven by `useGetAllXs` + `XFilterParams` state (page, search, sort, status).
 - Enum fields compare against the runtime enum (`StatusEnum.Published`), never string literals.
 
-### 10. State management
+### 10. Theme colors — tokens only, never inline palettes
+
+- Every color is a CSS variable defined in `globals.css` as an HSL triplet, once under `:root` (light) and once under `.dark` (dark) — e.g. `--success: 163 94% 24%;` / `.dark { --success: 158 64% 52%; }` — and mapped exactly once in `tailwind.config.ts`: `success: { DEFAULT: 'hsl(var(--success))', foreground: 'hsl(var(--success-foreground))' }`.
+- Components use **semantic utilities only**: `text-success`, `bg-warning/10`, `border-destructive`, `ring-primary/20`. Never raw palette classes with manual dark variants (`text-emerald-700 dark:text-emerald-400`) — with tokens, dark mode needs **zero `dark:` prefixes in component code**, and a rebrand is a two-line CSS edit instead of a repo-wide grep.
+- Standard semantic set beyond the shadcn defaults (background, foreground, primary, secondary, muted, accent, destructive, border, input, ring, card, popover + their `-foreground` pairs): add **`success`** (positive states: published, paid, active) and **`warning`** (caution states: draft, pending, hidden). Status UIs read the same everywhere: success = live, warning = hidden.
+- The `hsl(var(--x))` mapping gives opacity variants for free (`bg-success/10`, `ring-success/20`) — use them for tinted surfaces instead of extra tokens.
+- When adding a token, add it to **both** `:root` and `.dark` — and to every extra theme-skin class if the project ships palette skins (`.red`, `.green`, …): a skin that misses a token silently falls back to `:root`.
+
+### 11. Reusable components — extract once, reuse everywhere
+
+- Shared building blocks live in `src/components/common/<name>/index.tsx`. **Before writing any new control, check `components/common` first** — a second hand-rolled copy of an existing control is a bug, not a style choice.
+- Every reusable control follows the **controlled contract**: `value?: string | null` + `onChange: (value: string) => void`, so it drops straight into a react-hook-form field: `<StatusCards value={field.value} onChange={field.onChange} />`.
+- Always expose `className` (merged via `cn()`), `disabled` where it makes sense, and sensible label defaults overridable by props. Keep domain knowledge (enums like `StatusValues`, display copy) **inside** the component so every call site stays a one-liner.
+- The moment the same markup appears in a second form, extract it. Variants of one concept share the contract and the tokens — e.g. `StatusCards` (two-card radio picker) and `StatusSwitch` (compact one-line switch for dense forms) are interchangeable at the call site.
+- Styling inside shared components uses the theme tokens from §10 only — a shared component with hardcoded colors spreads the violation to every consumer.
+
+### 12. State management
 
 - **Server state lives in React Query** (one `ReactQueryProvider` in the root layout). **Client/UI state lives in Redux Toolkit** (`lib/store.ts`); export typed `useAppDispatch`/`useAppSelector` from `lib/hooks.ts` and add an ESLint `no-restricted-imports` rule banning raw `useSelector`/`useDispatch` from `react-redux`.
 - Don't mirror API data into Redux — that's what the query cache is for.
 
-### 11. Server-side safety & build hygiene
+### 13. Server-side safety & build hygiene
 
 - Every route handler under `app/api/*` that touches a server secret (upload signing, third-party keys) **must check `getServerSession(authOptions)` first** and 401 otherwise — an unauthenticated signing route is a free credential.
 - `next.config`: security headers, `poweredByHeader: false`, strip `console.log`/`console.debug` in production builds (keep errors/warnings), and gate the build on ESLint (`ignoreDuringBuilds: false`) so lint debt cannot ship.
 - shadcn/ui configured via `components.json` (aliases `@/components`); build pages from those primitives rather than ad-hoc markup.
 
-### 12. Adding a new entity on the frontend — checklist
+### 14. Adding a new entity on the frontend — checklist
 
 1. Backend + shared types already exist (API skill). Rebuild the types package.
 2. `services/interfaces/I<X>Service.ts` + `services/<X>Service.ts` (one method per endpoint).
 3. `config/types.ts`: add the symbol. `config/ioc.ts`: add the binding.
 4. `services/interfaces/IUnitOfService.ts` + `UnitOfService.ts`: add the `XService` property.
 5. `hooks/service-hooks/use<X>Service.ts`: query + mutation hooks with the key conventions above.
-6. `Manage<X>` dialog form (shared validator) + listing page under the right role area (`admin/…`).
+6. `Manage<X>` dialog form (shared validator) + listing page under the right role area (`admin/…`) — built from `components/common` controls and theme tokens only (§10–11).
 7. If a brand-new role area: extend `middleware.ts`'s `accessControlMap` + `matcher`.
 
-### 13. Definition of done
+### 15. Definition of done
 
 1. `tsc --noEmit` and `next lint` clean; `next build` passes.
 2. Login works for each role and lands on its own area; a wrong-role URL redirects to access-denied; logged-out visits redirect to login.
 3. Let an access token expire: the next API call silently refreshes and retries once; a revoked refresh token force-logs-out.
 4. Entity flow: create (form validation messages match the API's), list (pagination/search/sort), edit prefilled, delete with the API's 409 message surfaced; the list auto-refreshes after every mutation.
-5. No component imports axios or `HttpService` directly; no secret carries `NEXT_PUBLIC_`; no raw `useSelector`/`useDispatch`.
+5. No component imports axios or `HttpService` directly; no secret carries `NEXT_PUBLIC_`; no raw `useSelector`/`useDispatch`; no inline palette colors (`text-emerald-700`, `dark:` variants) — theme tokens only.

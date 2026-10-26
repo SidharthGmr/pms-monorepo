@@ -15,6 +15,8 @@ function remotePatternFor(url) {
 }
 
 const remotePatterns = [
+  // Kept although new uploads go to Vercel Blob: image URLs already stored in the
+  // database still point at Cloudinary and must keep rendering.
   { protocol: 'https', hostname: 'res.cloudinary.com' },
   remotePatternFor(process.env.NEXT_PUBLIC_CDN_BASE_URL || process.env.NEXT_PUBLIC_CDN_MAIN_DOMAIN_URL),
   remotePatternFor(process.env.NEXT_PUBLIC_API_BASE_URL),

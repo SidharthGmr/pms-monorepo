@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { del } from '@vercel/blob';
 import { authOptions } from '@/app/api/auth/[...nextauth]/options';
-
-import cloudinary from '@/lib/cloudinary';
 import { Roles } from '@pms/types';
 
 export const dynamic = 'force-dynamic';
@@ -14,29 +13,25 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
     const user = session.user as any;
+    const userId = user.id ?? user.userId;
 
-    const { publicId } = await req.json();
-    if (!publicId) {
-      return NextResponse.json({ success: false, message: 'publicId is required' }, { status: 400 });
+    const { pathname } = await req.json();
+    if (!pathname || typeof pathname !== 'string' || !pathname.startsWith('uploads/')) {
+      return NextResponse.json({ success: false, message: 'pathname is required' }, { status: 400 });
     }
 
+    // A regular admin can only delete files inside their own prefix; the super admin can
+    // delete anything under uploads/ - the same rule the list route scopes by.
     const isSuperAdmin = user.role === Roles.SUPER_ADMIN;
-    const adminFolder = `assets/admin_${user.id}/`;
-
-    // Security check: Regular admin can only delete their own files
-    if (!isSuperAdmin && !publicId.startsWith(adminFolder)) {
+    if (!isSuperAdmin && !pathname.startsWith(`uploads/user_${userId}/`)) {
       return NextResponse.json({ success: false, message: 'Unauthorized: You can only delete your own files' }, { status: 403 });
     }
 
-    const result = await cloudinary.uploader.destroy(publicId);
+    await del(pathname);
 
-    return NextResponse.json({
-      success: true,
-      message: 'File deleted successfully from Cloudinary',
-      result,
-    });
+    return NextResponse.json({ success: true, message: 'File deleted successfully' });
   } catch (error: any) {
-    console.error('Cloudinary delete error:', error);
+    console.error('Blob delete error:', error);
     return NextResponse.json({ success: false, message: error.message || 'Failed to delete file' }, { status: 500 });
   }
 }

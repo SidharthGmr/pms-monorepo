@@ -15,7 +15,7 @@ const originList = z
     raw
       .split(',')
       .map((origin) => origin.trim().replace(/\/$/, ''))
-      .filter(Boolean),
+      .filter(Boolean)
   )
   .pipe(z.array(z.string()).min(1, 'At least one origin is required'));
 

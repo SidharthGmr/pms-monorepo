@@ -1,16 +1,19 @@
-import { DeleteMediaResponse, ListMediaResponse, UploadMediaResponse } from '@pms/types';
+import { BlobUploadResponse, DeleteMediaResponse, ListMediaResponse } from '@pms/types';
+import { UploadKind } from '@/lib/blob-upload';
 
-export interface UploadMediaOptions {
+export interface UploadBlobOptions {
   /** Fired with 0-100 as the request body is sent. */
   onProgress?: (percent: number) => void;
   signal?: AbortSignal;
-  /** Sub-folder to file the upload under, inside the caller's own media folder. Created on
-   *  first use; the route sanitizes it, so an unusable name simply falls back to the root. */
+  /** Sub-folder inside the caller's own blob prefix (uploads/user_<id>/). Sanitized server-side. */
   folder?: string;
+  /** What the server accepts: image (default), doc, or any. */
+  kind?: UploadKind;
 }
 
 export default interface IMediaService {
-  upload(file: File, options?: UploadMediaOptions): Promise<UploadMediaResponse>;
+  /** Uploads to the private Vercel Blob store via /api/blob/upload. */
+  uploadBlob(file: File, options?: UploadBlobOptions): Promise<BlobUploadResponse>;
   getAll(signal?: AbortSignal): Promise<ListMediaResponse>;
-  delete(publicId: string): Promise<DeleteMediaResponse>;
+  delete(pathname: string): Promise<DeleteMediaResponse>;
 }

@@ -6,7 +6,7 @@ import { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from "@/
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useImageUpload } from "@/hooks/service-hooks/useMediaService";
+import { useBlobUpload } from "@/hooks/service-hooks/useMediaService";
 import { cn } from "@/lib/utils";
 
 interface ProfileImageUploaderProps {
@@ -21,7 +21,7 @@ interface ProfileImageUploaderProps {
 }
 
 export function ProfileImageUploader({ value, onChange, className, showUrlInput = true, folder }: ProfileImageUploaderProps) {
-  const { uploadUrl, isUploading } = useImageUpload(folder ? { folder } : undefined);
+  const { uploadUrl, isUploading } = useBlobUpload({ kind: "image", folder: folder || "profile" });
   const [isDragging, setIsDragging] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const cameraMode = useCameraAvailability();

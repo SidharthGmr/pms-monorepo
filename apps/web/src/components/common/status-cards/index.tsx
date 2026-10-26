@@ -5,26 +5,26 @@ import { Check, Eye, EyeOff } from 'lucide-react';
 import { StatusValues } from '@pms/types';
 
 // The Published / Draft choice as two tap targets instead of a select, shared by the brand and
-// category forms. Each status owns its colour so the selected option reads as "green = live" or
-// "amber = hidden" at a glance.
+// category forms. Colours come from the success/warning theme tokens (globals.css) so the
+// selected option reads as "success = live" or "warning = hidden" in both light and dark mode.
 const STATUS_OPTIONS = [
   {
     value: StatusValues.Published,
     label: 'Published',
     icon: Eye,
-    active: 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/20',
-    iconActive: 'bg-emerald-500 text-white',
-    iconIdle: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-    check: 'bg-emerald-500',
+    active: 'border-success bg-success/10 ring-2 ring-success/20',
+    iconActive: 'bg-success text-success-foreground',
+    iconIdle: 'bg-success/10 text-success',
+    check: 'bg-success text-success-foreground',
   },
   {
     value: StatusValues.Draft,
     label: 'Draft',
     icon: EyeOff,
-    active: 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20',
-    iconActive: 'bg-amber-500 text-white',
-    iconIdle: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    check: 'bg-amber-500',
+    active: 'border-warning bg-warning/10 ring-2 ring-warning/20',
+    iconActive: 'bg-warning text-warning-foreground',
+    iconIdle: 'bg-warning/10 text-warning',
+    check: 'bg-warning text-warning-foreground',
   },
 ];
 
@@ -59,7 +59,7 @@ export default function StatusCards({ value, onChange, className }: StatusCardsP
             <span
               aria-hidden
               className={cn(
-                'absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full text-white transition-all duration-150',
+                'absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full transition-all duration-150',
                 active ? cn(option.check, 'scale-100 opacity-100') : 'scale-50 opacity-0'
               )}
             >

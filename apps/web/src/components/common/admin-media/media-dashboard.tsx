@@ -9,30 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useDeleteMedia, useGetAllMedia, useImageUpload } from '@/hooks/service-hooks/useMediaService';
+import { useDeleteMedia, useGetAllMedia, useBlobUpload } from '@/hooks/service-hooks/useMediaService';
 import { PageHeader } from '../page-header';
+import { BlobFileDto } from '@pms/types';
 
-interface CloudinaryResource {
-  public_id: string;
-  format: string;
-  version: number;
-  resource_type: string;
-  type: string;
-  created_at: string;
-  bytes: number;
-  width: number;
-  height: number;
-  folder: string;
-  url: string;
-  secure_url: string;
-}
+// The list endpoint carries no MIME metadata, so file kinds come from the extension.
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
+const VIDEO_EXT = /\.(mp4|webm|mov|avi|mkv)$/i;
+
+const fileExtension = (pathname: string) => pathname.split('.').pop()?.toLowerCase() || '';
 
 export default function AdminMediaDashboard() {
   const { data: session } = useSession();
   const user = session?.user as any;
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
-  const [files, setFiles] = useState<CloudinaryResource[]>([]);
+  const [files, setFiles] = useState<BlobFileDto[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Drag & Drop State
@@ -48,10 +40,10 @@ export default function AdminMediaDashboard() {
 
   const mediaQuery = useGetAllMedia(!!session);
   const deleteMedia = useDeleteMedia({ silent: true });
-  const { upload } = useImageUpload({ accept: null, maxSizeMb: 20, silent: true });
+  const { upload } = useBlobUpload({ kind: 'any', silent: true });
 
   useEffect(() => {
-    if (mediaQuery.data?.images) setFiles(mediaQuery.data.images as CloudinaryResource[]);
+    if (mediaQuery.data?.images) setFiles(mediaQuery.data.images);
   }, [mediaQuery.data]);
 
   useEffect(() => {
@@ -95,9 +87,6 @@ export default function AdminMediaDashboard() {
     setUploadingFiles((prev) => [...prev, ...filesToUpload]);
 
     for (const file of filesToUpload) {
-      const formData = new FormData();
-      formData.append('file', file);
-
       setUploadProgress((prev) => ({ ...prev, [file.name]: 10 }));
 
       try {
@@ -107,7 +96,7 @@ export default function AdminMediaDashboard() {
 
         if (uploaded) {
           toast.success(`Uploaded ${file.name} successfully!`);
-          setFiles((prev) => [uploaded as CloudinaryResource, ...prev]);
+          setFiles((prev) => [uploaded, ...prev]);
         } else {
           toast.error(`Failed to upload ${file.name}`);
         }
@@ -125,12 +114,12 @@ export default function AdminMediaDashboard() {
     }
   };
 
-  const handleDelete = async (publicId: string) => {
+  const handleDelete = async (pathname: string) => {
     if (!confirm('Are you sure you want to delete this file permanently?')) return;
 
     try {
-      await deleteMedia.mutateAsync(publicId);
-      setFiles((prev) => prev.filter((f) => f.public_id !== publicId));
+      await deleteMedia.mutateAsync(pathname);
+      setFiles((prev) => prev.filter((f) => f.pathname !== pathname));
       toast.success('File deleted successfully');
     } catch (error) {
       toast.error((error as Error)?.message || 'Error deleting file');
@@ -139,7 +128,8 @@ export default function AdminMediaDashboard() {
 
   const copyToClipboard = async (url: string, id: string) => {
     try {
-      await navigator.clipboard.writeText(url);
+      // The stored URL is relative (same-origin serving route); copy something pasteable.
+      await navigator.clipboard.writeText(url.startsWith('/') ? `${window.location.origin}${url}` : url);
       setCopiedId(id);
       toast.success('URL copied to clipboard!');
       setTimeout(() => setCopiedId(null), 2000);
@@ -157,12 +147,12 @@ export default function AdminMediaDashboard() {
   };
 
   // Get dynamic folder suffix/owner
-  const getFolderOwner = (publicId: string) => {
-    const parts = publicId.split('/');
+  const getFolderOwner = (pathname: string) => {
+    const parts = pathname.split('/');
     if (parts.length > 1) {
       const folderName = parts[parts.length - 2];
-      if (folderName.startsWith('admin_')) {
-        return folderName.replace('admin_', 'Admin ID: ');
+      if (folderName.startsWith('user_')) {
+        return folderName.replace('user_', 'User ID: ');
       }
       return folderName;
     }
@@ -170,16 +160,16 @@ export default function AdminMediaDashboard() {
   };
 
   // Extract all unique folders for super admin filtering
-  const uniqueFolders = Array.from(new Set(files.map((f) => f.public_id.split('/').slice(0, -1).join('/')))).filter(Boolean);
+  const uniqueFolders = Array.from(new Set(files.map((f) => f.pathname.split('/').slice(0, -1).join('/')))).filter(Boolean);
 
   // Filtered files
   const filteredFiles = files.filter((file) => {
-    const fileName = file.public_id.split('/').pop() || '';
+    const fileName = file.pathname.split('/').pop() || '';
     const matchesSearch =
-      fileName.toLowerCase().includes(searchQuery.toLowerCase()) || file.public_id.toLowerCase().includes(searchQuery.toLowerCase());
+      fileName.toLowerCase().includes(searchQuery.toLowerCase()) || file.pathname.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (selectedFolderFilter === 'all') return matchesSearch;
-    const fileFolder = file.public_id.split('/').slice(0, -1).join('/');
+    const fileFolder = file.pathname.split('/').slice(0, -1).join('/');
     return matchesSearch && fileFolder === selectedFolderFilter;
   });
 
@@ -223,7 +213,7 @@ export default function AdminMediaDashboard() {
                   <option value="all">All Folders</option>
                   {uniqueFolders.map((folder) => (
                     <option key={folder} value={folder}>
-                      {folder.replace('media/', '')}
+                      {folder.replace('uploads/', '')}
                     </option>
                   ))}
                 </select>
@@ -269,17 +259,19 @@ export default function AdminMediaDashboard() {
                 </thead>
                 <tbody className="divide-y">
                   {filteredFiles.map((file) => {
-                    const fileName = file.public_id.split('/').pop() || file.public_id;
-                    const folderOwner = getFolderOwner(file.public_id);
+                    const fileName = file.pathname.split('/').pop() || file.pathname;
+                    const folderOwner = getFolderOwner(file.pathname);
+                    const isImage = IMAGE_EXT.test(file.pathname);
+                    const isVideo = VIDEO_EXT.test(file.pathname);
 
                     return (
-                      <tr key={file.public_id} className="hover:bg-muted/20 transition-colors group">
+                      <tr key={file.pathname} className="hover:bg-muted/20 transition-colors group">
                         {/* Thumbnail */}
                         <td className="p-4">
                           <div className="relative h-12 w-12 rounded border overflow-hidden bg-muted/40 flex items-center justify-center">
-                            {file.resource_type === 'image' ? (
-                              <img src={file.secure_url} alt={fileName} className="h-full w-full object-cover" loading="lazy" />
-                            ) : file.resource_type === 'video' ? (
+                            {isImage ? (
+                              <img src={file.url} alt={fileName} className="h-full w-full object-cover" loading="lazy" />
+                            ) : isVideo ? (
                               <Video className="h-6 w-6 text-indigo-500" />
                             ) : (
                               <File className="h-6 w-6 text-emerald-500" />
@@ -292,7 +284,9 @@ export default function AdminMediaDashboard() {
                           <div className="font-medium text-foreground truncate max-w-[250px]" title={fileName}>
                             {fileName}
                           </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">{new Date(file.created_at).toLocaleDateString()}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : '—'}
+                          </div>
                         </td>
 
                         {/* Owner/Folder */}
@@ -305,11 +299,8 @@ export default function AdminMediaDashboard() {
 
                         {/* File details */}
                         <td className="p-4">
-                          <div className="font-medium text-foreground uppercase text-xs">{file.format}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {formatBytes(file.bytes)}
-                            {file.width && file.height && ` • ${file.width}x${file.height}`}
-                          </div>
+                          <div className="font-medium text-foreground uppercase text-xs">{fileExtension(file.pathname)}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{formatBytes(file.size ?? 0)}</div>
                         </td>
 
                         {/* URL Copy */}
@@ -317,10 +308,10 @@ export default function AdminMediaDashboard() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => copyToClipboard(file.secure_url, file.public_id)}
+                            onClick={() => copyToClipboard(file.url, file.pathname)}
                             className="h-8 px-2 text-xs font-normal gap-1.5 hover:bg-muted"
                           >
-                            {copiedId === file.public_id ? (
+                            {copiedId === file.pathname ? (
                               <>
                                 <Check className="h-3.5 w-3.5 text-emerald-500" />
                                 <span className="text-emerald-600">Copied</span>
@@ -338,7 +329,7 @@ export default function AdminMediaDashboard() {
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <a
-                              href={file.secure_url}
+                              href={file.url}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
@@ -348,7 +339,7 @@ export default function AdminMediaDashboard() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(file.public_id)}
+                              onClick={() => handleDelete(file.pathname)}
                               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-3.5 w-3.5" />

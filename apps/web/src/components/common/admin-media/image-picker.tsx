@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetAllMedia, useImageUpload } from '@/hooks/service-hooks/useMediaService';
+import { useGetAllMedia, useBlobUpload } from '@/hooks/service-hooks/useMediaService';
+import { BLOB_MAX_SIZE_MB } from '@/lib/blob-upload';
 import { cn } from '@/lib/utils';
 import { Camera, Check, FolderOpen, ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
@@ -21,16 +22,16 @@ interface ImagePickerProps {
 
 /**
  * Single-image form field: preview, replace and remove, with three sources - a direct upload
- * (useImageUpload, Cloudinary via /api/admin-media), "Take photo" on any device with a camera
- * (CameraCaptureButton, same upload path), and "Choose from gallery", a dialog over the same
- * media library the Media page manages (useGetAllMedia).
+ * (useBlobUpload, the private Vercel Blob store via /api/blob), "Take photo" on any device with
+ * a camera (CameraCaptureButton, same upload path), and "Choose from gallery", a dialog over
+ * the same media library the Media page manages (useGetAllMedia).
  */
-export default function ImagePicker({ value, onChange, label = 'image', maxSizeMb = 5, disabled, className }: ImagePickerProps) {
+export default function ImagePicker({ value, onChange, label = 'image', maxSizeMb = BLOB_MAX_SIZE_MB, disabled, className }: ImagePickerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const cameraMode = useCameraAvailability();
-  const { uploadUrl, isUploading } = useImageUpload({ maxSizeMb });
+  const { uploadUrl, isUploading } = useBlobUpload({ kind: 'image', maxSizeMb });
 
   const uploadAndSet = async (file: File) => {
     const url = await uploadUrl(file);
@@ -138,9 +139,10 @@ function GalleryDialog({ isOpen, selected, onClose, onSelect }: GalleryDialogPro
   const mediaQuery = useGetAllMedia(isOpen);
 
   const images = useMemo(() => {
-    const all = (mediaQuery.data?.images ?? []).filter((item) => item.resource_type === 'image');
+    // The list endpoint has no MIME metadata, so an image is recognised by its extension.
+    const all = (mediaQuery.data?.images ?? []).filter((item) => /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(item.pathname));
     const needle = search.trim().toLowerCase();
-    return needle ? all.filter((item) => item.public_id.toLowerCase().includes(needle)) : all;
+    return needle ? all.filter((item) => item.pathname.toLowerCase().includes(needle)) : all;
   }, [mediaQuery.data, search]);
 
   return (
@@ -166,21 +168,21 @@ function GalleryDialog({ isOpen, selected, onClose, onSelect }: GalleryDialogPro
         ) : (
           <div className="grid max-h-[50vh] grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
             {images.map((item) => {
-              const isSelected = item.secure_url === selected;
+              const isSelected = item.url === selected;
               return (
                 <button
-                  key={item.public_id}
+                  key={item.pathname}
                   type="button"
-                  onClick={() => onSelect(item.secure_url)}
+                  onClick={() => onSelect(item.url)}
                   className={cn(
                     'group relative aspect-square overflow-hidden rounded-md border transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     isSelected && 'border-primary ring-2 ring-primary/40'
                   )}
-                  title={item.public_id}
+                  title={item.pathname}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item.secure_url}
+                    src={item.url}
                     alt=""
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform group-hover:scale-105"
