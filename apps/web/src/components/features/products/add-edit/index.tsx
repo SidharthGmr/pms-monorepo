@@ -1,9 +1,12 @@
 'use client';
 import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import ConfirmBox from '@/components/common/confirm-box';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { PriceInput } from '@/components/common/price-input';
 import { SelectSearch } from '@/components/common/select-search';
+import { DirtyNote } from '@/components/common/field';
+import OptionalSection from '@/components/common/optional-section';
 import StatusSwitch from '@/components/common/status-switch';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -22,15 +25,14 @@ import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryS
 import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useCreateProduct, useGetAllProducts, useGetProductById, useUpdateProduct } from '@/hooks/service-hooks/useProductService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFormFields, StatusValues, CreateProductModel } from '@pms/types';
-import { ArrowLeft, ChevronDown, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import VariantOptionRows from './variant-option-rows';
 
@@ -102,7 +104,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   // The slug follows the name until the user edits it by hand; the refresh button re-links them.
   const [slugTouched, setSlugTouched] = useState(false);
   const [slugOpen, setSlugOpen] = useState(false);
-  const [optionalOpen, setOptionalOpen] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const form = useForm<CreateProductModel>({
@@ -214,6 +215,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
 
   // Several fields live behind the disclosure; if one of them blocks the save, it must unfold
   // so the message is visible instead of the form refusing silently.
+  const [optionalOpen, setOptionalOpen] = useState(false);
   const onSubmit = handleSubmit(submitData, (errors) => {
     if (errors.description || errors.brandNameId || errors.attributeId || errors.parentId || errors.displayOrder) setOptionalOpen(true);
   });
@@ -232,14 +234,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
       return;
     }
     leave();
-  };
-
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      onSubmit();
-    }
   };
 
   const categoryItems = useMemo(
@@ -316,7 +310,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
               <div className="flex items-center gap-2">
                 <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{isEdit ? productName || 'Edit product' : 'New product'}</h1>
                 {isEdit && (
-                  <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                  <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
                     Editing
                   </span>
                 )}
@@ -363,7 +357,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
           </div>
         ) : (
           <Form {...form}>
-            <form autoComplete="off" onSubmit={onSubmit} onKeyDown={onFormKeyDown} className="flex flex-col">
+            <form autoComplete="off" onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter(onSubmit)} className="flex flex-col">
               <div className="space-y-5 px-5 py-5">
                 <FormField
                   control={form.control}
@@ -651,7 +645,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
 
                                 {/* The end date closes the price period itself, not just the discount. */}
                                 {!!form.watch(`variants.${index}.effectiveTo`) && (
-                                  <p className="text-[11px] text-amber-700 dark:text-amber-400 sm:col-span-3">
+                                  <p className="text-[11px] text-warning sm:col-span-3">
                                     After this date the variant has no price and cannot be bought.
                                   </p>
                                 )}
@@ -687,25 +681,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                     </div>
                   </section>
 
-                <section className="overflow-hidden rounded-xl border">
-                  <button
-                    type="button"
-                    onClick={() => setOptionalOpen((open) => !open)}
-                    aria-expanded={optionalOpen}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-                  >
-                    <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Brand &amp; more</span>
-                    {!optionalOpen && optionalSummary && (
-                      <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>
-                    )}
-                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Optional
-                    </span>
-                    <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', optionalOpen && 'rotate-180')} />
-                  </button>
-
-                  {optionalOpen && (
-                    <div className="space-y-5 border-t px-4 py-4">
+                <OptionalSection title="Brand & more" summary={optionalSummary} open={optionalOpen} onOpenChange={setOptionalOpen}>
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <FormField
                           control={form.control}
@@ -807,21 +783,11 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                           </FormItem>
                         )}
                       />
-                    </div>
-                  )}
-                </section>
+                </OptionalSection>
               </div>
 
               <div className="flex flex-col-reverse gap-2 border-t bg-muted/30 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p
-                  className={cn(
-                    'hidden items-center gap-1.5 text-xs sm:flex',
-                    isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'
-                  )}
-                >
-                  {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
-                  {isDirty ? 'Unsaved changes' : 'No changes yet'}
-                </p>
+                <DirtyNote dirty={isDirty} />
                 <div className="flex flex-col-reverse gap-2 sm:flex-row">
                   <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
                     Cancel

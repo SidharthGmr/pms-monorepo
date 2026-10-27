@@ -1,5 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import Field from '@/components/common/field';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -7,7 +8,6 @@ import { useGetAttributeById } from '@/hooks/service-hooks/useAttributeService';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Eye, EyeOff, Pencil, Ruler, Trash2 } from 'lucide-react';
-import { ReactNode } from 'react';
 import { StatusValues } from '@pms/types';
 
 /** Same colours and wording the status cards use, so view and edit read alike. */
@@ -122,11 +122,3 @@ export default function AttributeView({ id, onEdit, onClose }: AttributeViewProp
   );
 }
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-dashed py-2 last:border-0">
-      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium">{value}</dd>
-    </div>
-  );
-}

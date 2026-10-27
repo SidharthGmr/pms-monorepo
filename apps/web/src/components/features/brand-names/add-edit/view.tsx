@@ -1,39 +1,15 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import Field from '@/components/common/field';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useGetBrandNameById } from '@/hooks/service-hooks/useBrandNameService';
-import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
-import { Eye, EyeOff, ImageOff, Pencil, Sparkles, Trash2 } from 'lucide-react';
-import { ReactNode } from 'react';
-import { StatusValues } from '@pms/types';
-
-/** Same colours and wording the form's status cards use, so view and edit read alike. */
-const STATUS_TONE: Record<string, { label: string; hint: string; icon: typeof Eye; pill: string; dot: string }> = {
-  [StatusValues.Published]: {
-    label: 'Published',
-    hint: 'Visible in the store. Customers can shop this brand.',
-    icon: Eye,
-    pill: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-    dot: 'bg-emerald-500',
-  },
-  [StatusValues.Draft]: {
-    label: 'Draft',
-    hint: 'Hidden from the store until you publish it.',
-    icon: EyeOff,
-    pill: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-    dot: 'bg-amber-500',
-  },
-  [StatusValues.Trash]: {
-    label: 'Trash',
-    hint: 'Moved to Trash. Restore it to bring it back.',
-    icon: Trash2,
-    pill: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
-    dot: 'bg-rose-500',
-  },
-};
+import { formatDate } from '@/lib/format-date';
+import { ImageOff, Pencil, Sparkles } from 'lucide-react';
+import { BrandNameDto } from '@pms/types';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
+import StatusBadge from '@/components/common/status-badge';
 
 interface BrandNameViewProps {
   id: number;
@@ -41,25 +17,29 @@ interface BrandNameViewProps {
   onClose: () => void;
 }
 
-// Read-only half of the brand dialog: what is stored, nothing to type into. "Edit" hands the
-// same dialog over to the form, so the data is read and changed in one place.
 export default function BrandNameView({ id, onEdit, onClose }: BrandNameViewProps) {
   const { data, isLoading, isError } = useGetBrandNameById(id, id > 0);
-  const brand = data?.data?.data;
-
-  const when = (value?: Date | string | null) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return (
-      <span title={format(date, 'PPpp')}>
-        {format(date, 'd MMM yyyy, h:mm a')}
-        <span className="ml-1 text-muted-foreground/70">({formatDistanceToNow(date, { addSuffix: true })})</span>
-      </span>
-    );
-  };
-
-  const status = brand ? (STATUS_TONE[brand.status] ?? STATUS_TONE[StatusValues.Draft]) : null;
+  const brand = data?.data?.data as BrandNameDto;
   const logo = brand?.images?.[0];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-28 w-full rounded-xl" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+        <Skeleton className="h-9 w-full" />
+      </div>
+    );
+  }
+  if (isError || !brand) {
+    return (
+      <Card>
+        <CardTitle variant="sm">Could not load this brand</CardTitle>
+        <CardDescription>It may have been deleted. Close and refresh the list.</CardDescription>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -76,54 +56,27 @@ export default function BrandNameView({ id, onEdit, onClose }: BrandNameViewProp
       </DialogHeader>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-28 w-full rounded-xl" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-          </div>
-        ) : isError || !brand ? (
-          <div className="py-10 text-center">
-            <p className="text-sm font-semibold text-destructive">Could not load this brand</p>
-            <p className="mt-1 text-xs text-muted-foreground">Close this and try again.</p>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <div className="flex h-32 items-center justify-center rounded-xl border bg-gradient-to-b from-muted/60 to-muted/20 p-4">
-              {logo ? (
-                // Brand logos come from arbitrary CDNs; next/image would need each host in
-                // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt={brand.name} className="max-h-full max-w-[70%] object-contain" />
-              ) : (
-                <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
-                  <ImageOff className="h-7 w-7" />
-                  <span className="text-[11px]">No logo uploaded</span>
-                </div>
-              )}
-            </div>
-
-            {status && (
-              <div className={cn('flex items-start gap-3 rounded-xl border px-3 py-2.5', status.pill)}>
-                <status.icon className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">{status.label}</p>
-                  <p className="text-xs opacity-80">{status.hint}</p>
-                </div>
+        <div className="space-y-5">
+          <div className="flex h-32 items-center justify-center rounded-xl border bg-gradient-to-b from-muted/60 to-muted/20 p-4">
+            {logo ? (
+              <img src={logo} alt={brand.name} className="max-h-full max-w-[70%] object-contain" />
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
+                <ImageOff className="h-7 w-7" />
+                <span className="text-[11px]">No logo uploaded</span>
               </div>
             )}
-
-            <dl className="grid gap-x-6">
-              <Field label="Brand name" value={brand.name} />
-              <Field label="Display order" value={brand.displayOrder ?? '—'} />
-              <Field label="Brand ID" value={<span className="font-mono text-xs">{brand.id}</span>} />
-              <Field label="Images" value={brand.images?.length ? `${brand.images.length} uploaded` : 'None'} />
-              <Field label="Added" value={when(brand.createdAt)} />
-              <Field label="Last updated" value={when(brand.updatedAt)} />
-            </dl>
           </div>
-        )}
+
+          <dl className="grid gap-x-6">
+            <Field label="Name" value={brand.name} />
+            <Field label="Status" value={<StatusBadge status={brand.status} />} />
+            <Field label="ID" value={<span className="font-mono text-xs">{brand.id}</span>} />
+            <Field label="Display order" value={brand.displayOrder ?? '—'} />
+            {brand.updatedAt && <Field label="Updated At" value={formatDate(brand.updatedAt)} />}
+            <Field label="Created At" value={formatDate(brand.createdAt)} />
+          </dl>
+        </div>
       </div>
 
       <DialogFooter className="border-t px-5 py-4">
@@ -138,14 +91,5 @@ export default function BrandNameView({ id, onEdit, onClose }: BrandNameViewProp
         </div>
       </DialogFooter>
     </>
-  );
-}
-
-function Field({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-dashed py-2 last:border-0">
-      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium">{value}</dd>
-    </div>
   );
 }

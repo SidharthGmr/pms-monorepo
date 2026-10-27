@@ -1,5 +1,6 @@
 'use client';
 
+import Field from '@/components/common/field';
 import VariantPriceTable from '@/components/features/price-histories/variant-price-table';
 import ConfirmBox from '@/components/common/confirm-box';
 import { CurrencyInput } from '@/components/common/currency-input';
@@ -22,7 +23,7 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto, ProductVariantUpdateRequest, updateProductVariantFields } from '@pms/types';
 import { AlertTriangle, ChevronLeft, ExternalLink, History, ImageOff, Pencil, X } from 'lucide-react';
 import Link from 'next/link';
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Control, useForm } from 'react-hook-form';
 import VariantRating from './variant-rating';
 
@@ -535,11 +536,3 @@ function EditableVariantSkeleton() {
   );
 }
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-dashed py-2 last:border-0">
-      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium">{value}</dd>
-    </div>
-  );
-}

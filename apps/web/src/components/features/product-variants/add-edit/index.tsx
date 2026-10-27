@@ -1,5 +1,6 @@
 'use client';
 import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import ConfirmBox from '@/components/common/confirm-box';
 import { CurrencyInput } from '@/components/common/currency-input';
 import { DateRangePicker } from '@/components/common/date-range-picker';
@@ -24,7 +25,7 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantCreateRequest, ProductVariantModel, ProductVariantUpdateRequest, productVariantValidator, StatusValues } from '@pms/types';
 import { ChevronDown, Loader2, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { KeyboardEvent, ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import VariantRating from '../variant-rating';
 import AttributeRows, { toAttributeRows } from './attribute-rows';
@@ -186,14 +187,6 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
     leave();
   };
 
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      onSubmit();
-    }
-  };
-
   if (isEdit && isFetching) {
     return (
       <Card>
@@ -241,7 +234,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
         <form
           autoComplete="off"
           onSubmit={onSubmit}
-          onKeyDown={onFormKeyDown}
+          onKeyDown={submitOnCtrlEnter(onSubmit)}
           className={cn('flex flex-col', !isInline && 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm')}
         >
           <div className="space-y-5 px-4 py-5 sm:px-5">

@@ -1,5 +1,6 @@
 'use client';
 import ConfirmBox from '@/components/common/confirm-box';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import StatusCards from '@/components/common/status-cards';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -19,7 +20,7 @@ import SupplierSchema from '@/schema/supplierSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ChevronDown, Truck } from 'lucide-react';
-import { KeyboardEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import SupplierView from './view';
 import { StatusValues, CreateSupplierModel } from '@pms/types';
@@ -120,14 +121,6 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
     onClose(false);
   };
 
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      submit();
-    }
-  };
-
   const showSkeleton = isEdit && getSupplierResponse.isLoading;
   const fetchFailed = isEdit && getSupplierResponse.isError;
 
@@ -175,7 +168,7 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                 </div>
               ) : (
                 <Form {...form}>
-                  <form autoComplete="off" onSubmit={submit} onKeyDown={onFormKeyDown} className="flex min-h-0 flex-1 flex-col">
+                  <form autoComplete="off" onSubmit={submit} onKeyDown={submitOnCtrlEnter(submit)} className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
                       <FormField
                         control={form.control}

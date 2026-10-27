@@ -1,5 +1,6 @@
 'use client';
 import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import StatusCards from '@/components/common/status-cards';
 import ConfirmBox from '@/components/common/confirm-box';
 import { SelectSearch } from '@/components/common/select-search';
@@ -20,28 +21,17 @@ import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { CategoryModel, CategoryResponseDto, categoryFields, StatusValues } from '@pms/types';
 import { ChevronDown, FolderTree } from 'lucide-react';
-import { KeyboardEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import CategoryView from './view';
 
 interface ManageCategoryProps {
   id?: number;
   isOpen: boolean;
-  /** `view` opens read-only with an Edit button; `edit` goes straight to the form. */
   mode?: 'view' | 'edit';
-  /** Shown in view mode; the list already knows every parent's name. */
   parentName?: string;
   onClose: (refresh: boolean) => void;
 }
-
-const DEFAULT_VALUES: CategoryModel = {
-  name: '',
-  description: '',
-  images: [],
-  parentId: null,
-  status: StatusValues.Published,
-  displayOrder: undefined,
-};
 
 // One dialog for Add, View and Edit: no id creates, an id edits, and mode="view" opens read-only.
 // Escape and the X go through the dirty check; clicking outside does nothing so a stray click cannot discard edits.
@@ -60,8 +50,16 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
 
   const form = useForm<CategoryModel>({
     resolver: zodResolver(categoryFields),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: {
+      name: '',
+      description: '',
+      images: [],
+      parentId: null,
+      status: StatusValues.Published,
+      displayOrder: undefined,
+    },
   });
+
   const {
     reset,
     formState: { isDirty },
@@ -99,7 +97,9 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
   const allCategories = getAllCategories?.data?.data?.data?.data ?? [];
   const parentOptions = [
     { value: '', label: 'None (top level)' },
-    ...allCategories.filter((item) => !isEdit || item.id !== id).map((item) => ({ value: item.id, label: item.status === StatusValues.Draft ? `${item.name} (Draft)` : item.name })),
+    ...allCategories
+      .filter((item) => !isEdit || item.id !== id)
+      .map((item) => ({ value: item.id, label: item.status === StatusValues.Draft ? `${item.name} (Draft)` : item.name })),
   ];
 
   const save = async (model: CategoryModel) => {
@@ -132,14 +132,6 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
     onClose(false);
   };
 
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      submit();
-    }
-  };
-
   const showSkeleton = isEdit && getCategoryResponse.isLoading;
   const fetchFailed = isEdit && getCategoryResponse.isError;
 
@@ -169,7 +161,8 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="truncate text-base">{isEdit ? 'Edit category' : 'New category'}</DialogTitle>
                     <DialogDescription className="mt-1 text-xs">
-                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> + <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
                     </DialogDescription>
                   </div>
                 </div>
@@ -188,7 +181,7 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                 </div>
               ) : (
                 <Form {...form}>
-                  <form autoComplete="off" onSubmit={submit} onKeyDown={onFormKeyDown} className="flex min-h-0 flex-1 flex-col">
+                  <form autoComplete="off" onSubmit={submit} onKeyDown={submitOnCtrlEnter(submit)} className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
                       <FormField
                         control={form.control}
@@ -226,8 +219,12 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                           className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
                         >
                           <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Parent, image &amp; more</span>
-                          {!optionalOpen && optionalSummary && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>}
-                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Optional</span>
+                          {!optionalOpen && optionalSummary && (
+                            <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>
+                          )}
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Optional
+                          </span>
                           <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', optionalOpen && 'rotate-180')} />
                         </button>
 
@@ -261,7 +258,13 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                                 <FormItem>
                                   <FormLabel>Description</FormLabel>
                                   <FormControl>
-                                    <Textarea rows={3} className="resize-none" placeholder="What belongs in this category…" {...field} value={field.value ?? ''} />
+                                    <Textarea
+                                      rows={3}
+                                      className="resize-none"
+                                      placeholder="What belongs in this category…"
+                                      {...field}
+                                      value={field.value ?? ''}
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -277,7 +280,12 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                                 <FormItem>
                                   <FormLabel>Image</FormLabel>
                                   <FormControl>
-                                    <SingleImageUpload value={field.value?.[0] ?? ''} onChange={(path) => field.onChange(path ? [path] : [])} folder="categories" alt="Category image" />
+                                    <SingleImageUpload
+                                      value={field.value?.[0] ?? ''}
+                                      onChange={(path) => field.onChange(path ? [path] : [])}
+                                      folder="categories"
+                                      alt="Category image"
+                                    />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -316,7 +324,12 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                     </div>
 
                     <DialogFooter className="gap-2 border-t bg-muted/30 px-6 py-3 sm:justify-between">
-                      <p className={cn('hidden items-center gap-1.5 text-xs sm:flex', isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
+                      <p
+                        className={cn(
+                          'hidden items-center gap-1.5 text-xs sm:flex',
+                          isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'
+                        )}
+                      >
                         {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
                         {isDirty ? 'Unsaved changes' : 'No changes yet'}
                       </p>

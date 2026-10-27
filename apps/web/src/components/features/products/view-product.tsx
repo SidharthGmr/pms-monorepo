@@ -1,6 +1,7 @@
 'use client';
 
 import StatusBadge from '@/components/common/status-badge';
+import Field from '@/components/common/field';
 import { CustomDataTable } from '@/components/Table/data-table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,7 +18,7 @@ import { ProductVariantListItemDto, StatusValues } from '@pms/types';
 import { AlertTriangle, ChevronLeft, ExternalLink, History, ImageOff, Layers, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useProductVariantColumns } from '../product-variants/columns';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -263,11 +264,3 @@ function Tile({ label, value, hint, warn }: { label: string; value: string; hint
   );
 }
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-dashed py-2 last:border-0">
-      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium">{value}</dd>
-    </div>
-  );
-}

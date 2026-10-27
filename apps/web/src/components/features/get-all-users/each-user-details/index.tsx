@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge, BadgeProps } from '@/components/ui/badge';
+import Field, { Flag } from '@/components/common/field';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -328,7 +329,7 @@ function Avatar({ user, canEdit, onEdit }: { user: UserDto; canEdit: boolean; on
       )}
 
       <span
-        className={cn('absolute bottom-1.5 right-1.5 h-3 w-3 rounded-full ring-2 ring-background', user.isActive ? 'bg-emerald-500' : 'bg-muted-foreground')}
+        className={cn('absolute bottom-1.5 right-1.5 h-3 w-3 rounded-full ring-2 ring-background', user.isActive ? 'bg-success' : 'bg-muted-foreground')}
         title={user.isActive ? 'Active' : 'Inactive'}
       />
     </Wrapper>
@@ -347,23 +348,7 @@ function Panel({ title, icon: Icon, children }: { title: string; icon: typeof Ma
   );
 }
 
-function Field({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
-  return (
-    <div className={cn('flex items-start justify-between gap-4 border-b border-dashed py-2 last:border-0', className)}>
-      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium">{value}</dd>
-    </div>
-  );
-}
 
-function Flag({ value, yes = 'Yes', no = 'No' }: { value?: boolean; yes?: string; no?: string }) {
-  return (
-    <span className={cn('inline-flex items-center gap-1.5 text-sm font-medium', value ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>
-      <span className={cn('h-1.5 w-1.5 rounded-full', value ? 'bg-emerald-500' : 'bg-muted-foreground/50')} />
-      {value ? yes : no}
-    </span>
-  );
-}
 
 function ContactRow({
   icon: Icon,
@@ -397,13 +382,13 @@ function ContactRow({
           <p className="text-sm text-muted-foreground/60">Not provided</p>
         )}
       </div>
-      {value && verified && <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label={`${label} verified`} />}
+      {value && verified && <BadgeCheck className="h-4 w-4 shrink-0 text-success" aria-label={`${label} verified`} />}
       {value && onCopy && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <button type="button" onClick={onCopy} aria-label={`Copy ${label.toLowerCase()}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground">
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
             </TooltipTrigger>
             <TooltipContent>
@@ -424,7 +409,7 @@ function CopyChip({ label, value, copied, onCopy }: { label: string; value: stri
         {value}
       </code>
       <button type="button" onClick={onCopy} aria-label={`Copy ${label.toLowerCase()}`} className="flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-muted hover:text-foreground">
-        {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+        {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
       </button>
     </span>
   );
@@ -432,7 +417,7 @@ function CopyChip({ label, value, copied, onCopy }: { label: string; value: stri
 
 function StatTile({ icon, label, value, tone }: { icon: ReactNode; label: string; value: ReactNode; tone: 'green' | 'amber' | 'indigo' | 'sky' | 'rose' }) {
   const toneClass = {
-    green: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    green: 'bg-success/15 text-success',
     amber: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
     indigo: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
     sky: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',

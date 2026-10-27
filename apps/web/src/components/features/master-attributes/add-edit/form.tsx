@@ -1,5 +1,6 @@
 'use client';
-import { forwardRef, KeyboardEvent, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { AlertTriangle, ChevronDown, ListChecks, Lock, Unlock } from 'lucide-react';
@@ -162,14 +163,6 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
 
   useImperativeHandle(ref, () => ({ requestClose: handleCancel }));
 
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      submit(false)();
-    }
-  };
-
   const categoryItems = getAllCategories?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [];
   const brandItems = getAllBrandNames?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [];
   const categoryName = categoryItems.find((c) => c.value === categoryId)?.label;
@@ -221,7 +214,7 @@ const MasterAttributeForm = forwardRef<MasterAttributeFormHandle, MasterAttribut
   } else {
     body = (
       <Form {...form}>
-        <form autoComplete="off" onSubmit={submit(false)} onKeyDown={onFormKeyDown} className="flex min-h-0 flex-1 flex-col">
+        <form autoComplete="off" onSubmit={submit(false)} onKeyDown={submitOnCtrlEnter(submit(false))} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
             <FormField
               control={form.control}

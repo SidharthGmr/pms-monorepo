@@ -6,7 +6,7 @@
 export type UploadKind = 'image' | 'doc' | 'any';
 
 // Vercel route handlers cap request bodies at ~4.5MB, so the app-level ceiling stays under it.
-export const BLOB_MAX_SIZE_MB = 4;
+export const BLOB_MAX_SIZE_MB = 1;
 
 /** Value for an <input type="file"> accept attribute, per kind. `any` leaves it unset. */
 export const UPLOAD_KIND_ACCEPT: Record<UploadKind, string | undefined> = {

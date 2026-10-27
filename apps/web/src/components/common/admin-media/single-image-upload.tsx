@@ -19,17 +19,11 @@ import { toast } from 'sonner';
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
 
 export interface SingleImageUploadProps {
-  /** Stored image path. Empty string when nothing is set yet. */
   value: string;
-  /** Receives the uploaded image's path, or '' when the image is removed. */
   onChange: (path: string) => void;
-  /** Sub-folder the image is filed under, e.g. `brands`. Created automatically when new. */
   folder?: string;
-  /** Rejected before the request is made. Defaults to 5MB. */
   maxSizeMb?: number;
-  /** Replaces the default "PNG, JPG…" line under the dropzone. */
   hint?: string;
-  /** Alt text for the preview. */
   alt?: string;
   disabled?: boolean;
   className?: string;
@@ -85,7 +79,14 @@ export function SingleImageUpload({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <input type="file" ref={fileInputRef} onChange={(e) => handleFile(e.target.files?.[0])} accept={ACCEPTED.join(',')} className="hidden" disabled={locked} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => handleFile(e.target.files?.[0])}
+        accept={ACCEPTED.join(',')}
+        className="hidden"
+        disabled={locked}
+      />
 
       {value ? (
         <div className="flex items-center gap-4 rounded-xl border bg-muted/30 p-3">
@@ -109,9 +110,15 @@ export function SingleImageUpload({
                 Replace
               </Button>
               <CameraCaptureButton onCapture={handleFile} label="photo" busy={isUploading} disabled={locked} text="Retake" />
-              <Button type="button" variant="ghost" size="sm" onClick={() => onChange('')} disabled={locked} className="h-8 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onChange('')}
+                disabled={locked}
+                className="h-8 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
                 <Trash2 className="h-3.5 w-3.5" />
-                Remove
               </Button>
             </div>
           </div>
@@ -133,11 +140,21 @@ export function SingleImageUpload({
           )}
         >
           <div className={cn('rounded-full p-3', isDragging ? 'bg-primary/10 text-primary' : 'bg-background text-muted-foreground')}>
-            {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : disabled ? <ImageOff className="h-5 w-5" /> : <UploadCloud className="h-5 w-5" />}
+            {isUploading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : disabled ? (
+              <ImageOff className="h-5 w-5" />
+            ) : (
+              <UploadCloud className="h-5 w-5" />
+            )}
           </div>
           <div className="space-y-0.5">
             <p className="text-sm font-semibold text-foreground">
-              {isUploading ? `Uploading${percent != null ? ` ${percent}%` : '…'}` : isDragging ? 'Drop the image here' : 'Click or drag an image to upload'}
+              {isUploading
+                ? `Uploading${percent != null ? ` ${percent}%` : '…'}`
+                : isDragging
+                  ? 'Drop the image here'
+                  : 'Click or drag an image to upload'}
             </p>
             <p className="text-xs text-muted-foreground">{hint ?? `PNG, JPG, WEBP or SVG · up to ${maxSizeMb}MB`}</p>
           </div>

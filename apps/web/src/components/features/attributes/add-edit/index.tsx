@@ -1,5 +1,6 @@
 'use client';
 import ConfirmBox from '@/components/common/confirm-box';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import StatusCards from '@/components/common/status-cards';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -17,14 +18,13 @@ import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { AttributeModel, attributeFields, StatusValues } from '@pms/types';
 import { ChevronDown, Ruler } from 'lucide-react';
-import { KeyboardEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import AttributeView from './view';
 
 interface ManageAttributeProps {
   id?: number;
   isOpen: boolean;
-  /** `view` opens read-only with an Edit button; `edit` goes straight to the form. */
   mode?: 'view' | 'edit';
   onClose: (refresh: boolean) => void;
 }
@@ -103,18 +103,13 @@ export default function ManageAttribute({ id, isOpen, mode = 'edit', onClose }: 
     onClose(false);
   };
 
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      submit();
-    }
-  };
-
   const showSkeleton = isEdit && getAttributeResponse.isLoading;
   const fetchFailed = isEdit && getAttributeResponse.isError;
 
-  const optionalSummary = [unit.trim() ? `unit ${unit.trim()}` : null, displayOrder != null && String(displayOrder) !== '' ? `order ${displayOrder}` : null]
+  const optionalSummary = [
+    unit.trim() ? `unit ${unit.trim()}` : null,
+    displayOrder != null && String(displayOrder) !== '' ? `order ${displayOrder}` : null,
+  ]
     .filter(Boolean)
     .join(' · ');
 
@@ -134,7 +129,8 @@ export default function ManageAttribute({ id, isOpen, mode = 'edit', onClose }: 
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="truncate text-base">{isEdit ? 'Edit attribute' : 'New attribute'}</DialogTitle>
                     <DialogDescription className="mt-1 text-xs">
-                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> + <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
                     </DialogDescription>
                   </div>
                 </div>
@@ -153,7 +149,7 @@ export default function ManageAttribute({ id, isOpen, mode = 'edit', onClose }: 
                 </div>
               ) : (
                 <Form {...form}>
-                  <form autoComplete="off" onSubmit={submit} onKeyDown={onFormKeyDown} className="flex min-h-0 flex-1 flex-col">
+                  <form autoComplete="off" onSubmit={submit} onKeyDown={submitOnCtrlEnter(submit)} className="flex min-h-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
                       <FormField
                         control={form.control}
@@ -191,8 +187,12 @@ export default function ManageAttribute({ id, isOpen, mode = 'edit', onClose }: 
                           className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
                         >
                           <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Unit &amp; display order</span>
-                          {!optionalOpen && optionalSummary && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>}
-                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Optional</span>
+                          {!optionalOpen && optionalSummary && (
+                            <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>
+                          )}
+                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Optional
+                          </span>
                           <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', optionalOpen && 'rotate-180')} />
                         </button>
 
@@ -242,7 +242,12 @@ export default function ManageAttribute({ id, isOpen, mode = 'edit', onClose }: 
                     </div>
 
                     <DialogFooter className="gap-2 border-t bg-muted/30 px-6 py-3 sm:justify-between">
-                      <p className={cn('hidden items-center gap-1.5 text-xs sm:flex', isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
+                      <p
+                        className={cn(
+                          'hidden items-center gap-1.5 text-xs sm:flex',
+                          isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'
+                        )}
+                      >
                         {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
                         {isDirty ? 'Unsaved changes' : 'No changes yet'}
                       </p>

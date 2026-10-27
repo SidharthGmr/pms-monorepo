@@ -1,27 +1,24 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, DragEvent } from "react";
-import { Camera, Loader2, Trash2, Link as LinkIcon, User } from "lucide-react";
-import { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from "@/components/common/admin-media/camera-capture";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { useBlobUpload } from "@/hooks/service-hooks/useMediaService";
-import { cn } from "@/lib/utils";
+import React, { useState, useRef, DragEvent } from 'react';
+import { Camera, Loader2, Trash2, Link as LinkIcon, User } from 'lucide-react';
+import { CameraCaptureDialog, openNativeCamera, useCameraAvailability } from '@/components/common/admin-media/camera-capture';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { useBlobUpload } from '@/hooks/service-hooks/useMediaService';
+import { cn } from '@/lib/utils';
 
 interface ProfileImageUploaderProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
-  /** Hide the "paste a URL" field, for compact placements where only the avatar fits. */
   showUrlInput?: boolean;
-  /** Sub-folder the image is filed under, inside the signed-in admin's own media folder.
-   *  Created on first upload. Leave unset to drop it straight into that folder. */
   folder?: string;
 }
 
 export function ProfileImageUploader({ value, onChange, className, showUrlInput = true, folder }: ProfileImageUploaderProps) {
-  const { uploadUrl, isUploading } = useBlobUpload({ kind: "image", folder: folder || "profile" });
+  const { uploadUrl, isUploading } = useBlobUpload({ kind: 'image', folder: folder || 'profile' });
   const [isDragging, setIsDragging] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const cameraMode = useCameraAvailability();
@@ -31,14 +28,14 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
     const url = await uploadUrl(file);
     if (url) {
       onChange(url);
-      toast.success("Profile image uploaded successfully");
+      toast.success('Profile image uploaded successfully');
     }
     return !!url;
   };
 
   const takePhoto = async () => {
-    if (cameraMode === "native") {
-      const file = await openNativeCamera("user");
+    if (cameraMode === 'native') {
+      const file = await openNativeCamera('user');
       if (file) await handleUpload(file);
       return;
     }
@@ -63,12 +60,12 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
   };
 
   const handleRemove = () => {
-    onChange("");
-    toast.success("Profile image URL cleared");
+    onChange('');
+    toast.success('Profile image URL cleared');
   };
 
   return (
-    <div className={cn("flex flex-col items-center gap-6 w-full max-w-md mx-auto", className)}>
+    <div className={cn('flex flex-col items-center gap-6 w-full max-w-md mx-auto', className)}>
       <input
         type="file"
         ref={fileInputRef}
@@ -84,15 +81,11 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={cn(
-            "relative h-32 w-32 rounded-full border-4 border-background shadow-xl overflow-hidden cursor-pointer bg-muted flex items-center justify-center transition-all duration-300 ring-2 ring-primary/10 group-hover:ring-primary/45 group-hover:scale-105",
-            isDragging && "ring-primary scale-105 border-primary/50"
+            'relative h-32 w-32 rounded-full border-4 border-background shadow-xl overflow-hidden cursor-pointer bg-muted flex items-center justify-center transition-all duration-300 ring-2 ring-primary/10 group-hover:ring-primary/45 group-hover:scale-105',
+            isDragging && 'ring-primary scale-105 border-primary/50'
           )}
         >
-          {value ? (
-            <img src={value} alt="Profile" className="h-full w-full object-cover" />
-          ) : (
-            <User className="h-14 w-14 text-muted-foreground/60" />
-          )}
+          {value ? <img src={value} alt="Profile" className="h-full w-full object-cover" /> : <User className="h-14 w-14 text-muted-foreground/60" />}
 
           {/* Hover Overlay */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white">
@@ -108,7 +101,7 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
           )}
         </div>
 
-        {cameraMode && cameraMode !== "none" && !isUploading && (
+        {cameraMode && cameraMode !== 'none' && !isUploading && (
           <Button
             type="button"
             variant="secondary"
@@ -158,19 +151,19 @@ export function ProfileImageUploader({ value, onChange, className, showUrlInput 
 
       {/* Manual URL Input Option */}
       {showUrlInput && (
-      <div className="w-full space-y-2">
-        <div className="flex items-center gap-2">
-          <LinkIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Or paste image URL directly:</span>
+        <div className="w-full space-y-2">
+          <div className="flex items-center gap-2">
+            <LinkIcon className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Or paste image URL directly:</span>
+          </div>
+          <Input
+            type="url"
+            placeholder="https://example.com/avatar.jpg"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-9 text-xs focus-visible:ring-1"
+          />
         </div>
-        <Input
-          type="url"
-          placeholder="https://example.com/avatar.jpg"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 text-xs focus-visible:ring-1"
-        />
-      </div>
       )}
     </div>
   );

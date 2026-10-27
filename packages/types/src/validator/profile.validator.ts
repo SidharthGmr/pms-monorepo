@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { urlOrAppPath } from "./utils";
 
 export const profileValidator = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -14,9 +15,7 @@ export const profileValidator = z.object({
     .optional()
     .or(z.literal("")),
   dateOfBirth: z.coerce.date().optional(),
-  profileImageUrl: z
-    .string()
-    .url("Must be a valid URL")
+  profileImageUrl: urlOrAppPath()
     .optional()
     .or(z.literal("")),
   address: z.string().max(255, "Address is too long").optional(),
@@ -45,9 +44,7 @@ export const profileFields = z.object({
     .max(15, "Phone number must be at most 15 digits")
     .optional()
     .or(z.literal("")),
-  profileImageUrl: z
-    .string()
-    .url("Must be a valid URL")
+  profileImageUrl: urlOrAppPath()
     .optional()
     .or(z.literal("")),
   address: z.string().max(255, "Address is too long").optional(),

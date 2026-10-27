@@ -17,13 +17,14 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { urlOrAppPath } from '@pms/types';
 import * as z from 'zod';
 
 const profileFormSchema = z.object({
   name: z.string().min(3, { message: 'Name must be at least 3 characters.' }),
   userName: z.string().optional(),
   phone: z.string().optional(),
-  profileImageUrl: z.string().url({ message: 'Must be a valid URL' }).optional().or(z.literal('')),
+  profileImageUrl: urlOrAppPath('Must be a valid URL or app path').optional().or(z.literal('')),
   dateOfBirth: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),

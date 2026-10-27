@@ -1,5 +1,6 @@
 'use client';
-import { forwardRef, KeyboardEvent, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ChevronDown, Sparkles } from 'lucide-react';
@@ -143,14 +144,6 @@ const MasterEntryForm = forwardRef<MasterEntryFormHandle, MasterEntryFormProps>(
   };
 
   useImperativeHandle(ref, () => ({ requestClose: handleCancel }));
-
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-  const onFormKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      submit(false)();
-    }
-  };
 
   const showSkeleton = isEdit && isFetching;
 
@@ -363,7 +356,7 @@ const MasterEntryForm = forwardRef<MasterEntryFormHandle, MasterEntryFormProps>(
   } else {
     body = (
       <Form {...form}>
-        <form autoComplete="off" onSubmit={submit(false)} onKeyDown={onFormKeyDown} className="flex min-h-0 flex-1 flex-col">
+        <form autoComplete="off" onSubmit={submit(false)} onKeyDown={submitOnCtrlEnter(submit(false))} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
             {valueSection}
             {optionalSection}

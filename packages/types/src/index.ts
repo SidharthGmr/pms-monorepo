@@ -132,3 +132,4 @@ export * from "./validator/contact-message.validator";
 export * from "./validator/subscriber.validator";
 export * from "./validator/cms-page.validator";
 export * from "./validator/notification.validator";
+export * from "./validator/utils";

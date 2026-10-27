@@ -1,5 +1,6 @@
 'use client';
 
+import Field from '@/components/common/field';
 import VariantPriceTable from '@/components/features/price-histories/variant-price-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto } from '@pms/types';
 import { AlertTriangle, ChevronLeft, ExternalLink, History, ImageOff, Pencil } from 'lucide-react';
 import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -263,11 +264,3 @@ function VariantViewSkeleton() {
   );
 }
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-dashed py-2 last:border-0">
-      <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-right text-sm font-medium">{value}</dd>
-    </div>
-  );
-}

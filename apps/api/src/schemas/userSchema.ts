@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { urlOrAppPath } from "@pms/types";
 
 export const loginSchema = z.object({
   body: z.object({
@@ -154,7 +155,7 @@ export const updateProfileSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters").optional(),
     phone: z.string().min(10, "Phone number must be at least 10 digits").or(z.literal("")).optional(),
     userName: z.string().optional(),
-    profileImageUrl: z.string().url("Invalid URL").or(z.literal("")).optional(),
+    profileImageUrl: urlOrAppPath("Invalid URL").or(z.literal("")).optional(),
     dateOfBirth: z.string().or(z.date()).optional(),
     address: z.string().optional(),
     city: z.string().optional(),
