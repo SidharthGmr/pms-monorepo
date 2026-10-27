@@ -22,13 +22,11 @@ import { TYPES } from '@/config/types';
 import { useCreateBrandName, useGetBrandNameById, useUpdateBrandName } from '@/hooks/service-hooks/useBrandNameService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import StatusSwitch from '@/components/common/status-switch';
 import { AxiosResponse } from 'axios';
 import { useRouter } from 'next/navigation';
-import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 
 interface ManageBrandNameProps {
   id?: number;
@@ -50,8 +48,10 @@ export default function ManageBrandName({ id, isOpen, mode = 'edit', onClose }: 
   const updateMutate = useUpdateBrandName();
   const getBrandNameResponse = useGetBrandNameById(id ?? 0, isEdit);
 
-  const savedRef = useRef(false);
   const nameRef = useRef<HTMLInputElement | null>(null);
+  // Guards the form against background refetches: fill once per mount, or a window-focus
+  // refetch would overwrite whatever the user has typed since the dialog opened.
+  const filledRef = useRef(false);
 
   const form = useForm<CreateBrandNameModel>({
     resolver: zodResolver(brandNameFields),
@@ -74,29 +74,31 @@ export default function ManageBrandName({ id, isOpen, mode = 'edit', onClose }: 
   const fillBrandDetails = (data: BrandNameDto) => {
     setValue('name', data.name || '');
     setValue('images', data.images ?? []);
-    setValue('status', data.status || '');
+    setValue('status', data.status || StatusValues.Draft);
     setValue('displayOrder', data.displayOrder ?? null);
     if ((data.images?.length ?? 0) > 0 || data.displayOrder != null) setOptionalOpen(true);
   };
 
   useEffect(() => {
-    if (getBrandNameResponse.status === 'success' && getBrandNameResponse.data?.data.data) {
+    if (!filledRef.current && getBrandNameResponse.status === 'success' && getBrandNameResponse.data?.data.data) {
+      filledRef.current = true;
       fillBrandDetails(getBrandNameResponse.data.data.data);
     }
   }, [getBrandNameResponse.status, getBrandNameResponse.data?.data?.data]);
 
   const isSaving = createMutate.isPending || updateMutate.isPending;
-  const isError = createMutate.isError || updateMutate.isError;
 
   useUnsavedChangesWarning(isDirty && !isSaving);
 
   const save = async (model: CreateBrandNameModel) => {
+    // HttpService only resolves statuses below 500; a 5xx or network failure throws. Catch it
+    // here so a failed save shows a toast and keeps the form instead of unmounting it.
     let response: AxiosResponse<CustomResponse<BrandNameDto>>;
-
-    if (isEdit) {
-      response = await updateMutate.mutateAsync({ id: id, model });
-    } else {
-      response = await createMutate.mutateAsync(model);
+    try {
+      response = isEdit ? await updateMutate.mutateAsync({ id: id, model }) : await createMutate.mutateAsync(model);
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: <span>Could not reach the server. Please try again.</span> });
+      return;
     }
 
     if (response && (response.status === 201 || response.status === 200) && response.data.data) {
@@ -126,49 +128,30 @@ export default function ManageBrandName({ id, isOpen, mode = 'edit', onClose }: 
       setShowLeaveConfirm(true);
       return;
     }
-    onClose(savedRef.current);
+    onClose(false);
   };
 
   const showSkeleton = isEdit && getBrandNameResponse.isLoading;
   const fetchFailed = getBrandNameResponse.isError;
 
-  if (showSkeleton) {
-    return (
-      <Card>
-        <div className="grid grid-cols-1 gap-6 px-5 py-5 lg:grid-cols-[1fr_minmax(280px,360px)]" aria-busy="true" aria-label="Loading brand">
-          <div className="space-y-4">
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
+        {showSkeleton ? (
+          <div className="space-y-4 p-5" aria-busy="true" aria-label="Loading brand">
+            <DialogTitle className="sr-only">Loading brand</DialogTitle>
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-16 w-full" />
             <Skeleton className="h-10 w-40" />
           </div>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-24 w-full" />
+        ) : fetchFailed ? (
+          <div className="space-y-2 p-6">
+            <DialogTitle className="text-base">Could not load this brand</DialogTitle>
+            <DialogDescription>It may have been deleted. Close and refresh the list.</DialogDescription>
           </div>
-        </div>
-      </Card>
-    );
-  }
-
-  if (isError || fetchFailed) {
-    return (
-      <Card>
-        <CardTitle variant="sm">Could not load this brand</CardTitle>
-        <CardDescription>It may have been deleted. Close and refresh the list.</CardDescription>
-      </Card>
-    );
-  }
-
-  // Ctrl/Cmd+Enter saves from anywhere in the form, so a keyboard user never has to reach the footer.
-
-  return (
-    <Dialog open={isOpen} onOpenChange={() => onClose(false)}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
-        {editing ? (
+        ) : editing ? (
           <>
-            <>
               <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
                 <div className="flex items-center gap-3 pr-8">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -185,7 +168,7 @@ export default function ManageBrandName({ id, isOpen, mode = 'edit', onClose }: 
               </DialogHeader>
 
               <Form {...form}>
-                <form autoComplete="off" onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter(onSubmit)} className={cn('p-5 flex flex-col space-y-4')}>
+                <form autoComplete="off" onSubmit={onSubmit} onKeyDown={submitOnCtrlEnter(onSubmit)} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
                   <FormField
                     control={form.control}
                     name="name"
@@ -278,14 +261,13 @@ export default function ManageBrandName({ id, isOpen, mode = 'edit', onClose }: 
                 onClose={() => setShowLeaveConfirm(false)}
                 onSubmit={() => {
                   setShowLeaveConfirm(false);
-                  onClose(savedRef.current);
+                  onClose(false);
                 }}
                 heading="Discard changes?"
                 bodyText="This brand has unsaved changes. Closing now will lose them."
                 noButtonText="Keep editing"
                 yesButtonText="Discard"
               />
-            </>
           </>
         ) : (
           <BrandNameView id={id ?? 0} onEdit={() => setEditing(true)} onClose={() => onClose(false)} />

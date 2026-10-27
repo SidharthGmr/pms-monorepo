@@ -1,25 +1,373 @@
 'use client';
-import { useRef } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import MasterEntryForm, { MasterEntryFormHandle } from './form';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Sparkles } from 'lucide-react';
+import ConfirmBox from '@/components/common/confirm-box';
+import { DirtyNote } from '@/components/common/field';
+import OptionalSection from '@/components/common/optional-section';
+import { SelectSearch } from '@/components/common/select-search';
+import StatusSwitch from '@/components/common/status-switch';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
+import { container } from '@/config/ioc';
+import { TYPES } from '@/config/types';
+
+import { useCreateMasterEntry, useGetAllMasterAttributes, useGetMasterEntryById, useUpdateMasterEntry } from '@/hooks/service-hooks/useMasterEntryService';
+import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
+
+import { MasterEntrySchema } from '@/schema/masterEntrySchema';
+import IUnitOfService from '@/services/interfaces/IUnitOfService';
+import { StatusValues, CreateMasterEntryModel } from '@pms/types';
 
 interface ManageMasterEntryProps {
   id?: number;
+  /** Pre-selects the attribute when adding from a filtered list. */
   defaultAttributeId?: number;
   isOpen: boolean;
   onClose: (refresh: boolean) => void;
 }
 
-// One dialog for Add and Edit: no id creates, an id edits.
-// Escape and the X go through the form's dirty check; clicking outside does nothing so a stray click cannot discard edits.
+export const HEX_COLOR = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+
+const defaults = (attributeId?: number): CreateMasterEntryModel => ({
+  attributeId: attributeId ?? 0,
+  name: '',
+  value: '',
+  colorHex: '',
+  status: StatusValues.Published,
+  displayOrder: 0,
+});
+
+// One dialog for Add and Edit, structured like ManageCategory: no id creates, an id edits.
+// Escape and the X go through the dirty check; clicking outside does nothing so a stray click cannot discard edits.
 export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onClose }: ManageMasterEntryProps) {
-  const formRef = useRef<MasterEntryFormHandle>(null);
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const isEdit = !!id && id > 0;
+
+  const createMutation = useCreateMasterEntry();
+  const updateMutation = useUpdateMasterEntry();
+  const { data: response, isLoading: isFetching, isError: fetchFailed } = useGetMasterEntryById(id ?? 0, isEdit);
+  const { data: attributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
+
+  const attributes = useMemo(() => attributesResponse?.data?.data?.data ?? [], [attributesResponse]);
+  const attributeItems = useMemo(() => attributes.map((attribute) => ({ label: `${attribute.name} (${attribute.code})`, value: attribute.id })), [attributes]);
+
+  // savedRef is set once anything was saved so a later Cancel still tells the list to refresh.
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [optionalOpen, setOptionalOpen] = useState(false);
+  const savedRef = useRef(false);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+
+  const form = useForm<CreateMasterEntryModel>({
+    resolver: yupResolver(MasterEntrySchema),
+    defaultValues: defaults(defaultAttributeId),
+  });
+  const {
+    formState: { isDirty },
+  } = form;
+
+  // Fill once per mount: without the latch a window-focus refetch (new response object) would
+  // re-run the effect and overwrite whatever the user has typed since the dialog opened.
+  const filledRef = useRef(false);
+  useEffect(() => {
+    if (!filledRef.current && isEdit && response?.data?.data) {
+      filledRef.current = true;
+      const entry = response.data.data;
+      form.reset({
+        attributeId: entry.attributeId,
+        name: entry.name,
+        value: entry.value,
+        colorHex: entry.colorHex ?? '',
+        status: entry.status,
+        displayOrder: entry.displayOrder ?? 0,
+      });
+    }
+  }, [isEdit, response, form]);
+
+  const attributeId = form.watch('attributeId');
+  const colorHex = form.watch('colorHex') ?? '';
+  const selectedAttribute = attributes.find((attribute) => attribute.id === attributeId);
+  const isColorAttribute = /colou?r/i.test(selectedAttribute?.name ?? '') || /colou?r/i.test(selectedAttribute?.code ?? '');
+
+  // A colour attribute is pointless without its swatch, so the folded section opens itself for one.
+  useEffect(() => {
+    if (isColorAttribute) setOptionalOpen(true);
+  }, [isColorAttribute]);
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  useUnsavedChangesWarning(isDirty && !isSaving);
+
+  // "Save & add another" keeps the attribute and status, since values added in a row belong to the same group.
+  // An empty colour field must clear the column, not send "".
+  const save = async (model: CreateMasterEntryModel, addAnother: boolean) => {
+    const payload: CreateMasterEntryModel = { ...model, colorHex: model.colorHex || null };
+    // HttpService only resolves statuses below 500; a 5xx or network failure throws. Catch it
+    // here so a failed save shows a toast and keeps the form instead of an unhandled rejection.
+    let result;
+    try {
+      result = isEdit ? await updateMutation.mutateAsync({ id: id!, model: payload }) : await createMutation.mutateAsync(payload);
+    } catch {
+      toast({ variant: 'destructive', title: 'Could not save', description: <span>Could not reach the server. Please try again.</span> });
+      return;
+    }
+
+    if (result && (result.status === 200 || result.status === 201)) {
+      savedRef.current = true;
+      toast({ variant: 'success', title: `"${model.name}" ${isEdit ? 'updated' : 'created'}` });
+      if (addAnother) {
+        form.reset({ ...defaults(model.attributeId), status: model.status, displayOrder: (model.displayOrder ?? 0) + 1 });
+        nameRef.current?.focus();
+      } else {
+        onClose(true);
+      }
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Could not save', description: <span>{error}</span> });
+    }
+  };
+
+  // Two of the fields live behind the disclosure; if one of them blocks the save, it must unfold
+  // so the message is visible instead of the form refusing silently.
+  const submit = (addAnother: boolean) =>
+    form.handleSubmit(
+      (model) => save(model, addAnother),
+      (errors) => {
+        if (errors.colorHex || errors.displayOrder) setOptionalOpen(true);
+      }
+    );
+
+  const handleCancel = () => {
+    if (isDirty && !isSaving) {
+      setShowLeaveConfirm(true);
+      return;
+    }
+    onClose(savedRef.current);
+  };
+
+  const showSkeleton = isEdit && isFetching;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && formRef.current?.requestClose()}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={(e) => e.preventDefault()}>
-        <MasterEntryForm ref={formRef} id={id} defaultAttributeId={defaultAttributeId} onClose={onClose} />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+        <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
+            <div className="flex items-center gap-3 pr-8">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="truncate text-base">{isEdit ? 'Edit value' : 'New value'}</DialogTitle>
+                <DialogDescription className="mt-1 text-xs">
+                  <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+                  <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {showSkeleton ? (
+            <div className="space-y-4 px-6 py-5" aria-busy="true" aria-label="Loading value">
+              <Skeleton className="h-10 w-full" />
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : fetchFailed ? (
+            <div className="px-6 py-10 text-center">
+              <p className="text-sm font-semibold text-destructive">Could not load this value</p>
+              <p className="mt-1 text-xs text-muted-foreground">It may have been deleted. Close and refresh the list.</p>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form autoComplete="off" onSubmit={submit(false)} onKeyDown={submitOnCtrlEnter(submit(false))} className="flex min-h-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                  <FormField
+                    control={form.control}
+                    name="attributeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Attribute *</FormLabel>
+                        <FormControl>
+                          <div className="flex">
+                            <SelectSearch
+                              placeholder="Select attribute"
+                              buttonClass="w-full"
+                              items={attributeItems}
+                              value={field.value || undefined}
+                              valueType="number"
+                              containerName="master-entry-dialog-attribute"
+                              onChange={(value) => field.onChange(+value)}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Label *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. Large"
+                              autoFocus
+                              className="h-10"
+                              {...field}
+                              ref={(el) => {
+                                field.ref(el);
+                                nameRef.current = el;
+                              }}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="value"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stored value *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. L" className="h-10 font-mono" {...field} value={field.value ?? ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status *</FormLabel>
+                        <FormControl>
+                          <StatusSwitch value={field.value} onChange={field.onChange} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <OptionalSection
+                    title="Colour & display order"
+                    leading={HEX_COLOR.test(colorHex) ? <span className="h-4 w-4 shrink-0 rounded-full border" style={{ backgroundColor: colorHex }} aria-hidden /> : undefined}
+                    open={optionalOpen}
+                    onOpenChange={setOptionalOpen}
+                    contentClassName="grid grid-cols-1 gap-4 space-y-0 sm:grid-cols-2"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="colorHex"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Colour</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center gap-2">
+                              <label
+                                className="relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-md border"
+                                style={{ backgroundColor: HEX_COLOR.test(colorHex) ? colorHex : undefined }}
+                                title="Pick a colour"
+                              >
+                                <input
+                                  type="color"
+                                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                  value={HEX_COLOR.test(colorHex) && colorHex.length === 7 ? colorHex : '#000000'}
+                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                  aria-label="Colour picker"
+                                />
+                                {!HEX_COLOR.test(colorHex) && (
+                                  <span className="absolute inset-0 bg-[linear-gradient(135deg,transparent_45%,hsl(var(--border))_45%,hsl(var(--border))_55%,transparent_55%)]" />
+                                )}
+                              </label>
+                              <Input
+                                placeholder="#FF0000"
+                                className="h-10 font-mono uppercase"
+                                {...field}
+                                value={field.value ?? ''}
+                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="displayOrder"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Display order</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              min={0}
+                              placeholder="0"
+                              className="h-10"
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </OptionalSection>
+                </div>
+
+                <DialogFooter className="gap-2 border-t bg-muted/30 px-6 py-3 sm:justify-between">
+                  <DirtyNote dirty={isDirty} />
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                    <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
+                      Cancel
+                    </Button>
+                    {!isEdit && (
+                      <Button type="button" variant="secondary" loading={isSaving} onClick={submit(true)}>
+                        Save &amp; add another
+                      </Button>
+                    )}
+                    <Button type="submit" loading={isSaving}>
+                      {isEdit ? 'Save changes' : 'Create value'}
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </form>
+            </Form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmBox
+        isOpen={showLeaveConfirm}
+        onClose={() => setShowLeaveConfirm(false)}
+        onSubmit={() => {
+          setShowLeaveConfirm(false);
+          onClose(savedRef.current);
+        }}
+        heading="Discard changes?"
+        bodyText="This value has unsaved changes. Closing now will lose them."
+        noButtonText="Keep editing"
+        yesButtonText="Discard"
+      />
+    </>
   );
 }

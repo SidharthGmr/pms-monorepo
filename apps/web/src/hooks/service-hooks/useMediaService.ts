@@ -12,13 +12,9 @@ import { BLOB_MAX_SIZE_MB, isAllowedUploadType, UPLOAD_KIND_LABEL, UploadKind } 
 export const MEDIA_QUERY_KEY = ['MediaService.getAll'];
 
 export interface UseBlobUploadOptions {
-  /** Rejected before the request is made. Defaults to the server's own ceiling. */
   maxSizeMb?: number;
-  /** What the upload may be: image (default), doc, or any. The server enforces the same rule. */
   kind?: UploadKind;
-  /** Suppress the built-in toasts when the caller wants to report failures itself. */
   silent?: boolean;
-  /** Sub-folder inside the caller's own blob prefix. Created on first use. */
   folder?: string;
 }
 

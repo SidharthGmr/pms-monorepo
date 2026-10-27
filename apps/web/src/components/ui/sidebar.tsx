@@ -509,10 +509,14 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean;
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
+  // Varied width between 50 and 90%, derived from useId so the server and client render the
+  // same value (Math.random() here caused hydration mismatches on --skeleton-width).
+  const id = React.useId();
   const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  }, []);
+    let hash = 0;
+    for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % 1000;
+    return `${(hash % 41) + 50}%`;
+  }, [id]);
 
   return (
     <div ref={ref} data-sidebar="menu-skeleton" className={cn('rounded-md h-8 flex gap-2 px-2 items-center', className)} {...props}>

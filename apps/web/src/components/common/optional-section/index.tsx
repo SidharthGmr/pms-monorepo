@@ -6,6 +6,8 @@ import { ReactNode, useState } from 'react';
 interface OptionalSectionProps {
   title: string;
   children: ReactNode;
+  /** Rendered before the title in the header row, e.g. a colour swatch. */
+  leading?: ReactNode;
   summary?: string;
   badge?: string;
   defaultOpen?: boolean;
@@ -18,6 +20,7 @@ interface OptionalSectionProps {
 export default function OptionalSection({
   title,
   children,
+  leading,
   summary,
   badge = 'Optional',
   defaultOpen = false,
@@ -40,6 +43,7 @@ export default function OptionalSection({
         aria-expanded={open}
         className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
       >
+        {leading}
         <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">{title}</span>
         {!open && summary && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{summary}</span>}
         {badge && (

@@ -4,33 +4,10 @@ import Field from '@/components/common/field';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import StatusBadge from '@/components/common/status-badge';
 import { useGetCategoryById } from '@/hooks/service-hooks/useCategoryService';
-import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
-import { Eye, EyeOff, FolderTree, ImageOff, Pencil, Trash2 } from 'lucide-react';
-import { StatusValues } from '@pms/types';
-
-/** Same colours the list rows and cards use, so view and list read alike. */
-const STATUS_TONE: Record<string, { label: string; hint: string; icon: typeof Eye; pill: string }> = {
-  [StatusValues.Published]: {
-    label: 'Published',
-    hint: 'Visible in the store. Customers can browse this category.',
-    icon: Eye,
-    pill: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  },
-  [StatusValues.Draft]: {
-    label: 'Draft',
-    hint: 'Hidden from the store until you publish it.',
-    icon: EyeOff,
-    pill: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  },
-  [StatusValues.Trash]: {
-    label: 'Trash',
-    hint: 'Moved to Trash. Restore it to bring it back.',
-    icon: Trash2,
-    pill: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
-  },
-};
+import { formatDate } from '@/lib/format-date';
+import { FolderTree, ImageOff, Pencil } from 'lucide-react';
 
 interface CategoryViewProps {
   id: number;
@@ -46,18 +23,6 @@ export default function CategoryView({ id, parentName, onEdit, onClose }: Catego
   const { data, isLoading, isError } = useGetCategoryById(id, id > 0);
   const category = data?.data?.data;
 
-  const when = (value?: Date | string | null) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return (
-      <span title={format(date, 'PPpp')}>
-        {format(date, 'd MMM yyyy, h:mm a')}
-        <span className="ml-1 text-muted-foreground/70">({formatDistanceToNow(date, { addSuffix: true })})</span>
-      </span>
-    );
-  };
-
-  const status = category ? (STATUS_TONE[category.status] ?? STATUS_TONE[StatusValues.Draft]) : null;
   const image = category?.images?.[0];
 
   return (
@@ -103,25 +68,16 @@ export default function CategoryView({ id, parentName, onEdit, onClose }: Catego
               )}
             </div>
 
-            {status && (
-              <div className={cn('flex items-start gap-3 rounded-xl border px-3 py-2.5', status.pill)}>
-                <status.icon className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">{status.label}</p>
-                  <p className="text-xs opacity-80">{status.hint}</p>
-                </div>
-              </div>
-            )}
-
             <dl className="grid gap-x-6">
               <Field label="Name" value={category.name} />
+              <Field label="Status" value={<StatusBadge status={category.status} />} />
               <Field label="Parent category" value={category.parentId == null ? 'None (top level)' : (parentName ?? `#${category.parentId}`)} />
               <Field label="Description" value={category.description?.trim() ? category.description : '—'} />
               <Field label="Display order" value={category.displayOrder ?? '—'} />
               <Field label="Category ID" value={<span className="font-mono text-xs">{category.id}</span>} />
               <Field label="Images" value={category.images?.length ? `${category.images.length} uploaded` : 'None'} />
-              <Field label="Added" value={when(category.createdAt)} />
-              <Field label="Last updated" value={when(category.updatedAt)} />
+              <Field label="Added" value={formatDate(category.createdAt)} />
+              <Field label="Last updated" value={category.updatedAt ? formatDate(category.updatedAt) : '—'} />
             </dl>
           </div>
         )}

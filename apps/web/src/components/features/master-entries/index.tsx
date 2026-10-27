@@ -25,7 +25,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ManageMasterEntry from './add-edit';
-import { HEX_COLOR } from './add-edit/form';
+import { HEX_COLOR } from './add-edit';
 import { useMasterEntryColumns } from './columns';
 import MasterEntryFilter, { DEFAULT_MASTER_ENTRY_FILTER, MasterEntryFilterValue, SortDirection } from './filter';
 
