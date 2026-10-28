@@ -5,9 +5,14 @@ node_modules
 dist
 
 # Keep environment variables out of version control
+# Dotless names like env.prod are NOT matched by the .env* rules below, so they
+# are listed explicitly - env.prod reached a commit that way.
 .env
 .env.*
 !.env.example
+env
+env.*
+!env.example
 
 .vercel
 
