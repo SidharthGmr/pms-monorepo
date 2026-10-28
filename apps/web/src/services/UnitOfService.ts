@@ -3,7 +3,6 @@ import { TYPES } from '@/config/types';
 import { injectable } from 'inversify';
 
 import IAccountService from './interfaces/IAccountService';
-import IAttributeService from './interfaces/IAttributeService';
 import IBrandNameService from './interfaces/IBrandNameService';
 import ICategoryService from './interfaces/ICategoryService';
 import IDashboardService from './interfaces/IDashboardService';
@@ -54,7 +53,6 @@ export default class UnitOfService implements IUnitOfService {
   public CartService: ICartService;
   public CheckoutService: ICheckoutService;
   public CategoryService: ICategoryService;
-  public AttributeService: IAttributeService;
   public BrandNameService: IBrandNameService;
   public DashboardService: IDashboardService;
   public StaffSalaryService: IStaffSalaryService;
@@ -90,7 +88,6 @@ export default class UnitOfService implements IUnitOfService {
     cartService = container.get<ICartService>(TYPES.ICartService),
     checkoutService = container.get<ICheckoutService>(TYPES.ICheckoutService),
     categoryService = container.get<ICategoryService>(TYPES.ICategoryService),
-    attributeService = container.get<IAttributeService>(TYPES.IAttributeService),
     brandNameService = container.get<IBrandNameService>(TYPES.IBrandNameService),
     dashboardService = container.get<IDashboardService>(TYPES.IDashboardService),
     staffSalaryService = container.get<IStaffSalaryService>(TYPES.IStaffSalaryService),
@@ -125,7 +122,6 @@ export default class UnitOfService implements IUnitOfService {
     this.CartService = cartService;
     this.CheckoutService = checkoutService;
     this.CategoryService = categoryService;
-    this.AttributeService = attributeService;
     this.BrandNameService = brandNameService;
     this.DashboardService = dashboardService;
     this.StaffSalaryService = staffSalaryService;

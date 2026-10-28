@@ -169,7 +169,6 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
             <dl className="grid gap-x-8 sm:grid-cols-2">
               <Field label="Category" value={product.category?.name ?? '—'} />
               <Field label="Brand" value={product.brandName?.name ?? '—'} />
-              <Field label="Attribute" value={product.attribute?.name ?? '—'} />
               <Field label="Display order" value={product.displayOrder ?? '—'} />
               <Field label="Product ID" value={<span className="font-mono text-xs">{product.id}</span>} />
               <Field label="Slug" value={<span className="font-mono text-xs">{product.slug}</span>} />

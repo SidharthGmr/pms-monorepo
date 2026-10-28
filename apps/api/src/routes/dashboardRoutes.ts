@@ -19,7 +19,7 @@ const dashboardController = container.get<DashboardController>(TYPES.DashboardCo
  * @swagger
  * /dashboard/summary:
  *   get:
- *     summary: Get dashboard summary (recent 5 records + total for Products, Attributes, ProductVariants, ProductAttributes)
+ *     summary: Get dashboard summary (recent 5 records + total for Products, Attributes, ProductVariants)
  *     tags: [Dashboard]
  *     security:
  *       - bearerAuth: []
@@ -64,15 +64,6 @@ const dashboardController = container.get<DashboardController>(TYPES.DashboardCo
  *                           items:
  *                             type: object
  *                     productVariants:
- *                       type: object
- *                       properties:
- *                         total:
- *                           type: integer
- *                         recent:
- *                           type: array
- *                           items:
- *                             type: object
- *                     productAttributes:
  *                       type: object
  *                       properties:
  *                         total:

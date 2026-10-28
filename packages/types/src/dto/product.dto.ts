@@ -14,7 +14,6 @@ export interface ProductResponseDto {
   storeCode: string;
   category?: BasicDto | null;
   brandName?: BasicDto | null;
-  attribute?: BasicDto | null;
   status: Status;
   displayOrder?: number | null;
   createdById: string;
@@ -57,7 +56,6 @@ export interface ProductVariantSummaryDto {
 export interface ProductDetailResponseDto extends ProductResponseDto {
   category: BasicDto;
   brandName: BasicDto | null;
-  attribute: BasicDto | null;
 }
 
 export interface ProductWithPriceResponseDto extends ProductDetailResponseDto {

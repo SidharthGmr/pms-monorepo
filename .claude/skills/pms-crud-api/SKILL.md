@@ -58,25 +58,25 @@ Hard rules that fall out of this:
   }
   ```
 
-  `attribute.service.ts` is the canonical example. Name the callback parameter
+  `brand-name.service.ts` is the canonical example. Name the callback parameter
   `transactionClient`, not `tx` — 35 of the 43 transaction callbacks in `apps/api/src/services`
   already do, so a write stays greppable; `cart.service.ts` and `product-variant.service.ts` are
   the two stragglers, not the pattern.
 
   **Name the const holding the write result after the entity being written**, suffixed `Data`:
-  `attributeData` in `attribute.service.ts`, `brandNameData` in `brand-name.service.ts`,
-  `productData` in `product.service.ts`. `storeData` is correct in exactly one file,
+  `brandNameData` in `brand-name.service.ts`, `productData` in `product.service.ts`,
+  `categoryData` in `category.service.ts`. `storeData` is correct in exactly one file,
   `store.service.ts`.
 
   This is the rule copy-paste breaks first, and the one nothing catches: the const keeps the
   name of the service the block was lifted from, the inferred type still matches, `tsc` is
-  happy, and the wrong name ships. `brand-name`, `product` and `attribute` all carried a
+  happy, and the wrong name ships. `brand-name` and `product` both carried a
   mismatched const until 2026-09-09 (`storeData` / `categoryData`) — verify the name against
   the `transactionClient.<model>` on the same line, every time.
 
   `<entity>Data` is the standard for new code, and it is currently the minority — 8 of the 25
-  write sites in `apps/api/src/services` (verified 2026-09-09): `attribute`, `brand-name`,
-  `product`, `store`. The other 11 files bind the row to a bare noun instead — `user` /
+  write sites in `apps/api/src/services` (verified 2026-09-09): `brand-name`, `product`,
+  `store`. The other 11 files bind the row to a bare noun instead — `user` /
   `updatedUser` (`account.service.ts`), `created` (`master-attribute`, `master-entry`),
   `order`, `orderItem`, `variant`, `purchase`, `review`, `reply`, `supplier`, `entry`. Those
   are legacy: do not copy them into a new resource, and do not mass-rename them either — a
@@ -88,8 +88,8 @@ Hard rules that fall out of this:
 
   The same applies outside the callback: a local const, the controller's variable, and the
   response `message` string all name the resource they belong to. Check them together, because
-  they get copied together — `attribute.controller.ts` returned `'Category created
-  successfully'` from a `create` whose result it had bound to `category`.
+  they get copied together — a `create` has shipped returning `'Category created
+  successfully'` from a controller whose result it had bound to `category`.
 
   The repository interface gets **no** `create` / `update`: that client is scoped to its
   transaction and can't be handed to a repository method that closes over the module-level
@@ -110,27 +110,27 @@ Hard rules that fall out of this:
 - Nothing returns a raw Prisma row to the client: reads return `Dto` / `ListResponseDto<Dto>`.
 - **One `<entity>Select` object decides the response shape, and every method passes it.** Each
   repository declares its own, named after its entity and listing that entity's own columns —
-  `attributeSelect` in `attribute.repository.ts`, `productSelect` in `product.repository.ts`,
+  `brandNameSelect` in `brand-name.repository.ts`, `productSelect` in `product.repository.ts`,
   `categorySelect` in a new `category.repository.ts`. Declare it once at module scope, typed
   with `satisfies Prisma.<model>Select`, and hand it to *every* Prisma call in the file that
   returns a row — `findAll`, `findById` and the soft-delete `update` alike:
 
   ```ts
-  const attributeSelect = {
+  const brandNameSelect = {
     id: true,
     name: true,
-    unit: true,
+    images: true,
     storeCode: false,   // withheld: the caller already knows its own store
     status: true,
     displayOrder: true,
     createdAt: true,
     updatedAt: true,
-  } satisfies Prisma.attributeSelect;
+  } satisfies Prisma.brandNameSelect;
   ```
 
   Two things that bite when you copy this into a new repository. The model name in
   `Prisma.<model>Select` follows `schema.prisma`, whose casing is not uniform —
-  `Prisma.attributeSelect` and `Prisma.productSelect` are lowercase,
+  `Prisma.brandNameSelect` and `Prisma.productSelect` are lowercase,
   `Prisma.ProductVariantSelect` is not; read the schema rather than guessing. And a repository
   may hold more than one select when it serves genuinely different shapes — `product-variant`
   has `productVarientSelect` (note the existing typo), `variantInternalSelect` and
@@ -140,9 +140,9 @@ Hard rules that fall out of this:
   A field marked `true` reaches the client; `false` never leaves the database. Miss the
   `select` on one method and that endpoint quietly returns the whole row, including the fields
   the others withhold — and **`tsc` will not catch it**, because a Prisma result is not a fresh
-  object literal, so excess-property checking does not apply. `attribute.repository.ts` is the
-  reference; its `delete` leaked `storeCode` this way until 2026-09-17, while `findAll` and
-  `findById` were correct.
+  object literal, so excess-property checking does not apply. `brand-name.repository.ts` is the
+  reference; a `delete` has leaked `storeCode` this way while `findAll` and `findById` were
+  correct.
 
   The select and the DTO move together. Drop a field from `XDto` in `packages/types` and skip
   `npm run build:types`, and you get `Property 'storeCode' is missing … but required in type
@@ -166,7 +166,7 @@ Hard rules that fall out of this:
 4. **Create the six `apps/api` files** — templates in `reference/layer-templates.md`. Within each
    file put the members in endpoint order (`create`, `getAll`, `getById`, `update`, `delete`,
    then the rest). Copy the closest existing entity rather than writing from scratch:
-   `attribute` is the cleanest slice that already follows the `packages/types` split, `category`
+   `brand-name` is the cleanest slice that already follows the `packages/types` split, `category`
    is the same split with soft deletes and sorting, and `product` is the reference for nested
    relations and multi-table transactions. Older resources still keep their types under
    `apps/api/src/{dtos,params,models,schemas}` — don't copy that half.
@@ -396,12 +396,12 @@ The migration there is partial, so expect three shapes in the tree (verified 202
 
 | State | Resources |
 |---|---|
-| Fully in `packages/types` — copy these | `attribute`, `brand-name`, `category`, `purchase`, `profile` |
+| Fully in `packages/types` — copy these | `brand-name`, `category`, `purchase`, `profile` |
 | Split, so both halves exist | `product` (params still local), `product-variant` (dto + params still local) |
 | Not started | every other resource — ~70 files under `apps/api/src/{dtos,params,models,schemas}`, and the matching `apps/web/src/{dtos,models,params,schema}` copies |
 
-`attribute`, `brand-name` and `category` are the three to copy: each has the flat + wrapped
-validator split, and `brand-name`/`category` also have their `apps/web` types pointed at
+`brand-name` and `category` are the two to copy: each has the flat + wrapped
+validator split, and both also have their `apps/web` types pointed at
 `@pms/types` with no local duplicates left.
 
 `apps/api/src/enum/user.enum.ts` is also still imported by `auth.controller.ts`,

@@ -6,7 +6,6 @@ import { IUserService } from "./interfaces/Iuser.service";
 import { ICategoryService } from "./interfaces/Icategory.service";
 import { IProductService } from "./interfaces/Iproduct.service";
 import { IProductVariantService } from "./interfaces/Iproduct-variant.service";
-import { IAttributeService } from "./interfaces/Iattribute.service";
 import { IStaffAttendanceService } from "./interfaces/Istaff-attendance.service";
 import { IOrderService } from "./interfaces/Iorder.service";
 import { IOrderReturnService } from "./interfaces/Iorder-return.service";
@@ -40,7 +39,6 @@ export default class UnitOfService implements IUnitOfService {
   public Category: ICategoryService;
   public Product: IProductService;
   public ProductVariant: IProductVariantService;
-  public Attribute: IAttributeService;
   public StaffAttendance: IStaffAttendanceService;
   public Order: IOrderService;
   public OrderReturn: IOrderReturnService;
@@ -74,7 +72,6 @@ export default class UnitOfService implements IUnitOfService {
     category = container.get<ICategoryService>(TYPES.ICategoryService),
     product = container.get<IProductService>(TYPES.IProductService),
     productVariant = container.get<IProductVariantService>(TYPES.IProductVariantService),
-    attribute = container.get<IAttributeService>(TYPES.IAttributeService),
     staffAttendance = container.get<IStaffAttendanceService>(TYPES.IStaffAttendanceService),
     order = container.get<IOrderService>(TYPES.IOrderService),
     orderReturn = container.get<IOrderReturnService>(TYPES.IOrderReturnService),
@@ -107,7 +104,6 @@ export default class UnitOfService implements IUnitOfService {
     this.Category = category;
     this.Product = product;
     this.ProductVariant = productVariant;
-    this.Attribute = attribute;
     this.StaffAttendance = staffAttendance;
     this.Order = order;
     this.OrderReturn = orderReturn;

@@ -5,7 +5,6 @@ import healthRouter from "./health.routes";
 import categoryRouter from "./categoryRoutes";
 import productRouter from "./productRoutes";
 import productVariantRouter from "./productVariantRoutes";
-import attributeRouter from "./attributeRoutes";
 import staffAttendanceRouter from "./staffAttendanceRoutes";
 import orderRouter from "./orderRoutes";
 import orderReturnRouter from "./orderReturnRoutes";
@@ -34,7 +33,6 @@ import catalogRouter from "./catalogRoutes";
 
 const routes = express.Router();
 
-routes.use("/attributes", attributeRouter);
 routes.use("/auth", accountRouter);
 routes.use("/users", userRouter);
 routes.use("/health", healthRouter);

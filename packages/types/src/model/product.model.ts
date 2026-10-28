@@ -27,7 +27,6 @@ export interface ProductModel {
   parentId?: number | null;
   categoryId: number;
   brandNameId?: number | null;
-  attributeId?: number | null;
   slug: string;
   description?: string | null;
   sellingPrice?: number;

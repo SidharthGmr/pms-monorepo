@@ -39,7 +39,6 @@ export const productFields = z.object({
   parentId: z.number().int().positive("Parent ID is required").nullable().optional(),
   categoryId: z.number().positive("Category is required"),
   brandNameId: z.number().int().positive("Select a brand or leave it empty").nullable().optional(),
-  attributeId: z.number().int().positive("Select an attribute or leave it empty").nullable().optional(),
   slug: z.string().min(1, "Slug is required"),
   description: z.string().nullable().optional(),
   sellingPrice: z.number().nonnegative("Selling price must be zero or greater").optional(),

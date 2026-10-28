@@ -1,5 +1,4 @@
 import IAccountService from './IAccountService';
-import IAttributeService from './IAttributeService';
 import IBrandNameService from './IBrandNameService';
 import ICategoryService from './ICategoryService';
 import IDashboardService from './IDashboardService';
@@ -46,7 +45,6 @@ export default interface IUnitOfService {
   CartService: ICartService;
   CheckoutService: ICheckoutService;
   CategoryService: ICategoryService;
-  AttributeService: IAttributeService;
   BrandNameService: IBrandNameService;
   DashboardService: IDashboardService;
   StaffSalaryService: IStaffSalaryService;

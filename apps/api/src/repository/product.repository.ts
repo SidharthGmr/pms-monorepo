@@ -23,7 +23,6 @@ const productSelect = {
   updatedAt: true,
   category: { select: { id: true, name: true } },
   brandName: { select: { id: true, name: true } },
-  attribute: { select: { id: true, name: true } },
 } satisfies Prisma.productSelect;
 export class ProductRepository implements IProductRepository {
 

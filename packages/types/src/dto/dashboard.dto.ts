@@ -8,7 +8,6 @@ export interface DashboardProductDto {
   parentId?: number | null;
   categoryId: number;
   brandNameId?: number | null;
-  attributeId?: number | null;
   description?: string | null;
   images: string[];
   storeCode: string;
@@ -23,7 +22,7 @@ export interface DashboardProductDto {
 export interface DashboardAttributeDto {
   id: number;
   name: string;
-  unit?: string | null;
+  code: string;
   storeCode: string;
   status: Status;
   displayOrder?: number | null;

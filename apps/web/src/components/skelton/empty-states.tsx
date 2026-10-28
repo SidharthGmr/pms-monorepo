@@ -82,18 +82,6 @@ export function EmptyLowStockAlerts() {
   );
 }
 
-export function EmptyRecentAttributes() {
-  return (
-    <DashboardEmptyState
-      title="No recent attributes"
-      description="Create attributes to add dynamic variations to products."
-      ctaTitle="Create Attribute"
-      ctaUrl="/admin/attributes/create"
-      icon={Star}
-    />
-  );
-}
-
 export function EmptyProductsOrders() {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center w-full">

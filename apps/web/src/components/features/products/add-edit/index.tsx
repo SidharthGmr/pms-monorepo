@@ -18,7 +18,6 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
-import { useGetAllAttributes } from '@/hooks/service-hooks/useAttributeService';
 import { useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
@@ -65,7 +64,6 @@ const DEFAULT_VALUES: CreateProductModel = {
   parentId: undefined,
   categoryId: 0,
   brandNameId: undefined,
-  attributeId: undefined,
   name: '',
   slug: '',
   description: '',
@@ -93,7 +91,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   // and a category created eleventh simply cannot be picked.
   const getAllCategories = useGetAllCategories({ showAllRecords: true });
   const getAllBrandNames = useGetAllBrandNames({ showAllRecords: true });
-  const getAllAttributes = useGetAllAttributes({ showAllRecords: true });
   const getAllProducts = useGetAllProducts({ showAllRecords: true });
   const getAllMasterAttributes = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published }, !isEdit);
 
@@ -134,7 +131,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
         parentId: p.parentId ?? undefined,
         categoryId: p.category?.id,
         brandNameId: p.brandName?.id ?? undefined,
-        attributeId: p.attribute?.id ?? undefined,
         displayOrder: p.displayOrder ?? undefined,
         images: p.images ?? [],
         status: p.status,
@@ -217,7 +213,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   // so the message is visible instead of the form refusing silently.
   const [optionalOpen, setOptionalOpen] = useState(false);
   const onSubmit = handleSubmit(submitData, (errors) => {
-    if (errors.description || errors.brandNameId || errors.attributeId || errors.parentId || errors.displayOrder) setOptionalOpen(true);
+    if (errors.description || errors.brandNameId || errors.parentId || errors.displayOrder) setOptionalOpen(true);
   });
 
   const isSaving = createProduct.isPending || updateProduct.isPending;
@@ -243,10 +239,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   const brandItems = useMemo(
     () => getAllBrandNames?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [],
     [getAllBrandNames.data]
-  );
-  const attributeItems = useMemo(
-    () => (getAllAttributes?.data?.data?.data?.data ?? []).map((item) => ({ value: item.id, label: item.name })),
-    [getAllAttributes.data]
   );
   const masterAttributes = useMemo(() => getAllMasterAttributes?.data?.data?.data?.data ?? [], [getAllMasterAttributes.data]);
   // A product cannot be its own parent.
@@ -694,26 +686,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                                   buttonClass="h-10 w-full"
                                   placeholder="Select brand"
                                   items={brandItems}
-                                  value={field.value ?? ''}
-                                  onChange={(value) => field.onChange(value ? Number(value) : undefined)}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="attributeId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Attribute</FormLabel>
-                              <FormControl>
-                                <SelectSearch
-                                  buttonClass="h-10 w-full"
-                                  placeholder="Select attribute"
-                                  items={attributeItems}
                                   value={field.value ?? ''}
                                   onChange={(value) => field.onChange(value ? Number(value) : undefined)}
                                 />

@@ -132,7 +132,6 @@ export class ProductService implements IProductService {
           createdById: userId,
           name: data.name,
           brandNameId: data.brandNameId || null,
-          attributeId: data.attributeId || null,
           parentId: data.parentId || null,
           categoryId: data.categoryId,
           slug: data.slug,
@@ -180,7 +179,6 @@ export class ProductService implements IProductService {
       const updateData: any = {
         name: data.name,
         brandNameId: data.brandNameId || null,
-        attributeId: data.attributeId || null,
         slug: data.slug,
         description: data.description || null,
         categoryId: data.categoryId,

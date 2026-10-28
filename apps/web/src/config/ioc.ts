@@ -10,7 +10,6 @@ import IHttpService from '@/services/interfaces/IHttpService';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 
 import AccountService from '@/services/AccountService';
-import AttributeService from '@/services/AttributeService';
 import BrandNameService from '@/services/BrandNameService';
 import CategoryService from '@/services/CategoryService';
 import DashboardService from '@/services/DashboardService';
@@ -18,7 +17,6 @@ import DateTimeService from '@/services/DateTimeService';
 import EmailService from '@/services/EmailService';
 import ErrorHandlerService from '@/services/ErrorHandlerService';
 import HttpService from '@/services/HttpService';
-import IAttributeService from '@/services/interfaces/IAttributeService';
 import IBrandNameService from '@/services/interfaces/IBrandNameService';
 import ICategoryService from '@/services/interfaces/ICategoryService';
 import IDashboardService from '@/services/interfaces/IDashboardService';
@@ -92,7 +90,6 @@ container.bind<IProductVariantService>(TYPES.IProductVariantService).to(ProductV
 container.bind<ICartService>(TYPES.ICartService).to(CartService);
 container.bind<ICheckoutService>(TYPES.ICheckoutService).to(CheckoutService);
 container.bind<ICategoryService>(TYPES.ICategoryService).to(CategoryService);
-container.bind<IAttributeService>(TYPES.IAttributeService).to(AttributeService);
 container.bind<IBrandNameService>(TYPES.IBrandNameService).to(BrandNameService);
 container.bind<IDashboardService>(TYPES.IDashboardService).to(DashboardService);
 container.bind<IStaffSalaryService>(TYPES.IStaffSalaryService).to(StaffSalaryService);

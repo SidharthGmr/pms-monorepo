@@ -8,7 +8,6 @@ import { IAccountRepository } from "./interfaces/iaccount.repository";
 import { ICategoryRepository } from "./interfaces/icategory.repository";
 import { IProductRepository } from "./interfaces/iproduct.repository";
 import { IProductVariantRepository } from "./interfaces/iproduct-variant.repository";
-import { IAttributeRepository } from "./interfaces/iattribute.repository";
 import { IStaffAttendanceRepository } from "./interfaces/istaff-attendance.repository";
 import { IOrderRepository } from "./interfaces/iorder.repository";
 import { IOrderReturnRepository } from "./interfaces/iorder-return.repository";
@@ -41,7 +40,6 @@ export default class UnitOfWork implements IUnitOfWork {
   public Category: ICategoryRepository;
   public Product: IProductRepository;
   public ProductVariant: IProductVariantRepository;
-  public Attribute: IAttributeRepository;
   public StaffAttendance: IStaffAttendanceRepository;
   public Order: IOrderRepository;
   public OrderReturn: IOrderReturnRepository;
@@ -74,7 +72,6 @@ export default class UnitOfWork implements IUnitOfWork {
     category = container.get<ICategoryRepository>(TYPES.ICategoryRepository),
     product = container.get<IProductRepository>(TYPES.IProductRepository),
     productVariant = container.get<IProductVariantRepository>(TYPES.IProductVariantRepository),
-    attribute = container.get<IAttributeRepository>(TYPES.IAttributeRepository),
     staffAttendance = container.get<IStaffAttendanceRepository>(TYPES.IStaffAttendanceRepository),
     order = container.get<IOrderRepository>(TYPES.IOrderRepository),
     orderReturn = container.get<IOrderReturnRepository>(TYPES.IOrderReturnRepository),
@@ -106,7 +103,6 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Category = category;
     this.Product = product;
     this.ProductVariant = productVariant;
-    this.Attribute = attribute;
     this.StaffAttendance = staffAttendance;
     this.Order = order;
     this.OrderReturn = orderReturn;

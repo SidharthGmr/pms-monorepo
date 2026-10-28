@@ -75,8 +75,8 @@ export class DashboardRepository implements IDashboardRepository {
     ] = await Promise.all([
       prisma.product.count({ where: productWhere }),
       prisma.product.findMany({ where: productWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
-      prisma.attribute.count({ where: attributeWhere }),
-      prisma.attribute.findMany({ where: attributeWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
+      prisma.masterAttribute.count({ where: attributeWhere }),
+      prisma.masterAttribute.findMany({ where: attributeWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
       prisma.category.count({ where: categoryWhere }),
       prisma.category.findMany({ where: categoryWhere, orderBy: { createdAt: 'desc' }, take: RECENT_LIMIT }),
       prisma.brandName.count({ where: brandWhere }),

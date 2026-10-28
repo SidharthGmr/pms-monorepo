@@ -157,7 +157,6 @@ model store {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime?         @updatedAt
   status           Status            @default(Published)
-  attributes       attribute[]
   brandNames       brandName[]
   categories       category[]
   orders           order[]
@@ -230,7 +229,6 @@ model product {
   parentId         Int?
   categoryId       Int
   brandNameId      Int?
-  attributeId      Int?
   slug             String
   description      String?
   shortDescription String?
@@ -252,7 +250,6 @@ model product {
   store     store      @relation(fields: [storeCode], references: [code], onDelete: Restrict)
   category  category   @relation(fields: [storeCode, categoryId], references: [storeCode, id], onDelete: Restrict)
   brandName brandName? @relation(fields: [storeCode, brandNameId], references: [storeCode, id], onDelete: Restrict)
-  attribute attribute? @relation(fields: [storeCode, attributeId], references: [storeCode, id], onDelete: Restrict)
   parent    product?   @relation("ProductHierarchy", fields: [storeCode, parentId], references: [storeCode, id], onDelete: Restrict)
   createdBy users      @relation("ProductCreatedBy", fields: [createdById], references: [userId], onDelete: Restrict)
   updatedBy users?     @relation("ProductUpdatedBy", fields: [updatedById], references: [userId], onDelete: SetNull)
@@ -531,26 +528,6 @@ model brandName {
   masterAttributes MasterAttribute[]
 
   // Also unique: brandName_storeCode_name_live_key on (storeCode, name) WHERE status <> 'Trash' - a partial index in migration
-  // 20260930120000_review_fixes. Prisma 5 cannot declare partial indexes, so it is not listed
-  // here; if `prisma migrate dev` ever generates a DROP INDEX for it, remove that line.
-  @@unique([storeCode, id])
-  @@index([id])
-  @@index([storeCode])
-}
-
-model attribute {
-  id           Int       @id @default(autoincrement())
-  name         String
-  unit         String?
-  storeCode    String
-  status       Status    @default(Draft)
-  displayOrder Int?      @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  store        store     @relation(fields: [storeCode], references: [code])
-  products     product[]
-
-  // Also unique: attribute_storeCode_name_live_key on (storeCode, name) WHERE status <> 'Trash' - a partial index in migration
   // 20260930120000_review_fixes. Prisma 5 cannot declare partial indexes, so it is not listed
   // here; if `prisma migrate dev` ever generates a DROP INDEX for it, remove that line.
   @@unique([storeCode, id])

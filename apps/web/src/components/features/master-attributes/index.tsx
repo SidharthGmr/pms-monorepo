@@ -143,7 +143,7 @@ export default function MasterAttributeList() {
     <div className="space-y-4">
       <ListPageHeader
         icon={Ruler}
-        title="Variant Options"
+        title="Master Attributes"
         description={
           listQuery.isPending
             ? 'Groups of reusable values such as Size, Color and Weight'
