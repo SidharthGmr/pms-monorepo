@@ -11,8 +11,6 @@ export const MasterAttributeSchema = Yup.object().shape({
     .max(50, 'Code is too long')
     .matches(/^[A-Z][A-Z0-9_]*$/, 'Use uppercase letters, numbers and underscores (e.g. SIZE, SHOE_SIZE)')
     .required('Code is required'),
-  description: Yup.string().max(500, 'Description is too long').nullable().optional(),
-  unit: Yup.string().max(20, 'Unit is too long').nullable().optional(),
   // Both scopes are optional - leaving them empty makes the attribute global.
   categoryId: Yup.number().nullable().optional(),
   brandNameId: Yup.number().nullable().optional(),

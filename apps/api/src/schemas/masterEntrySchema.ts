@@ -13,8 +13,6 @@ export const createMasterAttributeSchema = z.object({
     body: z.object({
         name: z.string().min(1, "Name is required").max(100),
         code: codeSchema,
-        description: z.string().max(500).optional().nullable(),
-        unit: z.string().max(20).optional().nullable(),
         // Null is meaningful here: it scopes the attribute to every category/brand.
         categoryId: z.number().int().positive().optional().nullable(),
         brandNameId: z.number().int().positive().optional().nullable(),
@@ -27,8 +25,6 @@ export const updateMasterAttributeSchema = z.object({
     body: z.object({
         name: z.string().min(1).max(100).optional(),
         code: codeSchema.optional(),
-        description: z.string().max(500).optional().nullable(),
-        unit: z.string().max(20).optional().nullable(),
         categoryId: z.number().int().positive().optional().nullable(),
         brandNameId: z.number().int().positive().optional().nullable(),
         status: z.nativeEnum(Status).optional(),

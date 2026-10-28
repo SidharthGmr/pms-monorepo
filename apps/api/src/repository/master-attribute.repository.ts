@@ -20,8 +20,6 @@ function toDto(row: AttributeWithCount): MasterAttributeDto {
         id: row.id,
         name: row.name,
         code: row.code,
-        description: row.description,
-        unit: row.unit,
         categoryId: row.categoryId,
         brandNameId: row.brandNameId,
         storeCode: row.storeCode,
@@ -49,7 +47,6 @@ export class MasterAttributeRepository implements IMasterAttributeRepository {
                 where.OR = [
                     { name: { contains: filters.search, mode: 'insensitive' } },
                     { code: { contains: filters.search, mode: 'insensitive' } },
-                    { description: { contains: filters.search, mode: 'insensitive' } },
                 ];
             }
 

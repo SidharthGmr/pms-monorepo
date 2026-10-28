@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
@@ -38,8 +37,6 @@ interface ManageMasterAttributeProps {
 const DEFAULT_VALUES: CreateMasterAttributeModel = {
   name: '',
   code: '',
-  description: '',
-  unit: '',
   categoryId: undefined,
   brandNameId: undefined,
   status: StatusValues.Published,
@@ -70,18 +67,16 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
   const getAllBrandNames = useGetAllBrandNames({ showAllRecords: true });
 
   // Code follows Name until the user types in it; on edit it starts locked because other screens select by it.
-  // savedRef is set once anything was saved so a later Cancel still tells the list to refresh.
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const [codeTouched, setCodeTouched] = useState(false);
   const [codeUnlocked, setCodeUnlocked] = useState(!isEdit);
-  const savedRef = useRef(false);
-  const nameRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<CreateMasterAttributeModel>({
     resolver: yupResolver(MasterAttributeSchema),
     defaultValues: DEFAULT_VALUES,
   });
+
   const {
     formState: { isDirty },
   } = form;
@@ -96,8 +91,6 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
       form.reset({
         name: attribute.name,
         code: attribute.code,
-        description: attribute.description ?? '',
-        unit: attribute.unit ?? '',
         categoryId: attribute.categoryId ?? undefined,
         brandNameId: attribute.brandNameId ?? undefined,
         status: attribute.status,
@@ -117,8 +110,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
   const isSaving = createMutation.isPending || updateMutation.isPending;
   useUnsavedChangesWarning(isDirty && !isSaving);
 
-  // "Save & add another" keeps status and scope, since several attributes added in a row usually share them.
-  const save = async (model: CreateMasterAttributeModel, addAnother: boolean) => {
+  const save = async (model: CreateMasterAttributeModel) => {
     // HttpService only resolves statuses below 500; a 5xx or network failure throws. Catch it
     // here so a failed save shows a toast and keeps the form instead of an unhandled rejection.
     let result;
@@ -130,37 +122,27 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
     }
 
     if (result && (result.status === 200 || result.status === 201)) {
-      savedRef.current = true;
       toast({ variant: 'success', title: `"${model.name}" ${isEdit ? 'updated' : 'created'}` });
-      if (addAnother) {
-        form.reset({ ...DEFAULT_VALUES, status: model.status, categoryId: model.categoryId, brandNameId: model.brandNameId });
-        setCodeTouched(false);
-        nameRef.current?.focus();
-      } else {
-        onClose(true);
-      }
+      form.reset(model);
+      onClose(true);
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
       toast({ variant: 'destructive', title: 'Could not save', description: <span>{error}</span> });
     }
   };
 
-  // Five of the fields live behind the disclosure; if one of them blocks the save, it must unfold
+  // Three of the fields live behind the disclosure; if one of them blocks the save, it must unfold
   // so the message is visible instead of the form refusing silently.
-  const submit = (addAnother: boolean) =>
-    form.handleSubmit(
-      (model) => save(model, addAnother),
-      (errors) => {
-        if (errors.description || errors.unit || errors.displayOrder || errors.categoryId || errors.brandNameId) setOptionalOpen(true);
-      }
-    );
+  const submit = form.handleSubmit(save, (errors) => {
+    if (errors.displayOrder || errors.categoryId || errors.brandNameId) setOptionalOpen(true);
+  });
 
   const handleCancel = () => {
     if (isDirty && !isSaving) {
       setShowLeaveConfirm(true);
       return;
     }
-    onClose(savedRef.current);
+    onClose(false);
   };
 
   const categoryItems = getAllCategories?.data?.data?.data?.data?.map((item) => ({ value: item.id, label: item.name })) ?? [];
@@ -201,7 +183,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
             </div>
           ) : (
             <Form {...form}>
-              <form autoComplete="off" onSubmit={submit(false)} onKeyDown={submitOnCtrlEnter(submit(false))} className="flex min-h-0 flex-1 flex-col">
+              <form autoComplete="off" onSubmit={submit} onKeyDown={submitOnCtrlEnter(submit)} className="flex min-h-0 flex-1 flex-col">
                 <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
                   <FormField
                     control={form.control}
@@ -210,17 +192,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
                       <FormItem>
                         <FormLabel>Name *</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="e.g. Size, Color, Weight"
-                            autoFocus
-                            className="h-10"
-                            {...field}
-                            ref={(el) => {
-                              field.ref(el);
-                              nameRef.current = el;
-                            }}
-                            value={field.value ?? ''}
-                          />
+                          <Input placeholder="e.g. Size, Color, Weight" autoFocus className="h-10" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -288,7 +260,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
                     )}
                   />
 
-                  <OptionalSection title="Scope, unit & more" open={optionalOpen} onOpenChange={setOptionalOpen}>
+                  <OptionalSection title="Scope & display order" open={optionalOpen} onOpenChange={setOptionalOpen}>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <FormField
                         control={form.control}
@@ -336,56 +308,17 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="unit"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Unit</FormLabel>
-                            <FormControl>
-                              <Input placeholder="kg, cm, ml" className="h-10" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="displayOrder"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Display order</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                inputMode="numeric"
-                                min={0}
-                                placeholder="0"
-                                className="h-10"
-                                value={field.value ?? ''}
-                                onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
                     <FormField
                       control={form.control}
-                      name="description"
+                      name="displayOrder"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>Display order</FormLabel>
                           <FormControl>
-                            <Textarea
-                              className="resize-none"
-                              rows={2}
-                              placeholder="What this attribute is for…"
-                              {...field}
+                            <Input
+                              type="text"
                               value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -401,11 +334,6 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
                     <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
                       Cancel
                     </Button>
-                    {!isEdit && (
-                      <Button type="button" variant="secondary" loading={isSaving} onClick={submit(true)}>
-                        Save &amp; add another
-                      </Button>
-                    )}
                     <Button type="submit" loading={isSaving}>
                       {isEdit ? 'Save changes' : 'Create attribute'}
                     </Button>
@@ -422,7 +350,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
         onClose={() => setShowLeaveConfirm(false)}
         onSubmit={() => {
           setShowLeaveConfirm(false);
-          onClose(savedRef.current);
+          onClose(false);
         }}
         heading="Discard changes?"
         bodyText="You have unsaved edits. Close without saving?"

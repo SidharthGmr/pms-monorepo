@@ -459,8 +459,6 @@ model MasterAttribute {
   id           Int           @id @default(autoincrement())
   name         String
   code         String
-  description  String?
-  unit         String?
   categoryId   Int?
   brandNameId  Int?
   storeCode    String

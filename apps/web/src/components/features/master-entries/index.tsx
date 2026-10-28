@@ -325,7 +325,6 @@ function EntryCard({ entry, formatDate, onEdit, onDelete }: EntryCardProps) {
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
             <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono font-medium">{entry.value}</code>
-            {entry.attribute?.unit && <span title="Unit">{entry.attribute.unit}</span>}
             {swatch && <span className="font-mono uppercase">{swatch}</span>}
           </div>
         </div>

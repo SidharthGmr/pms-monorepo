@@ -3,8 +3,6 @@ import { Status } from '../enum/status.enum';
 export interface CreateMasterAttributeModel {
   name: string;
   code: string;
-  description?: string | null;
-  unit?: string | null;
   /** Leave empty to let the attribute apply to every category. */
   categoryId?: number | null;
   /** Leave empty to let the attribute apply to every brand. */

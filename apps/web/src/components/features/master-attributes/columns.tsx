@@ -35,8 +35,8 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
                 <button type="button" onClick={() => editRecord(+attribute.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={attribute.name}>
                   {attribute.name}
                 </button>
-                <p className="truncate text-[11px] text-muted-foreground" title={attribute.description || scope || undefined}>
-                  {attribute.description || (scope ? `Scoped to ${scope}` : 'Store-wide')}
+                <p className="truncate text-[11px] text-muted-foreground" title={scope || undefined}>
+                  {scope ? `Scoped to ${scope}` : 'Store-wide'}
                 </p>
               </div>
             </div>
@@ -52,7 +52,6 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
         cell: ({ row }) => (
           <span className="inline-flex items-center gap-2">
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium uppercase">{row.original.code}</code>
-            {row.original.unit && <span className="text-[11px] text-muted-foreground">in {row.original.unit}</span>}
           </span>
         ),
         meta: { sortingKey: 'code' },

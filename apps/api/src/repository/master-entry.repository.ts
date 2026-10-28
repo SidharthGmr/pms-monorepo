@@ -4,7 +4,7 @@ import { ListResponseDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/t
 import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
 
 const entryInclude = {
-    attribute: { select: { id: true, name: true, code: true, unit: true } },
+    attribute: { select: { id: true, name: true, code: true } },
 };
 
 type EntryWithAttribute = Prisma.MasterEntryGetPayload<{ include: typeof entryInclude }>;

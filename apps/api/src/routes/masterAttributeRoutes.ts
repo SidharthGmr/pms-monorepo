@@ -50,7 +50,7 @@ const ADMIN = [Role.SUPER_ADMIN, Role.ADMIN];
  *         name: search
  *         schema:
  *           type: string
- *         description: Matches name, code or description
+ *         description: Matches name or code
  *       - in: query
  *         name: status
  *         schema:
@@ -179,11 +179,6 @@ masterAttributeRouter.get("/:id", authenticateToken, asyncHandler(masterAttribut
  *                 type: string
  *                 example: SIZE
  *                 description: Uppercase letters, numbers and underscores. Stable key used across the app.
- *               description:
- *                 type: string
- *               unit:
- *                 type: string
- *                 example: cm
  *               categoryId:
  *                 type: integer
  *                 nullable: true
@@ -239,10 +234,6 @@ masterAttributeRouter.post(
  *               name:
  *                 type: string
  *               code:
- *                 type: string
- *               description:
- *                 type: string
- *               unit:
  *                 type: string
  *               categoryId:
  *                 type: integer

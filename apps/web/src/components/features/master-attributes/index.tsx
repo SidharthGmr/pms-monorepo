@@ -309,11 +309,10 @@ function AttributeCard({ attribute, formatDate, onEdit, onDelete }: AttributeCar
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
             <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono font-medium uppercase">{attribute.code}</code>
-            {attribute.unit && <span title="Unit">Unit: {attribute.unit}</span>}
           </div>
-          {(attribute.description || scope) && (
-            <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground" title={attribute.description ?? scope}>
-              {attribute.description || `Scoped to ${scope}`}
+          {scope && (
+            <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground" title={scope}>
+              Scoped to {scope}
             </p>
           )}
         </div>

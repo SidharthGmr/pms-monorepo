@@ -42,7 +42,6 @@ export const useMasterEntryColumns = (editRecord: (id: number) => void, deleteRe
                 </button>
                 <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <code className="rounded bg-muted px-1 py-0.5 font-mono font-medium">{entry.value}</code>
-                  {entry.attribute?.unit && <span>{entry.attribute.unit}</span>}
                   {swatch && <span className="font-mono uppercase">{swatch}</span>}
                 </p>
               </div>

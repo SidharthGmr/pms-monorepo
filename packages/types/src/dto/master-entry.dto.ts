@@ -11,8 +11,6 @@ export interface MasterAttributeDto {
   id: number;
   name: string;
   code: string;
-  description?: string | null;
-  unit?: string | null;
   /** Optional scoping - null means the attribute applies to every category. */
   categoryId?: number | null;
   /** Optional scoping - null means the attribute applies to every brand. */
@@ -32,7 +30,6 @@ export interface MasterEntryAttributeDto {
   id: number;
   name: string;
   code: string;
-  unit?: string | null;
 }
 
 export interface MasterEntryDto {
@@ -55,8 +52,6 @@ export interface MasterEntryDto {
 export interface CreateMasterAttributeDto {
   name: string;
   code: string;
-  description?: string | null;
-  unit?: string | null;
   categoryId?: number | null;
   brandNameId?: number | null;
   status?: Status;
