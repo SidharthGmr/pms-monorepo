@@ -7,8 +7,8 @@ import { toast } from '@/components/ui/use-toast';
 import { useRoleRedirect } from '@/hooks/use-role-base-redirection';
 import { cn } from '@/lib/utils';
 
-import LoginSchema from '@/schema/LoginSchema';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { loginFields } from '@pms/types';
+import { zodResolver } from '@/lib/zod-resolver';
 import { UserDto, LoginModel } from '@pms/types';
 import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { getSession, signIn, useSession } from 'next-auth/react';
@@ -25,7 +25,7 @@ export default function LoginModule() {
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginModel>({
-    resolver: yupResolver(LoginSchema),
+    resolver: zodResolver(loginFields),
     defaultValues: {
       email: '',
       password: '',

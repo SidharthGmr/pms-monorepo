@@ -7,7 +7,7 @@ import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
-import { createStaffSalarySchema, updateStaffSalarySchema } from "../schemas/staffSalarySchema";
+import { staffSalaryValidator, updateStaffSalaryValidator } from "@pms/types";
 
 const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
@@ -150,7 +150,7 @@ staffSalaryRouter.get("/:id", authenticateToken, authorization(ADMIN_ROLES), asy
  *       201:
  *         description: Staff salary created successfully
  */
-staffSalaryRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(createStaffSalarySchema), asyncHandler(staffSalaryController.create));
+staffSalaryRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(staffSalaryValidator), asyncHandler(staffSalaryController.create));
 
 /**
  * @swagger
@@ -200,7 +200,7 @@ staffSalaryRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), valid
  *       200:
  *         description: Staff salary updated successfully
  */
-staffSalaryRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffSalarySchema), asyncHandler(staffSalaryController.update));
+staffSalaryRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffSalaryValidator), asyncHandler(staffSalaryController.update));
 
 /**
  * @swagger

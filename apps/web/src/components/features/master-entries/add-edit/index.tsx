@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { Plus, Sparkles, X } from 'lucide-react';
 import ConfirmBox from '@/components/common/confirm-box';
 import { DirtyNote } from '@/components/common/field';
@@ -26,7 +26,7 @@ import {
 } from '@/hooks/service-hooks/useMasterEntryService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 
-import { MasterEntrySchema } from '@/schema/masterEntrySchema';
+import { masterEntryFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { StatusValues, CreateMasterEntryModel, UpdateMasterEntryModel, CustomResponse, MasterEntryDto } from '@pms/types';
 import type { AxiosResponse } from 'axios';
@@ -71,7 +71,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
   const firstValueRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<CreateMasterEntryModel>({
-    resolver: yupResolver(MasterEntrySchema),
+    resolver: zodResolver(masterEntryFields),
     defaultValues: defaults(defaultAttributeId),
   });
   const {

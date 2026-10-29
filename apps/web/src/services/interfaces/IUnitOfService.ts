@@ -25,6 +25,8 @@ import IMasterAttributeService from './IMasterAttributeService';
 import IMasterEntryService from './IMasterEntryService';
 import IPriceHistoryService from './IPriceHistoryService';
 import IContactMessageService from './IContactMessageService';
+import IEmailTemplateService from './IEmailTemplateService';
+import ISettingService from './ISettingService';
 import IMediaService from './IMediaService';
 import ISubscriberService from './ISubscriberService';
 import ICmsPageService from './ICmsPageService';
@@ -61,6 +63,8 @@ export default interface IUnitOfService {
   MasterEntryService: IMasterEntryService;
   PriceHistoryService: IPriceHistoryService;
   ContactMessageService: IContactMessageService;
+  EmailTemplateService: IEmailTemplateService;
+  SettingService: ISettingService;
   MediaService: IMediaService;
   SubscriberService: ISubscriberService;
   CmsPageService: ICmsPageService;

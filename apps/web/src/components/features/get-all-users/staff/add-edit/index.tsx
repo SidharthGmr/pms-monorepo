@@ -10,9 +10,9 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateStaff, useGetStaffById, useUpdateStaff } from '@/hooks/service-hooks/useStaffService';
 
-import StaffSchema from '@/schema/staffSchema';
+import { staffFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { CreateStaffModel } from '@pms/types';
@@ -50,7 +50,7 @@ export default function ManageStaff({ id, isOpen, onClose }: ManageStaffProps) {
   const { data: staffResponse, isLoading: isFetching } = useGetStaffById(id ?? 0, isEdit);
 
   const form = useForm<CreateStaffModel>({
-    resolver: yupResolver(StaffSchema),
+    resolver: zodResolver(staffFields),
     defaultValues: {
       position: null,
       department: null,

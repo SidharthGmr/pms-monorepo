@@ -7,7 +7,7 @@ import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
-import { createSupplierSchema, updateSupplierSchema } from "../schemas/supplierSchema";
+import { supplierValidator, updateSupplierValidator } from "@pms/types";
 
 const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
 
@@ -176,7 +176,7 @@ supplierRouter.get("/:id", authenticateToken, asyncHandler(supplierController.ge
  *         description: Validation error or store code not found
  *     description: Creates a new supplier. The storeCode is automatically taken from the authenticated user's token.
  */
-supplierRouter.post("/", authenticateToken, authorization(STAFF_ROLES), validate(createSupplierSchema), asyncHandler(supplierController.create));
+supplierRouter.post("/", authenticateToken, authorization(STAFF_ROLES), validate(supplierValidator), asyncHandler(supplierController.create));
 
 /**
  * @swagger
@@ -222,7 +222,7 @@ supplierRouter.post("/", authenticateToken, authorization(STAFF_ROLES), validate
  *       200:
  *         description: Supplier updated successfully
  */
-supplierRouter.put("/:id", authenticateToken, authorization(STAFF_ROLES), validate(updateSupplierSchema), asyncHandler(supplierController.update));
+supplierRouter.put("/:id", authenticateToken, authorization(STAFF_ROLES), validate(updateSupplierValidator), asyncHandler(supplierController.update));
 
 /**
  * @swagger

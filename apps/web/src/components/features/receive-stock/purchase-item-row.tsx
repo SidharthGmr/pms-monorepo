@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useGetAllProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
-import { ReceiveStockFormValues } from '@/schema/receiveStockSchema';
+import type { ReceiveStockFormValues } from '@pms/types';
 import { Check, Trash2 } from 'lucide-react';
 import { ComponentProps, forwardRef, useEffect, useMemo, useState } from 'react';
 import { Control, useFormContext, useWatch } from 'react-hook-form';

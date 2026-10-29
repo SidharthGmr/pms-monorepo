@@ -5,8 +5,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from '@/components/ui/use-toast';
 import { useResetPassword } from '@/hooks/service-hooks/useAccountService';
 import { cn } from '@/lib/utils';
-import ResetPasswordTokenSchema, { ResetPasswordFormModel } from '@/schema/ResetPasswordTokenSchema';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { resetPasswordTokenFields, type ResetPasswordFormModel } from '@pms/types';
+import { zodResolver } from '@/lib/zod-resolver';
 import { AlertTriangle, ArrowRight, Check, Eye, EyeOff, Lock, LockKeyhole } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -33,7 +33,7 @@ export default function ResetPasswordModule() {
   const resetPasswordMutation = useResetPassword();
 
   const form = useForm<ResetPasswordFormModel>({
-    resolver: yupResolver(ResetPasswordTokenSchema),
+    resolver: zodResolver(resetPasswordTokenFields),
     defaultValues: {
       newPassword: '',
       confirmPassword: '',

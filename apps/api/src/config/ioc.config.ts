@@ -141,6 +141,16 @@ import { IContactMessageService } from '../services/interfaces/Icontact-message.
 import { ContactMessageService } from '../services/contact-message.service';
 import { IContactMessageRepository } from '../repository/interfaces/icontact-message.repository';
 import { ContactMessageRepository } from '../repository/contact-message.repository';
+import { EmailTemplateController } from '../controllers/email-template.controller';
+import { IEmailTemplateService } from '../services/interfaces/Iemail-template.service';
+import { EmailTemplateService } from '../services/email-template.service';
+import { IEmailTemplateRepository } from '../repository/interfaces/iemail-template.repository';
+import { EmailTemplateRepository } from '../repository/email-template.repository';
+import { SettingController } from '../controllers/setting.controller';
+import { ISettingService } from '../services/interfaces/Isetting.service';
+import { SettingService } from '../services/setting.service';
+import { ISettingRepository } from '../repository/interfaces/isetting.repository';
+import { SettingRepository } from '../repository/setting.repository';
 import { SubscriberController } from '../controllers/subscriber.controller';
 import { ISubscriberService } from '../services/interfaces/Isubscriber.service';
 import { SubscriberService } from '../services/subscriber.service';
@@ -196,6 +206,8 @@ container.bind<MasterAttributeController>(TYPES.MasterAttributeController).to(Ma
 container.bind<MasterEntryController>(TYPES.MasterEntryController).to(MasterEntryController);
 container.bind<PriceHistoryController>(TYPES.PriceHistoryController).to(PriceHistoryController);
 container.bind<ContactMessageController>(TYPES.ContactMessageController).to(ContactMessageController);
+container.bind<EmailTemplateController>(TYPES.EmailTemplateController).to(EmailTemplateController);
+container.bind<SettingController>(TYPES.SettingController).to(SettingController);
 container.bind<SubscriberController>(TYPES.SubscriberController).to(SubscriberController);
 container.bind<CmsPageController>(TYPES.CmsPageController).to(CmsPageController);
 container.bind<NotificationController>(TYPES.NotificationController).to(NotificationController);
@@ -228,6 +240,8 @@ container.bind<IMasterAttributeService>(TYPES.IMasterAttributeService).to(Master
 container.bind<IMasterEntryService>(TYPES.IMasterEntryService).to(MasterEntryService);
 container.bind<IPriceHistoryService>(TYPES.IPriceHistoryService).to(PriceHistoryService);
 container.bind<IContactMessageService>(TYPES.IContactMessageService).to(ContactMessageService);
+container.bind<IEmailTemplateService>(TYPES.IEmailTemplateService).to(EmailTemplateService);
+container.bind<ISettingService>(TYPES.ISettingService).to(SettingService);
 container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberService);
 container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
@@ -259,6 +273,8 @@ container.bind<IMasterAttributeRepository>(TYPES.IMasterAttributeRepository).to(
 container.bind<IMasterEntryRepository>(TYPES.IMasterEntryRepository).to(MasterEntryRepository);
 container.bind<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository).to(PriceHistoryRepository);
 container.bind<IContactMessageRepository>(TYPES.IContactMessageRepository).to(ContactMessageRepository);
+container.bind<IEmailTemplateRepository>(TYPES.IEmailTemplateRepository).to(EmailTemplateRepository);
+container.bind<ISettingRepository>(TYPES.ISettingRepository).to(SettingRepository);
 container.bind<ISubscriberRepository>(TYPES.ISubscriberRepository).to(SubscriberRepository);
 container.bind<ICmsPageRepository>(TYPES.ICmsPageRepository).to(CmsPageRepository);
 container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepository);

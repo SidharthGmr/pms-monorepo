@@ -1,6 +1,6 @@
 'use client';
 import Loader from '@/components/common/Loader';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { container } from '@/config/ioc';
 import { toast } from '@/components/ui/use-toast';
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
 import { CardTitle } from '@/components/ui/card';
-import OtpSchema from '@/schema/otp.Schema';
+import { otpFields } from '@pms/types';
 import { OTPModel } from '@pms/types';
 
 export default function ManageVerify() {
@@ -20,7 +20,7 @@ export default function ManageVerify() {
   const addGrade = useVerifyOtp();
 
   const form = useForm<OTPModel>({
-    resolver: yupResolver(OtpSchema),
+    resolver: zodResolver(otpFields),
     defaultValues: {
       otp: '' as unknown as number,
     },

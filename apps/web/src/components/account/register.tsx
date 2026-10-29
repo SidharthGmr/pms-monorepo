@@ -7,9 +7,9 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { cn } from '@/lib/utils';
 
-import SignupSchema from '@/schema/userSchema';
+import { signupFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Phone, Store, User, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -24,7 +24,7 @@ export default function RegisterModule() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
   const form = useForm<CreateUserModel>({
-    resolver: yupResolver(SignupSchema),
+    resolver: zodResolver(signupFields),
     defaultValues: {
       firstName: '',
       lastName: '',

@@ -1,7 +1,7 @@
 'use client';
 import { DragEvent, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useFieldArray, useForm } from 'react-hook-form';
 import {
   ArrowLeft,
@@ -38,7 +38,7 @@ import { useCreatePurchase } from '@/hooks/service-hooks/usePurchaseService';
 import { useGetAllSuppliers } from '@/hooks/service-hooks/useSupplierService';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
-import { ReceiveStockFormValues, receiveStockSchema } from '@/schema/receiveStockSchema';
+import { receiveStockFields, type ReceiveStockFormValues } from '@pms/types';
 import { PurchaseItemRow, PurchaseItemsHeader } from './purchase-item-row';
 
 // Invoices go through /api/blob/upload, whose body Vercel caps at ~4.5MB.
@@ -76,7 +76,7 @@ export default function ReceiveStockPage() {
   const createPurchase = useCreatePurchase();
 
   const form = useForm<ReceiveStockFormValues>({
-    resolver: yupResolver(receiveStockSchema),
+    resolver: zodResolver(receiveStockFields),
     defaultValues: {
       supplierId: '',
       supplierName: '',

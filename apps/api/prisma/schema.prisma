@@ -966,6 +966,25 @@ model orderReturnItem {
   @@index([storeCode])
 }
 
+// Site-wide admin settings as key/value rows - logo, site name, chosen invoice layout.
+// A missing key means "use the built-in default", so there is no row to seed.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Admin-edited override of a transactional email. `key` matches a file in src/templetes;
+// when a row exists its subject/html are sent instead of the file default.
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  subject   String
+  html      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum ReturnType {
   REFUND
   EXCHANGE

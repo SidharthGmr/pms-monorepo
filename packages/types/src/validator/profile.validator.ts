@@ -14,7 +14,9 @@ export const profileValidator = z.object({
     .max(15, "Phone number must be at most 15 digits")
     .optional()
     .or(z.literal("")),
-  dateOfBirth: z.coerce.date().optional(),
+  // An untouched date box submits '', and new Date('') is an Invalid Date that z.coerce.date()
+  // rejects as "received Date" - blank means "no date", so it is dropped before coercion.
+  dateOfBirth: z.preprocess((value) => (value === "" || value == null ? undefined : value), z.coerce.date().optional()),
   profileImageUrl: urlOrAppPath()
     .optional()
     .or(z.literal("")),

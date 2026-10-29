@@ -14,6 +14,8 @@ export interface UploadBlobOptions {
 export default interface IMediaService {
   /** Uploads to the private Vercel Blob store via /api/blob/upload. */
   uploadBlob(file: File, options?: UploadBlobOptions): Promise<BlobUploadResponse>;
+  /** Uploads the branding logo to the PUBLIC blob store, so emails and PDFs can load it unauthenticated. */
+  uploadLogo(file: File, options?: Pick<UploadBlobOptions, 'onProgress' | 'signal'>): Promise<BlobUploadResponse>;
   getAll(signal?: AbortSignal): Promise<ListMediaResponse>;
   delete(pathname: string): Promise<DeleteMediaResponse>;
 }

@@ -14,9 +14,9 @@ import type { ZodType } from 'zod';
  * This uses `safeParseAsync`, so there is no throwing and no error-shape sniffing at all,
  * and reads `.issues`, which exists in both zod v3 and v4.
  *
- * Drop-in replacement for `zodResolver`. Prefer upgrading `@hookform/resolvers` to v5
- * (which supports zod v4 natively) once the 23 `yupResolver` call sites in this app can
- * be regression-tested against it.
+ * Drop-in replacement for `zodResolver`. Every form in this app now goes through it; yup
+ * and its resolver are gone. Prefer upgrading `@hookform/resolvers` to v5 (which supports
+ * zod v4 natively) and dropping this file once that upgrade can be regression-tested.
  */
 export function zodResolver<TFieldValues extends FieldValues = FieldValues>(
   schema: ZodType<any, any, any>,

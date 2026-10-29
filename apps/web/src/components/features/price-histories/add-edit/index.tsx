@@ -12,9 +12,9 @@ import { useCreatePriceHistory, useGetPriceHistoryById, useUpdatePriceHistory } 
 import { useGetAllProducts } from '@/hooks/service-hooks/useProductService';
 import { useGetProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 
-import { PriceHistorySchema } from '@/schema/priceHistorySchema';
+import { priceHistoryFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, Resolver } from 'react-hook-form';
 import { formatPercent, marginPercent } from '../format';
@@ -68,7 +68,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
   const form = useForm<CreatePriceHistoryModel>({
     // The schema covers the fields this form edits; the model also carries the ones the API
     // stamps server-side (storeCode, createdById), which the resolver never sees.
-    resolver: yupResolver(PriceHistorySchema) as Resolver<CreatePriceHistoryModel>,
+    resolver: zodResolver(priceHistoryFields) as Resolver<CreatePriceHistoryModel>,
     defaultValues: {
       variantId: defaultVariantId ?? 0,
       sellingPrice: 0,

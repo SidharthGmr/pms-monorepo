@@ -8,7 +8,7 @@ import { authenticateToken } from '../middleware/authentication.middleware';
 import authorization from '../middleware/authorization.middleware';
 import { storeRequiredMiddleware } from '../middleware/store-required.middleware';
 import { validate } from '../middleware/validate';
-import { createPriceHistorySchema, updatePriceHistorySchema } from '../schemas/priceHistorySchema';
+import { priceHistoryValidator, updatePriceHistoryValidator } from '@pms/types';
 
 const priceHistoryRouter = Router();
 const priceHistoryController = container.get<PriceHistoryController>(TYPES.PriceHistoryController);
@@ -307,7 +307,7 @@ priceHistoryRouter.post(
   authenticateToken,
   authorization(STAFF_ROLES),
   storeRequiredMiddleware,
-  validate(createPriceHistorySchema),
+  validate(priceHistoryValidator),
   asyncHandler(priceHistoryController.create)
 );
 
@@ -366,7 +366,7 @@ priceHistoryRouter.put(
   authenticateToken,
   authorization(ADMIN_ROLES),
   storeRequiredMiddleware,
-  validate(updatePriceHistorySchema),
+  validate(updatePriceHistoryValidator),
   asyncHandler(priceHistoryController.update)
 );
 

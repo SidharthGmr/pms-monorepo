@@ -2,7 +2,14 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +22,6 @@ import { LogOut, Store, UserRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BreadCrumb } from '../breadcrumb';
 import { CartIndicator } from '../cart-indicator';
 import { GlobalSearch } from '../global-search';
 import { NotificationBell } from '../notification-bell';
@@ -56,9 +62,9 @@ export default function HeaderDashboard() {
       </Link>
 
       <Separator orientation="vertical" className="hidden h-5 md:block" />
-      <div className="hidden min-w-0 md:block">
+      {/* <div className="hidden min-w-0 md:block">
         <BreadCrumb />
-      </div>
+      </div> */}
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <GlobalSearch />
@@ -96,7 +102,11 @@ export default function HeaderDashboard() {
                     <p className="truncate text-sm font-semibold">{name}</p>
                     {email && <p className="truncate text-xs text-muted-foreground">{email}</p>}
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {role && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{role}</span>}
+                      {role && (
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {role}
+                        </span>
+                      )}
                       {storeCode && <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{storeCode}</span>}
                     </div>
                   </div>

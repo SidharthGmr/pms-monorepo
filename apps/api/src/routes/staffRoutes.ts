@@ -7,7 +7,7 @@ import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { Role } from "@prisma/client";
 import { validate } from "../middleware/validate";
-import { createStaffSchema, updateStaffSchema } from "../schemas/staffSchema";
+import { staffValidator, updateStaffValidator } from "@pms/types";
 
 const ADMIN_ROLES = [Role.SUPER_ADMIN, Role.ADMIN];
 
@@ -198,7 +198,7 @@ staffRouter.get("/:id", authenticateToken, authorization(ADMIN_ROLES), asyncHand
  *       201:
  *         description: Staff created successfully
  */
-staffRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(createStaffSchema), asyncHandler(staffController.create));
+staffRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(staffValidator), asyncHandler(staffController.create));
 
 /**
  * @swagger
@@ -229,7 +229,7 @@ staffRouter.post("/", authenticateToken, authorization(ADMIN_ROLES), validate(cr
  *       200:
  *         description: Staff updated successfully
  */
-staffRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffSchema), asyncHandler(staffController.update));
+staffRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), validate(updateStaffValidator), asyncHandler(staffController.update));
 
 /**
  * @swagger

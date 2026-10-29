@@ -29,6 +29,8 @@ export const TYPES = {
   IMasterEntryService: Symbol.for('IMasterEntryService'),
   IPriceHistoryService: Symbol.for('IPriceHistoryService'),
   IContactMessageService: Symbol.for('IContactMessageService'),
+  IEmailTemplateService: Symbol.for('IEmailTemplateService'),
+  ISettingService: Symbol.for('ISettingService'),
   IMediaService: Symbol.for('IMediaService'),
   ISubscriberService: Symbol.for('ISubscriberService'),
   ICmsPageService: Symbol.for('ICmsPageService'),

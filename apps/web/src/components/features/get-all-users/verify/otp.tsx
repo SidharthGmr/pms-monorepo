@@ -1,6 +1,6 @@
 'use client';
 
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useSendOtp, useVerifyOtp } from '@/hooks/service-hooks/useUserList.serv
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { TYPES } from '@/config/types';
 import { container } from '@/config/ioc';
-import OtpSchema from '@/schema/otp.Schema';
+import { otpFields } from '@pms/types';
 import { toast } from '@/components/ui/use-toast';
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
 import { CardTitle } from '@/components/ui/card';
@@ -21,7 +21,7 @@ export default function ManageVerify() {
 
 
     const form = useForm<OTPModel>({
-        resolver: yupResolver(OtpSchema),
+        resolver: zodResolver(otpFields),
         defaultValues: {
             otp: '' as unknown as number,
         },

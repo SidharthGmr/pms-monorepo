@@ -10,9 +10,9 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateReview, useUpdateReview } from '@/hooks/service-hooks/useReviewService';
 
-import ReviewSchema from '@/schema/reviewSchema';
+import { reviewFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useForm } from 'react-hook-form';
 import { CreateReviewModel } from '@pms/types';
 
@@ -50,7 +50,7 @@ export default function RateProductDialog({
   const updateMutation = useUpdateReview();
 
   const form = useForm<RateFormValues>({
-    resolver: yupResolver(ReviewSchema),
+    resolver: zodResolver(reviewFields),
     defaultValues: {
       rating: initialRating ?? 0,
       title: initialTitle ?? '',

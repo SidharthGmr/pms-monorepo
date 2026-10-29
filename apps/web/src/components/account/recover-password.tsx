@@ -6,8 +6,8 @@ import { toast } from '@/components/ui/use-toast';
 import { useForgotPassword } from '@/hooks/service-hooks/useAccountService';
 import { cn } from '@/lib/utils';
 
-import ForgotPasswordSchema from '@/schema/ForgotPasswordSchema';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { forgotPasswordFields } from '@pms/types';
+import { zodResolver } from '@/lib/zod-resolver';
 import { ArrowRight, KeyRound, Mail, MailCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -22,7 +22,7 @@ export default function RecoverPasswordModule() {
   const forgotPasswordMutation = useForgotPassword();
 
   const form = useForm<ForgotPasswordModel>({
-    resolver: yupResolver(ForgotPasswordSchema),
+    resolver: zodResolver(forgotPasswordFields),
     defaultValues: {
       email: '',
     },

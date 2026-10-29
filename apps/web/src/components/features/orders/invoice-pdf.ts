@@ -112,10 +112,11 @@ const WATERMARK: Record<string, string> = {
 /**
  * The store logo as a data URL, or null when it cannot be fetched. Drawn in place of the
  * monogram when available; a failure here must never stop the invoice downloading.
+ * The admin-uploaded logo from Settings wins over the bundled asset.
  */
-async function loadLogo(): Promise<{ data: string; ratio: number } | null> {
+async function loadLogo(source: string): Promise<{ data: string; ratio: number } | null> {
   try {
-    const response = await fetch('/logo.png');
+    const response = await fetch(source);
     if (!response.ok) return null;
     const blob = await response.blob();
     const data = await new Promise<string>((resolve, reject) => {
@@ -136,9 +137,10 @@ async function loadLogo(): Promise<{ data: string; ratio: number } | null> {
   }
 }
 
-export async function downloadInvoicePdf(order: AnyOrder) {
+export async function downloadInvoicePdf(order: AnyOrder, logoUrl?: string) {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const logo = await loadLogo();
+  // Falls back to the bundled mark when no logo has been uploaded, or when the upload 404s.
+  const logo = (logoUrl ? await loadLogo(logoUrl) : null) ?? (await loadLogo('/logo.png'));
 
   const items: AnyOrder[] = order.items ?? [];
   const storeName = order.store?.name || config.appName;

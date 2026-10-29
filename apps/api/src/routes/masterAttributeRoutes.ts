@@ -7,7 +7,7 @@ import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { validate } from "../middleware/validate";
-import { createMasterAttributeSchema, updateMasterAttributeSchema } from "../schemas/masterEntrySchema";
+import { masterAttributeValidator, updateMasterAttributeValidator } from "@pms/types";
 
 const masterAttributeRouter = Router();
 const masterAttributeController = container.get<MasterAttributeController>(TYPES.MasterAttributeController);
@@ -200,7 +200,7 @@ masterAttributeRouter.post(
   "/",
   authenticateToken,
   authorization(ADMIN),
-  validate(createMasterAttributeSchema),
+  validate(masterAttributeValidator),
   asyncHandler(masterAttributeController.create)
 );
 
@@ -254,7 +254,7 @@ masterAttributeRouter.put(
   "/:id",
   authenticateToken,
   authorization(ADMIN),
-  validate(updateMasterAttributeSchema),
+  validate(updateMasterAttributeValidator),
   asyncHandler(masterAttributeController.update)
 );
 

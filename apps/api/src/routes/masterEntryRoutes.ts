@@ -7,7 +7,7 @@ import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { validate } from "../middleware/validate";
-import { createMasterEntrySchema, updateMasterEntrySchema } from "../schemas/masterEntrySchema";
+import { masterEntryValidator, updateMasterEntryValidator } from "@pms/types";
 
 const masterEntryRouter = Router();
 const masterEntryController = container.get<MasterEntryController>(TYPES.MasterEntryController);
@@ -178,7 +178,7 @@ masterEntryRouter.post(
   "/",
   authenticateToken,
   authorization(ADMIN),
-  validate(createMasterEntrySchema),
+  validate(masterEntryValidator),
   asyncHandler(masterEntryController.create)
 );
 
@@ -232,7 +232,7 @@ masterEntryRouter.put(
   "/:id",
   authenticateToken,
   authorization(ADMIN),
-  validate(updateMasterEntrySchema),
+  validate(updateMasterEntryValidator),
   asyncHandler(masterEntryController.update)
 );
 

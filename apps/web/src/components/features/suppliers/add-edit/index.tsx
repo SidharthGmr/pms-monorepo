@@ -17,37 +17,36 @@ import { TYPES } from '@/config/types';
 import { useCreateSupplier, useGetSupplierById, useUpdateSupplier } from '@/hooks/service-hooks/useSupplierService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 
-import SupplierSchema from '@/schema/supplierSchema';
+import { CustomResponse, SupplierDto, supplierFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { Truck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import SupplierView from './view';
-import { StatusValues, CreateSupplierModel } from '@pms/types';
+import { StatusValues, CreateSupplierModel, normalizeIndianPhone } from '@pms/types';
+import { AxiosResponse } from 'axios';
 
 interface ManageSupplierProps {
+  /** Omitted when adding; present when viewing or editing an existing supplier. */
   id?: number;
   isOpen: boolean;
   mode?: 'view' | 'edit';
   onClose: (refresh: boolean) => void;
 }
 
-const DEFAULT_VALUES: CreateSupplierModel = {
-  name: '',
-  email: '',
-  phone: '',
-  address: '',
-  status: StatusValues.Draft,
-  displayOrder: 0,
-};
+// The box holds at most the 10 digits of the subscriber number; the length is capped here, in
+// the sanitizer, NOT via maxLength={10} - the browser enforces maxLength on a paste before React
+// sees it, which cut "+91 98300 12345" down to "+91 98300 " and fed the sanitizer garbage.
+// maxLength={16} merely bounds raw typing; the +91/0091/trunk-0 prefix is peeled off by the same
+// helper the API uses, so both ends agree on what a number is.
+const sanitizePhone = (value: string) => normalizeIndianPhone(value).slice(0, 10);
 
 // One dialog for Add, View and Edit: no id creates, an id edits, and mode="view" opens read-only.
 // Escape and the X go through the dirty check; clicking outside does nothing so a stray click cannot discard edits.
 export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: ManageSupplierProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
-
   const [editing, setEditing] = useState(mode === 'edit');
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
@@ -57,10 +56,19 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
   const getSupplierResponse = useGetSupplierById(id ?? 0, isEdit && editing);
 
   const form = useForm<CreateSupplierModel>({
-    resolver: yupResolver(SupplierSchema),
-    defaultValues: DEFAULT_VALUES,
+    resolver: zodResolver(supplierFields),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      status: StatusValues.Draft,
+      displayOrder: 0,
+    },
   });
+
   const {
+    handleSubmit,
     reset,
     formState: { isDirty },
   } = form;
@@ -92,7 +100,9 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
   useUnsavedChangesWarning(editing && isDirty && !isSaving);
 
   const save = async (model: CreateSupplierModel) => {
-    let response;
+    // HttpService resolves anything under 500, but a 5xx or a dropped connection throws.
+    // Catching here keeps the form (and the typed values) instead of an unhandled rejection.
+    let response: AxiosResponse<CustomResponse<SupplierDto>>;
     try {
       response = isEdit ? await updateMutation.mutateAsync({ id: id!, model }) : await createMutation.mutateAsync(model);
     } catch {
@@ -100,19 +110,25 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
       return;
     }
 
-    if (response && (response.status === 200 || response.status === 201)) {
-      toast({ variant: 'success', title: `"${model.name}" ${isEdit ? 'updated' : 'created'}` });
+    if (response && (response.status === 200 || response.status === 201) && response.data.data) {
+      toast({
+        variant: 'success',
+        title: 'Record saved successfully',
+        description: `"${model.name}" ${isEdit ? 'updated' : 'created'}`,
+      });
       reset(model);
       onClose(true);
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
-      toast({ variant: 'destructive', title: 'Could not save', description: <span>{error}</span> });
+      toast({
+        variant: 'destructive',
+        title: 'Error, Could not save',
+        description: <span>{error}</span>,
+      });
     }
   };
 
-  // Two of the fields live behind the disclosure; if one of them blocks the save, it must unfold
-  // so the message is visible instead of the form refusing silently.
-  const submit = form.handleSubmit(
+  const submit = handleSubmit(
     (model) => save(model),
     (errors) => {
       if (errors.address || errors.displayOrder) setOptionalOpen(true);
@@ -207,8 +223,18 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                             <FormItem>
                               <FormLabel>Phone *</FormLabel>
                               <FormControl>
-                                <Input placeholder="+1 555 123 4567" {...field} value={field.value ?? ''} />
+                                <Input
+                                  type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                  maxLength={16}
+                                  placeholder="9876543210"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={(e) => field.onChange(sanitizePhone(e.target.value))}
+                                />
                               </FormControl>
+                              {/* <FormDescription className="text-[11px]">10 digits starting 6-9. A +91 or leading 0 is fine.</FormDescription> */}
                               <FormMessage />
                             </FormItem>
                           )}

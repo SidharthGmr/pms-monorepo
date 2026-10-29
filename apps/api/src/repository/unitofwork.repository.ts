@@ -29,6 +29,8 @@ import { IMasterAttributeRepository } from "./interfaces/imaster-attribute.repos
 import { IMasterEntryRepository } from "./interfaces/imaster-entry.repository";
 import { IPriceHistoryRepository } from "./interfaces/iprice-history.repository";
 import { IContactMessageRepository } from "./interfaces/icontact-message.repository";
+import { IEmailTemplateRepository } from "./interfaces/iemail-template.repository";
+import { ISettingRepository } from "./interfaces/isetting.repository";
 import { ISubscriberRepository } from "./interfaces/isubscriber.repository";
 import { ICmsPageRepository } from "./interfaces/icms-page.repository";
 import { INotificationRepository } from "./interfaces/inotification.repository";
@@ -61,6 +63,8 @@ export default class UnitOfWork implements IUnitOfWork {
   public MasterEntry: IMasterEntryRepository;
   public PriceHistory: IPriceHistoryRepository;
   public ContactMessage: IContactMessageRepository;
+  public EmailTemplate: IEmailTemplateRepository;
+  public Setting: ISettingRepository;
   public Subscriber: ISubscriberRepository;
   public CmsPage: ICmsPageRepository;
   public Notification: INotificationRepository;
@@ -93,6 +97,8 @@ export default class UnitOfWork implements IUnitOfWork {
     masterEntry = container.get<IMasterEntryRepository>(TYPES.IMasterEntryRepository),
     priceHistory = container.get<IPriceHistoryRepository>(TYPES.IPriceHistoryRepository),
     contactMessage = container.get<IContactMessageRepository>(TYPES.IContactMessageRepository),
+    emailTemplate = container.get<IEmailTemplateRepository>(TYPES.IEmailTemplateRepository),
+    setting = container.get<ISettingRepository>(TYPES.ISettingRepository),
     subscriber = container.get<ISubscriberRepository>(TYPES.ISubscriberRepository),
     cmsPage = container.get<ICmsPageRepository>(TYPES.ICmsPageRepository),
     notification = container.get<INotificationRepository>(TYPES.INotificationRepository),
@@ -124,6 +130,8 @@ export default class UnitOfWork implements IUnitOfWork {
     this.MasterEntry = masterEntry;
     this.PriceHistory = priceHistory;
     this.ContactMessage = contactMessage;
+    this.EmailTemplate = emailTemplate;
+    this.Setting = setting;
     this.Subscriber = subscriber;
     this.CmsPage = cmsPage;
     this.Notification = notification;

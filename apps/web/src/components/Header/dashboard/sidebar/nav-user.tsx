@@ -14,7 +14,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 
 import useLogout from '@/hooks/use-logout';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
-import { ChevronsUpDown, LogOut, Store, UserRound } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Settings, Store, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { Roles } from '@pms/types';
 
@@ -25,6 +25,8 @@ export function NavUser() {
 
   const role = currentUser?.role;
   const profileHref = role === Roles.USER ? '/dashboard/edit-profile' : '/admin/profile';
+  // Settings is admin-only, matching the route's own role gate in middleware.ts.
+  const canManageSettings = role === Roles.ADMIN || role === Roles.SUPER_ADMIN;
 
   const closeOnMobile = () => {
     if (isMobile) setOpenMobile(false);
@@ -54,6 +56,14 @@ export function NavUser() {
                   My profile
                 </Link>
               </DropdownMenuItem>
+              {canManageSettings && (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/settings" onClick={closeOnMobile}>
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
                 <Link href="/" onClick={closeOnMobile}>
                   <Store className="h-4 w-4" />

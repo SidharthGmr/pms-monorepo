@@ -7,7 +7,7 @@ import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { validate } from "../middleware/validate";
-import { createReviewSchema, updateReviewSchema } from "../schemas/reviewSchema";
+import { reviewValidator, updateReviewValidator } from "@pms/types";
 
 const reviewRouter = Router();
 const reviewController = container.get<ReviewController>(TYPES.ReviewController);
@@ -280,7 +280,7 @@ reviewRouter.get("/:id", authenticateToken, asyncHandler(reviewController.getByI
  *       403:
  *         description: Product was not purchased on one of your orders
  */
-reviewRouter.post("/", authenticateToken, validate(createReviewSchema), asyncHandler(reviewController.create));
+reviewRouter.post("/", authenticateToken, validate(reviewValidator), asyncHandler(reviewController.create));
 
 /**
  * @swagger
@@ -331,7 +331,7 @@ reviewRouter.post("/", authenticateToken, validate(createReviewSchema), asyncHan
  *       403:
  *         description: Not your review, or status change attempted by a customer
  */
-reviewRouter.put("/:id", authenticateToken, validate(updateReviewSchema), asyncHandler(reviewController.update));
+reviewRouter.put("/:id", authenticateToken, validate(updateReviewValidator), asyncHandler(reviewController.update));
 
 /**
  * @swagger
@@ -403,7 +403,7 @@ reviewRouter.patch(
   "/moderate/:id",
   authenticateToken,
   authorization([Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF]),
-  validate(updateReviewSchema),
+  validate(updateReviewValidator),
   asyncHandler(reviewController.update)
 );
 

@@ -7,7 +7,7 @@ import asyncHandler from "../middleware/asyncHandler.middleware";
 import { authenticateToken } from "../middleware/authentication.middleware";
 import authorization from "../middleware/authorization.middleware";
 import { validate } from "../middleware/validate";
-import { createReviewReplySchema, updateReviewReplySchema } from "../schemas/reviewSchema";
+import { reviewReplyValidator, updateReviewReplyValidator } from "@pms/types";
 
 const reviewReplyRouter = Router();
 const reviewReplyController = container.get<ReviewReplyController>(TYPES.ReviewReplyController);
@@ -139,7 +139,7 @@ reviewReplyRouter.get("/:id", authenticateToken, asyncHandler(reviewReplyControl
  *       404:
  *         description: Review not found
  */
-reviewReplyRouter.post("/", authenticateToken, authorization(STAFF), validate(createReviewReplySchema), asyncHandler(reviewReplyController.create));
+reviewReplyRouter.post("/", authenticateToken, authorization(STAFF), validate(reviewReplyValidator), asyncHandler(reviewReplyController.create));
 
 /**
  * @swagger
@@ -178,7 +178,7 @@ reviewReplyRouter.post("/", authenticateToken, authorization(STAFF), validate(cr
  *       403:
  *         description: Not your reply
  */
-reviewReplyRouter.put("/:id", authenticateToken, authorization(STAFF), validate(updateReviewReplySchema), asyncHandler(reviewReplyController.update));
+reviewReplyRouter.put("/:id", authenticateToken, authorization(STAFF), validate(updateReviewReplyValidator), asyncHandler(reviewReplyController.update));
 
 /**
  * @swagger

@@ -28,6 +28,8 @@ import { IMasterAttributeService } from "./interfaces/Imaster-attribute.service"
 import { IMasterEntryService } from "./interfaces/Imaster-entry.service";
 import { IPriceHistoryService } from "./interfaces/Iprice-history.service";
 import { IContactMessageService } from "./interfaces/Icontact-message.service";
+import { IEmailTemplateService } from "./interfaces/Iemail-template.service";
+import { ISettingService } from "./interfaces/Isetting.service";
 import { ISubscriberService } from "./interfaces/Isubscriber.service";
 import { ICmsPageService } from "./interfaces/Icms-page.service";
 import { INotificationService } from "./interfaces/Inotification.service";
@@ -61,6 +63,8 @@ export default class UnitOfService implements IUnitOfService {
   public MasterEntry: IMasterEntryService;
   public PriceHistory: IPriceHistoryService;
   public ContactMessage: IContactMessageService;
+  public EmailTemplate: IEmailTemplateService;
+  public Setting: ISettingService;
   public Subscriber: ISubscriberService;
   public CmsPage: ICmsPageService;
   public Notification: INotificationService;
@@ -94,6 +98,8 @@ export default class UnitOfService implements IUnitOfService {
     masterEntry = container.get<IMasterEntryService>(TYPES.IMasterEntryService),
     priceHistory = container.get<IPriceHistoryService>(TYPES.IPriceHistoryService),
     contactMessage = container.get<IContactMessageService>(TYPES.IContactMessageService),
+    emailTemplate = container.get<IEmailTemplateService>(TYPES.IEmailTemplateService),
+    setting = container.get<ISettingService>(TYPES.ISettingService),
     subscriber = container.get<ISubscriberService>(TYPES.ISubscriberService),
     cmsPage = container.get<ICmsPageService>(TYPES.ICmsPageService),
     notification = container.get<INotificationService>(TYPES.INotificationService),
@@ -126,6 +132,8 @@ export default class UnitOfService implements IUnitOfService {
     this.MasterEntry = masterEntry;
     this.PriceHistory = priceHistory;
     this.ContactMessage = contactMessage;
+    this.EmailTemplate = emailTemplate;
+    this.Setting = setting;
     this.Subscriber = subscriber;
     this.CmsPage = cmsPage;
     this.Notification = notification;

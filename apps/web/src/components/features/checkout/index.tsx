@@ -19,33 +19,15 @@ import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hoo
 import { loadRazorpay, RazorpayPaymentResponse } from '@/lib/razorpay';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { BadgePercent, Banknote, Check, CreditCard, Lock, RotateCcw, StickyNote, Truck, UserRound, Wallet } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as yup from 'yup';
-import { Roles } from '@pms/types';
+import { Roles, checkoutFields, type CheckoutFormValues } from '@pms/types';
 
 type DiscountMode = 'flat' | 'percent';
 
-const CheckoutSchema = yup.object().shape({
-  customerId: yup.string().required('Select a customer'),
-  discountMode: yup.mixed<DiscountMode>().oneOf(['flat', 'percent']).required().default('flat'),
-  discountValue: yup
-    .number()
-    .min(0, 'Must be 0 or more')
-    .typeError('Must be a number')
-    .optional()
-    .default(0)
-    .when('discountMode', { is: 'percent', then: (s) => s.max(100, 'A percentage cannot exceed 100') }),
-  tax: yup.number().min(0, 'Must be 0 or more').typeError('Must be a number').optional().default(0),
-  shippingCost: yup.number().min(0, 'Must be 0 or more').typeError('Must be a number').optional().default(0),
-  platformFee: yup.number().min(0, 'Must be 0 or more').typeError('Must be a number').optional().default(0),
-  notes: yup.string().optional(),
-});
-
-type CheckoutFormValues = yup.InferType<typeof CheckoutSchema>;
 
 type PaymentMode = 'razorpay' | 'cash' | 'direct';
 
@@ -106,7 +88,7 @@ export default function CheckoutPanel({ children }: { children?: ReactNode }) {
   const directCheckoutMutation = useCheckoutDirect();
 
   const form = useForm<CheckoutFormValues>({
-    resolver: yupResolver(CheckoutSchema),
+    resolver: zodResolver(checkoutFields),
     defaultValues: { customerId: '', discountMode: 'flat', discountValue: 0, tax: 0, shippingCost: 0, platformFee: 0, notes: '' },
   });
 

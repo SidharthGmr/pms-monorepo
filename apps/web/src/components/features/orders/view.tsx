@@ -12,6 +12,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
 import { useGetOrderById } from '@/hooks/service-hooks/useOrderService';
+import { useFetchSettings } from '@/hooks/service-hooks/useSettingService';
 import { useGetAllReviews } from '@/hooks/service-hooks/useReviewService';
 
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
@@ -74,6 +75,7 @@ const TIMELINE: { key: string; label: string; hint: string; icon: ReactNode }[] 
 export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const fetchSettings = useFetchSettings();
   const { data: response, isLoading, isError } = useGetOrderById(id);
   const order = response?.data?.data;
 
@@ -102,7 +104,12 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
       setIsGeneratingPdf(true);
       // Yield once so the button can paint its loading state before the draw begins.
       await new Promise((resolve) => setTimeout(resolve, 0));
-      await downloadInvoicePdf(order);
+      // Fetched here rather than on mount so merely viewing an order costs no extra request;
+      // a failure just means the invoice falls back to the bundled logo.
+      const logoUrl = await fetchSettings()
+        .then((response) => response.data.data?.logoUrl || undefined)
+        .catch(() => undefined);
+      await downloadInvoicePdf(order, logoUrl);
     } catch (error) {
       console.error('Failed to generate PDF', error);
     } finally {

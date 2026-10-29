@@ -1,4 +1,3 @@
-
 import {
   Bell,
   Boxes,
@@ -393,6 +392,15 @@ export const SideBarMenu: SideBarMenuDto[] = [
     role: [Roles.SUPER_ADMIN, Roles.ADMIN],
     isActive: false,
   },
+  // {
+  //   id: 'settings',
+  //   title: 'Settings',
+  //   icon: Settings2,
+  //   url: '/admin/settings/',
+  //   group: 'Administration',
+  //   role: [Roles.SUPER_ADMIN, Roles.ADMIN],
+  //   isActive: false,
+  // },
   {
     id: 'user',
     title: 'Profile',

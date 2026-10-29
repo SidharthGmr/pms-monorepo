@@ -8,9 +8,9 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateUserByAdmin } from '@/hooks/service-hooks/useUserList.service.hook';
 
-import UserSchema from '@/schema/userSchema';
+import { createUserByAdminFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { useForm } from 'react-hook-form';
 import { CreateUserModel, Role } from '@pms/types';
 
@@ -25,7 +25,7 @@ export default function ManageUser({ isOpen, onClose, role }: ManageUserProps) {
   const createUser = useCreateUserByAdmin();
 
   const form = useForm<CreateUserModel>({
-    resolver: yupResolver(UserSchema),
+    resolver: zodResolver(createUserByAdminFields),
     defaultValues: {
       firstName: '',
       lastName: '',

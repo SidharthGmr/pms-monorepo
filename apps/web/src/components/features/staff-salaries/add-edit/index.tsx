@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 
-import StaffSalarySchema from '@/schema/staffSalarySchema';
+import { staffSalaryFields } from '@pms/types';
 import { useCreateStaffSalary, useGetStaffSalaryById, useUpdateStaffSalary } from '@/hooks/service-hooks/useStaffSalaryService';
 import { SelectSearch } from '@/components/common/select-search';
 
@@ -59,7 +59,7 @@ export default function ManageStaffSalary({ id, isOpen, onClose }: ManageStaffSa
   const { data: staffSalaryResponse, isLoading: isFetching } = useGetStaffSalaryById(id ?? 0, isEdit);
 
   const form = useForm<CreateStaffSalaryModel>({
-    resolver: yupResolver(StaffSalarySchema),
+    resolver: zodResolver(staffSalaryFields),
     defaultValues: {
       staffId: 0,
       month: new Date().getMonth() + 1,

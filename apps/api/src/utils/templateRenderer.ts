@@ -42,6 +42,15 @@ const fill = (html: string, variables: Record<string, string>): string => {
   return html;
 };
 
+/** Plain {{placeholder}} substitution for one-line strings such as email subjects. */
+export const fillPlaceholders = (text: string, variables: Record<string, string>): string => fill(text, variables);
+
+/** The raw content of a template file, exactly as it sits on disk - the admin editor's default. */
+export async function readTemplateSource(templateName: string): Promise<string> {
+  const baseDir = await templatesDir();
+  return fs.readFile(path.join(baseDir, `${templateName}.html`), "utf-8");
+}
+
 /**
  * A content template is the inside of the card; `_layout.html` supplies the chrome around it,
  * so the brand header, dark-mode palette and footer are written once. A template opting out
@@ -55,8 +64,20 @@ export async function renderTemplate(
   templateName: string,
   variables: Record<string, string>
 ): Promise<string> {
+  const content = await readTemplateSource(templateName);
+  return renderTemplateContent(templateName, content, variables);
+}
+
+/**
+ * Renders template content supplied as a string - a DB-stored override from the admin editor -
+ * through the same layout/directive pipeline as a file template.
+ */
+export async function renderTemplateContent(
+  templateName: string,
+  content: string,
+  variables: Record<string, string>
+): Promise<string> {
   const baseDir = await templatesDir();
-  const content = await fs.readFile(path.join(baseDir, `${templateName}.html`), "utf-8");
 
   const standalone = templateName.startsWith("_") || /<html[\s>]/i.test(content);
   let html: string;

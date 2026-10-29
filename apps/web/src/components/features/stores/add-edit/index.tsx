@@ -1,7 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 
-import StoreSchema from '@/schema/storeSchema';
+import { storeFields } from '@pms/types';
 import { useCreateStore, useGetStoreById, useUpdateStore } from '@/hooks/service-hooks/useStoreService';
 import { SelectSearch } from '@/components/common/select-search';
 
@@ -33,7 +33,7 @@ export default function ManageStore({ id, isOpen, onClose }: ManageStoreProps) {
   const { data: storeResponse, isLoading: isFetching } = useGetStoreById(id ?? 0, isEdit);
 
   const form = useForm<CreateStoreModel>({
-    resolver: yupResolver(StoreSchema),
+    resolver: zodResolver(storeFields),
     defaultValues: {
       name: '',
       code: '',

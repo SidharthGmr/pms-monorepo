@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createStoreSchema, updateStoreSchema } from "../schemas/storeSchema";
+import { storeValidator, updateStoreValidator } from "@pms/types";
 import { validate } from "../middleware/validate";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { StoreController } from "../controllers/store.controller";
@@ -151,7 +151,7 @@ storeRouter.get("/:id", authenticateToken, asyncHandler(storeController.getById)
  *       400: { description: Bad Request }
  *       500: { description: Server error }
  */
-storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [validate(createStoreSchema)], asyncHandler(storeController.create));
+storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [validate(storeValidator)], asyncHandler(storeController.create));
 
 /**
  * @swagger
@@ -194,7 +194,7 @@ storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [val
  *       404: { description: Store not found }
  *       500: { description: Server error }
  */
-storeRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), [validate(updateStoreSchema)], asyncHandler(storeController.update));
+storeRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), [validate(updateStoreValidator)], asyncHandler(storeController.update));
 
 /**
  * @swagger

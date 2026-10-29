@@ -14,12 +14,11 @@ import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProduct
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import * as Yup from 'yup';
-import { OrderStatus, Roles, CreateOrderModel, OrderStatusEnum } from '@pms/types';
+import { Roles, CreateOrderModel, OrderStatusEnum, orderFormFields, type OrderFormValues } from '@pms/types';
 
 interface ManageOrderProps {
   id?: number;
@@ -27,25 +26,6 @@ interface ManageOrderProps {
   onClose: (refresh: boolean) => void;
 }
 
-const OrderSchema = Yup.object({
-  customerId: Yup.string().required('Customer is required'),
-  discount: Yup.number().typeError('Enter a number').min(0).required().default(0),
-  tax: Yup.number().typeError('Enter a number').min(0).required().default(0),
-  shippingCost: Yup.number().typeError('Enter a number').min(0).required().default(0),
-  status: Yup.mixed<OrderStatus>().oneOf(Object.values(OrderStatusEnum)).required(),
-  notes: Yup.string().optional(),
-  items: Yup.array()
-    .of(
-      Yup.object({
-        variantId: Yup.number().typeError('Variant is required').required('Variant is required'),
-        quantity: Yup.number().typeError('Quantity is required').min(1, 'Quantity must be at least 1').required('Quantity is required'),
-      })
-    )
-    .min(1, 'Add at least one product')
-    .required(),
-});
-
-type OrderFormValues = Yup.InferType<typeof OrderSchema>;
 
 export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
   const isEdit = !!id && id > 0;
@@ -75,7 +55,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
   );
 
   const form = useForm<OrderFormValues>({
-    resolver: yupResolver(OrderSchema),
+    resolver: zodResolver(orderFormFields),
     defaultValues: {
       customerId: '',
       discount: 0,

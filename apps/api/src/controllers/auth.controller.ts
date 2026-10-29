@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config';
+import env from '../config/env';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
 import {
@@ -477,6 +478,20 @@ export class AccountController {
     if (!updatedUser) {
       throw new CustomError('Failed to verify email', 500);
     }
+
+    // The welcome email greets the user once the address is confirmed, so it never lands in an
+    // inbox that was mistyped. Never awaited: a mail failure must not fail the verification.
+    dispatchEmailAsync({
+      userId: updatedUser.userId,
+      to: updatedUser.email,
+      subject: `Welcome to ${env.APP_NAME}!`,
+      templateName: 'welcome',
+      templateData: {
+        Name: updatedUser.name || 'there',
+        LoginLink: `${(env.APP_PUBLIC_URL || '').replace(/\/$/, '')}/login`,
+        SupportEmail: env.ADMIN_NOTIFY_EMAIL || '',
+      },
+    });
 
     return res.status(200).json({
       success: true,

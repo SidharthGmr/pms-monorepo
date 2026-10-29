@@ -37,6 +37,24 @@ export default class MediaService implements IMediaService {
     }
   }
 
+  async uploadLogo(file: File, options?: Pick<UploadBlobOptions, 'onProgress' | 'signal'>): Promise<BlobUploadResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post<BlobUploadResponse>(`${BASE}/logo`, formData, {
+        signal: options?.signal,
+        onUploadProgress: (event) => {
+          if (!options?.onProgress || !event.total) return;
+          options.onProgress(Math.round((event.loaded / event.total) * 100));
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return failure(error, 'Failed to upload logo');
+    }
+  }
+
   async getAll(signal?: AbortSignal): Promise<ListMediaResponse> {
     try {
       const response = await axios.get<ListMediaResponse>(`${BASE}/list`, { signal });

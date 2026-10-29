@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@/lib/zod-resolver';
 import { AlertTriangle, ListChecks, Lock, Unlock } from 'lucide-react';
 import ConfirmBox from '@/components/common/confirm-box';
 import { DirtyNote } from '@/components/common/field';
@@ -23,7 +23,7 @@ import { useGetAllCategories } from '@/hooks/service-hooks/useCategoryService';
 import { useCreateMasterAttribute, useGetMasterAttributeById, useUpdateMasterAttribute } from '@/hooks/service-hooks/useMasterEntryService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 
-import { MasterAttributeSchema } from '@/schema/masterEntrySchema';
+import { masterAttributeFields } from '@pms/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { StatusValues, CreateMasterAttributeModel } from '@pms/types';
 import { CardDescription } from '@/components/ui/card';
@@ -73,7 +73,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
   const [codeUnlocked, setCodeUnlocked] = useState(!isEdit);
 
   const form = useForm<CreateMasterAttributeModel>({
-    resolver: yupResolver(MasterAttributeSchema),
+    resolver: zodResolver(masterAttributeFields),
     defaultValues: DEFAULT_VALUES,
   });
 

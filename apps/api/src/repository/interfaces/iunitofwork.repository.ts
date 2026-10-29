@@ -25,6 +25,8 @@ import { IMasterAttributeRepository } from "./imaster-attribute.repository";
 import { IMasterEntryRepository } from "./imaster-entry.repository";
 import { IPriceHistoryRepository } from "./iprice-history.repository";
 import { IContactMessageRepository } from "./icontact-message.repository";
+import { IEmailTemplateRepository } from "./iemail-template.repository";
+import { ISettingRepository } from "./isetting.repository";
 import { ISubscriberRepository } from "./isubscriber.repository";
 import { ICmsPageRepository } from "./icms-page.repository";
 import { INotificationRepository } from "./inotification.repository";
@@ -57,6 +59,8 @@ export default interface IUnitOfWork {
   MasterEntry: IMasterEntryRepository;
   PriceHistory: IPriceHistoryRepository;
   ContactMessage: IContactMessageRepository;
+  EmailTemplate: IEmailTemplateRepository;
+  Setting: ISettingRepository;
   Subscriber: ISubscriberRepository;
   CmsPage: ICmsPageRepository;
   Notification: INotificationRepository;
