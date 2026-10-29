@@ -47,7 +47,7 @@ export const useSupplierColumns = (editRecord: (id: number) => void, deleteRecor
                 <button type="button" onClick={() => (viewRecord ?? editRecord)(supplier.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={supplier.name}>
                   {supplier.name}
                 </button>
-                <p className="truncate text-[11px] text-muted-foreground">{supplier.contactPerson ? `Contact: ${supplier.contactPerson}` : 'No contact person'}</p>
+                <p className="truncate text-[11px] text-muted-foreground">{supplier.email ?? 'No email'}</p>
               </div>
             </div>
           );

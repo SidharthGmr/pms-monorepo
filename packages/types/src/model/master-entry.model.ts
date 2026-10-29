@@ -11,12 +11,18 @@ export interface CreateMasterAttributeModel {
   displayOrder?: number | null;
 }
 
+/** The add form collects several values at once; each one becomes its own entry. */
 export interface CreateMasterEntryModel {
   attributeId: number;
-  name: string;
+  values: string[];
+  status: Status;
+  displayOrder?: number | null;
+}
+
+/** The edit form works on one existing row, so it carries a single value. */
+export interface UpdateMasterEntryModel {
+  attributeId: number;
   value: string;
-  colorHex?: string | null;
-  metadata?: Record<string, unknown> | null;
   status: Status;
   displayOrder?: number | null;
 }

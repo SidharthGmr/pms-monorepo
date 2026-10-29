@@ -192,7 +192,7 @@ export default function ManageMasterAttribute({ id, isOpen, onClose }: ManageMas
                       <FormItem>
                         <FormLabel>Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Size, Color, Weight" autoFocus className="h-10" {...field} value={field.value ?? ''} />
+                          <Input placeholder="e.g. Size, Color, Weight" autoFocus {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

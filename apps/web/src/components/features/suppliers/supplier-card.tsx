@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Mail, MapPin, Pencil, Phone, Trash2, UserRound } from 'lucide-react';
+import { Eye, Mail, MapPin, Pencil, Phone, Trash2 } from 'lucide-react';
 import { SupplierDto } from '@pms/types';
 
 const TONES = [
@@ -57,10 +57,6 @@ export default function SupplierCard({ supplier, onView, onEdit, onDelete }: Sup
       </div>
 
       <div className="space-y-1.5 p-4">
-        <span className="flex items-center gap-1.5 text-xs">
-          <UserRound className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          {supplier.contactPerson ? <span className="truncate">{supplier.contactPerson}</span> : <span className="text-muted-foreground/60">No contact person</span>}
-        </span>
         <span className="flex items-center gap-1.5 text-xs">
           <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           {supplier.email ? (

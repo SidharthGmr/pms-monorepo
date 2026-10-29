@@ -1,9 +1,10 @@
 import { Status } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
-import { ListResponseDto, CreateMasterEntryDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
+import { ListResponseDto, CreateMasterEntryDto, UpdateMasterEntryDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
+import CustomError from "../exceptions/custom-error";
 
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { IMasterEntryService } from "./interfaces/Imaster-entry.service";
@@ -22,36 +23,51 @@ export class MasterEntryService implements IMasterEntryService {
     return entry;
   }
 
-  async create(data: CreateMasterEntryDto, storeCode: string): Promise<MasterEntryDto> {
+  // One call files several values under the same attribute: each becomes its own row, and the
+  // whole batch shares a transaction so a duplicate part way through rolls the rest back rather
+  // than leaving half a list behind. Blank and repeated values are dropped before writing, since
+  // (attributeId, value) is unique and a repeat would only ever be a typo in the form.
+  async create(data: CreateMasterEntryDto, storeCode: string): Promise<MasterEntryDto[]> {
     // An entry inherits its store from its parent group, so a value can never be
     // filed under a store the attribute does not belong to.
     const attribute = await this.unitOfWork.MasterAttribute.findById(data.attributeId);
     if (!attribute) throw new NotFoundError("Master attribute not found");
     if (attribute.storeCode !== storeCode) throw new ForbiddenError("Master attribute does not belong to your store");
 
-    return this.unitOfWork.transaction(async (transactionClient) => {
-      const created = await transactionClient.masterEntry.create({
-        data: {
-          attributeId: data.attributeId,
-          name: data.name,
-          value: data.value,
-          colorHex: data.colorHex || null,
-          ...(data.metadata !== undefined && data.metadata !== null && { metadata: data.metadata }),
-          storeCode: attribute.storeCode,
-          status: data.status ?? Status.Published,
-          displayOrder: data.displayOrder ?? null,
-        },
-        select: { id: true },
-      });
+    const values = [...new Set((data.values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))];
+    if (values.length === 0) throw new CustomError("Add at least one value", 400);
 
-      // Read back through the transaction client - the global one cannot see this row yet.
-      const entry = await this.unitOfWork.MasterEntry.findById(created.id, transactionClient);
-      if (!entry) throw new NotFoundError("Master entry not found");
-      return entry;
+    return this.unitOfWork.transaction(async (transactionClient) => {
+      const entries: MasterEntryDto[] = [];
+
+      for (const [index, value] of values.entries()) {
+        const created = await transactionClient.masterEntry.create({
+          data: {
+            attributeId: data.attributeId,
+            // The label defaults to the value: the form no longer collects one separately.
+            name: data.name ?? value,
+            value,
+            colorHex: data.colorHex || null,
+            ...(data.metadata !== undefined && data.metadata !== null && { metadata: data.metadata }),
+            storeCode: attribute.storeCode,
+            status: data.status ?? Status.Published,
+            // Successive values keep the order they were typed in.
+            displayOrder: data.displayOrder !== undefined && data.displayOrder !== null ? data.displayOrder + index : null,
+          },
+          select: { id: true },
+        });
+
+        // Read back through the transaction client - the global one cannot see this row yet.
+        const entry = await this.unitOfWork.MasterEntry.findById(created.id, transactionClient);
+        if (!entry) throw new NotFoundError("Master entry not found");
+        entries.push(entry);
+      }
+
+      return entries;
     });
   }
 
-  async update(id: number, data: CreateMasterEntryDto): Promise<MasterEntryDto> {
+  async update(id: number, data: UpdateMasterEntryDto): Promise<MasterEntryDto> {
     const existing = await this.unitOfWork.MasterEntry.findById(id);
     if (!existing) throw new NotFoundError("Master entry not found");
 

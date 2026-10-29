@@ -18,14 +18,20 @@ export const MasterAttributeSchema = Yup.object().shape({
   displayOrder: Yup.number().nullable().optional(),
 });
 
+/**
+ * Add collects a list of values and creates one entry per item; edit works on the single row
+ * it opened, so both forms share this shape with the array holding exactly one entry.
+ */
 export const MasterEntrySchema = Yup.object().shape({
   attributeId: Yup.number().min(1, 'Please pick an attribute').required('Attribute is required'),
-  name: Yup.string().max(100, 'Name is too long').required('Name is required'),
-  value: Yup.string().max(100, 'Value is too long').required('Value is required'),
-  colorHex: Yup.string()
-    .matches(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, { message: 'Use a hex colour like #FF0000', excludeEmptyString: true })
-    .nullable()
-    .optional(),
+  values: Yup.array()
+    .of(Yup.string().trim().max(100, 'Value is too long').required('Value is required'))
+    .min(1, 'Add at least one value')
+    .required('Add at least one value')
+    .test('unique', 'Remove the repeated values', (list) => {
+      const filled = (list ?? []).map((value) => (value ?? '').trim()).filter(Boolean);
+      return new Set(filled).size === filled.length;
+    }),
   status: Yup.mixed<Status>().oneOf(['Published', 'Draft', 'Trash']).required('Status is required'),
   displayOrder: Yup.number().nullable().optional(),
 });

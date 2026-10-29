@@ -2,7 +2,7 @@ import { Status } from '@prisma/client';
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, ListResponseDto, CreateMasterEntryDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
+import { CustomResponse, ListResponseDto, CreateMasterEntryDto, UpdateMasterEntryDto, MasterEntryDto, MasterEntryFilterParams } from '@pms/types';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 import { MISSING_STORE_CODE } from '../constants/responses';
 
@@ -41,21 +41,22 @@ export class MasterEntryController {
     return res.status(200).json({ success: true, message: 'Master entry fetched successfully', data });
   };
 
-  create = async (req: Request, res: Response): Promise<Response<CustomResponse<MasterEntryDto>>> => {
+  create = async (req: Request, res: Response): Promise<Response<CustomResponse<MasterEntryDto[]>>> => {
     const storeCode = req.user?.storeCode;
     if (!storeCode) {
       return res.status(400).json(MISSING_STORE_CODE);
     }
 
     const data = await this.unitOfService.MasterEntry.create(req.body as CreateMasterEntryDto, storeCode);
-    return res.status(201).json({ success: true, message: 'Master entry created successfully', data });
+    const message = data.length === 1 ? 'Master entry created successfully' : `${data.length} master entries created successfully`;
+    return res.status(201).json({ success: true, message, data });
   };
 
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<MasterEntryDto>>> => {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
 
-    const data = await this.unitOfService.MasterEntry.update(id, req.body as CreateMasterEntryDto);
+    const data = await this.unitOfService.MasterEntry.update(id, req.body as UpdateMasterEntryDto);
     return res.status(200).json({ success: true, message: 'Master entry updated successfully', data });
   };
 

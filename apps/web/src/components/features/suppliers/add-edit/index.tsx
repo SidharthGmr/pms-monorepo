@@ -1,7 +1,9 @@
 'use client';
 import ConfirmBox from '@/components/common/confirm-box';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
-import StatusCards from '@/components/common/status-cards';
+import { DirtyNote } from '@/components/common/field';
+import OptionalSection from '@/components/common/optional-section';
+import StatusSwitch from '@/components/common/status-switch';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,13 +16,12 @@ import { TYPES } from '@/config/types';
 
 import { useCreateSupplier, useGetSupplierById, useUpdateSupplier } from '@/hooks/service-hooks/useSupplierService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
-import { cn } from '@/lib/utils';
 
 import SupplierSchema from '@/schema/supplierSchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { ChevronDown, Truck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Truck } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import SupplierView from './view';
 import { StatusValues, CreateSupplierModel } from '@pms/types';
@@ -28,18 +29,15 @@ import { StatusValues, CreateSupplierModel } from '@pms/types';
 interface ManageSupplierProps {
   id?: number;
   isOpen: boolean;
-  /** `view` opens read-only with an Edit button; `edit` goes straight to the form. */
   mode?: 'view' | 'edit';
   onClose: (refresh: boolean) => void;
 }
 
 const DEFAULT_VALUES: CreateSupplierModel = {
   name: '',
-  contactPerson: '',
   email: '',
   phone: '',
   address: '',
-  notes: '',
   status: StatusValues.Draft,
   displayOrder: 0,
 };
@@ -67,32 +65,40 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
     formState: { isDirty },
   } = form;
 
+  // Fill once per mount: without the latch a window-focus refetch (new response object) would
+  // re-run the effect and overwrite whatever the user has typed since the dialog opened.
+  const filledRef = useRef(false);
   useEffect(() => {
-    if (isEdit && getSupplierResponse.data?.data?.data) {
+    if (!filledRef.current && isEdit && getSupplierResponse.data?.data?.data) {
+      filledRef.current = true;
       const supplier = getSupplierResponse.data.data.data;
       reset({
         name: supplier.name,
-        contactPerson: supplier.contactPerson ?? '',
         email: supplier.email ?? '',
         phone: supplier.phone ?? '',
         address: supplier.address ?? '',
-        notes: supplier.notes ?? '',
         status: supplier.status,
         displayOrder: supplier.displayOrder ?? 0,
       });
+      // An address or a non-default order is already filled in, so the fold must not hide it.
+      if (supplier.address?.trim() || (supplier.displayOrder ?? 0) !== 0) setOptionalOpen(true);
     }
   }, [isEdit, getSupplierResponse.data, reset]);
 
-  const contactPerson = form.watch('contactPerson') ?? '';
   const address = form.watch('address') ?? '';
-  const notes = form.watch('notes') ?? '';
   const displayOrder = form.watch('displayOrder');
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   useUnsavedChangesWarning(editing && isDirty && !isSaving);
 
   const save = async (model: CreateSupplierModel) => {
-    const response = isEdit ? await updateMutation.mutateAsync({ id: id!, model }) : await createMutation.mutateAsync(model);
+    let response;
+    try {
+      response = isEdit ? await updateMutation.mutateAsync({ id: id!, model }) : await createMutation.mutateAsync(model);
+    } catch {
+      toast({ variant: 'destructive', title: 'Could not save', description: <span>Could not reach the server. Please try again.</span> });
+      return;
+    }
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: `"${model.name}" ${isEdit ? 'updated' : 'created'}` });
@@ -104,12 +110,12 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
     }
   };
 
-  // Four of the fields live behind the disclosure; if one of them blocks the save, it must unfold
+  // Two of the fields live behind the disclosure; if one of them blocks the save, it must unfold
   // so the message is visible instead of the form refusing silently.
   const submit = form.handleSubmit(
     (model) => save(model),
     (errors) => {
-      if (errors.contactPerson || errors.address || errors.notes || errors.displayOrder) setOptionalOpen(true);
+      if (errors.address || errors.displayOrder) setOptionalOpen(true);
     }
   );
 
@@ -124,18 +130,13 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
   const showSkeleton = isEdit && getSupplierResponse.isLoading;
   const fetchFailed = isEdit && getSupplierResponse.isError;
 
-  const optionalSummary = [
-    contactPerson.trim() || null,
-    address.trim() ? 'address' : null,
-    notes.trim() ? 'notes' : null,
-    displayOrder != null && String(displayOrder) !== '' && displayOrder !== 0 ? `order ${displayOrder}` : null,
-  ]
+  const optionalSummary = [address.trim() ? 'address' : null, displayOrder != null && displayOrder !== 0 ? `order ${displayOrder}` : null]
     .filter(Boolean)
     .join(' · ');
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && (editing ? handleCancel() : onClose(false))}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
         <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
           {!editing ? (
             <SupplierView id={id ?? 0} onEdit={() => setEditing(true)} onClose={() => onClose(false)} />
@@ -149,7 +150,8 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="truncate text-base">{isEdit ? 'Edit supplier' : 'New supplier'}</DialogTitle>
                     <DialogDescription className="mt-1 text-xs">
-                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> + <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+                      <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
                     </DialogDescription>
                   </div>
                 </div>
@@ -177,7 +179,7 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                           <FormItem>
                             <FormLabel>Name *</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. Acme Corp" autoFocus className="h-10" {...field} value={field.value ?? ''} />
+                              <Input placeholder="e.g. Acme Corp" autoFocus {...field} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -192,7 +194,7 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                             <FormItem>
                               <FormLabel>Email *</FormLabel>
                               <FormControl>
-                                <Input type="email" placeholder="jane@acme.com" className="h-10" {...field} value={field.value ?? ''} />
+                                <Input type="email" placeholder="jane@acme.com" {...field} value={field.value ?? ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -205,7 +207,7 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                             <FormItem>
                               <FormLabel>Phone *</FormLabel>
                               <FormControl>
-                                <Input placeholder="+1 555 123 4567" className="h-10" {...field} value={field.value ?? ''} />
+                                <Input placeholder="+1 555 123 4567" {...field} value={field.value ?? ''} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -220,102 +222,59 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                           <FormItem>
                             <FormLabel>Status *</FormLabel>
                             <FormControl>
-                              <StatusCards value={field.value} onChange={field.onChange} />
+                              <StatusSwitch value={field.value} onChange={field.onChange} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
 
-                      <section className="overflow-hidden rounded-xl border">
-                        <button
-                          type="button"
-                          onClick={() => setOptionalOpen((open) => !open)}
-                          aria-expanded={optionalOpen}
-                          className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-                        >
-                          <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">Contact person, address &amp; more</span>
-                          {!optionalOpen && optionalSummary && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{optionalSummary}</span>}
-                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Optional</span>
-                          <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', optionalOpen && 'rotate-180')} />
-                        </button>
+                      <OptionalSection title="Address & display order" summary={optionalSummary} open={optionalOpen} onOpenChange={setOptionalOpen}>
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Address</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  className="resize-none"
+                                  rows={2}
+                                  placeholder="Street, city, state, ZIP"
+                                  {...field}
+                                  value={field.value ?? ''}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                        {optionalOpen && (
-                          <div className="space-y-5 border-t px-4 py-4">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                              <FormField
-                                control={form.control}
-                                name="contactPerson"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Contact person</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="e.g. Jane Smith" className="h-10" {...field} value={field.value ?? ''} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="displayOrder"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Display order</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        inputMode="numeric"
-                                        min={0}
-                                        placeholder="0"
-                                        className="h-10"
-                                        value={field.value ?? ''}
-                                        onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-
-                            <FormField
-                              control={form.control}
-                              name="address"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Address</FormLabel>
-                                  <FormControl>
-                                    <Textarea className="resize-none" rows={2} placeholder="Street, city, state, ZIP" {...field} value={field.value ?? ''} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="notes"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Notes</FormLabel>
-                                  <FormControl>
-                                    <Textarea className="resize-none" rows={2} placeholder="Payment terms, lead times…" {...field} value={field.value ?? ''} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        )}
-                      </section>
+                        <FormField
+                          control={form.control}
+                          name="displayOrder"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Display order</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min={0}
+                                  placeholder="0"
+                                  value={field.value ?? ''}
+                                  onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </OptionalSection>
                     </div>
 
                     <DialogFooter className="gap-2 border-t bg-muted/30 px-6 py-3 sm:justify-between">
-                      <p className={cn('hidden items-center gap-1.5 text-xs sm:flex', isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
-                        {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
-                        {isDirty ? 'Unsaved changes' : 'No changes yet'}
-                      </p>
+                      <DirtyNote dirty={isDirty} />
                       <div className="flex flex-col-reverse gap-2 sm:flex-row">
                         <Button type="button" variant="outline" onClick={handleCancel} disabled={isSaving}>
                           Cancel

@@ -153,9 +153,6 @@ supplierRouter.get("/:id", authenticateToken, asyncHandler(supplierController.ge
  *                 type: string
  *                 minLength: 1
  *                 example: "Acme Corp"
- *               contactPerson:
- *                 type: string
- *                 example: "Jane Doe"
  *               email:
  *                 type: string
  *                 example: "jane@acme.com"
@@ -165,9 +162,6 @@ supplierRouter.get("/:id", authenticateToken, asyncHandler(supplierController.ge
  *               address:
  *                 type: string
  *                 example: "123 Market St"
- *               notes:
- *                 type: string
- *                 example: "Preferred supplier for electronics"
  *               status:
  *                 type: string
  *                 enum: [Published, Draft, Trash]
@@ -213,15 +207,11 @@ supplierRouter.post("/", authenticateToken, authorization(STAFF_ROLES), validate
  *             properties:
  *               name:
  *                 type: string
- *               contactPerson:
- *                 type: string
  *               email:
  *                 type: string
  *               phone:
  *                 type: string
  *               address:
- *                 type: string
- *               notes:
  *                 type: string
  *               status:
  *                 type: string

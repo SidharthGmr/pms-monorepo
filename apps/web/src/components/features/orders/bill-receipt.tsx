@@ -9,7 +9,28 @@ interface BillReceiptProps {
 /** Paise always shown, because a bill that rounds is a bill that gets queried. */
 const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const ONES = [
+  '',
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+  'Eleven',
+  'Twelve',
+  'Thirteen',
+  'Fourteen',
+  'Fifteen',
+  'Sixteen',
+  'Seventeen',
+  'Eighteen',
+  'Nineteen',
+];
 const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
 
 const underHundred = (n: number): string => (n < 20 ? ONES[n] : `${TENS[Math.floor(n / 10)]}${n % 10 ? ` ${ONES[n % 10]}` : ''}`);
@@ -89,7 +110,9 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(({ order 
           <div className="shrink-0 text-right">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Tax Invoice</p>
             <p className="mt-0.5 font-mono text-2xl font-bold tracking-tight text-slate-900">#{order.orderNumber || order.id}</p>
-            <span className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}>{status}</span>
+            <span className={`mt-2 inline-block rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone}`}>
+              {status}
+            </span>
           </div>
         </div>
 
@@ -117,7 +140,8 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(({ order 
           <tbody>
             {items.map((item: any, index: number) => {
               const name = item.product?.name || `Product #${item.productId}`;
-              const variant = item.variant?.name && item.product?.name ? item.variant.name.replace(`${item.product.name} - `, '') : item.variant?.name;
+              const variant =
+                item.variant?.name && item.product?.name ? item.variant.name.replace(`${item.product.name} - `, '') : item.variant?.name;
               const amount = (item.unitPrice ?? 0) * (item.quantity ?? 1);
 
               return (
@@ -182,7 +206,7 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(({ order 
             This is a computer-generated invoice and does not require a signature.
           </p>
           <div className="text-right">
-            <div className="h-10" />
+            <div />
             <p className="w-48 border-t border-slate-300 pt-1.5 text-[11px] text-slate-500">Authorised signatory</p>
           </div>
         </div>

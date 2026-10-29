@@ -1,6 +1,13 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CustomResponse as Response, ListResponseDto, MasterEntryDto, CreateMasterEntryModel, MasterEntryFilterParams } from '@pms/types';
+import {
+  CustomResponse as Response,
+  ListResponseDto,
+  MasterEntryDto,
+  CreateMasterEntryModel,
+  UpdateMasterEntryModel,
+  MasterEntryFilterParams,
+} from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';
@@ -14,8 +21,9 @@ export default class MasterEntryService implements IMasterEntryService {
     this.httpService = httpService;
   }
 
-  create(model: CreateMasterEntryModel): Promise<AxiosResponse<Response<MasterEntryDto>>> {
-    return this.httpService.call().post<MasterEntryDto, AxiosResponse<Response<MasterEntryDto>>>('/master-entries', model);
+  // Create sends a list of values and gets back one entry per value.
+  create(model: CreateMasterEntryModel): Promise<AxiosResponse<Response<MasterEntryDto[]>>> {
+    return this.httpService.call().post<MasterEntryDto[], AxiosResponse<Response<MasterEntryDto[]>>>('/master-entries', model);
   }
 
   getAll(params?: MasterEntryFilterParams): Promise<AxiosResponse<Response<ListResponseDto<MasterEntryDto>>>> {
@@ -28,7 +36,7 @@ export default class MasterEntryService implements IMasterEntryService {
     return this.httpService.call().get<MasterEntryDto, AxiosResponse<Response<MasterEntryDto>>>(`/master-entries/${id}`);
   }
 
-  update(id: number | string, model: CreateMasterEntryModel): Promise<AxiosResponse<Response<MasterEntryDto>>> {
+  update(id: number | string, model: UpdateMasterEntryModel): Promise<AxiosResponse<Response<MasterEntryDto>>> {
     return this.httpService.call().put<MasterEntryDto, AxiosResponse<Response<MasterEntryDto>>>(`/master-entries/${id}`, model);
   }
 

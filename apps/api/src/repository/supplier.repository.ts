@@ -23,7 +23,6 @@ export class SupplierRepository implements ISupplierRepository {
             if (filters.search) {
                 where.OR = [
                     { name: { contains: filters.search, mode: 'insensitive' } },
-                    { contactPerson: { contains: filters.search, mode: 'insensitive' } },
                     { email: { contains: filters.search, mode: 'insensitive' } },
                     { phone: { contains: filters.search, mode: 'insensitive' } },
                 ];

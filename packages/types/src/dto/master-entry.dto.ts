@@ -58,10 +58,26 @@ export interface CreateMasterAttributeDto {
   displayOrder?: number | null;
 }
 
+/**
+ * Create takes a list: one call files several values under the same attribute, and the API
+ * writes one MasterEntry row per entry in `values`.
+ */
 export interface CreateMasterEntryDto {
   attributeId: number;
-  name: string;
-  value: string;
+  values: string[];
+  /** Falls back to the value itself when the caller does not send a separate label. */
+  name?: string;
+  colorHex?: string | null;
+  metadata?: JsonValue;
+  status?: Status;
+  displayOrder?: number | null;
+}
+
+/** Update edits one existing row, so it carries a single value rather than a list. */
+export interface UpdateMasterEntryDto {
+  attributeId?: number;
+  name?: string;
+  value?: string;
   colorHex?: string | null;
   metadata?: JsonValue;
   status?: Status;

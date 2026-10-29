@@ -189,7 +189,7 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                               <CharCounter schema={categoryFields} field="name" value={field.value ?? ''} />
                             </div>
                             <FormControl>
-                              <Input placeholder="e.g. Footwear, Electronics" autoFocus className="h-10" {...field} />
+                              <Input placeholder="e.g. Footwear, Electronics" autoFocus {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

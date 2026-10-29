@@ -166,7 +166,13 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   // the form refuses with the message out of sight.
   const onSubmit = form.handleSubmit(submitData, (errors) => {
     if (errors.costPrice || errors.offerPrice || errors.effectiveFrom || errors.effectiveTo) setPriceOpen(true);
-    if ((isEdit && (errors.attributes || errors.sku || errors.images)) || errors.barcode || errors.stockQuantity || errors.lowStockThreshold || errors.reason)
+    if (
+      (isEdit && (errors.attributes || errors.sku || errors.images)) ||
+      errors.barcode ||
+      errors.stockQuantity ||
+      errors.lowStockThreshold ||
+      errors.reason
+    )
       setMoreOpen(true);
   });
 
@@ -243,7 +249,16 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 <span className="text-sm font-medium">{variant?.product?.name ?? '—'}</span>
                 {variant?.sku && <code className="font-mono text-xs text-muted-foreground">{variant.sku}</code>}
                 {/* Rating posts immediately - it is its own endpoint, not part of this form's submit. */}
-                {variant && <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} interactive size="md" className="ml-auto" />}
+                {variant && (
+                  <VariantRating
+                    variantId={variant.id}
+                    rating={variant.rating}
+                    ratingCount={variant.ratingCount}
+                    interactive
+                    size="md"
+                    className="ml-auto"
+                  />
+                )}
               </div>
             ) : (
               <FormField
@@ -278,7 +293,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                     <FormItem>
                       <FormLabel>Variant name *</FormLabel>
                       <FormControl>
-                        <Input placeholder='e.g. 64GB / 4GB / 4.5"' className="h-10" {...field} value={field.value ?? ''} />
+                        <Input placeholder='e.g. 64GB / 4GB / 4.5"' {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -292,7 +307,13 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                     <FormItem>
                       <FormLabel>Description *</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="What makes this variant distinct - fabric, capacity, finish." rows={3} className="resize-y" {...field} value={field.value ?? ''} />
+                        <Textarea
+                          placeholder="What makes this variant distinct - fabric, capacity, finish."
+                          rows={3}
+                          className="resize-y"
+                          {...field}
+                          value={field.value ?? ''}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -380,7 +401,9 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                   <span className="flex items-center gap-1.5">
                     <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">Margin</span>
-                    <span className={margin >= 0 ? 'font-semibold text-emerald-600 dark:text-emerald-500' : 'font-semibold text-red-600'}>{margin.toFixed(1)}%</span>
+                    <span className={margin >= 0 ? 'font-semibold text-emerald-600 dark:text-emerald-500' : 'font-semibold text-red-600'}>
+                      {margin.toFixed(1)}%
+                    </span>
                   </span>
                 )}
               </div>
@@ -485,14 +508,21 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
 
                     {/* The end date closes the price period itself, not just the discount. */}
                     {effectiveTo && (
-                      <p className="text-[11px] text-amber-700 dark:text-amber-400 sm:col-span-3">After this date the variant has no price and cannot be bought.</p>
+                      <p className="text-[11px] text-amber-700 dark:text-amber-400 sm:col-span-3">
+                        After this date the variant has no price and cannot be bought.
+                      </p>
                     )}
                   </div>
                 )}
               </div>
             </Fold>
 
-            <Fold title={isEdit ? 'Attributes, stock & media' : 'Stock & more'} summary={moreSummary} open={moreOpen} onToggle={() => setMoreOpen((open) => !open)}>
+            <Fold
+              title={isEdit ? 'Attributes, stock & media' : 'Stock & more'}
+              summary={moreSummary}
+              open={moreOpen}
+              onToggle={() => setMoreOpen((open) => !open)}
+            >
               {isEdit && (
                 <>
                   <AttributeRows masterAttributes={masterAttributes} />
@@ -529,7 +559,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                       <FormControl>
                         <Input
                           placeholder="Barcode"
-                          className="h-10"
+
                           {...field}
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.value)}
@@ -551,7 +581,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                           type="number"
                           min={0}
                           placeholder="0"
-                          className="h-10"
+
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)}
                         />
@@ -572,7 +602,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                           type="number"
                           min={0}
                           placeholder="5"
-                          className="h-10"
+
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? undefined : +e.target.value)}
                         />
@@ -616,7 +646,9 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <p className={cn('hidden items-center gap-1.5 text-xs sm:flex', isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
+            <p
+              className={cn('hidden items-center gap-1.5 text-xs sm:flex', isDirty ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}
+            >
               {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
               {isDirty ? 'Unsaved changes' : 'No changes yet'}
             </p>
@@ -649,13 +681,32 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
 }
 
 // Everything the API accepts but does not require, folded away until it is wanted.
-function Fold({ title, summary, open, onToggle, children }: { title: string; summary?: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+function Fold({
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  summary?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
   return (
     <section className="overflow-hidden rounded-xl border">
-      <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+      >
         <span className="min-w-0 flex-1 text-sm font-semibold leading-tight">{title}</span>
         {!open && summary && <span className="hidden truncate text-[11px] text-muted-foreground sm:inline">{summary}</span>}
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Optional</span>
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Optional
+        </span>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
 

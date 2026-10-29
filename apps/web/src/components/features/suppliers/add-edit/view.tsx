@@ -4,33 +4,10 @@ import Field from '@/components/common/field';
 import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import StatusBadge from '@/components/common/status-badge';
 import { useGetSupplierById } from '@/hooks/service-hooks/useSupplierService';
-import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
-import { Eye, EyeOff, Pencil, Trash2, Truck } from 'lucide-react';
-import { StatusValues } from '@pms/types';
-
-/** Same colours and wording the status cards use, so view and edit read alike. */
-const STATUS_TONE: Record<string, { label: string; hint: string; icon: typeof Eye; pill: string }> = {
-  [StatusValues.Published]: {
-    label: 'Published',
-    hint: 'Offered when receiving stock.',
-    icon: Eye,
-    pill: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  },
-  [StatusValues.Draft]: {
-    label: 'Draft',
-    hint: 'Hidden until you publish it.',
-    icon: EyeOff,
-    pill: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-  },
-  [StatusValues.Trash]: {
-    label: 'Trash',
-    hint: 'Moved to Trash. Restore it to bring it back.',
-    icon: Trash2,
-    pill: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
-  },
-};
+import { formatDate } from '@/lib/format-date';
+import { Pencil, Truck } from 'lucide-react';
 
 interface SupplierViewProps {
   id: number;
@@ -44,18 +21,6 @@ export default function SupplierView({ id, onEdit, onClose }: SupplierViewProps)
   const { data, isLoading, isError } = useGetSupplierById(id, id > 0);
   const supplier = data?.data?.data;
 
-  const when = (value?: Date | string | null) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return (
-      <span title={format(date, 'PPpp')}>
-        {format(date, 'd MMM yyyy, h:mm a')}
-        <span className="ml-1 text-muted-foreground/70">({formatDistanceToNow(date, { addSuffix: true })})</span>
-      </span>
-    );
-  };
-
-  const status = supplier ? (STATUS_TONE[supplier.status] ?? STATUS_TONE[StatusValues.Draft]) : null;
 
   return (
     <>
@@ -86,19 +51,9 @@ export default function SupplierView({ id, onEdit, onClose }: SupplierViewProps)
           </div>
         ) : (
           <div className="space-y-5">
-            {status && (
-              <div className={cn('flex items-start gap-3 rounded-xl border px-3 py-2.5', status.pill)}>
-                <status.icon className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">{status.label}</p>
-                  <p className="text-xs opacity-80">{status.hint}</p>
-                </div>
-              </div>
-            )}
-
             <dl className="grid gap-x-6">
               <Field label="Name" value={supplier.name} />
-              <Field label="Contact person" value={supplier.contactPerson?.trim() ? supplier.contactPerson : '—'} />
+              <Field label="Status" value={<StatusBadge status={supplier.status} />} />
               <Field
                 label="Email"
                 value={
@@ -124,11 +79,10 @@ export default function SupplierView({ id, onEdit, onClose }: SupplierViewProps)
                 }
               />
               <Field label="Address" value={supplier.address?.trim() ? supplier.address : '—'} />
-              <Field label="Notes" value={supplier.notes?.trim() ? supplier.notes : '—'} />
               <Field label="Display order" value={supplier.displayOrder ?? '—'} />
               <Field label="Supplier ID" value={<span className="font-mono text-xs">{supplier.id}</span>} />
-              <Field label="Added" value={when(supplier.createdAt)} />
-              <Field label="Last updated" value={when(supplier.updatedAt)} />
+              <Field label="Added" value={formatDate(supplier.createdAt)} />
+              <Field label="Last updated" value={supplier.updatedAt ? formatDate(supplier.updatedAt) : '—'} />
             </dl>
           </div>
         )}

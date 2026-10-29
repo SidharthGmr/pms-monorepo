@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Sparkles } from 'lucide-react';
+import { Plus, Sparkles, X } from 'lucide-react';
 import ConfirmBox from '@/components/common/confirm-box';
 import { DirtyNote } from '@/components/common/field';
 import OptionalSection from '@/components/common/optional-section';
@@ -18,33 +18,36 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
-import { useCreateMasterEntry, useGetAllMasterAttributes, useGetMasterEntryById, useUpdateMasterEntry } from '@/hooks/service-hooks/useMasterEntryService';
+import {
+  useCreateMasterEntry,
+  useGetAllMasterAttributes,
+  useGetMasterEntryById,
+  useUpdateMasterEntry,
+} from '@/hooks/service-hooks/useMasterEntryService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 
 import { MasterEntrySchema } from '@/schema/masterEntrySchema';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { StatusValues, CreateMasterEntryModel } from '@pms/types';
+import { StatusValues, CreateMasterEntryModel, UpdateMasterEntryModel, CustomResponse, MasterEntryDto } from '@pms/types';
+import type { AxiosResponse } from 'axios';
 
 interface ManageMasterEntryProps {
   id?: number;
-  /** Pre-selects the attribute when adding from a filtered list. */
   defaultAttributeId?: number;
   isOpen: boolean;
   onClose: (refresh: boolean) => void;
 }
 
-export const HEX_COLOR = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
-
 const defaults = (attributeId?: number): CreateMasterEntryModel => ({
   attributeId: attributeId ?? 0,
-  name: '',
-  value: '',
-  colorHex: '',
+  values: [''],
   status: StatusValues.Published,
   displayOrder: 0,
 });
 
 // One dialog for Add and Edit, structured like ManageCategory: no id creates, an id edits.
+// Add collects a list of values and creates one entry each; edit works on the single row it
+// opened, so the same array holds exactly one value there.
 // Escape and the X go through the dirty check; clicking outside does nothing so a stray click cannot discard edits.
 export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onClose }: ManageMasterEntryProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -56,20 +59,23 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
   const { data: attributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
 
   const attributes = useMemo(() => attributesResponse?.data?.data?.data ?? [], [attributesResponse]);
-  const attributeItems = useMemo(() => attributes.map((attribute) => ({ label: `${attribute.name} (${attribute.code})`, value: attribute.id })), [attributes]);
+  const attributeItems = useMemo(
+    () => attributes.map((attribute) => ({ label: `${attribute.name} (${attribute.code})`, value: attribute.id })),
+    [attributes]
+  );
 
   // savedRef is set once anything was saved so a later Cancel still tells the list to refresh.
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [optionalOpen, setOptionalOpen] = useState(false);
   const savedRef = useRef(false);
-  const nameRef = useRef<HTMLInputElement | null>(null);
+  const firstValueRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<CreateMasterEntryModel>({
     resolver: yupResolver(MasterEntrySchema),
     defaultValues: defaults(defaultAttributeId),
   });
   const {
-    formState: { isDirty },
+    formState: { isDirty, errors },
   } = form;
 
   // Fill once per mount: without the latch a window-focus refetch (new response object) would
@@ -81,37 +87,43 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
       const entry = response.data.data;
       form.reset({
         attributeId: entry.attributeId,
-        name: entry.name,
-        value: entry.value,
-        colorHex: entry.colorHex ?? '',
+        values: [entry.value],
         status: entry.status,
         displayOrder: entry.displayOrder ?? 0,
       });
     }
   }, [isEdit, response, form]);
 
-  const attributeId = form.watch('attributeId');
-  const colorHex = form.watch('colorHex') ?? '';
-  const selectedAttribute = attributes.find((attribute) => attribute.id === attributeId);
-  const isColorAttribute = /colou?r/i.test(selectedAttribute?.name ?? '') || /colou?r/i.test(selectedAttribute?.code ?? '');
+  const values = form.watch('values') ?? [''];
 
-  // A colour attribute is pointless without its swatch, so the folded section opens itself for one.
-  useEffect(() => {
-    if (isColorAttribute) setOptionalOpen(true);
-  }, [isColorAttribute]);
+  // Primitive arrays do not fit useFieldArray, which keys off object ids, so the list is
+  // rewritten in place - shouldDirty keeps the unsaved-changes guard honest.
+  const setValues = (next: string[]) => form.setValue('values', next, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  const addValue = () => setValues([...values, '']);
+  const removeValue = (index: number) => setValues(values.filter((_, position) => position !== index));
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   useUnsavedChangesWarning(isDirty && !isSaving);
 
   // "Save & add another" keeps the attribute and status, since values added in a row belong to the same group.
-  // An empty colour field must clear the column, not send "".
   const save = async (model: CreateMasterEntryModel, addAnother: boolean) => {
-    const payload: CreateMasterEntryModel = { ...model, colorHex: model.colorHex || null };
+    const cleaned = Array.from(new Set((model.values ?? []).map((value) => value.trim()).filter(Boolean)));
+
     // HttpService only resolves statuses below 500; a 5xx or network failure throws. Catch it
     // here so a failed save shows a toast and keeps the form instead of an unhandled rejection.
-    let result;
+    let result: AxiosResponse<CustomResponse<MasterEntryDto | MasterEntryDto[]>> | undefined;
     try {
-      result = isEdit ? await updateMutation.mutateAsync({ id: id!, model: payload }) : await createMutation.mutateAsync(payload);
+      if (isEdit) {
+        const payload: UpdateMasterEntryModel = {
+          attributeId: model.attributeId,
+          value: cleaned[0],
+          status: model.status,
+          displayOrder: model.displayOrder,
+        };
+        result = await updateMutation.mutateAsync({ id: id!, model: payload });
+      } else {
+        result = await createMutation.mutateAsync({ ...model, values: cleaned });
+      }
     } catch {
       toast({ variant: 'destructive', title: 'Could not save', description: <span>Could not reach the server. Please try again.</span> });
       return;
@@ -119,10 +131,11 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
 
     if (result && (result.status === 200 || result.status === 201)) {
       savedRef.current = true;
-      toast({ variant: 'success', title: `"${model.name}" ${isEdit ? 'updated' : 'created'}` });
+      const title = isEdit ? `"${cleaned[0]}" updated` : cleaned.length === 1 ? `"${cleaned[0]}" created` : `${cleaned.length} values created`;
+      toast({ variant: 'success', title });
       if (addAnother) {
-        form.reset({ ...defaults(model.attributeId), status: model.status, displayOrder: (model.displayOrder ?? 0) + 1 });
-        nameRef.current?.focus();
+        form.reset({ ...defaults(model.attributeId), status: model.status, displayOrder: (model.displayOrder ?? 0) + cleaned.length });
+        firstValueRef.current?.focus();
       } else {
         onClose(true);
       }
@@ -132,13 +145,13 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
     }
   };
 
-  // Two of the fields live behind the disclosure; if one of them blocks the save, it must unfold
-  // so the message is visible instead of the form refusing silently.
+  // Display order lives behind the disclosure; if it blocks the save, it must unfold so the
+  // message is visible instead of the form refusing silently.
   const submit = (addAnother: boolean) =>
     form.handleSubmit(
       (model) => save(model, addAnother),
-      (errors) => {
-        if (errors.colorHex || errors.displayOrder) setOptionalOpen(true);
+      (formErrors) => {
+        if (formErrors.displayOrder) setOptionalOpen(true);
       }
     );
 
@@ -151,6 +164,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
   };
 
   const showSkeleton = isEdit && isFetching;
+  const valuesError = Array.isArray(errors.values) ? undefined : errors.values?.message;
 
   return (
     <>
@@ -162,7 +176,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
                 <Sparkles className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
-                <DialogTitle className="truncate text-base">{isEdit ? 'Edit value' : 'New value'}</DialogTitle>
+                <DialogTitle className="truncate text-base">{isEdit ? 'Edit value' : 'New values'}</DialogTitle>
                 <DialogDescription className="mt-1 text-xs">
                   <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
                   <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
@@ -174,10 +188,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
           {showSkeleton ? (
             <div className="space-y-4 px-6 py-5" aria-busy="true" aria-label="Loading value">
               <Skeleton className="h-10 w-full" />
-              <div className="grid grid-cols-2 gap-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
+              <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
           ) : fetchFailed ? (
@@ -213,43 +224,57 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
                     )}
                   />
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Label *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g. Large"
-                              autoFocus
-                              className="h-10"
-                              {...field}
-                              ref={(el) => {
-                                field.ref(el);
-                                nameRef.current = el;
-                              }}
-                              value={field.value ?? ''}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="value"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Stored value *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. L" className="h-10 font-mono" {...field} value={field.value ?? ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <div className="space-y-2">
+                    <FormLabel>{isEdit ? 'Stored value *' : 'Stored values *'}</FormLabel>
+                    {values.map((_, index) => (
+                      <FormField
+                        key={index}
+                        control={form.control}
+                        name={`values.${index}` as const}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  placeholder="e.g. L"
+                                  autoFocus={index === 0}
+                                  className="h-10 font-mono"
+                                  {...field}
+                                  ref={(el) => {
+                                    field.ref(el);
+                                    if (index === 0) firstValueRef.current = el;
+                                  }}
+                                  value={field.value ?? ''}
+                                />
+                                {!isEdit && values.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 shrink-0 text-muted-foreground"
+                                    onClick={() => removeValue(index)}
+                                    aria-label={`Remove value ${index + 1}`}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                    {valuesError && <p className="text-sm font-medium text-destructive">{valuesError}</p>}
+                    {!isEdit && (
+                      <>
+                        <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" onClick={addValue}>
+                          <Plus className="h-3.5 w-3.5" />
+                          Add value
+                        </Button>
+                        <p className="text-[11px] text-muted-foreground">Each value is saved as its own entry under the selected attribute.</p>
+                      </>
+                    )}
                   </div>
 
                   <FormField
@@ -266,50 +291,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
                     )}
                   />
 
-                  <OptionalSection
-                    title="Colour & display order"
-                    leading={HEX_COLOR.test(colorHex) ? <span className="h-4 w-4 shrink-0 rounded-full border" style={{ backgroundColor: colorHex }} aria-hidden /> : undefined}
-                    open={optionalOpen}
-                    onOpenChange={setOptionalOpen}
-                    contentClassName="grid grid-cols-1 gap-4 space-y-0 sm:grid-cols-2"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="colorHex"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Colour</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-2">
-                              <label
-                                className="relative h-10 w-10 shrink-0 cursor-pointer overflow-hidden rounded-md border"
-                                style={{ backgroundColor: HEX_COLOR.test(colorHex) ? colorHex : undefined }}
-                                title="Pick a colour"
-                              >
-                                <input
-                                  type="color"
-                                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                                  value={HEX_COLOR.test(colorHex) && colorHex.length === 7 ? colorHex : '#000000'}
-                                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                                  aria-label="Colour picker"
-                                />
-                                {!HEX_COLOR.test(colorHex) && (
-                                  <span className="absolute inset-0 bg-[linear-gradient(135deg,transparent_45%,hsl(var(--border))_45%,hsl(var(--border))_55%,transparent_55%)]" />
-                                )}
-                              </label>
-                              <Input
-                                placeholder="#FF0000"
-                                className="h-10 font-mono uppercase"
-                                {...field}
-                                value={field.value ?? ''}
-                                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <OptionalSection title="Display order" open={optionalOpen} onOpenChange={setOptionalOpen}>
                     <FormField
                       control={form.control}
                       name="displayOrder"
@@ -322,7 +304,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
                               inputMode="numeric"
                               min={0}
                               placeholder="0"
-                              className="h-10"
+
                               value={field.value ?? ''}
                               onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
                             />
@@ -346,7 +328,7 @@ export default function ManageMasterEntry({ id, defaultAttributeId, isOpen, onCl
                       </Button>
                     )}
                     <Button type="submit" loading={isSaving}>
-                      {isEdit ? 'Save changes' : 'Create value'}
+                      {isEdit ? 'Save changes' : 'Create values'}
                     </Button>
                   </div>
                 </DialogFooter>

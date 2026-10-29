@@ -9,7 +9,6 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
-
 import { useCreateOrder, useGetOrderById, useUpdateOrder } from '@/hooks/service-hooks/useOrderService';
 import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
@@ -242,7 +241,7 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                               <Input
                                 type="number"
                                 min={1}
-                                className="h-10"
+
                                 placeholder="Qty"
                                 value={field.value ?? ''}
                                 onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
@@ -276,7 +275,12 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                 <FormItem>
                   <FormLabel>Discount</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -290,7 +294,12 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                 <FormItem>
                   <FormLabel>Tax</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -304,7 +313,12 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                 <FormItem>
                   <FormLabel>Shipping Cost</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="0" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

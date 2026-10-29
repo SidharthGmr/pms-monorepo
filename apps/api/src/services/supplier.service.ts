@@ -27,11 +27,9 @@ export class SupplierService implements ISupplierService {
       const supplier = await transactionClient.supplier.create({
         data: {
           name: data.name,
-          contactPerson: data.contactPerson || null,
           email: data.email || null,
           phone: data.phone || null,
           address: data.address || null,
-          notes: data.notes || null,
           storeCode: storeCode,
           status: data.status || StatusEnum.Published,
           displayOrder: data.displayOrder || null,
@@ -50,11 +48,9 @@ export class SupplierService implements ISupplierService {
         where: { id },
         data: {
           name: data.name,
-          contactPerson: data.contactPerson ?? null,
           email: data.email ?? null,
           phone: data.phone ?? null,
           address: data.address ?? null,
-          notes: data.notes ?? null,
           status: data.status,
           displayOrder: data.displayOrder || null,
           updatedAt: new Date(),

@@ -5,7 +5,13 @@ import { TYPES } from '@/config/types';
 import IMasterAttributeService from '@/services/interfaces/IMasterAttributeService';
 import IMasterEntryService from '@/services/interfaces/IMasterEntryService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CreateMasterAttributeModel, CreateMasterEntryModel, MasterAttributeFilterParams, MasterEntryFilterParams } from '@pms/types';
+import {
+  CreateMasterAttributeModel,
+  CreateMasterEntryModel,
+  UpdateMasterEntryModel,
+  MasterAttributeFilterParams,
+  MasterEntryFilterParams,
+} from '@pms/types';
 
 const attributeService = () => container.get<IMasterAttributeService>(TYPES.IMasterAttributeService);
 const entryService = () => container.get<IMasterEntryService>(TYPES.IMasterEntryService);
@@ -105,7 +111,7 @@ export const useCreateMasterEntry = () => {
 export const useUpdateMasterEntry = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, model }: { id: number | string; model: CreateMasterEntryModel }) => entryService().update(id, model),
+    mutationFn: ({ id, model }: { id: number | string; model: UpdateMasterEntryModel }) => entryService().update(id, model),
     onSettled: () => invalidateMasterData(queryClient),
   });
 };

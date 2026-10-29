@@ -538,11 +538,9 @@ model brandName {
 model supplier {
   id            Int       @id @default(autoincrement())
   name          String
-  contactPerson String?
   email         String?
   phone         String?
   address       String?
-  notes         String?
   storeCode     String
   status        Status    @default(Published)
   displayOrder  Int?      @default(0)

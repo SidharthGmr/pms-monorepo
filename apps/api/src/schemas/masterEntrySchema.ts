@@ -35,8 +35,10 @@ export const updateMasterAttributeSchema = z.object({
 export const createMasterEntrySchema = z.object({
     body: z.object({
         attributeId: z.number().int().positive("attributeId is required"),
-        name: z.string().min(1, "Name is required").max(100),
-        value: z.string().min(1, "Value is required").max(100),
+        values: z
+            .array(z.string().min(1, "Value is required").max(100))
+            .min(1, "Add at least one value"),
+        name: z.string().min(1).max(100).optional(),
         colorHex: z
             .string()
             .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Use a hex colour like #FF0000")

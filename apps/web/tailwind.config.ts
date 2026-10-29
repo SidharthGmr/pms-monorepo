@@ -1,4 +1,3 @@
-import { Poppins } from 'next/font/google';
 import type { Config } from 'tailwindcss';
 import colors from 'tailwindcss/colors';
 
@@ -21,7 +20,7 @@ const config = {
   			sidebar: '1200px'
   		},
   		fontFamily: {
-  			sans: ['var(--font-outfit)', 'var(--font-jakarta)', 'var(--font-devanagari)', 'sans-serif']
+  			sans: ['var(--font-outfit, Outfit)', 'var(--font-jakarta, "Plus Jakarta Sans")', 'var(--font-devanagari, "Noto Sans Devanagari")', 'sans-serif']
   		},
   		colors: {
   			violet: {

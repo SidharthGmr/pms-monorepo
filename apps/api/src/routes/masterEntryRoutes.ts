@@ -138,20 +138,19 @@ masterEntryRouter.get("/:id", authenticateToken, asyncHandler(masterEntryControl
  *             type: object
  *             required:
  *               - attributeId
- *               - name
- *               - value
+ *               - values
  *             properties:
  *               attributeId:
  *                 type: integer
  *                 example: 1
+ *               values:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: [S, M, L]
  *               name:
  *                 type: string
  *                 example: Large
- *                 description: Label shown in a dropdown
- *               value:
- *                 type: string
- *                 example: L
- *                 description: Stored/compared value - unique within its attribute
  *               colorHex:
  *                 type: string
  *                 example: "#FF0000"
@@ -163,11 +162,13 @@ masterEntryRouter.get("/:id", authenticateToken, asyncHandler(masterEntryControl
  *               displayOrder:
  *                 type: integer
  *     description: >
+ *       One call creates one entry per item in values, sharing a transaction. Blank and
+ *       repeated values are dropped first. name defaults to the value when omitted.
  *       storeCode is inherited from the parent attribute, so a value can never be filed
  *       under a different store. A duplicate value inside one attribute returns 400.
  *     responses:
  *       201:
- *         description: Master entry created successfully
+ *         description: Master entries created successfully
  *       403:
  *         description: Master attribute belongs to another store
  *       404:

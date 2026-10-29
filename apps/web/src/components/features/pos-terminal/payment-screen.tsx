@@ -113,7 +113,7 @@ export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScre
                 Open invoice
               </Link>
             </Button>
-            <Button type="button" className="h-10" onClick={onBack}>
+            <Button type="button" onClick={onBack}>
               New sale
             </Button>
           </div>
@@ -226,20 +226,43 @@ export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScre
               <label className="text-xs font-semibold text-muted-foreground" htmlFor="pos-discount">
                 Discount
               </label>
-              <Input id="pos-discount" type="number" min={0} inputMode="decimal" placeholder="0" value={discount} onChange={(event) => setDiscount(event.target.value)} className="mt-1.5 h-10 tabular-nums" />
+              <Input
+                id="pos-discount"
+                type="number"
+                min={0}
+                inputMode="decimal"
+                placeholder="0"
+                value={discount}
+                onChange={(event) => setDiscount(event.target.value)}
+                className="mt-1.5 h-10 tabular-nums"
+              />
             </div>
             {method === 'CASH' && (
               <div>
                 <label className="text-xs font-semibold text-muted-foreground" htmlFor="pos-received">
                   Cash received
                 </label>
-                <Input id="pos-received" type="number" min={0} inputMode="decimal" placeholder={String(grandTotal)} value={received} onChange={(event) => setReceived(event.target.value)} className="mt-1.5 h-10 tabular-nums" />
+                <Input
+                  id="pos-received"
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  placeholder={String(grandTotal)}
+                  value={received}
+                  onChange={(event) => setReceived(event.target.value)}
+                  className="mt-1.5 h-10 tabular-nums"
+                />
               </div>
             )}
           </div>
 
           {method === 'CASH' && received !== '' && (
-            <p className={cn('rounded-lg px-3 py-2 text-xs font-semibold tabular-nums', cashShort ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400')}>
+            <p
+              className={cn(
+                'rounded-lg px-3 py-2 text-xs font-semibold tabular-nums',
+                cashShort ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+              )}
+            >
               {cashShort ? `Short by ${formatPrice(grandTotal - receivedAmount)}` : `Change to return: ${formatPrice(change)}`}
             </p>
           )}
@@ -248,10 +271,23 @@ export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScre
             <label className="text-xs font-semibold text-muted-foreground" htmlFor="pos-notes">
               Note
             </label>
-            <Textarea id="pos-notes" rows={2} placeholder="Optional, lands on the invoice" value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-1.5 resize-none" />
+            <Textarea
+              id="pos-notes"
+              rows={2}
+              placeholder="Optional, lands on the invoice"
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              className="mt-1.5 resize-none"
+            />
           </div>
 
-          <Button type="button" className="h-12 w-full gap-2 text-sm font-bold" loading={createOrder.isPending} disabled={cashShort} onClick={placeOrder}>
+          <Button
+            type="button"
+            className="h-12 w-full gap-2 text-sm font-bold"
+            loading={createOrder.isPending}
+            disabled={cashShort}
+            onClick={placeOrder}
+          >
             Confirm · {formatPrice(grandTotal)}
           </Button>
         </section>
