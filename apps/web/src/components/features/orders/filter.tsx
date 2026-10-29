@@ -10,9 +10,7 @@ export type { SortDirection };
 
 export interface OrderFilterValue {
   search: string;
-  /** `null` means every status, which is what the API does when status is omitted. */
   status: OrderStatus | null;
-  /** Filters on `createdAt`. */
   dateRange: DateRange | undefined;
   sortBy: string;
   sortDirection: SortDirection;

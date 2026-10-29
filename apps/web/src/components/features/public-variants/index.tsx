@@ -18,9 +18,7 @@ import { useGetAllPublicProducts } from '@/hooks/service-hooks/useProductService
 // The filter params type the id lists as a comma-separated string or an array, since the
 // API parses either; the sidebar always works in numbers.
 const toIds = (value?: number[] | string): number[] =>
-  (Array.isArray(value) ? value : (value ?? '').split(','))
-    .map(Number)
-    .filter((n) => Number.isInteger(n) && n > 0);
+  (Array.isArray(value) ? value : (value ?? '').split(',')).map(Number).filter((n) => Number.isInteger(n) && n > 0);
 
 export default function PublicVariantList() {
   const searchParams = useSearchParams();
@@ -38,8 +36,6 @@ export default function PublicVariantList() {
     sortBy: searchParams.get('sortBy') || 'createdAt',
     sortDirection: searchParams.get('sortDirection') || 'DESC',
   });
-
-  //const getAllPublicVariantsResponse = useGetAllPublicProductVariants(filterParams);
 
   const getAllProductVariantsResponse = useGetAllPublicProductVariants({ ...filterParams }, true);
 

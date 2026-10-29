@@ -17,14 +17,16 @@ export default function OrderListingWrapper() {
         icon={Receipt}
         title="Invoices"
         description={
-          total === undefined ? 'Every sale billed from this store' : `${total} ${total === 1 ? 'invoice' : 'invoices'} · every sale billed from this store`
+          total === undefined
+            ? 'Every sale billed from this store'
+            : `${total} ${total === 1 ? 'invoice' : 'invoices'} · every sale billed from this store`
         }
-        actions={
-          <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4" />
-            New invoice
-          </Button>
-        }
+        // actions={
+        //   <Button type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+        //     <Plus className="h-4 w-4" />
+        //     New invoice
+        //   </Button>
+        // }
       />
 
       <OrderList onCountChange={handleCount} />

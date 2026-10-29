@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { OrderRowActions } from './row-action';
 import OrderStatusMenu from './status-menu';
 import { OrderDto } from '@pms/types';
+import Link from 'next/link';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
@@ -32,14 +33,14 @@ export const useOrderColumns = (editRecord: (id: number) => void, deleteRecord: 
                 <Receipt className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <button
-                  type="button"
-                  onClick={() => viewRecord(order.id)}
-                  className="block max-w-[200px] truncate text-left font-mono text-sm font-semibold hover:underline"
+                <Link
                   title={order.orderNumber}
+                  href={`/admin/orders/${order.id}`}
+                  className="block max-w-[220px] truncate text-sm font-semibold capitalize hover:underline"
                 >
                   {order.orderNumber}
-                </button>
+                </Link>
+
                 <p className="text-[11px] text-muted-foreground">
                   {items.length} {items.length === 1 ? 'line' : 'lines'} · {quantity} qty
                 </p>
@@ -101,7 +102,9 @@ export const useOrderColumns = (editRecord: (id: number) => void, deleteRecord: 
           return (
             <div className="whitespace-nowrap">
               <p className="text-sm font-bold tabular-nums">{formatPrice(order.grandTotal ?? 0)}</p>
-              {order.discount > 0 && <p className="text-[11px] tabular-nums text-emerald-600 dark:text-emerald-400">−{formatPrice(order.discount)} off</p>}
+              {order.discount > 0 && (
+                <p className="text-[11px] tabular-nums text-emerald-600 dark:text-emerald-400">−{formatPrice(order.discount)} off</p>
+              )}
             </div>
           );
         },
@@ -115,15 +118,20 @@ export const useOrderColumns = (editRecord: (id: number) => void, deleteRecord: 
         cell: ({ row }) => <OrderStatusMenu order={row.original} />,
         meta: { sortingKey: 'status' },
       },
-      {
-        id: 'actions',
-        enableSorting: false,
-        header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => (
-          <OrderRowActions order={row.original} onView={() => viewRecord(row.original.id)} onEdit={() => editRecord(row.original.id)} onDelete={() => deleteRecord(row.original.id)} />
-        ),
-        meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
-      },
+      // {
+      //   id: 'actions',
+      //   enableSorting: false,
+      //   header: () => <span className="sr-only">Actions</span>,
+      //   cell: ({ row }) => (
+      //     <OrderRowActions
+      //       order={row.original}
+      //       onView={() => viewRecord(row.original.id)}
+      //       onEdit={() => editRecord(row.original.id)}
+      //       onDelete={() => deleteRecord(row.original.id)}
+      //     />
+      //   ),
+      //   meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
+      // },
     ],
     [editRecord, deleteRecord, viewRecord]
   );

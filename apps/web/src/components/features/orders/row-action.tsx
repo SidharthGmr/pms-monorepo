@@ -17,7 +17,9 @@ interface OrderRowActionsProps {
 // View and Edit sit inline; sharing and the destructive delete live behind the "…" menu.
 export function OrderRowActions({ order, onView, onEdit, onDelete }: OrderRowActionsProps) {
   const sendWhatsAppMessage = () => {
-    const lines = (order.items ?? []).map((item) => `- ${item.product?.name ?? `Product #${item.productId}`} x${item.quantity ?? 1} — ${formatPrice(item.unitPrice ?? 0)}`);
+    const lines = (order.items ?? []).map(
+      (item) => `- ${item.product?.name ?? `Product #${item.productId}`} x${item.quantity ?? 1} — ${formatPrice(item.unitPrice ?? 0)}`
+    );
     const message = [
       `Order ${order.orderNumber}`,
       order.createdAt ? `Placed: ${new Date(order.createdAt).toLocaleDateString()}` : '',
@@ -42,12 +44,27 @@ export function OrderRowActions({ order, onView, onEdit, onDelete }: OrderRowAct
           <Eye className="h-4 w-4" />
         </Link>
       </Button>
-      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onEdit} aria-label={`Edit order ${order.orderNumber}`} title="Edit">
+      {/* <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground hover:text-primary"
+        onClick={onEdit}
+        aria-label={`Edit order ${order.orderNumber}`}
+        title="Edit"
+      >
         <Pencil className="h-4 w-4" />
-      </Button>
-      <DropdownMenu modal={false}>
+      </Button> */}
+      {/* <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground data-[state=open]:bg-muted" aria-label={`More actions for ${order.orderNumber}`} title="More">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground data-[state=open]:bg-muted"
+            aria-label={`More actions for ${order.orderNumber}`}
+            title="More"
+          >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -66,7 +83,7 @@ export function OrderRowActions({ order, onView, onEdit, onDelete }: OrderRowAct
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu> */}
     </div>
   );
 }

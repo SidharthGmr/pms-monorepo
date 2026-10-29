@@ -10,7 +10,6 @@ import config from '@/config';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
-
 import { useDeleteOrder, useGetAllOrders } from '@/hooks/service-hooks/useOrderService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -103,7 +102,11 @@ export default function OrderList({ onCountChange }: OrderListProps) {
   const openView = useCallback((id: number) => router.push(`/admin/orders/${id}`), [router]);
 
   // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.
-  const columns = useOrderColumns((id) => openEditModal(id), (id) => openDeleteModal(id), openView);
+  const columns = useOrderColumns(
+    (id) => openEditModal(id),
+    (id) => openDeleteModal(id),
+    openView
+  );
   const table = useCustomDataTable({
     columns,
     data: orders,
@@ -158,7 +161,14 @@ export default function OrderList({ onCountChange }: OrderListProps) {
       />
 
       <Card size="sm">
-        <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+        <ListPagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          loading={listQuery.isFetching}
+          onPageChange={setPage}
+          onPageSizeChange={changePageSize}
+        />
       </Card>
 
       {listQuery.isError ? (
@@ -176,7 +186,9 @@ export default function OrderList({ onCountChange }: OrderListProps) {
             emptyMessage={
               <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
                 <Receipt className="h-6 w-6 text-muted-foreground/40" />
-                <span className="text-sm">{isFiltered ? 'No invoices match these filters.' : 'No invoices yet. Use "New invoice" above to raise the first one.'}</span>
+                <span className="text-sm">
+                  {isFiltered ? 'No invoices match these filters.' : 'No invoices yet. Use "New invoice" above to raise the first one.'}
+                </span>
               </div>
             }
           />
@@ -200,20 +212,35 @@ export default function OrderList({ onCountChange }: OrderListProps) {
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No invoices match these filters' : 'No invoices yet'}</p>
-            <p className="text-xs text-muted-foreground">{isFiltered ? 'Try a different search, status or date range.' : 'Use "New invoice" above to raise the first one.'}</p>
+            <p className="text-xs text-muted-foreground">
+              {isFiltered ? 'Try a different search, status or date range.' : 'Use "New invoice" above to raise the first one.'}
+            </p>
           </div>
         </Card>
       ) : (
         <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onView={() => openView(order.id)} onEdit={() => openEditModal(order.id)} onDelete={() => openDeleteModal(order.id)} />
+            <OrderCard
+              key={order.id}
+              order={order}
+              onView={() => openView(order.id)}
+              onEdit={() => openEditModal(order.id)}
+              onDelete={() => openDeleteModal(order.id)}
+            />
           ))}
         </div>
       )}
 
       {total > pageSize && (
         <Card size="sm">
-          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+          <ListPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={listQuery.isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </Card>
       )}
 
