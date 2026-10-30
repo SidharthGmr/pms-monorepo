@@ -14,7 +14,7 @@ export default function ProductListingWrapper() {
   const closeForm = useCallback(() => setFormId(null), []);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-4">
+    <div className="mx-auto w-full max-w-6xl space-y-4">
       {formId !== null ? (
         <ManageProduct id={formId} onCancel={closeForm} onSaved={closeForm} backLabel="Back to products" />
       ) : (

@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
@@ -352,7 +351,7 @@ export default function EmailTemplatesEditor() {
                     fontSize: 14,
                   }}
                   value={html}
-                  onChange={(event) => setHtml(event.target.value)}
+                  onChange={(value: string | undefined) => setHtml(value ?? '')}
                 />
               ) : (
                 <div>

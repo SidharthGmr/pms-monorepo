@@ -36,18 +36,19 @@ const STATUS_BADGE: Record<string, 'green' | 'orange' | 'destructive'> = {
 };
 
 const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-
 // `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant), which puts a 20px inset at desktop widths.
 const FLUSH_CARD = 'p-0 md:p-0';
 
 const VIEW_STORAGE_KEY = 'master-entries.view';
+interface IdProps {
+  attributeId?: number | '';
+}
 
-export default function MasterEntryList() {
+export default function MasterEntryList({ attributeId }: IdProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
 
   // The attributes screen deep-links here with ?attributeId=..., which both filters the list and pre-selects the group when adding.
-  const initialAttributeId = searchParams.get('attributeId') ? +searchParams.get('attributeId')! : undefined;
 
   // Cards are the default view; the stored preference is applied after mount so server and first client render agree.
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,7 +66,7 @@ export default function MasterEntryList() {
   const [filter, setFilter] = useState<MasterEntryFilterValue>(() => ({
     search: searchParams.get('search') ?? DEFAULT_MASTER_ENTRY_FILTER.search,
     status: (searchParams.get('status') as Status) || DEFAULT_MASTER_ENTRY_FILTER.status,
-    attributeId: initialAttributeId,
+    attributeId: Number(searchParams.get('attributeId')) || attributeId || undefined,
     sortBy: searchParams.get('sortBy') ?? DEFAULT_MASTER_ENTRY_FILTER.sortBy,
     sortDirection: (searchParams.get('sortDirection')?.toUpperCase() as SortDirection) === 'ASC' ? 'ASC' : 'DESC',
   }));
@@ -76,7 +77,7 @@ export default function MasterEntryList() {
     () => ({
       search: filter.search,
       status: filter.status ?? undefined,
-      attributeId: filter.attributeId,
+      attributeId: filter.attributeId ?? undefined,
       sortBy: filter.sortBy,
       sortDirection: filter.sortDirection,
       page,
@@ -176,7 +177,6 @@ export default function MasterEntryList() {
         }
       />
 
-
       <MasterEntryFilter
         value={filter}
         onChange={updateFilter}
@@ -188,7 +188,14 @@ export default function MasterEntryList() {
       />
 
       <Card size="sm">
-        <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+        <ListPagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          loading={listQuery.isFetching}
+          onPageChange={setPage}
+          onPageSizeChange={changePageSize}
+        />
       </Card>
 
       {listQuery.isError ? (
@@ -237,21 +244,36 @@ export default function MasterEntryList() {
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No values match these filters' : 'No values yet'}</p>
             <p className="text-xs text-muted-foreground">
-              {isFiltered ? 'Try a different search, status or attribute.' : 'Use "Add value" above to create the first one, e.g. Small, Medium, Large.'}
+              {isFiltered
+                ? 'Try a different search, status or attribute.'
+                : 'Use "Add value" above to create the first one, e.g. Small, Medium, Large.'}
             </p>
           </div>
         </Card>
       ) : (
         <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
           {entries.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} formatDate={formatDate} onEdit={() => openEditModal(entry.id)} onDelete={() => openDeleteModal(entry.id)} />
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              formatDate={formatDate}
+              onEdit={() => openEditModal(entry.id)}
+              onDelete={() => openDeleteModal(entry.id)}
+            />
           ))}
         </div>
       )}
 
       {total > pageSize && (
         <Card size="sm">
-          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+          <ListPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={listQuery.isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </Card>
       )}
 
@@ -309,7 +331,10 @@ function EntryCard({ entry, formatDate, onEdit, onDelete }: EntryCardProps) {
         {swatch ? (
           <span className="h-11 w-11 shrink-0 rounded-lg border shadow-inner" style={{ backgroundColor: swatch }} title={swatch} />
         ) : (
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-xs font-bold uppercase text-primary" title={entry.value}>
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-xs font-bold uppercase text-primary"
+            title={entry.value}
+          >
             {entry.value.slice(0, 3)}
           </span>
         )}

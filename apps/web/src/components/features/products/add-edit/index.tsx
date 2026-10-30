@@ -318,7 +318,7 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
         {isEdit && !isInline && (
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-              <Link href={`/admin/products/${id}/variants`}>
+              <Link href={`/admin/products/${id}`}>
                 <Layers className="h-4 w-4" />
                 Variants &amp; stock
               </Link>

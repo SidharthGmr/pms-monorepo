@@ -30,7 +30,7 @@ export default function ProductCard({ product, onView, onEdit, onDelete }: Produ
     <Card className={cn('group relative !p-0 flex flex-col overflow-hidden transition-shadow hover:shadow-md', trashed && 'opacity-70')}>
       <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
         <CardAction label={`View ${product.name}`} icon={Eye} onClick={onView} className="hover:bg-primary hover:text-primary-foreground" />
-        <CardAction label={`Variants of ${product.name}`} icon={Boxes} onClick={() => router.push(`/admin/products/${product.id}/variants`)} className="hover:bg-primary hover:text-primary-foreground" />
+        <CardAction label={`Variants of ${product.name}`} icon={Boxes} onClick={() => router.push(`/admin/products/${product.id}`)} className="hover:bg-primary hover:text-primary-foreground" />
         <CardAction label={`Edit ${product.name}`} icon={Pencil} onClick={onEdit ?? (() => router.push(`/admin/products/${product.id}?edit=1`))} className="hover:bg-primary hover:text-primary-foreground" />
         {!trashed && <CardAction label={`Delete ${product.name}`} icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />}
       </div>

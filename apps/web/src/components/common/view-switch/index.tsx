@@ -4,21 +4,23 @@ import { cn } from '@/lib/utils';
 
 export type ListView = 'grid' | 'table';
 
+// What a listing shows before the viewer has picked anything, or when their stored choice is unreadable.
+export const DEFAULT_LIST_VIEW: ListView = 'table';
+
 const VIEWS: { value: ListView; label: string; short: string; icon: typeof LayoutGrid }[] = [
   { value: 'grid', label: 'Card view', short: 'Cards', icon: LayoutGrid },
   { value: 'table', label: 'Table view', short: 'Table', icon: Table2 },
 ];
 
 interface ViewSwitchProps {
-  value: ListView;
+  value?: ListView;
   onChange: (view: ListView) => void;
   className?: string;
-  /** Icons only, with the label kept for the tooltip and screen readers. */
   iconOnly?: boolean;
 }
 
 // Cards / Table toggle for listing pages. The stored choice lives with the page, not here.
-export default function ViewSwitch({ value, onChange, className, iconOnly = false }: ViewSwitchProps) {
+export default function ViewSwitch({ value = DEFAULT_LIST_VIEW, onChange, className, iconOnly = false }: ViewSwitchProps) {
   return (
     <div className={cn('inline-flex rounded-md border bg-muted/40 p-0.5', className)} role="radiogroup" aria-label="Layout">
       {VIEWS.map(({ value: v, label, short, icon: Icon }) => {

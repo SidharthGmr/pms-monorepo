@@ -1,6 +1,10 @@
-import ProductPage from '@/components/features/products/product-page';
+import { authOptions } from '@/app/api/auth/[...nextauth]/options';
+import ProductView from '@/components/features/products/view-product';
 import config from '@/config';
+import { CustomResponse, ProductResponseDto } from '@pms/types';
 import { Metadata } from 'next';
+import { getServerSession } from 'next-auth';
+import { notFound } from 'next/navigation';
 
 interface ProductsPageProps {
   params: {
@@ -8,21 +12,51 @@ interface ProductsPageProps {
   };
 }
 
-export function generateMetadata({ params }: ProductsPageProps): Metadata {
-  const id = Number(params.id);
+const fetchProduct = async (id: number): Promise<ProductResponseDto | null> => {
+  if (!Number.isFinite(id) || id <= 0) return null;
+
+  const session = await getServerSession(authOptions);
+  const accessToken = (session?.user as { token?: string } | undefined)?.token;
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`${config.apiBaseUrl}/products/${id}`, {
+      headers: {
+        clientId: config.clientId,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      console.error('Product fetch failed:', { id, status: res.status });
+      return null;
+    }
+
+    const json: CustomResponse<ProductResponseDto> = await res.json();
+    return json.data ?? null;
+  } catch (error) {
+    console.error('Product fetch error:', error);
+    return null;
+  }
+};
+
+export async function generateMetadata({ params }: ProductsPageProps): Promise<Metadata> {
+  const product = await fetchProduct(Number(params.id));
   return {
-    title: `${id > 0 ? 'Product' : 'Add Product'} - ${config.appName}`,
+    title: `${product?.name ?? 'Product'} - ${config.appName}`,
+    ...(product?.description ? { description: product.description } : {}),
   };
 }
 
-export default function ProductsPage({ params }: ProductsPageProps) {
-  // The route is shared: /admin/products/0 renders the create form, /admin/products/12 opens
-  // product 12 - its details, or the form when ?edit=1.
-  const id = Number(params.id);
+export default async function ProductsPage({ params }: ProductsPageProps) {
+  const product = await fetchProduct(Number(params.id));
+  if (!product) return notFound();
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4">
-      <ProductPage id={Number.isFinite(id) ? id : 0} />
+    <div className="mx-auto w-full max-w-7xl space-y-4">
+      <ProductView id={product.id} />
     </div>
   );
 }

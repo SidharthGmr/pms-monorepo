@@ -99,7 +99,7 @@ export default function ListToolbar<TStatus extends string | null = string | nul
           {sort && (
             <div className="flex items-center rounded-md border bg-background">
               <Select value={sort.value} onValueChange={sort.onChange}>
-                <SelectTrigger className="h-9 w-[150px] border-0 shadow-none focus:ring-0" aria-label="Sort by">
+                <SelectTrigger className="w-[150px] border-0 shadow-none focus:ring-0" aria-label="Sort by">
                   <span className="text-muted-foreground">Sort&nbsp;</span>
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>

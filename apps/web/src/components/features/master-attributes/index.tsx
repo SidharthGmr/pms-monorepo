@@ -1,8 +1,8 @@
 'use client';
-import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
+import { MouseEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ListChecks, Pencil, Plus, Ruler, Trash2 } from 'lucide-react';
+import { ListChecks, Plus, Ruler } from 'lucide-react';
 import { Status, MasterAttributeDto, MasterAttributeFilterParams, StatusValues } from '@pms/types';
 import { useDeleteMasterAttribute, useGetAllMasterAttributes } from '@/hooks/service-hooks/useMasterEntryService';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
@@ -15,15 +15,15 @@ import config from '@/config';
 import { cn } from '@/lib/utils';
 import { CustomDataTable } from '@/components/Table/data-table';
 import ConfirmBox from '@/components/common/confirm-box';
-import CardAction from '@/components/common/card-action';
 import ListPagination from '@/components/common/list-pagination';
 import ListPageHeader from '@/components/common/list-page-header';
+import { CustomeCard } from '@/components/common/custome-card/card';
 import { readStoredView, storeView } from '@/components/common/view-switch';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
+import ManageMasterEntry from '../master-entries/add-edit';
 import ManageMasterAttribute from './add-edit';
 import { useMasterAttributeColumns } from './columns';
 import MasterAttributeFilter, { DEFAULT_MASTER_ATTRIBUTE_FILTER, ListView, MasterAttributeFilterValue, SortDirection } from './filter';
@@ -36,10 +36,15 @@ const STATUS_BADGE: Record<string, 'green' | 'orange' | 'destructive'> = {
 
 const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3';
 
-// `p-0` alone loses to the Card's own `md:p-5` in tailwind-merge (different variant), which puts a 20px inset at desktop widths.
-const FLUSH_CARD = 'p-0 md:p-0';
-
 const VIEW_STORAGE_KEY = 'master-attributes.view';
+
+// The card itself opens the editor, so the values link has to keep its click to itself.
+const stopPropagation = (e: MouseEvent) => e.stopPropagation();
+
+const scopeOf = (attribute: MasterAttributeDto) => {
+  const scope = [attribute.category?.name, attribute.brandName?.name].filter(Boolean).join(' · ');
+  return scope ? `Scoped to ${scope}` : undefined;
+};
 
 export default function MasterAttributeList() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -84,15 +89,19 @@ export default function MasterAttributeList() {
   const deleteMutation = useDeleteMasterAttribute();
 
   const result = listQuery.data?.data?.data;
+  console.log('result', result);
   const attributes: MasterAttributeDto[] = useMemo(() => result?.data ?? [], [result]);
   const total = result?.totalRecord ?? 0;
 
   const { showModal: showEditModal, openModal: openEditModal, closeModal: closeEditModal, uniqueId: editId } = useModalShowHide();
+  // The "+" action on a row opens the entry dialog with that attribute already picked.
+  const { showModal: showValuesModal, openModal: openValuesModal, closeModal: closeValuesModal, uniqueId: valuesId } = useModalShowHide();
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
   // The table view reuses the original column set. Paging and sorting are already applied by
   // the API, so the table is told it is manual and simply renders the page it is given.
   const columns = useMasterAttributeColumns(
+    (id) => openValuesModal(id),
     (id) => openEditModal(id),
     (id) => openDeleteModal(id)
   );
@@ -134,8 +143,6 @@ export default function MasterAttributeList() {
     closeDeleteModal(true);
   };
 
-  const formatDate = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(new Date(value), false) : '—');
-
   const isFiltered = filter.search !== '' || filter.status !== null;
   const showSkeleton = listQuery.isPending;
 
@@ -168,7 +175,14 @@ export default function MasterAttributeList() {
       />
 
       <Card size="sm">
-        <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+        <ListPagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          loading={listQuery.isFetching}
+          onPageChange={setPage}
+          onPageSizeChange={changePageSize}
+        />
       </Card>
 
       {listQuery.isError ? (
@@ -177,7 +191,7 @@ export default function MasterAttributeList() {
           <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
         </Card>
       ) : view === 'table' ? (
-        <Card className={cn(FLUSH_CARD, 'overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
+        <Card className={cn('p-0 md:p-0 overflow-hidden', listQuery.isFetching && !showSkeleton && 'opacity-60 transition-opacity')}>
           <CustomDataTable
             columns={columns}
             table={table}
@@ -194,7 +208,7 @@ export default function MasterAttributeList() {
       ) : showSkeleton ? (
         <div className={GRID} aria-busy="true" aria-label="Loading attributes">
           {Array.from({ length: Math.min(pageSize, 9) }).map((_, i) => (
-            <Card key={i} className={cn(FLUSH_CARD, 'border')}>
+            <Card key={i} className={cn('p-0 md:p-0 border')}>
               <div className="flex items-start gap-3 p-4">
                 <Skeleton className="h-11 w-11 shrink-0 rounded-lg" />
                 <div className="flex-1 space-y-2">
@@ -224,10 +238,28 @@ export default function MasterAttributeList() {
       ) : (
         <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
           {attributes.map((attribute) => (
-            <AttributeCard
+            <CustomeCard
               key={attribute.id}
-              attribute={attribute}
-              formatDate={formatDate}
+              monogram={attribute.code.slice(0, 3)}
+              title={attribute.name}
+              type={attribute.code}
+              status={attribute.status}
+              statusVariant={STATUS_BADGE[attribute.status] ?? 'default'}
+              subtitle={scopeOf(attribute)}
+              displayOrder={attribute.displayOrder}
+              date={attribute.createdAt}
+              entityLabel="attribute"
+              dimmed={attribute.status === StatusValues.Trash}
+              footer={
+                <Link
+                  href={`/admin/master-entries?attributeId=${attribute.id}`}
+                  onClick={stopPropagation}
+                  className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  <ListChecks className="h-3.5 w-3.5" />
+                  {attribute.entryCount ?? 0} {(attribute.entryCount ?? 0) === 1 ? 'value' : 'values'}
+                </Link>
+              }
               onEdit={() => openEditModal(attribute.id)}
               onDelete={() => openDeleteModal(attribute.id)}
             />
@@ -237,12 +269,22 @@ export default function MasterAttributeList() {
 
       {total > pageSize && (
         <Card size="sm">
-          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+          <ListPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={listQuery.isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </Card>
       )}
 
       {showAddModal && <ManageMasterAttribute isOpen={showAddModal} onClose={() => setShowAddModal(false)} />}
       {showEditModal && editId && <ManageMasterAttribute id={+editId} isOpen={showEditModal} onClose={(refresh) => closeEditModal(refresh)} />}
+      {showValuesModal && valuesId && (
+        <ManageMasterEntry defaultAttributeId={+valuesId} isOpen={showValuesModal} onClose={(refresh) => closeValuesModal(refresh)} />
+      )}
       {showDeleteModal && deleteId && (
         <ConfirmBox
           isOpen={showDeleteModal}
@@ -254,91 +296,5 @@ export default function MasterAttributeList() {
         />
       )}
     </div>
-  );
-}
-
-interface AttributeCardProps {
-  attribute: MasterAttributeDto;
-  formatDate: (value?: Date | string | null) => string;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function AttributeCard({ attribute, formatDate, onEdit, onDelete }: AttributeCardProps) {
-  const isTrashed = attribute.status === StatusValues.Trash;
-  const entryCount = attribute.entryCount ?? 0;
-  const scope = [attribute.category?.name, attribute.brandName?.name].filter(Boolean).join(' · ');
-
-  // The whole card opens the editor; the overlay buttons and the values link stop propagation.
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onEdit();
-    }
-  };
-  const stop = (e: MouseEvent) => e.stopPropagation();
-
-  return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={onEdit}
-      onKeyDown={onKeyDown}
-      aria-label={`Edit ${attribute.name}`}
-      className={cn(
-        FLUSH_CARD,
-        'group relative flex cursor-pointer flex-col border transition-all duration-200',
-        'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        isTrashed && 'opacity-70 grayscale hover:grayscale-0'
-      )}
-    >
-      <div className="flex items-start gap-3 p-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-xs font-bold uppercase tracking-wide text-primary">
-          {attribute.code.slice(0, 3)}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-sm font-semibold leading-tight" title={attribute.name}>
-              {attribute.name}
-            </p>
-            <Badge variant={STATUS_BADGE[attribute.status] ?? 'default'} className="shrink-0 px-1.5 py-0 text-[10px]">
-              {attribute.status}
-            </Badge>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-            <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono font-medium uppercase">{attribute.code}</code>
-          </div>
-          {scope && (
-            <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground" title={scope}>
-              Scoped to {scope}
-            </p>
-          )}
-        </div>
-
-        <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-          <CardAction label="Edit attribute" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
-          <CardAction label="Delete attribute" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />
-        </div>
-      </div>
-
-      <div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-2.5 text-[11px] text-muted-foreground">
-        <Link
-          href={`/admin/master-entries?attributeId=${attribute.id}`}
-          onClick={stop}
-          className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
-        >
-          <ListChecks className="h-3.5 w-3.5" />
-          {entryCount} {entryCount === 1 ? 'value' : 'values'}
-        </Link>
-        <span className="flex items-center gap-2">
-          <span className="rounded bg-muted px-1.5 py-0.5 font-medium tabular-nums" title="Display order">
-            Order {attribute.displayOrder ?? '—'}
-          </span>
-          <span title="Date added">{formatDate(attribute.createdAt)}</span>
-        </span>
-      </div>
-    </Card>
   );
 }

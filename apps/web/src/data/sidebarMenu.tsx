@@ -123,14 +123,14 @@ export const SideBarMenu: SideBarMenuDto[] = [
         role: [Roles.ADMIN],
         isActive: false,
       },
-      {
-        id: 'master-entries',
-        title: 'Option Values',
-        icon: ListChecks,
-        url: '/admin/master-entries/',
-        role: [Roles.ADMIN],
-        isActive: false,
-      },
+      // {
+      //   id: 'master-entries',
+      //   title: 'Option Values',
+      //   icon: ListChecks,
+      //   url: '/admin/master-entries/',
+      //   role: [Roles.ADMIN],
+      //   isActive: false,
+      // },
       {
         id: 'suppliers',
         title: 'Suppliers',

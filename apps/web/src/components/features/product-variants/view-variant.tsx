@@ -1,46 +1,57 @@
 'use client';
 
-import Field from '@/components/common/field';
-import VariantPriceTable from '@/components/features/price-histories/variant-price-table';
-import { Badge } from '@/components/ui/badge';
+import StatusBadge from '@/components/common/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
+import { useGetAllMasterAttributes, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
 import { useGetProductVariantById } from '@/hooks/service-hooks/useProductVariantService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductVariantListItemDto } from '@pms/types';
-import { AlertTriangle, ChevronLeft, ExternalLink, History, ImageOff, Pencil } from 'lucide-react';
+import { ProductVariantAttributeDto, ProductVariantListItemDto } from '@pms/types';
+import { AlertTriangle, Boxes, ChevronLeft, History, ImageOff, IndianRupee, Pencil, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import ManageVariant from './add-edit';
+import VariantRating from './variant-rating';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
 const money = (amount: number) => `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const attributesOf = (variant: ProductVariantListItemDto): { key: string; value: string }[] => {
-  const attributes = variant.attributes;
-  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return [];
-  return Object.entries(attributes).map(([key, value]) => ({ key, value: String(value) }));
-};
-
-interface VariantViewProps {
+interface ViewVariantProps {
   id: number;
-  /** When given, Edit opens the form on this page instead of navigating to it. */
-  onEdit?: () => void;
 }
 
-// Read-only view of one SKU, opened from the list in its own tab so the list is never lost.
-// Everything here comes from the detail endpoint.
-export default function VariantView({ id, onEdit }: VariantViewProps) {
-  const { data, isPending, isError } = useGetProductVariantById(id);
+// Read-only page for one variant: media, price tiles, resolved option pairs and the ledger
+// details, with editing handed to the shared ManageVariant form in a dialog.
+export default function ViewVariant({ id }: ViewVariantProps) {
+  const { data, isPending, isError } = useGetProductVariantById(id, id > 0);
   const variant = data?.data?.data as ProductVariantListItemDto | undefined;
 
-  const [activeImage, setActiveImage] = useState(0);
+  const { data: attributesResponse } = useGetAllMasterAttributes({ showAllRecords: true });
+  const { data: entriesResponse } = useGetAllMasterEntries({ showAllRecords: true });
 
-  if (isPending) return <VariantViewSkeleton />;
+  const [activeImage, setActiveImage] = useState(0);
+  const [showEdit, setShowEdit] = useState(false);
+
+  // The stored pairs are master-data ids; the names live in the attribute/entry catalogues.
+  const options = useMemo(() => {
+    const attributeNames = new Map((attributesResponse?.data?.data?.data ?? []).map((attribute) => [attribute.id, attribute.name]));
+    const entryValues = new Map((entriesResponse?.data?.data?.data ?? []).map((entry) => [entry.id, entry.value]));
+    const pairs = Array.isArray(variant?.attributes) ? (variant?.attributes as unknown as ProductVariantAttributeDto[]) : [];
+    return pairs
+      .filter((pair) => pair && pair.attributeid != null)
+      .map((pair) => ({
+        label: attributeNames.get(pair.attributeid) ?? `Attribute #${pair.attributeid}`,
+        value: entryValues.get(pair.attributeValueId) ?? `#${pair.attributeValueId}`,
+      }));
+  }, [variant, attributesResponse, entriesResponse]);
+
+  if (isPending) return <ViewVariantSkeleton />;
 
   if (isError || !variant) {
     return (
@@ -55,212 +66,190 @@ export default function VariantView({ id, onEdit }: VariantViewProps) {
     );
   }
 
-  const images = variant.images?.length ? variant.images : variant.product?.images?.length ? variant.product.images : [];
-  const stock = variant.stockQuantity ?? 0;
-  const low = variant.lowStockThreshold != null && stock <= variant.lowStockThreshold;
-  const live = variant.isOffer && variant.offerPrice != null;
-  const payable = variant.sellingPrice == null ? null : live ? Number(variant.offerPrice) : Number(variant.sellingPrice);
-  const savings = live && variant.sellingPrice ? Math.round((1 - Number(variant.offerPrice) / Number(variant.sellingPrice)) * 100) : 0;
-  const margin =
-    variant.sellingPrice != null && variant.costPrice != null && Number(variant.sellingPrice) !== 0
-      ? ((Number(variant.sellingPrice) - Number(variant.costPrice)) / Number(variant.sellingPrice)) * 100
-      : null;
-  const attributes = attributesOf(variant);
+  const images = variant.images ?? [];
+  const title = variant.name ?? variant.sku;
+  const payable = variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice;
+  const margin = variant.costPrice != null && variant.sellingPrice ? ((variant.sellingPrice - variant.costPrice) / variant.sellingPrice) * 100 : null;
+  const lowStock = variant.lowStockThreshold != null && variant.stockQuantity <= variant.lowStockThreshold;
+  const date = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as Date, true) : '—');
 
-  const date = (value?: Date | string | null, withTime = true) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as Date, withTime) : '—');
+  const specs: { label: string; value: string; mono?: boolean }[] = [
+    { label: 'SKU', value: variant.sku, mono: true },
+    { label: 'Barcode', value: variant.barcode ?? '—', mono: true },
+    { label: 'Product', value: variant.product?.name ?? '—' },
+    ...options.map((option) => ({ label: option.label, value: option.value })),
+    { label: 'Low-stock threshold', value: String(variant.lowStockThreshold ?? '—') },
+    { label: 'Price effective from', value: date(variant.effectiveFrom) },
+    { label: 'Price effective to', value: variant.effectiveTo ? date(variant.effectiveTo) : 'Open' },
+    { label: 'Added', value: date(variant.createdAt) },
+    { label: 'Last updated', value: date(variant.updatedAt) },
+  ];
 
   return (
     <div className="space-y-4">
+      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 gap-1 text-muted-foreground hover:text-foreground">
+        <Link href={variant.product ? `/admin/products/${variant.product.id}` : '/admin/products/variants'}>
+          <ChevronLeft className="h-4 w-4" />
+          {variant.product ? `Back to ${variant.product.name}` : 'Back to variants'}
+        </Link>
+      </Button>
+
       <Card className="!p-0 overflow-hidden">
         <div className="flex flex-col gap-3 border-b bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{variant.name ?? variant.sku}</h1>
+            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
               <span className="truncate">{variant.product?.name ?? '—'}</span>
               <code className="font-mono text-xs">{variant.sku}</code>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1.5 text-xs font-medium',
-                  variant.isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'
-                )}
-              >
-                <span className={cn('h-1.5 w-1.5 rounded-full', variant.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50')} />
-                {variant.isActive ? 'Active' : 'Retired'}
-              </span>
+              <StatusBadge status={variant.isActive ? 'ACTIVE' : 'INACTIVE'} label={variant.isActive ? 'Active (sellable)' : 'Retired'} />
+              <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} size="sm" />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {variant.isActive && (
-              <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-                <a href={`/products/${encodeURIComponent(variant.sku)}`} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  View in store
-                </a>
-              </Button>
-            )}
             <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
               <Link href={`/admin/price-histories?productId=${variant.product?.id}&variantId=${variant.id}`}>
                 <History className="h-3.5 w-3.5" />
                 Price history
               </Link>
             </Button>
-            {onEdit ? (
-              <Button type="button" size="sm" className="h-9 gap-1.5" onClick={onEdit}>
-                <Pencil className="h-3.5 w-3.5" />
-                Edit variant
-              </Button>
-            ) : (
-              <Button asChild type="button" size="sm" className="h-9 gap-1.5">
-                <Link href={`/admin/products/variants/${variant.id}`}>
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit variant
-                </Link>
-              </Button>
-            )}
+            <Button type="button" size="sm" className="h-9 gap-1.5" onClick={() => setShowEdit(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+              Edit variant
+            </Button>
           </div>
         </div>
 
-        <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="space-y-2">
-            <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
-              {images[activeImage] ? (
-                // Variant images come from arbitrary CDNs; next/image would need each host in
-                // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={images[activeImage]} alt={variant.name ?? variant.sku} className="h-full w-full object-cover" />
-              ) : (
-                <ImageOff className="h-10 w-10 text-muted-foreground/30" />
-              )}
-            </div>
-            {images.length > 1 && (
-              <div className="flex gap-1.5 overflow-x-auto">
-                {images.map((image, index) => (
-                  <button
-                    key={image}
-                    type="button"
-                    onClick={() => setActiveImage(index)}
-                    aria-label={`Photo ${index + 1}`}
-                    className={cn('h-14 w-14 shrink-0 overflow-hidden rounded-lg border', index === activeImage && 'ring-2 ring-primary')}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={image} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
+            {images.length ? (
+              <>
+                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted/20">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={images[activeImage]} alt={title} className="h-full w-full object-cover" />
+                </div>
+                {images.length > 1 && (
+                  <div className="flex gap-1.5 overflow-x-auto">
+                    {images.map((image, index) => (
+                      <button
+                        key={image}
+                        type="button"
+                        onClick={() => setActiveImage(index)}
+                        aria-label={`Photo ${index + 1}`}
+                        className={cn('h-14 w-14 shrink-0 overflow-hidden rounded-lg border', index === activeImage && 'ring-2 ring-primary')}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={image} alt="" className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/20 text-muted-foreground/60">
+                <div className="rounded-full bg-muted p-3">
+                  <ImageOff className="h-6 w-6" />
+                </div>
+                <p className="text-xs font-medium">No photos yet</p>
               </div>
             )}
           </div>
 
           <div className="space-y-5">
-            <div className="rounded-xl border bg-muted/30 p-4">
-              {payable == null ? (
-                <p className="text-sm text-muted-foreground">Unpriced — record a price to make this sellable.</p>
-              ) : (
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-3xl font-bold tabular-nums">{money(payable)}</span>
-                  {live && <span className="text-sm tabular-nums text-muted-foreground line-through">{money(Number(variant.sellingPrice))}</span>}
-                  {live && savings > 0 && (
-                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{savings}% off</span>
-                  )}
-                </div>
-              )}
-              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-                <span>
-                  Cost <span className="font-semibold text-foreground">{variant.costPrice != null ? money(Number(variant.costPrice)) : '—'}</span>
-                </span>
-                {margin !== null && (
-                  <span>
-                    Margin{' '}
-                    <span
-                      className={cn(
-                        'font-semibold tabular-nums',
-                        margin < 0 ? 'text-rose-600 dark:text-rose-400' : margin < 15 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
-                      )}
-                    >
-                      {margin.toFixed(1)}%
-                    </span>
-                  </span>
-                )}
-                {!variant.isOffer && variant.offerPrice != null && <span>Offer {money(Number(variant.offerPrice))} staged</span>}
-              </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Tile
+                icon={IndianRupee}
+                label="Customer pays"
+                value={payable != null ? money(payable) : 'Unpriced'}
+                hint={
+                  variant.isOffer && variant.offerPrice != null && variant.sellingPrice
+                    ? `offer · was ${money(variant.sellingPrice)}`
+                    : variant.costPrice != null
+                      ? `cost ${money(variant.costPrice)}`
+                      : undefined
+                }
+                warn={payable == null}
+              />
+              <Tile
+                icon={Boxes}
+                label="Stock on hand"
+                value={String(variant.stockQuantity)}
+                hint={lowStock ? 'at or below threshold' : undefined}
+                warn={lowStock}
+              />
+              <Tile
+                icon={TrendingUp}
+                label="Margin"
+                value={margin != null ? `${margin.toFixed(1)}%` : '—'}
+                hint={margin != null ? 'on selling price' : 'needs cost price'}
+                warn={margin != null && margin < 0}
+              />
             </div>
 
-            <dl className="grid gap-x-8 sm:grid-cols-2">
-              <Field
-                label="Stock on hand"
-                value={
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className={cn('tabular-nums', low && 'font-semibold text-amber-600 dark:text-amber-400', stock === 0 && 'text-rose-600 dark:text-rose-400')}>{stock}</span>
-                    {low && (
-                      <Badge variant={stock === 0 ? 'rose' : 'orange'} className="gap-1 font-normal">
-                        <AlertTriangle className="h-3 w-3" />
-                        {stock === 0 ? 'Out' : 'Low'}
-                      </Badge>
-                    )}
-                  </span>
-                }
-              />
-              <Field label="Low-stock alert at" value={variant.lowStockThreshold ?? '—'} />
-              <Field label="Barcode" value={variant.barcode ? <code className="font-mono text-xs">{variant.barcode}</code> : '—'} />
-              <Field label="Rating" value={variant.rating != null ? `${variant.rating.toFixed(1)} (${variant.ratingCount ?? 0})` : 'Not rated yet'} />
-              <Field label="Added" value={date(variant.createdAt)} />
-              <Field label="Last updated" value={date(variant.updatedAt)} />
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-xl border px-4 py-3 sm:grid-cols-3">
+              {specs.map((spec) => (
+                <div key={spec.label} className="min-w-0">
+                  <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{spec.label}</dt>
+                  <dd className={cn('mt-0.5 truncate text-sm font-semibold', spec.mono && 'font-mono text-xs leading-5')} title={spec.value}>
+                    {spec.value}
+                  </dd>
+                </div>
+              ))}
             </dl>
 
-            {attributes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {attributes.map(({ key, value }) => (
-                  <Badge key={key} variant="zinc" className="font-normal">
-                    <span className="uppercase text-muted-foreground">{key}</span>
-                    <span className="mx-1">·</span>
-                    <span className="font-medium">{value}</span>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            {variant.description && <p className="border-t pt-4 text-sm leading-relaxed text-muted-foreground">{variant.description}</p>}
+            {variant.description && <p className="text-sm leading-relaxed text-muted-foreground">{variant.description}</p>}
           </div>
         </div>
       </Card>
 
-      <div className="space-y-2">
-        <h2 className="flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <History className="h-3.5 w-3.5 text-primary" />
-          Price history
-        </h2>
-        <VariantPriceTable variantId={variant.id} />
+      {showEdit && (
+        <Dialog open onOpenChange={(open) => !open && setShowEdit(false)}>
+          <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
+            <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
+              <DialogTitle className="truncate text-base">Edit variant</DialogTitle>
+              <DialogDescription className="mt-1 text-xs">{title}</DialogDescription>
+            </DialogHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <ManageVariant id={variant.id} onCancel={() => setShowEdit(false)} onSaved={() => setShowEdit(false)} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+function Tile({ icon: Icon, label, value, hint, warn }: { icon: typeof Boxes; label: string; value: string; hint?: string; warn?: boolean }) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border bg-card p-3 shadow-sm">
+      <div className={cn('mt-0.5 rounded-lg p-2', warn ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-primary/10 text-primary')}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className={cn('truncate text-lg font-bold leading-tight tabular-nums', warn && 'text-rose-600 dark:text-rose-400')} title={value}>
+          {value}
+        </p>
+        {hint && <p className="truncate text-[11px] text-muted-foreground">{hint}</p>}
       </div>
     </div>
   );
 }
 
-export function VariantViewBackLink() {
-  return (
-    <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 gap-1 text-muted-foreground hover:text-foreground">
-      <Link href="/admin/products/variants">
-        <ChevronLeft className="h-4 w-4" />
-        Back to variants
-      </Link>
-    </Button>
-  );
-}
-
-function VariantViewSkeleton() {
+function ViewVariantSkeleton() {
   return (
     <Card className="!p-0 overflow-hidden">
       <div className="border-b bg-muted/40 px-4 py-4 sm:px-6">
         <Skeleton className="h-6 w-56" />
         <Skeleton className="mt-2 h-4 w-40" />
       </div>
-      <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <Skeleton className="aspect-square w-full rounded-xl" />
         <div className="space-y-4">
-          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
           <Skeleton className="h-40 w-full rounded-xl" />
         </div>
       </div>
     </Card>
   );
 }
-

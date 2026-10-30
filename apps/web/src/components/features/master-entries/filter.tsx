@@ -10,7 +10,6 @@ export type { SortDirection };
 
 export interface MasterEntryFilterValue {
   search: string;
-  /** `null` means "everything except Trash", which is what the API does when status is omitted - same as brands and categories. */
   status: Status | null;
   attributeId?: number;
   sortBy: string;

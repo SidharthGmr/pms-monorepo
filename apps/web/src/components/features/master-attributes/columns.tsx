@@ -1,12 +1,11 @@
 'use client';
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ListChecks, Pencil, Trash2 } from 'lucide-react';
+import { ListChecks } from 'lucide-react';
 import Link from 'next/link';
 import RecordTimestamps from '@/components/common/record-timestamps';
 import StatusBadge from '@/components/common/status-badge';
-import { Button } from '@/components/ui/button';
-
+import ActionTooltip from '@/components/common/tooltip-action-button';
 
 import { cn } from '@/lib/utils';
 import { MasterAttributeDto, StatusValues } from '@pms/types';
@@ -14,7 +13,11 @@ import { MasterAttributeDto, StatusValues } from '@pms/types';
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
 // Table layout for the attribute list. Sorting is driven by the page's Sort control, not the headers.
-export const useMasterAttributeColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void) =>
+export const useMasterAttributeColumns = (
+  addRecordOption: (id: number) => void,
+  editRecord: (id: number) => void,
+  deleteRecord: (id: number) => void
+) =>
   useMemo<ColumnDef<MasterAttributeDto>[]>(
     () => [
       {
@@ -28,13 +31,32 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
           const trashed = attribute.status === StatusValues.Trash;
           return (
             <div className="flex items-center gap-3">
-              <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-[11px] font-bold uppercase tracking-wide text-primary', trashed && 'grayscale')}>
+              <span
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-[11px] font-bold uppercase tracking-wide text-primary',
+                  trashed && 'grayscale'
+                )}
+              >
                 {attribute.code.slice(0, 3)}
               </span>
               <div className="min-w-0">
-                <button type="button" onClick={() => editRecord(+attribute.id)} className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline" title={attribute.name}>
+                {/* <Link
+                  href={`/admin/master-entries/${attribute.id}`}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-primary/10 hover:text-primary"
+                  title={`Show all ${attribute.name} values`}
+                >
+                  <ListChecks className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{attribute.name}</span>
+                  <code className="shrink-0 font-mono text-[10px] uppercase text-muted-foreground">{attribute.code}</code>
+                </Link> */}
+
+                <Link
+                  href={`/admin/master-entries/${attribute.id}`}
+                  className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline"
+                  title={attribute.name}
+                >
                   {attribute.name}
-                </button>
+                </Link>
                 <p className="truncate text-[11px] text-muted-foreground" title={scope || undefined}>
                   {scope ? `Scoped to ${scope}` : 'Store-wide'}
                 </p>
@@ -95,7 +117,9 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
         enableSorting: false,
         header: () => <span className={HEADER}>Order</span>,
         cell: ({ row }) => (
-          <span className="inline-flex min-w-7 justify-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums">{row.original.displayOrder ?? '—'}</span>
+          <span className="inline-flex min-w-7 justify-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums">
+            {row.original.displayOrder ?? '—'}
+          </span>
         ),
         meta: { sortingKey: 'displayOrder', thClassName: 'text-center', tdClassName: 'text-center' },
       },
@@ -104,9 +128,7 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
         accessorKey: 'createdAt',
         enableSorting: false,
         header: () => <span className={HEADER}>Added / Updated</span>,
-        cell: ({ row }) => (
-          <RecordTimestamps createdAt={row.original.createdAt} updatedAt={row.original.updatedAt} />
-        ),
+        cell: ({ row }) => <RecordTimestamps createdAt={row.original.createdAt} updatedAt={row.original.updatedAt} />,
         meta: { sortingKey: 'createdAt', thClassName: 'hidden md:table-cell', tdClassName: 'hidden md:table-cell' },
       },
       {
@@ -114,17 +136,19 @@ export const useMasterAttributeColumns = (editRecord: (id: number) => void, dele
         enableSorting: false,
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-0.5">
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => editRecord(+row.original.id)} aria-label={`Edit ${row.original.name}`} title="Edit">
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteRecord(+row.original.id)} aria-label={`Delete ${row.original.name}`} title="Delete">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-end gap-1">
+            <ActionTooltip
+              variant="add"
+              tooltip="Add values"
+              ariaLabel={`Add values to ${row.original.name}`}
+              onClick={() => addRecordOption(+row.original.id)}
+            />
+            <ActionTooltip variant="edit" tooltip="Edit" ariaLabel={`Edit ${row.original.name}`} onClick={() => editRecord(+row.original.id)} />
+            <ActionTooltip variant="delete" tooltip="Delete" ariaLabel={`Delete ${row.original.name}`} onClick={() => deleteRecord(+row.original.id)} />
           </div>
         ),
         meta: { thClassName: 'w-24 pr-4', tdClassName: 'pr-4' },
       },
     ],
-    [editRecord, deleteRecord]
+    [addRecordOption, editRecord, deleteRecord]
   );

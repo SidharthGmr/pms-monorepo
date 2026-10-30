@@ -14,6 +14,7 @@ import ClassicTemplate from './classic';
 import MinimalTemplate from './minimal';
 import ModernTemplate from './modern';
 import ReceiptTemplate from './receipt';
+import TaxTemplate from './tax';
 import { InvoiceTemplateProps, SAMPLE_INVOICE } from './sample-data';
 
 const SURFACE = 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm';
@@ -25,6 +26,7 @@ const COMPONENTS: Record<InvoiceTemplateKey, React.ComponentType<InvoiceTemplate
   modern: ModernTemplate,
   minimal: MinimalTemplate,
   receipt: ReceiptTemplate,
+  tax: TaxTemplate,
 };
 
 interface InvoiceTemplatesProps {

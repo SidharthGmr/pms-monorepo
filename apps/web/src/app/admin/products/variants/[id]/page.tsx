@@ -1,4 +1,4 @@
-import VariantPage from '@/components/features/product-variants/variant-page';
+import ViewVariant from '@/components/features/product-variants/view-variant';
 import config from '@/config';
 import { Metadata } from 'next';
 
@@ -12,11 +12,12 @@ interface VariantViewPageProps {
   };
 }
 
-// One variant by its own id. Route params arrive as strings, so the id has to be converted
-// before it is handed over - a string never passes Number.isFinite, and the detail query is
-// disabled for id 0, which leaves the page on its skeleton forever.
 export default function VariantViewPage({ params }: VariantViewPageProps) {
   const id = Number(params.id);
 
-  return <VariantPage id={Number.isFinite(id) ? id : 0} />;
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-4">
+      <ViewVariant id={Number.isFinite(id) ? id : 0} />
+    </div>
+  );
 }

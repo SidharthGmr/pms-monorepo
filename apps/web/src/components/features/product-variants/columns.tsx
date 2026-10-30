@@ -1,13 +1,13 @@
 'use client';
+import ActionTooltip from '@/components/common/tooltip-action-button';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto } from '@pms/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { AlertTriangle, Eye, History, ImageOff, Pencil } from 'lucide-react';
+import { AlertTriangle, ImageOff } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -195,6 +195,16 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         },
         meta: { thClassName: 'hidden xl:table-cell', tdClassName: 'hidden xl:table-cell' },
       },
+      // {
+      //   id: 'status',
+      //   accessorKey: 'status',
+      //   enableSorting: false,
+      //   header: () => <span className={HEADER}>Status</span>,
+      //   cell: ({ row }) => {
+      //     return <StatusBadge status={row.original.isActive} />;
+      //   },
+      //   meta: { sortingKey: 'status' },
+      // },
       {
         id: 'isActive',
         accessorKey: 'isActive',
@@ -217,32 +227,27 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         enableSorting: false,
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-0.5">
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="View in new tab">
-              <Link href={viewHrefFor(row.original)} target="_blank" aria-label={`View ${row.original.name ?? row.original.sku} in a new tab`}>
-                <Eye className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Price history">
-              <Link
-                href={`/admin/price-histories?productId=${row.original?.product?.id}&variantId=${row.original.id}`}
-                aria-label={`Price history for ${row.original.name ?? row.original.sku}`}
-              >
-                <History className="h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="flex items-center justify-end gap-1">
+            <ActionTooltip
+              variant="view"
+              tooltip="View in new tab"
+              ariaLabel={`View ${row.original.name ?? row.original.sku} in a new tab`}
+              href={viewHrefFor(row.original)}
+              target="_blank"
+            />
+            <ActionTooltip
+              variant="history"
+              tooltip="Price history"
+              ariaLabel={`Price history for ${row.original.name ?? row.original.sku}`}
+              href={`/admin/price-histories?productId=${row.original?.product?.id}&variantId=${row.original.id}`}
+            />
             {onEdit && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-primary"
+              <ActionTooltip
+                variant="edit"
+                tooltip="Edit"
+                ariaLabel={`Edit ${row.original.name ?? row.original.sku}`}
                 onClick={() => onEdit(row.original)}
-                aria-label={`Edit ${row.original.name ?? row.original.sku}`}
-                title="Edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              />
             )}
           </div>
         ),

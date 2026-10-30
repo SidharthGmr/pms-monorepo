@@ -5,7 +5,7 @@
  * header display - so the two cannot drift apart.
  */
 
-export const INVOICE_TEMPLATE_KEYS = ["classic", "modern", "minimal", "receipt"] as const;
+export const INVOICE_TEMPLATE_KEYS = ["classic", "modern", "minimal", "receipt", "tax"] as const;
 
 export type InvoiceTemplateKey = (typeof INVOICE_TEMPLATE_KEYS)[number];
 
@@ -24,4 +24,5 @@ export const INVOICE_TEMPLATE_META: InvoiceTemplateMeta[] = [
   { key: "modern", name: "Modern", description: "Gradient masthead with card-based details.", width: 794 },
   { key: "minimal", name: "Minimal", description: "Monochrome serif design with hairline rules.", width: 794 },
   { key: "receipt", name: "POS Receipt", description: "80mm thermal-printer slip for counter sales.", width: 320 },
+  { key: "tax", name: "Tax Invoice", description: "GST-style boxed layout with HSN/SAC, received and balance.", width: 794 },
 ];

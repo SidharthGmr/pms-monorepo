@@ -1,11 +1,11 @@
 'use client';
 import { useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ListChecks, Pencil, Trash2 } from 'lucide-react';
+import { ListChecks } from 'lucide-react';
 import Link from 'next/link';
 import RecordTimestamps from '@/components/common/record-timestamps';
 import StatusBadge from '@/components/common/status-badge';
-import { Button } from '@/components/ui/button';
+import ActionTooltip from '@/components/common/tooltip-action-button';
 
 
 import { cn } from '@/lib/utils';
@@ -106,13 +106,9 @@ export const useMasterEntryColumns = (editRecord: (id: number) => void, deleteRe
         enableSorting: false,
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-0.5">
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => editRecord(+row.original.id)} aria-label={`Edit ${row.original.name}`} title="Edit">
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteRecord(+row.original.id)} aria-label={`Delete ${row.original.name}`} title="Delete">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-end gap-1">
+            <ActionTooltip variant="edit" tooltip="Edit" ariaLabel={`Edit ${row.original.name}`} onClick={() => editRecord(+row.original.id)} />
+            <ActionTooltip variant="delete" tooltip="Delete" ariaLabel={`Delete ${row.original.name}`} onClick={() => deleteRecord(+row.original.id)} />
           </div>
         ),
         meta: { thClassName: 'w-24 pr-4', tdClassName: 'pr-4' },

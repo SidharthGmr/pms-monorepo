@@ -6,6 +6,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import { ImageOff } from 'lucide-react';
 import { useMemo } from 'react';
 import ProductRowActions from './row-action';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
@@ -23,25 +25,30 @@ export const useProductColumns = (deleteRecord: (id: number) => void, viewRecord
           const image = product.images?.[0] ?? null;
           return (
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
+              <span className={cn('flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40')}>
                 {image ? (
-                  // Product images come from arbitrary CDNs; next/image would need each host in
-                  // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={image} alt={product.name} className="h-full w-full object-cover" />
+                  <img src={image} alt="" loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <ImageOff className="h-4 w-4 text-muted-foreground/40" />
                 )}
               </span>
+
               <div className="min-w-0">
-                <button
+                <Link
+                  href={`/admin/products/${product.id}`}
+                  className="block max-w-[260px] truncate text-left text-sm font-semibold hover:underline"
+                  title={product.name}
+                >
+                  {product.name}
+                </Link>
+                {/* <button
                   type="button"
                   onClick={() => viewRecord(product.id)}
                   className="block max-w-[240px] truncate text-left text-sm font-semibold hover:underline"
                   title={product.name}
                 >
                   {product.name}
-                </button>
+                </button> */}
                 <p className="max-w-[240px] truncate font-mono text-[11px] text-muted-foreground" title={product.slug}>
                   {product.slug}
                 </p>
@@ -66,6 +73,21 @@ export const useProductColumns = (deleteRecord: (id: number) => void, viewRecord
           </div>
         ),
       },
+
+      {
+        id: 'actions',
+        enableSorting: false,
+        header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => (
+          <ProductRowActions
+            product={row.original}
+            onView={() => viewRecord(row.original.id)}
+            onEdit={editRecord && (() => editRecord(row.original.id))}
+            onDelete={() => deleteRecord(row.original.id)}
+          />
+        ),
+        meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
+      },
       {
         id: 'status',
         accessorKey: 'status',
@@ -81,24 +103,8 @@ export const useProductColumns = (deleteRecord: (id: number) => void, viewRecord
         accessorKey: 'createdAt',
         enableSorting: false,
         header: () => <span className={HEADER}>Added / Updated</span>,
-        cell: ({ row }) => (
-          <RecordTimestamps createdAt={row.original.createdAt} updatedAt={row.original.updatedAt} />
-        ),
+        cell: ({ row }) => <RecordTimestamps createdAt={row.original.createdAt} updatedAt={row.original.updatedAt} />,
         meta: { sortingKey: 'createdAt', thClassName: 'hidden md:table-cell', tdClassName: 'hidden md:table-cell' },
-      },
-      {
-        id: 'actions',
-        enableSorting: false,
-        header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => (
-          <ProductRowActions
-            product={row.original}
-            onView={() => viewRecord(row.original.id)}
-            onEdit={editRecord && (() => editRecord(row.original.id))}
-            onDelete={() => deleteRecord(row.original.id)}
-          />
-        ),
-        meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
       },
     ],
     [deleteRecord, viewRecord, editRecord]

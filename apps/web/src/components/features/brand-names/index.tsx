@@ -1,7 +1,7 @@
 'use client';
-import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Eye, ImageOff, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
+import { Plus, Tag } from 'lucide-react';
 import { BrandNameDto, BrandNameFilterParams, Status, StatusValues } from '@pms/types';
 import { useDeleteBrandName, useGetAllBrandNames } from '@/hooks/service-hooks/useBrandNameService';
 import useModalShowHide from '@/hooks/use-modal-show-hide';
@@ -22,9 +22,15 @@ import { CustomDataTable } from '@/components/Table/data-table';
 import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
 import BrandNameFilter, { BrandNameFilterValue, DEFAULT_BRAND_NAME_FILTER, SortDirection } from './filter';
 import ListPagination from '@/components/common/list-pagination';
-import CardAction from '@/components/common/card-action';
 import { Button } from '@/components/ui/button';
 import ListPageHeader from '@/components/common/list-page-header';
+import { CustomeCard } from '@/components/common/custome-card/card';
+
+const STATUS_BADGE: Record<Status, 'green' | 'orange' | 'destructive'> = {
+  [StatusValues.Published]: 'green',
+  [StatusValues.Draft]: 'orange',
+  [StatusValues.Trash]: 'destructive',
+};
 
 const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
 const FLUSH_CARD = 'p-0 md:p-0';
@@ -35,7 +41,7 @@ export default function BrandName() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const searchParams = useSearchParams();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [view, setView] = useState<ListView>('grid');
+  const [view, setView] = useState<ListView>('table');
   useEffect(() => {
     const stored = readStoredView(VIEW_STORAGE_KEY);
     if (stored) setView(stored);
@@ -208,9 +214,18 @@ export default function BrandName() {
       ) : (
         <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
           {brands.map((brand) => (
-            <BrandCard
+            <CustomeCard
               key={brand.id}
-              brand={brand}
+              image={brand.images?.[0]}
+              title={brand.name}
+              status={brand.status}
+              statusVariant={STATUS_BADGE[brand.status] ?? 'default'}
+              displayOrder={brand.displayOrder}
+              date={brand.createdAt}
+              entityLabel="brand"
+              imageFit="contain"
+              emptyImageText="No logo"
+              dimmed={brand.status === StatusValues.Trash}
               onView={() => openViewModal(brand.id)}
               onEdit={() => openEditModal(brand.id)}
               onDelete={() => openDeleteModal(brand.id)}
@@ -246,89 +261,5 @@ export default function BrandName() {
         />
       )}
     </div>
-  );
-}
-
-interface BrandCardProps {
-  brand: BrandNameDto;
-  onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function BrandCard({ brand, onView, onEdit, onDelete }: BrandCardProps) {
-  const logo = brand.images?.[0];
-  const isTrashed = brand.status === StatusValues.Trash;
-
-  // The whole card opens the read-only view; the overlay buttons stop propagation so edit and
-  // delete never fall through to it.
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onView();
-    }
-  };
-
-  return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={onView}
-      onKeyDown={onKeyDown}
-      aria-label={`View ${brand.name}`}
-      className={cn(
-        FLUSH_CARD,
-        'group relative flex cursor-pointer flex-col overflow-hidden border transition-all duration-200',
-        'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        isTrashed && 'opacity-70 grayscale hover:grayscale-0'
-      )}
-    >
-      <div className="relative flex h-28 items-center justify-center bg-gradient-to-b from-muted/60 to-muted/20 p-4">
-        {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logo}
-            alt=""
-            loading="lazy"
-            className="max-h-full max-w-[80%] object-contain drop-shadow-sm transition-transform duration-200 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
-            <ImageOff className="h-6 w-6" />
-            <span className="text-[10px]">No logo</span>
-          </div>
-        )}
-        <div className="absolute left-2 top-2 px-1.5 py-0 text-[10px] shadow-sm">
-          <span className="rounded bg-muted px-1.5 py-0.5 font-medium tabular-nums" title="Display order">
-            Order {brand.displayOrder ?? '—'}
-          </span>
-        </div>
-
-        {/* <Badge variant={STATUS_BADGE[brand.status] ?? 'default'} className="absolute left-2 top-2 px-1.5 py-0 text-[10px] shadow-sm">
-          {brand.status}
-        </Badge> */}
-
-        <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-          <CardAction label="View brand" icon={Eye} onClick={onView} className="hover:bg-primary hover:text-primary-foreground" />
-          <CardAction label="Edit brand" icon={Pencil} onClick={onEdit} className="hover:bg-primary hover:text-primary-foreground" />
-          <CardAction label="Delete brand" icon={Trash2} onClick={onDelete} className="hover:bg-destructive hover:text-destructive-foreground" />
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-1.5 border-t px-3 py-2.5">
-        <p className="truncate text-sm font-semibold leading-tight text-center" title={brand.name}>
-          {brand.name}
-        </p>
-        {/* <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-          <span className="rounded bg-muted px-1.5 py-0.5 font-medium tabular-nums" title="Display order">
-            Order {brand.displayOrder ?? '—'}
-          </span>
-          <span className="truncate" title="Date added">
-            {formatDate(brand.createdAt)}
-          </span>
-        </div> */}
-      </div>
-    </Card>
   );
 }

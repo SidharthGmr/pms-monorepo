@@ -4,6 +4,7 @@ export interface SampleInvoiceItem {
   name: string;
   variant?: string;
   sku?: string;
+  hsn?: string;
   quantity: number;
   unitPrice: number;
 }
@@ -18,6 +19,8 @@ export interface SampleInvoice {
   discount: number;
   taxRate: number;
   shipping: number;
+  /** Amount already paid against this invoice; balance = grand total - received. */
+  received: number;
   payment: { method: string; status: string };
   notes: string;
 }
@@ -88,14 +91,15 @@ export const SAMPLE_INVOICE: SampleInvoice = {
     email: 'aarav.sharma@example.com',
   },
   items: [
-    { name: 'Wireless Optical Mouse', variant: 'Black · 1600 DPI', sku: 'MS-1600-BLK', quantity: 2, unitPrice: 649 },
-    { name: 'Mechanical Keyboard', variant: 'Blue Switch · TKL', sku: 'KB-MX-BLU', quantity: 1, unitPrice: 2499 },
-    { name: 'USB-C Charging Cable 1m', sku: 'CB-UC-100', quantity: 3, unitPrice: 299 },
-    { name: 'Aluminium Laptop Stand', variant: 'Silver', sku: 'LS-AL-SLV', quantity: 1, unitPrice: 1299 },
+    { name: 'Wireless Optical Mouse', variant: 'Black · 1600 DPI', sku: 'MS-1600-BLK', hsn: '8471', quantity: 2, unitPrice: 649 },
+    { name: 'Mechanical Keyboard', variant: 'Blue Switch · TKL', sku: 'KB-MX-BLU', hsn: '8471', quantity: 1, unitPrice: 2499 },
+    { name: 'USB-C Charging Cable 1m', sku: 'CB-UC-100', hsn: '8544', quantity: 3, unitPrice: 299 },
+    { name: 'Aluminium Laptop Stand', variant: 'Silver', sku: 'LS-AL-SLV', hsn: '7616', quantity: 1, unitPrice: 1299 },
   ],
   discount: 300,
   taxRate: 0.18,
   shipping: 99,
+  received: 4000,
   payment: { method: 'UPI', status: 'Paid' },
   notes: 'Goods once sold are only exchangeable within 7 days with the original invoice.',
 };
