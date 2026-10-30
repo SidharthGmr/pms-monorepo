@@ -37,6 +37,9 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Lets `next build` run beside `next dev` without the two corrupting one shared .next
+  // (unset everywhere else, including Vercel, so the default stays `.next`).
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   trailingSlash: true,
   reactStrictMode: true,
   poweredByHeader: false,

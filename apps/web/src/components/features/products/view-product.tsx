@@ -5,7 +5,6 @@ import { CustomDataTable } from '@/components/Table/data-table';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
@@ -15,7 +14,7 @@ import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto, StatusValues } from '@pms/types';
-import { AlertTriangle, Boxes, ChevronLeft, ExternalLink, History, ImageOff, IndianRupee, Layers, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, Boxes, ChevronLeft, ExternalLink, ImageOff, IndianRupee, Layers, Pencil, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';

@@ -39,7 +39,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/middleware.tbkps"
+    "src/middleware.tbkps",
+    ".next-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -5,7 +5,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Receipt } from 'lucide-react';
 import { useMemo } from 'react';
-import { OrderRowActions } from './row-action';
 import OrderStatusMenu from './status-menu';
 import { OrderDto } from '@pms/types';
 import Link from 'next/link';
@@ -14,7 +13,8 @@ const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-fo
 
 // Register layout for the invoice list: one row per document, read left to right the way a
 // ledger is - number, who it was billed to, when it was issued, what it came to, where it stands.
-export const useOrderColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void, viewRecord: (id: number) => void) =>
+// The handlers are kept (underscored) for when the commented-out actions column returns.
+export const useOrderColumns = (_editRecord: (id: number) => void, _deleteRecord: (id: number) => void, _viewRecord: (id: number) => void) =>
   useMemo<ColumnDef<OrderDto>[]>(
     () => [
       {
@@ -133,5 +133,5 @@ export const useOrderColumns = (editRecord: (id: number) => void, deleteRecord: 
       //   meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
       // },
     ],
-    [editRecord, deleteRecord, viewRecord]
+    []
   );

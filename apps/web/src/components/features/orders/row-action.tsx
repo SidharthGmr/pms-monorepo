@@ -1,9 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-import { formatPrice } from '@/lib/format-price';
-import { Eye, MessageCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import Link from 'next/link';
 import { OrderDto } from '@pms/types';
 
@@ -15,27 +12,27 @@ interface OrderRowActionsProps {
 }
 
 // View and Edit sit inline; sharing and the destructive delete live behind the "…" menu.
-export function OrderRowActions({ order, onView, onEdit, onDelete }: OrderRowActionsProps) {
-  const sendWhatsAppMessage = () => {
-    const lines = (order.items ?? []).map(
-      (item) => `- ${item.product?.name ?? `Product #${item.productId}`} x${item.quantity ?? 1} — ${formatPrice(item.unitPrice ?? 0)}`
-    );
-    const message = [
-      `Order ${order.orderNumber}`,
-      order.createdAt ? `Placed: ${new Date(order.createdAt).toLocaleDateString()}` : '',
-      `Total: ${formatPrice(order.grandTotal ?? 0)}`,
-      '',
-      lines.length ? 'Items:' : 'No items',
-      ...lines,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    // Without a number WhatsApp opens the contact picker, which is what we want: the previous
-    // hardcoded 1234567890 silently messaged a stranger.
-    const phone = (order.customer?.phone ?? '').replace(/[^\d]/g, '');
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
-  };
+export function OrderRowActions({ order }: OrderRowActionsProps) {
+  // const sendWhatsAppMessage = () => {
+  //   const lines = (order.items ?? []).map(
+  //     (item) => `- ${item.product?.name ?? `Product #${item.productId}`} x${item.quantity ?? 1} — ${formatPrice(item.unitPrice ?? 0)}`
+  //   );
+  //   const message = [
+  //     `Order ${order.orderNumber}`,
+  //     order.createdAt ? `Placed: ${new Date(order.createdAt).toLocaleDateString()}` : '',
+  //     `Total: ${formatPrice(order.grandTotal ?? 0)}`,
+  //     '',
+  //     lines.length ? 'Items:' : 'No items',
+  //     ...lines,
+  //   ]
+  //     .filter(Boolean)
+  //     .join('\n');
+  //
+  //   // Without a number WhatsApp opens the contact picker, which is what we want: the previous
+  //   // hardcoded 1234567890 silently messaged a stranger.
+  //   const phone = (order.customer?.phone ?? '').replace(/[^\d]/g, '');
+  //   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+  // };
 
   return (
     <div className="flex items-center justify-end gap-0.5">

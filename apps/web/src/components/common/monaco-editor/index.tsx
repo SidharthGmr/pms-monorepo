@@ -9,7 +9,7 @@ interface MonacoHtmlEditorProps {
 
 export default function MonacoHtmlEditor({ initialHtml = '<h1>Hello Newsletter!</h1>' }: MonacoHtmlEditorProps) {
   const editorRef = useRef<any>(null);
-  const [previewHtml, setPreviewHtml] = useState<string>(initialHtml);
+  const [, setPreviewHtml] = useState<string>(initialHtml);
 
   function handleEditorDidMount(editor: any) {
     editorRef.current = editor;

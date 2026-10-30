@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CornerDownRight, FolderTree, Plus } from 'lucide-react';
 import { CategoryFilterParams, CategoryResponseDto, Status, StatusValues } from '@pms/types';
@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 import ListPageHeader from '@/components/common/list-page-header';
 import { CustomeCard } from '@/components/common/custome-card/card';
-import { ListView, readStoredView, storeView } from '@/components/common/view-switch';
+import { ListView } from '@/components/common/view-switch';
 import { CustomDataTable } from '@/components/Table/data-table';
 import { useCustomDataTable } from '@/hooks/use-custom-table';
 import ManageCategory from './add-edit';
@@ -35,8 +35,6 @@ const GRID = 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4';
 const FLUSH_CARD = 'p-0 md:p-0';
 
 const ALL_CATEGORIES_PARAMS: CategoryFilterParams = { showAllRecords: true };
-
-const VIEW_STORAGE_KEY = 'categories.view';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();

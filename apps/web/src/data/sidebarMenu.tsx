@@ -10,7 +10,6 @@ import {
   History,
   LayoutDashboard,
   List,
-  ListChecks,
   Package,
   PackagePlus,
   Settings2,

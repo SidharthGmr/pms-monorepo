@@ -1,7 +1,6 @@
 'use client';
 import ListPageHeader from '@/components/common/list-page-header';
-import { Button } from '@/components/ui/button';
-import { Plus, Receipt } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import OrderList from '.';
 import ManageOrder from './add-edit';
