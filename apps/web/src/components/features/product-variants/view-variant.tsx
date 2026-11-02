@@ -206,7 +206,7 @@ export default function ViewVariant({ id }: ViewVariantProps) {
         <Dialog open onOpenChange={(open) => !open && setShowEdit(false)}>
           <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
-              <DialogTitle className="truncate text-base">Edit variant</DialogTitle>
+              <DialogTitle className="truncate text-base">{showEdit && title ? title : 'Edit variant'}</DialogTitle>
               <DialogDescription className="mt-1 text-xs">{title}</DialogDescription>
             </DialogHeader>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">

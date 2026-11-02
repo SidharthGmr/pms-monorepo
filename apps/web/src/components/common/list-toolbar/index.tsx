@@ -75,9 +75,6 @@ export default function ListToolbar<TStatus extends string | null = string | nul
 
   return (
     <div className={cn('rounded-xl border border-border/70 bg-card shadow-sm', className)}>
-      {/* One wrapping flow, not a left/right split: a page with many filters (products has
-          seven controls) folds onto a tidy second row instead of stacking the right-hand
-          group into a ragged column. ml-auto still pulls sort/view to the end when it fits. */}
       <div className="flex flex-col gap-2 p-3 lg:flex-row lg:flex-wrap lg:items-center">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {search && <SearchBox value={search.value} onChange={search.onChange} placeholder={search.placeholder} debounceMs={search.debounceMs} />}
@@ -159,13 +156,10 @@ export function SearchBox({ value, onChange, placeholder = 'Search…', debounce
 
   useEffect(() => {
     if (debounced !== value) onChange(debounced);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced]);
 
-  // Keep the box in step when the parent resets the filters.
   useEffect(() => {
     if (value === '' && text !== '') setText('');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return (

@@ -77,53 +77,56 @@ export default function ProductListFilter({ value, onChange, onReset, view, onVi
     !!(value.dateRange?.from || value.dateRange?.to);
 
   return (
-    <ListToolbar<Status | null>
-      search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search name, slug or SKU…' }}
-      status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
-      sort={{
-        value: value.sortBy,
-        onChange: (sortBy) => onChange({ sortBy }),
-        options: SORT_OPTIONS,
-        direction: value.sortDirection,
-        onDirectionChange: (sortDirection) => onChange({ sortDirection }),
-      }}
-      view={{ value: view, onChange: onViewChange, iconOnly: true }}
-      isFiltered={isFiltered}
-      onReset={onReset}
-      leading={
-        <>
-          <SelectSearch
-            value={value.categoryId}
-            placeholder="All categories"
-            items={categoryItems}
-            valueType="number"
-            onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="h-9 bg-background sm:w-44"
-            containerName="product-category-filter"
-          />
-          <SelectSearch
-            value={value.brandNameId}
-            placeholder="All brands"
-            items={brandItems}
-            valueType="number"
-            onChange={(next) => onChange({ brandNameId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="h-9 bg-background sm:w-44"
-            containerName="product-brand-filter"
-          />
-        </>
-      }
-      trailing={
-        <DateRangePicker
-          key={value.dateRange ? 'range' : 'empty'}
-          mode="range"
-          value={value.dateRange}
-          selected={value.dateRange}
-          onSelect={(dateRange) => onChange({ dateRange })}
-          numberOfMonthsToShow={2}
-          placeholder="Date added"
-          buttonClass="h-9 bg-background"
-        />
-      }
-    />
+    <>
+      <ListToolbar<Status | null>
+        search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search name, slug or SKU…' }}
+        status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
+        sort={{
+          value: value.sortBy,
+          onChange: (sortBy) => onChange({ sortBy }),
+          options: SORT_OPTIONS,
+          direction: value.sortDirection,
+          onDirectionChange: (sortDirection) => onChange({ sortDirection }),
+        }}
+        view={{ value: view, onChange: onViewChange, iconOnly: true }}
+        isFiltered={isFiltered}
+        onReset={onReset}
+        leading={
+          <>
+            {' '}
+            <div className="grid grid-cols-3 gpa-4">
+              <SelectSearch
+                value={value.categoryId}
+                placeholder="All categories"
+                items={categoryItems}
+                valueType="number"
+                onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
+                buttonClass=""
+                containerName="product-category-filter"
+              />
+              <SelectSearch
+                value={value.brandNameId}
+                placeholder="All brands"
+                items={brandItems}
+                valueType="number"
+                onChange={(next) => onChange({ brandNameId: next === '' || next === undefined ? undefined : +next })}
+                buttonClass=""
+                containerName="product-brand-filter"
+              />
+              <DateRangePicker
+                key={value.dateRange ? 'range' : 'empty'}
+                mode="range"
+                value={value.dateRange}
+                selected={value.dateRange}
+                onSelect={(dateRange) => onChange({ dateRange })}
+                numberOfMonthsToShow={2}
+                placeholder="Date added"
+                buttonClass=""
+              />
+            </div>
+          </>
+        }
+      />
+    </>
   );
 }

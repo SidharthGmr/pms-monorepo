@@ -97,12 +97,18 @@ export default function UserListFilter({ value, onChange, onReset, view, onViewC
               placeholder="All roles"
               items={roleOptions}
               onChange={(role) => onChange({ role: String(role ?? '') })}
-              buttonClass="h-9 bg-background sm:w-40"
+              buttonClass="sm:w-40"
               disableSearch
             />
           )}
           <div className="w-full sm:w-auto">
-            <DateRangePicker mode="range" value={value.dateRange} selected={value.dateRange} onSelect={(dateRange) => onChange({ dateRange })} numberOfMonthsToShow={2} />
+            <DateRangePicker
+              mode="range"
+              value={value.dateRange}
+              selected={value.dateRange}
+              onSelect={(dateRange) => onChange({ dateRange })}
+              numberOfMonthsToShow={2}
+            />
           </div>
         </>
       }

@@ -18,7 +18,6 @@ interface ActionTooltipProps {
   showText?: boolean;
   onClick?: () => void;
   href?: string;
-  /** Where the link opens; only used with href. */
   target?: '_blank' | '_self';
   disabled?: boolean;
   tooltip?: string;

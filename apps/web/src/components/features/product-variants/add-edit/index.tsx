@@ -40,19 +40,12 @@ import AttributeRows, { toAttributeRows } from './attribute-rows';
 interface ManageVariantProps {
   id?: number;
   productId?: number;
-  /** Set when the form is opened inline (dialog/panel), so Cancel just closes it. */
   onCancel?: () => void;
-  /** Set when the form is opened inline, so a save closes it instead of navigating away. */
   onSaved?: () => void;
 }
 
 const LIST_URL = '/admin/products/variants';
 
-/**
- * Create/edit form for a variant. The component keeps only data fetching, form wiring and the
- * submit/leave flow; every field group below it is a small `useFormContext` component, so a
- * keystroke in one group does not re-render the whole form.
- */
 export default function ManageVariant({ id, productId, onCancel, onSaved }: ManageVariantProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
@@ -225,8 +218,8 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
               </div>
             ) : lockedProductId ? (
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border bg-muted/30 px-3 py-2.5">
-                <span className="text-sm font-medium">{lockedProduct?.name ?? 'Loading product…'}</span>
-                <span className="text-[11px] text-muted-foreground">New variant for this product</span>
+                {/* <span className="text-sm font-medium">{lockedProduct?.name ?? 'Loading product…'}</span>
+                <span className="text-[11px] text-muted-foreground">New variant for this product</span> */}
               </div>
             ) : (
               <FormField

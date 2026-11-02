@@ -1,7 +1,7 @@
 'use client';
 import ListPageHeader from '@/components/common/list-page-header';
 import { Button } from '@/components/ui/button';
-import { Package, Plus } from 'lucide-react';
+import { Package, Plus, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import ProductList from '.';
 import ManageProduct from './add-edit';
@@ -15,25 +15,35 @@ export default function ProductListingWrapper() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4">
+      <ListPageHeader
+        icon={Package}
+        title="Products"
+        description={
+          total === undefined
+            ? 'Everything you sell, with its variants, images and stock'
+            : `${total} ${total === 1 ? 'product' : 'products'} · everything you sell, with its variants, images and stock`
+        }
+        actions={
+          formId !== null ? (
+            <Button type="button" variant="outlineDestructive" onClick={closeForm}>
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+          ) : (
+            <Button type="button" onClick={() => setFormId(0)}>
+              <Plus className="h-4 w-4" />
+              Add product
+            </Button>
+          )
+        }
+      />
+
       {formId !== null ? (
-        <ManageProduct id={formId} onCancel={closeForm} onSaved={closeForm} backLabel="Back to products" />
+        <>
+          <ManageProduct id={formId} onCancel={closeForm} onSaved={closeForm} backLabel="Back to products" />
+        </>
       ) : (
         <>
-          <ListPageHeader
-            icon={Package}
-            title="Products"
-            description={
-              total === undefined
-                ? 'Everything you sell, with its variants, images and stock'
-                : `${total} ${total === 1 ? 'product' : 'products'} · everything you sell, with its variants, images and stock`
-            }
-            actions={
-              <Button type="button" className="h-9 gap-1.5" onClick={() => setFormId(0)}>
-                <Plus className="h-4 w-4" />
-                Add product
-              </Button>
-            }
-          />
           <ProductList onCountChange={handleCount} onEdit={setFormId} />
         </>
       )}

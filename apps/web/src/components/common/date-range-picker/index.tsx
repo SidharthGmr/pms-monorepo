@@ -84,7 +84,11 @@ export function DateRangePicker({
     <div className={cn('grid gap-1', className)}>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button id="date" variant={'outline'} className={cn('justify-start text-left font-normal !px-3', !date && 'text-muted-foreground', buttonClass)}>
+          <Button
+            id="date"
+            variant={'outline'}
+            className={cn('justify-start text-left font-normal !px-3', !date && 'text-muted-foreground', buttonClass)}
+          >
             <CalendarIcon className="h-4 w-4" />
             {date?.from ? (
               date.to ? (
@@ -109,7 +113,7 @@ export function DateRangePicker({
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'justify-start hover:bg-primary/90 hover:text-primary-foreground p-2',
+                    'justify-start h-11 hover:bg-primary/90 hover:text-primary-foreground p-2',
                     activePreset === label && 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
                   )}
                   onClick={() => {

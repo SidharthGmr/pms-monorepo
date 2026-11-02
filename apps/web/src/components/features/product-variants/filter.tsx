@@ -61,8 +61,14 @@ export default function ProductVariantFilter({ value, onChange, onReset, view, o
   const { data: productsResponse } = useGetAllProducts({ showAllRecords: true });
   const { data: categoriesResponse } = useGetAllCategories({ showAllRecords: true });
 
-  const productItems = useMemo(() => (productsResponse?.data?.data?.data ?? []).map((product) => ({ label: product.name, value: product.id })), [productsResponse]);
-  const categoryItems = useMemo(() => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })), [categoriesResponse]);
+  const productItems = useMemo(
+    () => (productsResponse?.data?.data?.data ?? []).map((product) => ({ label: product.name, value: product.id })),
+    [productsResponse]
+  );
+  const categoryItems = useMemo(
+    () => (categoriesResponse?.data?.data?.data ?? []).map((category) => ({ label: category.name, value: category.id })),
+    [categoriesResponse]
+  );
 
   const isFiltered = value.search !== '' || value.productId !== undefined || value.categoryId !== undefined || value.active !== null;
 
@@ -88,7 +94,7 @@ export default function ProductVariantFilter({ value, onChange, onReset, view, o
             items={productItems}
             valueType="number"
             onChange={(next) => onChange({ productId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="h-9 bg-background sm:w-44"
+            buttonClass="sm:w-44"
             containerName="variant-product-filter"
           />
           <SelectSearch
@@ -97,7 +103,7 @@ export default function ProductVariantFilter({ value, onChange, onReset, view, o
             items={categoryItems}
             valueType="number"
             onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="h-9 bg-background sm:w-44"
+            buttonClass="sm:w-44"
             containerName="variant-category-filter"
           />
         </>

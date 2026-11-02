@@ -14,13 +14,15 @@ import { useCustomDataTable } from '@/hooks/use-custom-table';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto, StatusValues } from '@pms/types';
-import { AlertTriangle, Boxes, ChevronLeft, ExternalLink, ImageOff, IndianRupee, Layers, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, Boxes, ChevronLeft, ExternalLink, ImageOff, IndianRupee, Layers, Pencil, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useProductVariantColumns } from '../product-variants/columns';
 import ProductViewSkeleton from '@/components/skelton/productView-Skeleton';
 import ManageVariant from '../product-variants/add-edit';
+import { FiEdit } from 'react-icons/fi';
+import ManageProduct from './add-edit';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -39,6 +41,7 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
 
   const [activeImage, setActiveImage] = useState(0);
   const [showAddVariant, setShowAddVariant] = useState(false);
+  const [showEditProduct, setShowEditProduct] = useState(false);
 
   const variantQuery = useGetAllProductVariants({ productId: id, recordPerPage: 100 }, id > 0);
   const variants: ProductVariantListItemDto[] = useMemo(() => variantQuery.data?.data?.data?.data ?? [], [variantQuery.data]);
@@ -82,137 +85,188 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
   const date = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as Date, true) : '—');
 
   return (
-    <div className="space-y-4">
-      <Card className="!p-0 overflow-hidden">
-        <div className="flex flex-col gap-3 border-b bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{product.name}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-              <span className="truncate">{product.category?.name ?? '—'}</span>
-              {product.brandName?.name && <span className="truncate">· {product.brandName.name}</span>}
-              <code className="font-mono text-xs">/{product.slug}</code>
-              <StatusBadge status={product.status} />
+    <>
+      <div className="space-y-4">
+        <Card className="!p-0 overflow-hidden">
+          <div className="flex flex-col gap-3 border-b bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{product.name}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                <span className="truncate">{product.category?.name ?? '—'}</span>
+                {product.brandName?.name && <span className="truncate">· {product.brandName.name}</span>}
+                <code className="font-mono text-xs">/{product.slug}</code>
+                <StatusBadge status={product.status} />
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {product.status === StatusValues.Published && (
-              <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-                <a href={`/products?search=${encodeURIComponent(product.name)}`} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  View in store
-                </a>
+            <div className="flex flex-wrap items-center gap-2">
+              {product.status === StatusValues.Published && (
+                <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
+                  <a href={`/products?search=${encodeURIComponent(product.name)}`} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    View in store
+                  </a>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() => {
+                  setShowAddVariant(true);
+                  setShowEditProduct(false);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add variant
               </Button>
-            )}
-            <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setShowAddVariant(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Add variant
-            </Button>
+              {showEditProduct ? (
+                <Button type="button" variant="outlineDestructive" onClick={() => setShowEditProduct(false)}>
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setShowEditProduct(true)}>
+                  <FiEdit className="h-3.5 w-3.5" />
+                  Edit product
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <div className="space-y-2">
-            {images.length ? (
-              <>
-                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted/20">
-                  <img src={images[activeImage]} alt={product.name} className="h-full w-full object-cover" />
+          {showEditProduct ? (
+            <ManageProduct id={product.id} onCancel={() => setShowEditProduct(false)} onSaved={() => setShowEditProduct(false)} backLabel="Close" />
+          ) : (
+            <>
+              <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="space-y-2">
+                  {images.length ? (
+                    <>
+                      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted/20">
+                        <img src={images[activeImage]} alt={product.name} className="h-full w-full object-cover" />
+                      </div>
+                      {images.length > 1 && (
+                        <div className="flex gap-1.5 overflow-x-auto">
+                          {images.map((image, index) => (
+                            <button
+                              key={image}
+                              type="button"
+                              onClick={() => setActiveImage(index)}
+                              aria-label={`Photo ${index + 1}`}
+                              className={cn('h-14 w-14 shrink-0 overflow-hidden rounded-lg border', index === activeImage && 'ring-2 ring-primary')}
+                            >
+                              <img src={image} alt="" className="h-full w-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/20 text-muted-foreground/60">
+                      <div className="rounded-full bg-muted p-3">
+                        <ImageOff className="h-6 w-6" />
+                      </div>
+                      <p className="text-xs font-medium">No photos yet</p>
+                      {onEdit && (
+                        <Button type="button" variant="outline" size="sm" className="mt-1 h-7 gap-1 text-xs" onClick={onEdit}>
+                          <Pencil className="h-3 w-3" />
+                          Add photos
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {images.length > 1 && (
-                  <div className="flex gap-1.5 overflow-x-auto">
-                    {images.map((image, index) => (
-                      <button
-                        key={image}
-                        type="button"
-                        onClick={() => setActiveImage(index)}
-                        aria-label={`Photo ${index + 1}`}
-                        className={cn('h-14 w-14 shrink-0 overflow-hidden rounded-lg border', index === activeImage && 'ring-2 ring-primary')}
-                      >
-                        <img src={image} alt="" className="h-full w-full object-cover" />
-                      </button>
-                    ))}
+
+                <div className="space-y-5">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Tile
+                      icon={IndianRupee}
+                      label="Price range"
+                      value={low == null ? 'Unpriced' : low === high ? money(low) : `${money(low)} – ${money(high!)}`}
+                      hint={
+                        priced.length ? `across ${priced.length} active ${priced.length === 1 ? 'variant' : 'variants'}` : 'no active priced variant'
+                      }
+                      warn={low == null}
+                    />
+                    <Tile icon={Layers} label="Variants" value={String(variants.length)} hint={`${active.length} active`} />
+                    <Tile icon={Boxes} label="Stock on hand" value={String(stock)} hint="all variants combined" warn={stock === 0} />
                   </div>
-                )}
-              </>
-            ) : (
-              <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/20 text-muted-foreground/60">
-                <div className="rounded-full bg-muted p-3">
-                  <ImageOff className="h-6 w-6" />
+
+                  <dl className="grid grid-cols-2 overflow-hidden rounded-xl border sm:grid-cols-3 [&>div]:border-b [&>div]:border-r [&>div:nth-child(3n)]:sm:border-r-0 [&>div:nth-child(2n)]:max-sm:border-r-0 [&>div:nth-last-child(-n+3)]:sm:border-b-0 [&>div:nth-last-child(-n+2)]:max-sm:border-b-0">
+                    <Spec label="Category" value={product.category?.name ?? '—'} />
+                    <Spec label="Brand" value={product.brandName?.name ?? '—'} />
+                    <Spec label="Display order" value={String(product.displayOrder ?? '—')} />
+                    <Spec label="Product ID" value={`#${product.id}`} mono />
+                    <Spec label="Added" value={date(product.createdAt)} />
+                    <Spec label="Last updated" value={date(product.updatedAt)} />
+                  </dl>
+
+                  {product.description && <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>}
                 </div>
-                <p className="text-xs font-medium">No photos yet</p>
-                {onEdit && (
-                  <Button type="button" variant="outline" size="sm" className="mt-1 h-7 gap-1 text-xs" onClick={onEdit}>
-                    <Pencil className="h-3 w-3" />
-                    Add photos
-                  </Button>
-                )}
               </div>
-            )}
-          </div>
-
-          <div className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Tile
-                icon={IndianRupee}
-                label="Price range"
-                value={low == null ? 'Unpriced' : low === high ? money(low) : `${money(low)} – ${money(high!)}`}
-                hint={priced.length ? `across ${priced.length} active ${priced.length === 1 ? 'variant' : 'variants'}` : 'no active priced variant'}
-                warn={low == null}
-              />
-              <Tile icon={Layers} label="Variants" value={String(variants.length)} hint={`${active.length} active`} />
-              <Tile icon={Boxes} label="Stock on hand" value={String(stock)} hint="all variants combined" warn={stock === 0} />
-            </div>
-
-            <dl className="grid grid-cols-2 overflow-hidden rounded-xl border sm:grid-cols-3 [&>div]:border-b [&>div]:border-r [&>div:nth-child(3n)]:sm:border-r-0 [&>div:nth-child(2n)]:max-sm:border-r-0 [&>div:nth-last-child(-n+3)]:sm:border-b-0 [&>div:nth-last-child(-n+2)]:max-sm:border-b-0">
-              <Spec label="Category" value={product.category?.name ?? '—'} />
-              <Spec label="Brand" value={product.brandName?.name ?? '—'} />
-              <Spec label="Display order" value={String(product.displayOrder ?? '—')} />
-              <Spec label="Product ID" value={`#${product.id}`} mono />
-              <Spec label="Added" value={date(product.createdAt)} />
-              <Spec label="Last updated" value={date(product.updatedAt)} />
-            </dl>
-
-            {product.description && <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>}
-          </div>
-        </div>
-      </Card>
-
-      {showAddVariant && (
-        <Dialog open onOpenChange={(open) => !open && setShowAddVariant(false)}>
-          <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
-            <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
-              <DialogTitle className="truncate text-base">Add variant</DialogTitle>
-              <DialogDescription className="mt-1 text-xs">A sellable version of {product.name} with its own SKU, price and stock.</DialogDescription>
-            </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-              <ManageVariant productId={product.id} onCancel={() => setShowAddVariant(false)} onSaved={() => setShowAddVariant(false)} />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {variantQuery.isError ? (
-        <Card className="py-10 text-center">
-          <p className="text-sm font-semibold text-destructive">Could not load this product&apos;s variants</p>
-          <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+            </>
+          )}
         </Card>
-      ) : (
-        <Card className={cn(FLUSH_CARD, 'overflow-hidden')}>
-          <CustomDataTable
-            columns={columns}
-            table={table}
-            isLoading={variantQuery.isPending}
-            flush
-            emptyMessage={
-              <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
-                <Layers className="h-6 w-6 text-muted-foreground/40" />
-                <span className="text-sm">No variants yet. A product needs one with a price before it can be sold.</span>
+
+        {showAddVariant && (
+          <Dialog open onOpenChange={(open) => !open && setShowAddVariant(false)}>
+            <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
+              <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
+                <DialogTitle className="truncate text-base">Add variant</DialogTitle>
+                <DialogDescription className="mt-1 text-xs">
+                  A sellable version of {product.name} with its own SKU, price and stock.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <ManageVariant productId={product.id} onCancel={() => setShowAddVariant(false)} onSaved={() => setShowAddVariant(false)} />
               </div>
-            }
-          />
-        </Card>
-      )}
-    </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* {showEditProduct && (
+          <Dialog open onOpenChange={(open) => !open && setShowEditProduct(false)}>
+            <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
+              <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
+                <DialogTitle className="truncate text-base">Edit {product.name}</DialogTitle>
+                <DialogDescription className="mt-1 text-xs">Update the details of {product.name}.</DialogDescription>
+              </DialogHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <ManageProduct
+                  id={product.id}
+                  onCancel={() => setShowEditProduct(false)}
+                  onSaved={() => setShowEditProduct(false)}
+                  backLabel="Close"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )} */}
+
+        {variantQuery.isError ? (
+          <Card className="py-10 text-center">
+            <p className="text-sm font-semibold text-destructive">Could not load this product&apos;s variants</p>
+            <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+          </Card>
+        ) : (
+          <Card className={cn(FLUSH_CARD, 'overflow-hidden')}>
+            <CustomDataTable
+              columns={columns}
+              table={table}
+              isLoading={variantQuery.isPending}
+              flush
+              emptyMessage={
+                <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                  <Layers className="h-6 w-6 text-muted-foreground/40" />
+                  <span className="text-sm">No variants yet. A product needs one with a price before it can be sold.</span>
+                </div>
+              }
+            />
+          </Card>
+        )}
+      </div>
+    </>
   );
 }
 

@@ -28,7 +28,7 @@ import { zodResolver } from '@/lib/zod-resolver';
 
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFormFields, StatusValues, CreateProductModel } from '@pms/types';
-import { ArrowLeft, History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -37,11 +37,8 @@ import VariantOptionRows from './variant-option-rows';
 
 interface ManageProductProps {
   id: number;
-  /** Set when the form is shown inside the product page, so Cancel returns to the details instead of the list. */
   onCancel?: () => void;
-  /** Set when the form is shown inside the product page, so a save returns to the details instead of the list. */
   onSaved?: () => void;
-  /** What the inline back link says, since the form is hosted by both the product page and the list. */
   backLabel?: string;
 }
 
@@ -271,8 +268,10 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          {isInline ? (
+        {/* {isEdit && (
+          <>
+            <div className="min-w-0">
+             {isInline ? (
             <button
               type="button"
               onClick={handleCancel}
@@ -287,33 +286,30 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
               Products
             </Link>
           )}
-          <div className="mt-1 flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
-              {thumbnail ? (
-                // Product images come from arbitrary CDNs; next/image would need each host in
-                // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumbnail} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <Package className="h-5 w-5" />
-              )}
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{isEdit ? productName || 'Edit product' : 'New product'}</h1>
-                {isEdit && (
-                  <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                    Editing
-                  </span>
-                )}
+              <div className="mt-1 flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
+                  {thumbnail ? <img src={thumbnail} alt="" className="h-full w-full object-cover" /> : <Package className="h-5 w-5" />}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                      {isEdit ? productName || 'Edit product' : 'New product'}
+                    </h1>
+                    {isEdit && (
+                      <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                        Editing
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
+                    <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
-                <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
-              </p>
             </div>
-          </div>
-        </div>
+          </>
+        )} */}
 
         {isEdit && !isInline && (
           <div className="flex flex-wrap items-center gap-2">
