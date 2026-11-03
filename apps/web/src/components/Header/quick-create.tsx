@@ -7,6 +7,7 @@ import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { Boxes, FolderTree, PackagePlus, Plus, ShoppingBag, Tags, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { Roles } from '@pms/types';
+import { useHeaderMenu } from './header-menus';
 
 const ACTIONS = [
   { label: 'New sale', hint: 'Take payment for the cart', href: '/admin/cart', icon: ShoppingBag },
@@ -20,10 +21,11 @@ const ACTIONS = [
 // One-click entry points for the things an admin creates most. Hidden for everyone else.
 export function QuickCreate() {
   const { currentUser } = useGetCurrentUser();
+  const { open, onOpenChange } = useHeaderMenu('quick-create');
   if (currentUser?.role !== Roles.ADMIN) return null;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button size="sm" className="h-9 gap-1.5 rounded-lg px-2.5 sm:px-3" aria-label="Create">
           <Plus className="h-4 w-4" />

@@ -19,6 +19,7 @@ import useLogout from '@/hooks/use-logout';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
 import { UserDto } from '@pms/types';
 import { LogOut, Store, UserRound } from 'lucide-react';
+import { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -27,6 +28,7 @@ import { GlobalSearch } from '../global-search';
 import { NotificationBell } from '../notification-bell';
 import { QuickCreate } from '../quick-create';
 import { SettingsMenu } from '../settings-menu';
+import { HeaderMenusProvider, useHeaderMenu } from '../header-menus';
 
 const ICON = '/logo.png';
 const ICON_LIGHT = '/logo-light.png';
@@ -66,6 +68,7 @@ export default function HeaderDashboard() {
         <BreadCrumb />
       </div> */}
 
+      <HeaderMenusProvider>
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
         <GlobalSearch />
         <QuickCreate />
@@ -73,7 +76,7 @@ export default function HeaderDashboard() {
         <CartIndicator />
         <NotificationBell />
         <SettingsMenu />
-        <DropdownMenu>
+        <AccountMenuRoot>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-9 gap-2 rounded-full bg-muted/70 px-1 pr-1 hover:bg-muted md:pr-3" aria-label="Account menu">
               <Avatar className="h-7 w-7 ring-1 ring-border">
@@ -137,9 +140,20 @@ export default function HeaderDashboard() {
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </AccountMenuRoot>
         <SidebarTrigger className="h-8 w-8 rounded-lg sidebar:hidden" />
       </div>
+      </HeaderMenusProvider>
     </header>
+  );
+}
+
+/** The avatar menu's Radix root, driven by the shared header slot like the icon menus. */
+function AccountMenuRoot({ children }: { children: ReactNode }) {
+  const { open, onOpenChange } = useHeaderMenu('account');
+  return (
+    <DropdownMenu open={open} onOpenChange={onOpenChange} modal={false}>
+      {children}
+    </DropdownMenu>
   );
 }

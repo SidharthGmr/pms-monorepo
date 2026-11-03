@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useHeaderMenu } from './header-menus';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetActiveCart, useRemoveCartVariant, useUpdateCartVariantQuantity } from '@/hooks/service-hooks/useCartService';
 import { useLocale } from '@/i18n/locale-provider';
@@ -10,7 +11,6 @@ import { CartItemDto } from '@pms/types';
 import { ArrowRight, ImageOff, Minus, Plus, ShoppingCart, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 
 /**
  * Top-bar cart, opened in place like the notification bell rather than navigating away: the
@@ -21,7 +21,7 @@ import { useState } from 'react';
 export function CartIndicator() {
   const pathname = usePathname();
   const { t, formatCurrency } = useLocale();
-  const [open, setOpen] = useState(false);
+  const { open, onOpenChange: setOpen } = useHeaderMenu('cart');
 
   const isDashboard = pathname?.startsWith('/dashboard') ?? false;
   const isAdmin = pathname?.startsWith('/admin') ?? false;
@@ -52,7 +52,7 @@ export function CartIndicator() {
     totalQuantity === 0 ? t('cart.badgeTitleNone') : totalQuantity === 1 ? t('cart.badgeTitleOne') : t('cart.badgeTitle', { count: totalQuantity });
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-9 w-9" title={badgeTitle} aria-label={badgeTitle}>
           <ShoppingCart className="h-[18px] w-[18px]" />

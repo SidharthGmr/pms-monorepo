@@ -22,6 +22,7 @@ import {
 } from '@/hooks/use-dashboard-variant';
 import { useTheme } from '@/context/theme-provider';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { useHeaderMenu } from './header-menus';
 import { LOCALE_LABELS, LOCALES } from '@/i18n/config';
 import { useLocale } from '@/i18n/locale-provider';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ export function SettingsMenu() {
   const { currentUser } = useGetCurrentUser();
   const dashboardVariant = useDashboardVariant();
   const userDashboardVariant = useUserDashboardVariant();
+  const { open, onOpenChange } = useHeaderMenu('settings');
 
   const mode = theme === 'dark' || theme === 'system' ? theme : 'light';
   const color = THEME_COLORS.some((option) => option.value === theme) ? theme : 'light';
@@ -70,7 +72,7 @@ export function SettingsMenu() {
   const isCustomer = !isAdmin && roles.some((item) => item === Roles.USER);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg" title="Settings" aria-label="Settings">
           <Settings className="h-[18px] w-[18px]" />

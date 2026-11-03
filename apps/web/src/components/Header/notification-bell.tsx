@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useHeaderMenu } from './header-menus';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeleteNotification, useGetAllNotifications, useGetUnreadNotificationCount, useMarkNotificationsRead } from '@/hooks/service-hooks/useNotificationService';
 import useGetCurrentUser from '@/hooks/useGetCurrentUser';
@@ -12,7 +13,6 @@ import { NotificationDto } from '@pms/types';
 import { ArrowRight, Bell, CheckCheck, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 /**
  * Top-bar notification bell for both the admin and the customer dashboard. The badge polls for
@@ -34,7 +34,7 @@ export function NotificationBell() {
   const signedIn = !!currentUser;
   const router = useRouter();
 
-  const [open, setOpen] = useState(false);
+  const { open, onOpenChange: setOpen } = useHeaderMenu('notifications');
 
   const { data: countResponse } = useGetUnreadNotificationCount(signedIn);
   const { data: listResponse, isLoading } = useGetAllNotifications({ recordPerPage: PANEL_SIZE }, signedIn && open);
@@ -56,7 +56,7 @@ export function NotificationBell() {
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
