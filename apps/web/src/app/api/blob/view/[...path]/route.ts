@@ -11,17 +11,22 @@ export const dynamic = 'force-dynamic';
  * session cookie rides along on same-origin requests, which is the whole access check.
  */
 export async function GET(_req: NextRequest, { params }: { params: { path: string[] } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-  }
-
   const pathname = (params.path ?? []).join('/');
 
-  // Only the namespace the upload route writes to is servable - anything else 404s so the
-  // route cannot be used to probe the rest of the store.
-  if (!pathname.startsWith('uploads/')) {
-    return NextResponse.json({ success: false, message: 'File not found' }, { status: 404 });
+  // `branding/` holds only the admin-uploaded logo, which must load with no session (emails,
+  // invoice PDFs, the public storefront); everything else requires a signed-in user.
+  const isPublicBranding = pathname.startsWith('branding/');
+  if (!isPublicBranding) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only the namespace the upload route writes to is servable - anything else 404s so the
+    // route cannot be used to probe the rest of the store.
+    if (!pathname.startsWith('uploads/')) {
+      return NextResponse.json({ success: false, message: 'File not found' }, { status: 404 });
+    }
   }
 
   try {
@@ -35,8 +40,9 @@ export async function GET(_req: NextRequest, { params }: { params: { path: strin
       headers: {
         'Content-Type': file.blob?.contentType || 'application/octet-stream',
         'Content-Disposition': 'inline',
-        // Private: the file needs a session to fetch, so only the browser cache may keep it.
-        'Cache-Control': 'private, max-age=3600',
+        // The logo is public and its filename is timestamped, so caches may keep it for a day;
+        // everything else needs a session to fetch, so only the browser cache may keep it.
+        'Cache-Control': isPublicBranding ? 'public, max-age=86400' : 'private, max-age=3600',
       },
     });
   } catch (error: any) {

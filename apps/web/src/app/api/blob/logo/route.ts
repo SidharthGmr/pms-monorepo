@@ -8,10 +8,10 @@ import { getServerSession } from 'next-auth';
 export const dynamic = 'force-dynamic';
 
 /**
- * The branding logo goes to the PUBLIC blob store, unlike every other upload in the app.
- * It has to load with no session attached - in a customer's email client, in a downloaded
- * invoice PDF - so the authenticated /api/blob/view route cannot serve it. Nothing else is
- * written to this namespace, and only an admin can write here at all.
+ * The branding logo lives in the same PRIVATE blob store as everything else (the store refuses
+ * public writes), but it has to load with no session attached - in a customer's email client,
+ * in a downloaded invoice PDF - so the view route serves the `branding/` namespace without
+ * authentication. Nothing else is written here, and only an admin can write here at all.
  */
 
 const MAX_LOGO_MB = 2;
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     const blob = await put(`branding/logo-${Date.now()}.${extensionFor(file)}`, file, {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
       ...(file.type ? { contentType: file.type } : {}),
     });
@@ -54,8 +54,9 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Logo uploaded successfully',
       data: {
-        // The blob's own public URL: absolute, session-free, safe to embed in an email.
-        url: blob.url,
+        // Served session-free by the view route's branding carve-out; the email dispatcher
+        // prefixes the site URL when it needs an absolute link.
+        url: `/api/blob/view/${blob.pathname}`,
         pathname: blob.pathname,
         contentType: file.type || undefined,
         size: file.size,

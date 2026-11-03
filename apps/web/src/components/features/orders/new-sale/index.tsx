@@ -16,13 +16,14 @@ import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { CreateOrderModel, OrderStatusEnum, orderFormFields, Roles, type OrderFormValues, type ProductVariantListItemDto } from '@pms/types';
-import { format } from 'date-fns';
-import { BadgePercent, Plus, ReceiptText, Trash2 } from 'lucide-react';
+import { Plus, ReceiptText, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { toneFor } from '../order-status';
 import { InputSelect } from '@/components/common/input-select';
+import ClassicTemplate from '@/components/features/settings/invoice-templates/classic';
+import { type SampleInvoice } from '@/components/features/settings/invoice-templates/sample-data';
+import { useGetSettings } from '@/hooks/service-hooks/useSettingService';
 
 const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -34,6 +35,19 @@ export default function NewSale() {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const createOrder = useCreateOrder();
+
+  // Branding for the invoice preview, and a zoom factor that fits the 794px sheet to the column.
+  const { data: settingsResponse } = useGetSettings();
+  const settings = settingsResponse?.data?.data;
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [previewZoom, setPreviewZoom] = useState(0.6);
+  useEffect(() => {
+    const element = previewRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => setPreviewZoom(Math.min(1, element.clientWidth / 794)));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
   const customers = useMemo(
@@ -86,13 +100,32 @@ export default function NewSale() {
       const unitPrice = unitPriceOf(variant);
       return { variantId, variant, quantity, unitPrice, amount: unitPrice * quantity };
     });
-  const totalQty = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
   const discount = Number(values.discount) || 0;
   const tax = Number(values.tax) || 0;
   const shipping = Number(values.shippingCost) || 0;
-  const grandTotal = subtotal - discount + tax + shipping;
-  const tone = toneFor(values.status);
+
+  // The Classic template computes tax from a rate, so the entered absolute tax is converted back.
+  const taxable = subtotal - discount;
+  const previewInvoice: SampleInvoice = {
+    number: 'PREVIEW',
+    status: (['PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELLED'] as const).find((s) => s === values.status) ?? 'CONFIRMED',
+    issuedAt: new Date(),
+    store: { name: settings?.siteName || config.appName, code: '', address: '', phone: '', email: '' },
+    customer: { name: customer?.name || 'Walk-in customer', address: '', phone: '', email: customer?.email || '' },
+    items: lines.map((line) => ({
+      name: line.variant?.product?.name || line.variant?.name || line.variant?.sku || `Variant #${line.variantId}`,
+      variant: [line.variant?.name, line.variant?.sku].filter(Boolean).join(' · ') || undefined,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+    })),
+    discount,
+    taxRate: taxable > 0 ? tax / taxable : 0,
+    shipping,
+    received: 0,
+    payment: { method: '—', status: 'Due' },
+    notes: values.notes || '',
+  };
 
   const submitData = async (model: OrderFormValues) => {
     const payload: CreateOrderModel = {
@@ -359,119 +392,14 @@ export default function NewSale() {
           </Form>
         </div>
 
-        {/* Live invoice preview: same layout language as BillReceipt, but fluid and fed from the form; real prices land on save. */}
+        {/* Live preview rendered with the real Classic invoice template, zoomed to fit the column; real prices land on save. */}
         <div className="lg:col-span-5">
-          <div className="overflow-hidden rounded-xl border bg-white text-slate-900 shadow-sm lg:sticky lg:top-6">
-            <div className="h-1.5 w-full bg-slate-900" />
-
-            <div className="px-6 pb-6 pt-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
-                    {config.appName.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-bold leading-tight">{config.appName}</p>
-                    <p className="text-[11px] uppercase tracking-wider text-slate-400">Tax Invoice</p>
-                  </div>
-                </div>
-
-                <div className="shrink-0 text-right">
-                  <span className="inline-block rounded-full border border-dashed border-slate-300 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    Preview
-                  </span>
-                  <p className="mt-1.5 text-xs text-slate-500">{format(new Date(), 'dd MMM yyyy')}</p>
-                  <span
-                    className={`mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tone.soft} ${tone.text}`}
-                  >
-                    <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-                    {tone.label}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Bill to</p>
-                <p className="mt-1 text-sm font-bold">{customer?.name || 'Walk-in customer'}</p>
-                {customer?.email && <p className="text-xs text-slate-600">{customer.email}</p>}
-              </div>
-
-              <table className="mt-5 w-full border-collapse text-left">
-                <thead>
-                  <tr className="bg-slate-900 text-white">
-                    <th className="rounded-l-md py-2 pl-3 pr-2 text-[10px] font-bold uppercase tracking-wider">Item</th>
-                    <th className="w-20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wider">Rate</th>
-                    <th className="w-12 px-2 py-2 text-center text-[10px] font-bold uppercase tracking-wider">Qty</th>
-                    <th className="w-24 rounded-r-md py-2 pl-2 pr-3 text-right text-[10px] font-bold uppercase tracking-wider">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((line, index) => (
-                    <tr key={index} className="border-b border-slate-100 align-top">
-                      <td className="py-2.5 pl-3 pr-2">
-                        <p className="text-sm font-semibold leading-snug">
-                          {line.variant?.name || line.variant?.sku || `Variant #${line.variantId}`}
-                        </p>
-                        {line.variant?.sku && <p className="mt-0.5 font-mono text-[11px] text-slate-500">{line.variant.sku}</p>}
-                      </td>
-                      <td className="px-2 py-2.5 text-right text-sm tabular-nums text-slate-600">{money(line.unitPrice)}</td>
-                      <td className="px-2 py-2.5 text-center text-sm tabular-nums text-slate-600">{line.quantity}</td>
-                      <td className="py-2.5 pl-2 pr-3 text-right text-sm font-semibold tabular-nums">{money(line.amount)}</td>
-                    </tr>
-                  ))}
-
-                  {lines.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-8 text-center text-sm italic text-slate-400">
-                        Add a product to see it on the invoice.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              <div className="mt-4 space-y-2 rounded-lg border border-slate-200 px-4 py-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Subtotal {totalQty > 0 ? `(${totalQty} qty)` : ''}</span>
-                  <span className="font-semibold tabular-nums">{money(subtotal)}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-slate-500">
-                      <BadgePercent className="h-3.5 w-3.5" /> Discount
-                    </span>
-                    <span className="font-semibold tabular-nums text-rose-600">- {money(discount)}</span>
-                  </div>
-                )}
-                {tax > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Tax</span>
-                    <span className="font-semibold tabular-nums">{money(tax)}</span>
-                  </div>
-                )}
-                {shipping > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Shipping &amp; fees</span>
-                    <span className="font-semibold tabular-nums">{money(shipping)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-2 flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-white">
-                <span className="text-[11px] font-bold uppercase tracking-widest">Total</span>
-                <span className="text-xl font-bold tabular-nums tracking-tight">{money(grandTotal)}</span>
-              </div>
-
-              {values.notes && (
-                <div className="mt-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Notes</p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-600">{values.notes}</p>
-                </div>
-              )}
+          <div ref={previewRef} className="overflow-hidden rounded-xl border bg-white shadow-sm lg:sticky lg:top-6">
+            <div style={{ zoom: previewZoom }}>
+              <ClassicTemplate invoice={previewInvoice} logoUrl={settings?.logoUrl} />
             </div>
-
-            <div className="bg-slate-50 px-6 py-2.5 text-[10px] text-slate-400">
-              Prices shown are indicative; the saved invoice uses the effective price at sale time.
+            <div className="border-t bg-slate-50 px-6 py-2.5 text-[10px] text-slate-400">
+              Preview only - prices shown are indicative; the saved invoice uses the effective price at sale time.
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 'use client';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AuthProvider from '@/context/AuthProvider';
@@ -24,6 +25,8 @@ export default function AppProviders({ children }: { children: React.ReactNode }
                   <Suspense>{children}</Suspense>
                 </TooltipProvider>
                 <Toaster />
+                {/* The media uploaders and useBlobUpload toast through sonner; without this mount those errors are silent. */}
+                <SonnerToaster position="top-right" closeButton />
               </LocaleProvider>
             </ThemeProvider>
           </AuthProvider>

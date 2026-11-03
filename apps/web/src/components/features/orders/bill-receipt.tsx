@@ -1,3 +1,4 @@
+import { amountInWords } from '@/lib/amount-in-words';
 import config from '@/config';
 import { format } from 'date-fns';
 import React from 'react';
@@ -8,55 +9,6 @@ interface BillReceiptProps {
 
 /** Paise always shown, because a bill that rounds is a bill that gets queried. */
 const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-const ONES = [
-  '',
-  'One',
-  'Two',
-  'Three',
-  'Four',
-  'Five',
-  'Six',
-  'Seven',
-  'Eight',
-  'Nine',
-  'Ten',
-  'Eleven',
-  'Twelve',
-  'Thirteen',
-  'Fourteen',
-  'Fifteen',
-  'Sixteen',
-  'Seventeen',
-  'Eighteen',
-  'Nineteen',
-];
-const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-
-const underHundred = (n: number): string => (n < 20 ? ONES[n] : `${TENS[Math.floor(n / 10)]}${n % 10 ? ` ${ONES[n % 10]}` : ''}`);
-
-// Indian grouping - crore, lakh, thousand - so the words match the digits beside them.
-const toWords = (n: number): string => {
-  if (n === 0) return 'Zero';
-  const parts: string[] = [];
-  const crore = Math.floor(n / 10000000);
-  const lakh = Math.floor((n % 10000000) / 100000);
-  const thousand = Math.floor((n % 100000) / 1000);
-  const hundred = Math.floor((n % 1000) / 100);
-  const rest = n % 100;
-  if (crore) parts.push(`${toWords(crore)} Crore`);
-  if (lakh) parts.push(`${underHundred(lakh)} Lakh`);
-  if (thousand) parts.push(`${underHundred(thousand)} Thousand`);
-  if (hundred) parts.push(`${ONES[hundred]} Hundred`);
-  if (rest) parts.push(underHundred(rest));
-  return parts.join(' ');
-};
-
-const amountInWords = (value: number): string => {
-  const rupees = Math.floor(Math.abs(value));
-  const paise = Math.round((Math.abs(value) - rupees) * 100);
-  return `${toWords(rupees)} Rupees${paise ? ` and ${underHundred(paise)} Paise` : ''} Only`;
-};
 
 const STATUS_TONE: Record<string, string> = {
   PENDING: 'bg-amber-50 text-amber-700 border-amber-200',

@@ -8,8 +8,10 @@ import { useUpdateSettings } from '@/hooks/service-hooks/useSettingService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { DEFAULT_INVOICE_TEMPLATE, INVOICE_TEMPLATE_META, InvoiceTemplateKey, SettingsDto } from '@pms/types';
-import { Check, Printer, Save } from 'lucide-react';
+import { Check, Expand, Printer, Save } from 'lucide-react';
+import Link from 'next/link';
 import React, { useState } from 'react';
+import { a3PrintScale, InvoiceA3PrintStyle } from './print-style';
 import ClassicTemplate from './classic';
 import MinimalTemplate from './minimal';
 import ModernTemplate from './modern';
@@ -44,6 +46,7 @@ export default function InvoiceTemplates({ settings }: InvoiceTemplatesProps) {
   const selected = INVOICE_TEMPLATE_META.find((meta) => meta.key === selectedKey) ?? INVOICE_TEMPLATE_META[0];
   const SelectedTemplate = COMPONENTS[selected.key];
   const logoUrl = settings.logoUrl;
+  const printScale = a3PrintScale(selected);
 
   // The mutation invalidates the settings query, so the page re-reads the saved layout itself.
   const save = async () => {
@@ -60,6 +63,12 @@ export default function InvoiceTemplates({ settings }: InvoiceTemplatesProps) {
       <div className={cn(SURFACE, 'flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5 print:hidden')}>
         <p className="text-sm text-muted-foreground">Pick the layout invoices are printed and downloaded with. Previews use sample data and your logo.</p>
         <div className="ml-auto flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/admin/invoice-templates/preview?template=${selectedKey}`}>
+              <Expand className="mr-1.5 h-4 w-4" />
+              Full preview
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" icon={Printer} iconPlacement="left" onClick={() => window.print()}>
             Print preview
           </Button>
@@ -122,28 +131,14 @@ export default function InvoiceTemplates({ settings }: InvoiceTemplatesProps) {
         </div>
         <div className="overflow-x-auto bg-muted/60 p-6 print:bg-white print:p-0">
           <div id="invoice-print-area" className="flex justify-center">
-            <SelectedTemplate invoice={SAMPLE_INVOICE} logoUrl={logoUrl} />
+            <div id="invoice-print-sheet">
+              <SelectedTemplate invoice={SAMPLE_INVOICE} logoUrl={logoUrl} />
+            </div>
           </div>
         </div>
       </section>
 
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #invoice-print-area,
-          #invoice-print-area * {
-            visibility: visible;
-          }
-          #invoice-print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-        }
-      `}</style>
+      <InvoiceA3PrintStyle scale={printScale} />
     </div>
   );
 }

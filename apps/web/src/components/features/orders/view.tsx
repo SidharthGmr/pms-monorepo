@@ -41,7 +41,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { ReactNode, useState } from 'react';
 import BillReceipt from './bill-receipt';
-import { amountInWords, downloadInvoicePdf } from './invoice-pdf';
+import { amountInWords } from '@/lib/amount-in-words';
+import { downloadInvoicePdf } from './invoice-pdf';
 import { OrderItemDto, Roles } from '@pms/types';
 
 interface OrderDetailsViewProps {
