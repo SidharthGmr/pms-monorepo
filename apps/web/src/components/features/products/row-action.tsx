@@ -13,7 +13,6 @@ import StockHistoryModal from './stock-history-modal';
 interface ProductRowActionsProps {
   product: ProductResponseDto;
   onView: () => void;
-  /** When given, Edit opens the form where the list is instead of navigating to the product. */
   onEdit?: () => void;
   onDelete: () => void;
 }
@@ -34,7 +33,9 @@ export default function ProductRowActions({ product, onView, onEdit, onDelete }:
         ) : (
           <ActionTooltip variant="edit" tooltip="Edit" ariaLabel={`Edit ${product.name}`} href={`/admin/products/${product.id}?edit=1`} />
         )}
-        {product.status !== StatusValues.Trash && <ActionTooltip variant="delete" tooltip="Delete" ariaLabel={`Delete ${product.name}`} onClick={onDelete} />}
+        {product.status !== StatusValues.Trash && (
+          <ActionTooltip variant="delete" tooltip="Delete" ariaLabel={`Delete ${product.name}`} onClick={onDelete} />
+        )}
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
@@ -82,7 +83,12 @@ export default function ProductRowActions({ product, onView, onEdit, onDelete }:
       )}
 
       {isStockHistoryOpen && (
-        <StockHistoryModal productId={product.id} productName={product.name} isOpen={isStockHistoryOpen} onClose={() => setIsStockHistoryOpen(false)} />
+        <StockHistoryModal
+          productId={product.id}
+          productName={product.name}
+          isOpen={isStockHistoryOpen}
+          onClose={() => setIsStockHistoryOpen(false)}
+        />
       )}
     </>
   );

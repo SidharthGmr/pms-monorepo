@@ -1,5 +1,4 @@
 'use client';
-import { DateRangePicker } from '@/components/common/date-range-picker';
 import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
 import { SelectSearch } from '@/components/common/select-search';
 import { ListView } from '@/components/common/view-switch';
@@ -53,8 +52,8 @@ interface ProductListFilterProps {
   loading?: boolean;
 }
 
-// Product wiring of the shared ListToolbar: category and brand selects ride in the leading
-// slot, the created-date range in the trailing one.
+// Product wiring of the shared ListToolbar: the created-date range sits beside the status
+// select, and the category/brand selects fold away behind the filter toggle.
 export default function ProductListFilter({ value, onChange, onReset, view, onViewChange, total, loading }: ProductListFilterProps) {
   // `showAllRecords` matters here - without it these lists stop at the first ten records.
   const { data: categoriesResponse } = useGetAllCategories({ showAllRecords: true });
@@ -81,6 +80,7 @@ export default function ProductListFilter({ value, onChange, onReset, view, onVi
       <ListToolbar<Status | null>
         search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search name, slug or SKU…' }}
         status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
+        dateRange={{ value: value.dateRange, onChange: (dateRange) => onChange({ dateRange }) }}
         sort={{
           value: value.sortBy,
           onChange: (sortBy) => onChange({ sortBy }),
@@ -91,39 +91,26 @@ export default function ProductListFilter({ value, onChange, onReset, view, onVi
         view={{ value: view, onChange: onViewChange, iconOnly: true }}
         isFiltered={isFiltered}
         onReset={onReset}
-        leading={
+        trailing={
           <>
-            {' '}
-            <div className="grid grid-cols-3 gpa-4">
-              <SelectSearch
-                value={value.categoryId}
-                placeholder="All categories"
-                items={categoryItems}
-                valueType="number"
-                onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
-                buttonClass=""
-                containerName="product-category-filter"
-              />
-              <SelectSearch
-                value={value.brandNameId}
-                placeholder="All brands"
-                items={brandItems}
-                valueType="number"
-                onChange={(next) => onChange({ brandNameId: next === '' || next === undefined ? undefined : +next })}
-                buttonClass=""
-                containerName="product-brand-filter"
-              />
-              <DateRangePicker
-                key={value.dateRange ? 'range' : 'empty'}
-                mode="range"
-                value={value.dateRange}
-                selected={value.dateRange}
-                onSelect={(dateRange) => onChange({ dateRange })}
-                numberOfMonthsToShow={2}
-                placeholder="Date added"
-                buttonClass=""
-              />
-            </div>
+            <SelectSearch
+              value={value.categoryId}
+              placeholder="All categories"
+              items={categoryItems}
+              valueType="number"
+              onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
+              buttonClass=""
+              containerName="product-category-filter"
+            />
+            <SelectSearch
+              value={value.brandNameId}
+              placeholder="All brands"
+              items={brandItems}
+              valueType="number"
+              onChange={(next) => onChange({ brandNameId: next === '' || next === undefined ? undefined : +next })}
+              buttonClass=""
+              containerName="product-brand-filter"
+            />
           </>
         }
       />

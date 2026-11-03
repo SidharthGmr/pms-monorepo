@@ -438,193 +438,195 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
                   )}
                 />
 
-                <section className="overflow-hidden rounded-xl border">
-                  <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
-                        <Layers className="h-4 w-4 text-primary" />
-                        Variants &amp; pricing{isEdit ? '' : ' *'}
-                      </p>
-                      {/* <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {!isEdit && (
+                  <section className="overflow-hidden rounded-xl border">
+                    <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-sm font-semibold leading-tight">
+                          <Layers className="h-4 w-4 text-primary" />
+                          Variants &amp; pricing{isEdit ? '' : ' *'}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
                           Pick each variant's options and price — its name and SKU are generated from them.
-                        </p> */}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="divide-y">
-                    {variantRows.fields.map((row, index) => (
-                      <div key={row.fieldKey} className="relative space-y-3 p-4 pr-11">
-                        {variantRows.fields.length > 1 && (
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Variant {index + 1}</p>
-                        )}
-                        <VariantOptionRows variantIndex={index} masterAttributes={masterAttributes} />
+                    <div className="divide-y">
+                      {variantRows.fields.map((row, index) => (
+                        <div key={row.fieldKey} className="relative space-y-3 p-4 pr-11">
+                          {variantRows.fields.length > 1 && (
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Variant {index + 1}</p>
+                          )}
+                          <VariantOptionRows variantIndex={index} masterAttributes={masterAttributes} />
 
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.costPrice`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Cost price</FormLabel>
-                                <FormControl>
-                                  <PriceInput value={field.value ?? null} onChange={field.onChange} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.sellingPrice`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Selling price *</FormLabel>
-                                <FormControl>
-                                  <PriceInput value={field.value ?? null} onChange={field.onChange} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.stockQuantity`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Opening stock</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="text"
-                                    {...field}
-                                    value={field.value ?? '0'}
-                                    onChange={(e) => field.onChange(numberChange(e.target.value))}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="rounded-lg border">
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.isOffer`}
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
-                                <FormLabel className="font-medium">Run an offer</FormLabel>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value ?? false}
-                                    aria-label="Run an offer"
-                                    onCheckedChange={(checked) => {
-                                      field.onChange(checked);
-                                      // Nothing stale is left hidden behind the toggle.
-                                      if (!checked) {
-                                        setValue(`variants.${index}.offerPrice`, undefined);
-                                        setValue(`variants.${index}.effectiveFrom`, undefined);
-                                        setValue(`variants.${index}.effectiveTo`, null);
-                                      }
-                                    }}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-
-                          {form.watch(`variants.${index}.isOffer`) && (
-                            <div className="grid grid-cols-1 gap-3 border-t p-3 sm:grid-cols-3">
-                              <FormField
-                                control={form.control}
-                                name={`variants.${index}.offerPrice`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Offer price *</FormLabel>
-                                    <FormControl>
-                                      <PriceInput value={field.value ?? null} onChange={field.onChange} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
-                                name={`variants.${index}.effectiveFrom`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Starts</FormLabel>
-                                    <FormControl>
-                                      <DateRangePicker
-                                        value={field.value ? { from: field.value as Date } : undefined}
-                                        onSelect={(range) => field.onChange(range?.from)}
-                                        numberOfMonthsToShow={1}
-                                        placeholder="Immediately"
-                                        buttonClass="w-full"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              <FormField
-                                control={form.control}
-                                name={`variants.${index}.effectiveTo`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Ends</FormLabel>
-                                    <FormControl>
-                                      <DateRangePicker
-                                        value={field.value ? { from: field.value as Date } : undefined}
-                                        onSelect={(range) => field.onChange(range?.from ?? null)}
-                                        numberOfMonthsToShow={1}
-                                        placeholder="No end date"
-                                        buttonClass="w-full"
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-
-                              {/* The end date closes the price period itself, not just the discount. */}
-                              {!!form.watch(`variants.${index}.effectiveTo`) && (
-                                <p className="text-[11px] text-warning sm:col-span-3">
-                                  After this date the variant has no price and cannot be bought.
-                                </p>
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.costPrice`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Cost price</FormLabel>
+                                  <FormControl>
+                                    <PriceInput value={field.value ?? null} onChange={field.onChange} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
                               )}
-                            </div>
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.sellingPrice`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Selling price *</FormLabel>
+                                  <FormControl>
+                                    <PriceInput value={field.value ?? null} onChange={field.onChange} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.stockQuantity`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Opening stock</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="text"
+                                      {...field}
+                                      value={field.value ?? '0'}
+                                      onChange={(e) => field.onChange(numberChange(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="rounded-lg border">
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.isOffer`}
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
+                                  <FormLabel className="font-medium">Run an offer</FormLabel>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value ?? false}
+                                      aria-label="Run an offer"
+                                      onCheckedChange={(checked) => {
+                                        field.onChange(checked);
+                                        // Nothing stale is left hidden behind the toggle.
+                                        if (!checked) {
+                                          setValue(`variants.${index}.offerPrice`, undefined);
+                                          setValue(`variants.${index}.effectiveFrom`, undefined);
+                                          setValue(`variants.${index}.effectiveTo`, null);
+                                        }
+                                      }}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            {form.watch(`variants.${index}.isOffer`) && (
+                              <div className="grid grid-cols-1 gap-3 border-t p-3 sm:grid-cols-3">
+                                <FormField
+                                  control={form.control}
+                                  name={`variants.${index}.offerPrice`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Offer price *</FormLabel>
+                                      <FormControl>
+                                        <PriceInput value={field.value ?? null} onChange={field.onChange} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={form.control}
+                                  name={`variants.${index}.effectiveFrom`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Starts</FormLabel>
+                                      <FormControl>
+                                        <DateRangePicker
+                                          value={field.value ? { from: field.value as Date } : undefined}
+                                          onSelect={(range) => field.onChange(range?.from)}
+                                          numberOfMonthsToShow={1}
+                                          placeholder="Immediately"
+                                          buttonClass="w-full"
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                <FormField
+                                  control={form.control}
+                                  name={`variants.${index}.effectiveTo`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Ends</FormLabel>
+                                      <FormControl>
+                                        <DateRangePicker
+                                          value={field.value ? { from: field.value as Date } : undefined}
+                                          onSelect={(range) => field.onChange(range?.from ?? null)}
+                                          numberOfMonthsToShow={1}
+                                          placeholder="No end date"
+                                          buttonClass="w-full"
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* The end date closes the price period itself, not just the discount. */}
+                                {!!form.watch(`variants.${index}.effectiveTo`) && (
+                                  <p className="text-[11px] text-warning sm:col-span-3">
+                                    After this date the variant has no price and cannot be bought.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {variantRows.fields.length > 1 && !form.watch(`variants.${index}.id`) && (
+                            <button
+                              type="button"
+                              onClick={() => variantRows.remove(index)}
+                              aria-label={`Remove variant ${index + 1}`}
+                              title="Remove this variant"
+                              className="absolute right-2.5 top-2.5 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           )}
                         </div>
+                      ))}
 
-                        {variantRows.fields.length > 1 && !form.watch(`variants.${index}.id`) && (
-                          <button
-                            type="button"
-                            onClick={() => variantRows.remove(index)}
-                            aria-label={`Remove variant ${index + 1}`}
-                            title="Remove this variant"
-                            className="absolute right-2.5 top-2.5 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div className="p-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 w-full gap-1.5 border-dashed text-muted-foreground hover:text-foreground"
+                          onClick={() => variantRows.append(EMPTY_VARIANT_ROW)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add variant
+                        </Button>
                       </div>
-                    ))}
-
-                    <div className="p-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 w-full gap-1.5 border-dashed text-muted-foreground hover:text-foreground"
-                        onClick={() => variantRows.append(EMPTY_VARIANT_ROW)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add variant
-                      </Button>
                     </div>
-                  </div>
-                </section>
+                  </section>
+                )}
 
                 <OptionalSection title="Brand & more" summary={optionalSummary} open={optionalOpen} onOpenChange={setOptionalOpen}>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

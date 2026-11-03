@@ -2,7 +2,6 @@
 import { DateRange } from 'react-day-picker';
 import { Status } from '@pms/types';
 import ListToolbar, { SortDirection, SortOption, STATUS_FILTER_OPTIONS } from '@/components/common/list-toolbar';
-import { DateRangePicker } from '@/components/common/date-range-picker';
 import { ListView } from '@/components/common/view-switch';
 
 export type { SortDirection };
@@ -68,17 +67,7 @@ export default function CategoryFilter({ value, onChange, onReset, view, onViewC
     <ListToolbar<Status | null>
       search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search categories…' }}
       status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
-      leading={
-        <DateRangePicker
-          key={value.dateRange ? 'range' : 'empty'}
-          mode="range"
-          value={value.dateRange}
-          selected={value.dateRange}
-          onSelect={(dateRange) => onChange({ dateRange })}
-          numberOfMonthsToShow={2}
-          placeholder="Date added"
-        />
-      }
+      dateRange={{ value: value.dateRange, onChange: (dateRange) => onChange({ dateRange }) }}
       // trailing={
       //   <div className="flex h-9 items-center gap-2 rounded-md border bg-background px-3">
       //     <Switch id="category-include-deleted" checked={value.includeDeleted} onCheckedChange={(includeDeleted) => onChange({ includeDeleted })} />

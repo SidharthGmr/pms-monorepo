@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import ProductRowActions from './row-action';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import ActionTooltip from '@/components/common/tooltip-action-button';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
@@ -79,12 +80,24 @@ export const useProductColumns = (deleteRecord: (id: number) => void, viewRecord
         enableSorting: false,
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
-          <ProductRowActions
-            product={row.original}
-            onView={() => viewRecord(row.original.id)}
-            onEdit={editRecord && (() => editRecord(row.original.id))}
-            onDelete={() => deleteRecord(row.original.id)}
-          />
+          <>
+            <div className="flex items-center justify-end gap-1">
+              <ActionTooltip variant="view" tooltip="View" ariaLabel={`View ${row.original.name}`} href={`/admin/products/${row.original.id}`} />
+              <ActionTooltip variant="edit" tooltip="Edit" ariaLabel={`Edit ${row.original.name}`} href={`/admin/products/${row.original.id}`} />
+              <ActionTooltip
+                variant="delete"
+                tooltip="Delete"
+                ariaLabel={`Delete ${row.original.name}`}
+                onClick={() => deleteRecord(row.original.id)}
+              />
+            </div>
+
+            {/* <ProductRowActions
+              product={row.original}
+              onView={() => viewRecord(row.original.id)}
+              onEdit={editRecord && (() => editRecord(row.original.id))}
+            /> */}
+          </>
         ),
         meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
       },

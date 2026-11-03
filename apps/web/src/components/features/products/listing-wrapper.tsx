@@ -5,13 +5,11 @@ import { Package, Plus, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import ProductList from '.';
 import ManageProduct from './add-edit';
+import Link from 'next/link';
 
 export default function ProductListingWrapper() {
   const [total, setTotal] = useState<number | undefined>(undefined);
   const handleCount = useCallback((value: number) => setTotal(value), []);
-
-  const [formId, setFormId] = useState<number | null>(null);
-  const closeForm = useCallback(() => setFormId(null), []);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4">
@@ -24,29 +22,15 @@ export default function ProductListingWrapper() {
             : `${total} ${total === 1 ? 'product' : 'products'} · everything you sell, with its variants, images and stock`
         }
         actions={
-          formId !== null ? (
-            <Button type="button" variant="outlineDestructive" onClick={closeForm}>
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-          ) : (
-            <Button type="button" onClick={() => setFormId(0)}>
-              <Plus className="h-4 w-4" />
-              Add product
-            </Button>
-          )
+          <Button icon={Plus} type="button" variant={'light'}>
+            <Link href={`/admin/products/${0}`}>Add product</Link>
+          </Button>
         }
       />
 
-      {formId !== null ? (
-        <>
-          <ManageProduct id={formId} onCancel={closeForm} onSaved={closeForm} backLabel="Back to products" />
-        </>
-      ) : (
-        <>
-          <ProductList onCountChange={handleCount} onEdit={setFormId} />
-        </>
-      )}
+      <>
+        <ProductList onCountChange={handleCount} />
+      </>
     </div>
   );
 }
