@@ -4,7 +4,6 @@ import ConfirmBox from '@/components/common/confirm-box';
 import OptionalSection from '@/components/common/optional-section';
 import { CurrencyInput } from '@/components/common/currency-input';
 import { DateRangePicker } from '@/components/common/date-range-picker';
-import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,7 +14,6 @@ import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useGetAllMasterAttributes, useGetAllMasterEntries } from '@/hooks/service-hooks/useMasterEntryService';
-import { useGetAllProducts, useGetProductById } from '@/hooks/service-hooks/useProductService';
 import { useCreateProductVariant, useGetProductVariantById, useUpdateProductVariant } from '@/hooks/service-hooks/useProductVariantService';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
@@ -23,7 +21,6 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import {
-  MasterAttributeDto,
   ProductVariantCreateRequest,
   ProductVariantModel,
   ProductVariantUpdateRequest,
@@ -33,8 +30,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, useFormContext } from 'react-hook-form';
-import VariantRating from '../variant-rating';
+import { useForm } from 'react-hook-form';
 import AttributeRows, { toAttributeRows } from './attribute-rows';
 
 interface ManageVariantProps {
@@ -58,18 +54,6 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
 
   const { data: getVariantResponse, isLoading: isFetching, isError } = useGetProductVariantById(id ?? 0, isEdit);
   const variant = getVariantResponse?.data?.data;
-
-  // Opened from a product page the product is fixed, so one product is fetched for its name and
-  // the full catalogue list is skipped; edit mode shows the stored product and needs neither.
-  const lockedProductId = !isEdit && productId && productId > 0 ? productId : undefined;
-  const { data: getLockedProductResponse } = useGetProductById(lockedProductId ?? 0, !!lockedProductId);
-  const lockedProduct = getLockedProductResponse?.data?.data;
-
-  const { data: getProductsResponse } = useGetAllProducts({ showAllRecords: true }, !isEdit && !lockedProductId);
-  const productItems = useMemo(
-    () => (getProductsResponse?.data?.data?.data ?? []).map((product) => ({ value: product.id, label: product.name })),
-    [getProductsResponse]
-  );
 
   const { data: getAttributesResponse } = useGetAllMasterAttributes({ showAllRecords: true, status: StatusValues.Published });
   const masterAttributes = useMemo(() => getAttributesResponse?.data?.data?.data ?? [], [getAttributesResponse]);
@@ -203,32 +187,6 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
           className={cn('flex flex-col', !isInline && 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm')}
         >
           <div className={cn('space-y-4', !isInline && 'px-4 py-5 sm:px-5')}>
-            {/* {productId === 0 && !isEdit && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="productId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Product *</FormLabel>
-                      <FormControl>
-                        <SelectSearch
-                          items={productItems}
-                          value={field.value ?? ''}
-                          valueType="number"
-                          placeholder="Select product"
-                          buttonClass="w-full"
-                          containerName="variant-product"
-                          onChange={(value) => field.onChange(value ? Number(value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <span className="text-[11px] text-muted-foreground">New variant for this product</span>
-              </>
-            )} */}
 
             <FormField
               control={form.control}

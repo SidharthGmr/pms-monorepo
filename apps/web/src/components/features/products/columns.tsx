@@ -5,7 +5,6 @@ import { ProductResponseDto } from '@pms/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { ImageOff } from 'lucide-react';
 import { useMemo } from 'react';
-import ProductRowActions from './row-action';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import ActionTooltip from '@/components/common/tooltip-action-button';

@@ -4,7 +4,6 @@ import ManageProduct from '@/components/features/products/add-edit';
 import ProductView from '@/components/features/products/view-product';
 import config from '@/config';
 import { CustomResponse, ProductResponseDto } from '@pms/types';
-import { Tag } from 'lucide-react';
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { notFound } from 'next/navigation';

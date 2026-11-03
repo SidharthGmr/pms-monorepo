@@ -8,7 +8,7 @@ import { TYPES } from '@/config/types';
 import { useGetPriceHistoryByVariant } from '@/hooks/service-hooks/usePriceHistoryService';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { Tags, TrendingDown, TrendingUp } from 'lucide-react';
+import { Tags } from 'lucide-react';
 import { StateBadge } from './columns';
 import { formatPercent, formatPrice, marginPercent, priceInWords, priceState } from './format';
 
@@ -71,9 +71,6 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
         </TableHeader>
         <TableBody>
           {rows.map((row) => {
-            const previous = row.previousPrice;
-            const delta = previous !== null && previous !== undefined && previous !== 0 ? ((row.sellingPrice - previous) / previous) * 100 : null;
-            const up = (delta ?? 0) > 0;
             const margin = marginPercent(row.sellingPrice, row.costPrice);
             const inWords = priceInWords(row.sellingPrice);
 
@@ -83,21 +80,6 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
                   <StateBadge state={priceState(row)} />
                 </TableCell>
                 <TableCell>
-                  {/* <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span className="text-sm font-semibold tabular-nums">{formatPrice(row.sellingPrice)}</span>
-                    {delta !== null && delta !== 0 && (
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
-                          up ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-rose-500/15 text-rose-700 dark:text-rose-400'
-                        )}
-                        title={`Was ${formatPrice(previous)}`}
-                      >
-                        {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                        {formatPercent(Math.abs(delta))}
-                      </span>
-                    )}
-                  </div> */}
 
                   {formatPrice(row.sellingPrice)}
                   {inWords && (

@@ -28,7 +28,7 @@ import { zodResolver } from '@/lib/zod-resolver';
 
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { productFormFields, StatusValues, CreateProductModel } from '@pms/types';
-import { History, Layers, Link2, Package, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { History, Layers, Link2, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -78,7 +78,7 @@ const generateSlug = (name: string) =>
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
 
-export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back to details' }: ManageProductProps) {
+export default function ManageProduct({ id, onCancel, onSaved }: ManageProductProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const router = useRouter();
   const isEdit = !!id && id > 0;
@@ -252,8 +252,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   // Number input change → number | undefined (empty string clears the field).
   const numberChange = (raw: string) => (raw === '' ? undefined : +raw);
 
-  const productName = isEdit ? productResponse?.data?.data?.name : undefined;
-  const thumbnail = productResponse?.data?.data?.images?.[0];
   const showSkeleton = isEdit && isFetching;
 
   // Keeps the stored values visible while the section is closed.

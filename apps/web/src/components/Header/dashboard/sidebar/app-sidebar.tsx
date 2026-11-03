@@ -1,6 +1,15 @@
 'use client';
 
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInput, SidebarRail, useSidebar } from '@/components/ui/sidebar';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInput,
+  SidebarRail,
+  SidebarTrigger,
+  useSidebar,
+} from '@/components/ui/sidebar';
 import config from '@/config';
 import { Search, X } from 'lucide-react';
 import Image from 'next/image';
@@ -26,11 +35,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="gap-3 border-b border-sidebar-border px-3 py-3 group-data-[collapsible=icon]:px-2">
-        <Link href="/" title={config.appName} className="flex h-9 items-center justify-center rounded-lg outline-none ring-sidebar-ring focus-visible:ring-2">
+        <Link
+          href="/"
+          title={config.appName}
+          className="flex h-9 items-center justify-center rounded-lg outline-none ring-sidebar-ring focus-visible:ring-2"
+        >
           {expanded ? (
             <>
-              <Image src={LOGO} width={160} height={40} alt={config.appName} priority className="h-8 w-auto max-w-[150px] object-contain dark:hidden" />
-              <Image src={LOGO_LIGHT} width={160} height={40} alt={config.appName} priority className="hidden h-8 w-auto max-w-[150px] object-contain dark:block" />
+              <Image
+                src={LOGO}
+                width={160}
+                height={40}
+                alt={config.appName}
+                priority
+                className="h-8 w-auto max-w-[150px] object-contain dark:hidden"
+              />
+              <Image
+                src={LOGO_LIGHT}
+                width={160}
+                height={40}
+                alt={config.appName}
+                priority
+                className="hidden h-8 w-auto max-w-[150px] object-contain dark:block"
+              />
             </>
           ) : (
             <>
@@ -39,11 +66,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </>
           )}
         </Link>
-
+        <SidebarTrigger className="absolute top-3 -right-3  hidden h-8 w-8 bg-background rounded-full sidebar:flex" />
         {isMobile && (
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <SidebarInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search menu" aria-label="Search menu" className="h-8 rounded-lg border-sidebar-border pl-8 pr-7 text-xs" />
+            <SidebarInput
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search menu"
+              aria-label="Search menu"
+              className="h-8 rounded-lg border-sidebar-border pl-8 pr-7 text-xs"
+            />
             {query && (
               <button
                 type="button"

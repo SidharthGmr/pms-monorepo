@@ -16,7 +16,6 @@ import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantListItemDto, StatusValues } from '@pms/types';
 import { AlertTriangle, Boxes, ChevronLeft, ExternalLink, ImageOff, IndianRupee, Layers, Pencil, Plus, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useProductVariantColumns } from '../product-variants/columns';
 import ProductViewSkeleton from '@/components/skelton/productView-Skeleton';
@@ -35,7 +34,6 @@ interface ProductViewProps {
   onEdit?: () => void;
 }
 export default function ProductView({ id, onEdit }: ProductViewProps) {
-  const router = useRouter();
   const { data, isPending, isError } = useGetProductById(id, id > 0);
   const product = data?.data?.data;
 

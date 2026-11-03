@@ -1,10 +1,9 @@
 'use client';
 import ListPageHeader from '@/components/common/list-page-header';
 import { Button } from '@/components/ui/button';
-import { Package, Plus, X } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import ProductList from '.';
-import ManageProduct from './add-edit';
 import Link from 'next/link';
 
 export default function ProductListingWrapper() {
