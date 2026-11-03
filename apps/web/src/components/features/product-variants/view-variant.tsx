@@ -28,11 +28,8 @@ interface ViewVariantProps {
   id: number;
 }
 
-// Read-only page for one variant: media, price tiles, resolved option pairs and the ledger
-// details, with editing handed to the shared ManageVariant form in a dialog.
 export default function ViewVariant({ id }: ViewVariantProps) {
   const [showAddModal, setShowAddModal] = useState(false);
-
   const { data, isPending, isError } = useGetProductVariantById(id, id > 0);
   const variant = data?.data?.data as ProductVariantListItemDto | undefined;
 

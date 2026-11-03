@@ -12,15 +12,10 @@ import { cn } from '@/lib/utils';
 interface ProductImageUploaderProps {
   value: string[];
   onChange: (value: string[]) => void;
-  /** Max file size in MB. */
   maxSizeMb?: number;
-  /** Sub-folder the images are filed under, inside the signed-in admin's own media folder.
-   *  Created on first upload. Leave unset to drop them straight into that folder. */
   folder?: string;
 }
 
-// Narrows the OS file picker. Size and MIME are enforced again by useBlobUpload, which is
-// what catches a file dragged straight onto the dropzone.
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
 export function ProductImageUploader({ value = [], onChange, maxSizeMb = BLOB_MAX_SIZE_MB, folder }: ProductImageUploaderProps) {
@@ -42,7 +37,6 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = BLOB_MA
       }
       return false;
     } finally {
-      // Reset so selecting the SAME file again still fires onChange.
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -82,44 +76,37 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = BLOB_MA
 
   return (
     <div className="space-y-4">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={(e) => handleFiles(e.target.files)}
-        multiple
-        accept={ACCEPTED.join(',')}
-        className="hidden"
-      />
+      <input type="file" ref={fileInputRef} onChange={(e) => handleFiles(e.target.files)} multiple accept={ACCEPTED.join(',')} className="hidden" />
 
       {/* Dropzone - empty state only; with images present the grid below is the drop target. */}
       {value.length === 0 && (
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => !isUploading && fileInputRef.current?.click()}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !isUploading && fileInputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={onDrop}
-        className={cn(
-          'flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors',
-          isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
-          isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50'
-        )}
-      >
-        <div className={cn('rounded-full p-3', isDragging ? 'bg-primary/10 text-primary' : 'bg-background text-muted-foreground')}>
-          {isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <UploadCloud className="h-6 w-6" />}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !isUploading && fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={onDrop}
+          className={cn(
+            'flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center transition-colors',
+            isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+            isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50'
+          )}
+        >
+          <div className={cn('rounded-full p-3', isDragging ? 'bg-primary/10 text-primary' : 'bg-background text-muted-foreground')}>
+            {isUploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <UploadCloud className="h-6 w-6" />}
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-foreground">
+              {isUploading ? 'Uploading…' : isDragging ? 'Drop images here' : 'Click or drag images to upload'}
+            </p>
+            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP or GIF · up to {maxSizeMb}MB each</p>
+          </div>
         </div>
-        <div className="space-y-0.5">
-          <p className="text-sm font-semibold text-foreground">
-            {isUploading ? 'Uploading…' : isDragging ? 'Drop images here' : 'Click or drag images to upload'}
-          </p>
-          <p className="text-xs text-muted-foreground">PNG, JPG, WEBP or GIF · up to {maxSizeMb}MB each</p>
-        </div>
-      </div>
       )}
 
       {value.length === 0 && hasCamera && (
@@ -138,13 +125,13 @@ export function ProductImageUploader({ value = [], onChange, maxSizeMb = BLOB_MA
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={onDrop}
-          className={cn('grid grid-cols-3 gap-3 rounded-xl sm:grid-cols-4 md:grid-cols-5', isDragging && 'outline-dashed outline-2 outline-primary/60')}
+          className={cn(
+            'grid grid-cols-3 gap-3 rounded-xl sm:grid-cols-4 md:grid-cols-5',
+            isDragging && 'outline-dashed outline-2 outline-primary/60'
+          )}
         >
           {value.map((url, index) => (
-            <div
-              key={`${url}-${index}`}
-              className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
-            >
+            <div key={`${url}-${index}`} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt={`product-${index}`} className="h-full w-full object-cover" />
 
