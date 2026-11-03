@@ -35,6 +35,7 @@ function toDto(row: PriceHistoryWithVariant, previousPrice: number | null = null
     isCurrent: row.isCurrent,
     sellingPrice: row.sellingPrice.toNumber(),
     offerPrice: row.offerPrice?.toNumber() ?? null,
+    isOffer: row.isOffer,
     costPrice: row.costPrice?.toNumber() ?? null,
     compareAtPrice: row.compareAtPrice?.toNumber() ?? null,
     effectiveFrom: row.effectiveFrom,
@@ -356,6 +357,7 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
         storeCode: data.storeCode ?? variant.storeCode,
         sellingPrice: data.sellingPrice,
         offerPrice: data.offerPrice ?? null,
+        isOffer: data.isOffer ?? false,
         costPrice: data.costPrice ?? null,
         compareAtPrice: data.compareAtPrice ?? null,
         effectiveFrom,
@@ -383,6 +385,7 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
         data: {
           ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
           ...(data.offerPrice !== undefined && { offerPrice: data.offerPrice }),
+          ...(data.isOffer !== undefined && { isOffer: data.isOffer }),
           ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
           ...(data.compareAtPrice !== undefined && { compareAtPrice: data.compareAtPrice }),
           ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null }),

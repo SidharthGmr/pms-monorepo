@@ -22,6 +22,7 @@ export const priceHistoryFields = z.object({
       "Offer price cannot be negative",
     )
     .nullable(),
+  isOffer: z.boolean().optional(),
   costPrice: optionalNumberField("Cost price must be a number")
     .refine(
       (value) => value === undefined || value >= 0,
@@ -42,6 +43,7 @@ const priceRulesAreCoherent = (
   values: {
     sellingPrice?: number;
     offerPrice?: number | null;
+    isOffer?: boolean;
     effectiveFrom?: Date | string | null;
     effectiveTo?: Date | string | null;
   },
@@ -56,6 +58,15 @@ const priceRulesAreCoherent = (
       code: "custom",
       path: ["offerPrice"],
       message: "Offer price cannot be higher than the selling price",
+    });
+  }
+
+  // An offer with no price to charge would silently fall back to the selling price.
+  if (values.isOffer && values.offerPrice == null) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["offerPrice"],
+      message: "Enter the offer price, or turn the offer off",
     });
   }
 

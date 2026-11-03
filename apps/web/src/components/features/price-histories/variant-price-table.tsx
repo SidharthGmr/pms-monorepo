@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { Tags, TrendingDown, TrendingUp } from 'lucide-react';
 import { StateBadge } from './columns';
-import { formatPercent, formatPrice, marginPercent, priceState } from './format';
+import { formatPercent, formatPrice, marginPercent, priceInWords, priceState } from './format';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -75,6 +75,7 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
             const delta = previous !== null && previous !== undefined && previous !== 0 ? ((row.sellingPrice - previous) / previous) * 100 : null;
             const up = (delta ?? 0) > 0;
             const margin = marginPercent(row.sellingPrice, row.costPrice);
+            const inWords = priceInWords(row.sellingPrice);
 
             return (
               <TableRow key={row.id}>
@@ -82,7 +83,7 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
                   <StateBadge state={priceState(row)} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2 whitespace-nowrap">
+                  {/* <div className="flex items-center gap-2 whitespace-nowrap">
                     <span className="text-sm font-semibold tabular-nums">{formatPrice(row.sellingPrice)}</span>
                     {delta !== null && delta !== 0 && (
                       <span
@@ -96,7 +97,14 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
                         {formatPercent(Math.abs(delta))}
                       </span>
                     )}
-                  </div>
+                  </div> */}
+
+                  {formatPrice(row.sellingPrice)}
+                  {inWords && (
+                    <span className="mt-0.5 line-clamp-1 block max-w-[240px] text-[11px] leading-tight text-muted-foreground" title={inWords}>
+                      {inWords}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <span className="text-sm tabular-nums text-muted-foreground">{formatPrice(row.costPrice)}</span>
@@ -108,7 +116,11 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
                     <span
                       className={cn(
                         'text-sm font-semibold tabular-nums',
-                        margin < 0 ? 'text-rose-600 dark:text-rose-400' : margin < 15 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                        margin < 0
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : margin < 15
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
                       )}
                     >
                       {formatPercent(margin)}
@@ -134,7 +146,11 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
           })}
         </TableBody>
       </Table>
-      {total > ROW_LIMIT && <p className="border-t px-4 py-2 text-[11px] text-muted-foreground">Showing the newest {ROW_LIMIT} of {total} entries.</p>}
+      {total > ROW_LIMIT && (
+        <p className="border-t px-4 py-2 text-[11px] text-muted-foreground">
+          Showing the newest {ROW_LIMIT} of {total} entries.
+        </p>
+      )}
     </Card>
   );
 }

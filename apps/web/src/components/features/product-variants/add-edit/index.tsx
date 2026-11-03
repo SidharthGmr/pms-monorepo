@@ -27,7 +27,7 @@ import {
   ProductVariantCreateRequest,
   ProductVariantModel,
   ProductVariantUpdateRequest,
-  productVariantValidator,
+  productVariantFormFields,
   StatusValues,
 } from '@pms/types';
 import { Loader2 } from 'lucide-react';
@@ -82,7 +82,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   // isActive starts false so a new variant lands as the schema defaults it: Draft and not yet
   // sellable. Activation lives on the variant's own page.
   const form = useForm<ProductVariantModel>({
-    resolver: zodResolver(productVariantValidator),
+    resolver: zodResolver(productVariantFormFields),
     defaultValues: {
       productId,
       name: '',
@@ -265,7 +265,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                   <FormItem>
                     <FormLabel>Cost price*</FormLabel>
                     <FormControl>
-                      <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
+                      <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? null : value)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,9 +1,24 @@
+import { toCurrency } from 'n2words/en-IN';
+
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
   currency: 'INR',
 });
 
 export const formatPrice = (amount?: number | null): string => (amount === null || amount === undefined ? '—' : currencyFormatter.format(Number(amount)));
+
+/**
+ * The amount spelled out the way an invoice or a cheque reads it - lakh and crore, rupees
+ * and paise - so a figure with several digits can be checked at a glance.
+ */
+export const priceInWords = (amount?: number | null): string | null => {
+  const value = Number(amount);
+  if (amount === null || amount === undefined || !Number.isFinite(value)) return null;
+  // Fixed to two places first: the paise come off the string, so 1099.985 would otherwise
+  // spell out a third decimal the ledger never stored.
+  const words = toCurrency(value.toFixed(2));
+  return `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+};
 
 /** Gross margin on a row, or null when there is no cost to compare against. */
 export const marginPercent = (sellingPrice?: number | null, costPrice?: number | null): number | null => {

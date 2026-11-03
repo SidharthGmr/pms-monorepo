@@ -28,6 +28,8 @@ export interface PriceHistoryDto {
   storeCode: string;
   sellingPrice: number;
   offerPrice: number | null;
+  /** Whether the offer price is actually charged while this row is in force. */
+  isOffer: boolean;
   costPrice: number | null;
   compareAtPrice: number | null;
   effectiveFrom: Date | string;

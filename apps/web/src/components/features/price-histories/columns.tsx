@@ -19,20 +19,28 @@ const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-fo
 interface PriceHistoryColumnOptions {
   editRecord: (id: number) => void;
   deleteRecord: (id: number) => void;
-  /** Opens the variant's full price timeline; available whatever the role. */
   viewTimeline: (row: PriceHistoryDto) => void;
-  /**
-   * Correcting and deleting a row are admin-only on the API. Staff would get a 403,
-   * which HttpService turns into an /access-denied redirect - so hide the buttons.
-   */
   canManage: boolean;
 }
 
-// One word for where the row sits against now, coloured the same way in table, card and timeline.
 export function StateBadge({ state }: { state: PriceState }) {
-  if (state === 'live') return <Badge variant="green" className="w-fit">Live now</Badge>;
-  if (state === 'scheduled') return <Badge variant="blue" className="w-fit">Scheduled</Badge>;
-  return <Badge variant="zinc" className="w-fit">Ended</Badge>;
+  if (state === 'live')
+    return (
+      <Badge variant="green" className="w-fit">
+        Live now
+      </Badge>
+    );
+  if (state === 'scheduled')
+    return (
+      <Badge variant="blue" className="w-fit">
+        Scheduled
+      </Badge>
+    );
+  return (
+    <Badge variant="zinc" className="w-fit">
+      Ended
+    </Badge>
+  );
 }
 
 export const usePriceHistoryColumns = ({ editRecord, deleteRecord, viewTimeline, canManage }: PriceHistoryColumnOptions) =>
@@ -67,12 +75,25 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, viewTimeline,
           // The API resolves what this row replaced, so the comparison holds however the
           // table is sorted and even when the previous row sits on another page.
           const previous = row.original.previousPrice;
-          const delta = previous !== null && previous !== undefined && previous !== 0 ? ((row.original.sellingPrice - previous) / previous) * 100 : null;
+          const delta =
+            previous !== null && previous !== undefined && previous !== 0 ? ((row.original.sellingPrice - previous) / previous) * 100 : null;
           const up = (delta ?? 0) > 0;
+          // An offer price only costs the customer anything while the row's own flag is on;
+          // set with the flag off it is staged, exactly like the variant screens show it.
+          const { offerPrice, isOffer } = row.original;
+          const offerLive = isOffer && offerPrice != null;
 
           return (
             <div className="flex items-center gap-2 whitespace-nowrap">
-              <span className="text-sm font-semibold tabular-nums">{formatPrice(row.original.sellingPrice)}</span>
+              {offerLive ? (
+                <span className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{formatPrice(offerPrice)}</span>
+                  <span className="text-xs tabular-nums text-muted-foreground line-through">{formatPrice(row.original.sellingPrice)}</span>
+                </span>
+              ) : (
+                <span className="text-sm font-semibold tabular-nums">{formatPrice(row.original.sellingPrice)}</span>
+              )}
+              {!isOffer && offerPrice != null && <span className="text-[11px] text-muted-foreground">Offer {formatPrice(offerPrice)} staged</span>}
               {delta !== null && delta !== 0 && (
                 <span
                   className={cn(
@@ -110,7 +131,11 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, viewTimeline,
             <span
               className={cn(
                 'text-sm font-semibold tabular-nums',
-                margin < 0 ? 'text-rose-600 dark:text-rose-400' : margin < 15 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                margin < 0
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : margin < 15
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
               )}
             >
               {formatPercent(margin)}
@@ -132,7 +157,9 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, viewTimeline,
             <div className="flex flex-col gap-1">
               <StateBadge state={state} />
               <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                {row.original.effectiveTo ? `${when(row.original.effectiveFrom)} → ${when(row.original.effectiveTo)}` : `From ${when(row.original.effectiveFrom)}`}
+                {row.original.effectiveTo
+                  ? `${when(row.original.effectiveFrom)} → ${when(row.original.effectiveTo)}`
+                  : `From ${when(row.original.effectiveFrom)}`}
               </span>
             </div>
           );

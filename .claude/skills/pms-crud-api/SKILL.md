@@ -149,6 +149,24 @@ Hard rules that fall out of this:
   'XDto'` pointing at the repository — that is the stale `dist/` talking, not a bug in the
   repository. Rebuild before reading the error.
 
+## Never put data in through the database
+
+Creating, updating or deleting a record - to try a field out, to check a column, to seed an
+example - goes **through the UI** in `apps/web`. The stack that matters is the stack a user
+hits: the form, the shared zod validator, `HttpService` and its `clientId` header, auth, the
+controller, the service's transaction and the repository's own bookkeeping (ledger stitching,
+`isCurrent`/`effectiveTo` flags, soft deletes, denormalised columns, `createdById`). A
+`prisma.x.create` script skips every one of them, so it proves nothing about the feature and
+can leave a row in a state the service would never produce. The database is shared with
+production, so that row is production data.
+
+- **Add it from the running app**: `npm run dev`, then the admin screen for the resource.
+- **No screen for it yet?** Build the dialog (see *Admin UI* below) - or, if the UI genuinely
+  is not the point, call the API over HTTP: Swagger at `http://localhost:4000/api`, or curl
+  with the `clientId` header and a bearer token. That is still the real pipeline.
+- **Direct SQL or Prisma is for reading**, plus one exception: a schema migration and the
+  backfill that ships with it, under `apps/api/prisma/migrations`.
+
 ## Workflow
 
 1. **Confirm the Prisma model exists.** Read `prisma/schema.prisma`. Every business model
@@ -176,6 +194,9 @@ Hard rules that fall out of this:
    change to `packages/types` reaches `apps/web` too. There is no test runner in this repo, so
    do not invent `npm test`. Then `npm run dev` and hit the routes. Swagger UI at
    `http://localhost:4000/api` renders the JSDoc you wrote — use it as the smoke test.
+7. **Exercise it from the admin screen** — add, edit and delete one record in the browser.
+   That is the only check that covers the form, the validator and the layers at once, and it
+   is how a record gets created here; never seed one with a Prisma script.
 
 ## Naming (copy this table, it is not guessable)
 

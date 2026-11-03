@@ -3,6 +3,7 @@ export interface CreatePriceHistoryModel {
   storeCode?: string;
   sellingPrice: number;
   offerPrice?: number | null;
+  isOffer?: boolean;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date | string | null;
@@ -18,6 +19,7 @@ export interface CreatePriceHistoryModel {
 export interface UpdatePriceHistoryModel {
   sellingPrice?: number;
   offerPrice?: number | null;
+  isOffer?: boolean;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date | string | null;

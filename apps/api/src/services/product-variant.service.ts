@@ -83,6 +83,7 @@ export class ProductVariantService implements IProductVariantService {
             costPrice: data.costPrice ?? null,
             sellingPrice: data.sellingPrice,
             offerPrice: data.offerPrice ?? null,
+            isOffer: data.isOffer ?? false,
             compareAtPrice: data.compareAtPrice ?? null,
             effectiveFrom: data.effectiveFrom ? new Date(data.effectiveFrom) : new Date(),
             ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo == null ? null : new Date(data.effectiveTo) }),
@@ -169,6 +170,7 @@ export class ProductVariantService implements IProductVariantService {
         (data.sellingPrice !== existing.sellingPrice ||
           (data.costPrice ?? null) !== (existing.costPrice ?? null) ||
           (data.offerPrice !== undefined && (data.offerPrice ?? null) !== (existing.offerPrice ?? null)) ||
+          (data.isOffer !== undefined && data.isOffer !== existing.isOffer) ||
           (effectiveTo !== undefined && effectiveTo?.getTime() !== existing.effectiveTo?.getTime()) ||
           effectiveFrom !== undefined);
       if (priceChanged) {
@@ -178,6 +180,7 @@ export class ProductVariantService implements IProductVariantService {
             storeCode,
             sellingPrice: data.sellingPrice as number,
             offerPrice: data.offerPrice !== undefined ? data.offerPrice : existing.offerPrice,
+            isOffer: data.isOffer !== undefined ? data.isOffer : existing.isOffer,
             costPrice: data.costPrice ?? null,
             ...(effectiveFrom !== undefined && { effectiveFrom }),
             ...(effectiveTo !== undefined && { effectiveTo }),

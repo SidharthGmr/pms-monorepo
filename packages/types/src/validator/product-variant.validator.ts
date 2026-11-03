@@ -150,8 +150,15 @@ const periodIsOrdered = (
   }
 };
 
+/**
+ * What the add/edit form binds to. `productVariantValidator` is the API's own shape, where
+ * `offerPrice`/`costPrice` are nullable but not optional - binding a form to it rejects a
+ * submit on a field the offer toggle keeps hidden, with no message anywhere to show for it.
+ */
+export const productVariantFormFields = productVariantFields.superRefine(periodIsOrdered);
+
 export const CreateProductVariantValidator = z.object({
-  body: productVariantFields.superRefine(periodIsOrdered),
+  body: productVariantFormFields,
 });
 
 /**

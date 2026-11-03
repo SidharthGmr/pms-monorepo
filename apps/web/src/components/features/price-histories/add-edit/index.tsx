@@ -1,10 +1,12 @@
 'use client';
 import { CurrencyInput } from '@/components/common/currency-input';
 import { DateRangePicker } from '@/components/common/date-range-picker';
+import OptionalSection from '@/components/common/optional-section';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import ManagePriceHistorySkeleton from '@/components/skelton/managePriceHistory-Skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
@@ -24,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, Resolver } from 'react-hook-form';
+import { useForm, FieldErrors, Resolver } from 'react-hook-form';
 import { formatPercent, formatPrice, isScheduled, marginPercent } from '../format';
 import { CreatePriceHistoryModel } from '@pms/types';
 
@@ -56,6 +58,9 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
   const { data: response, isLoading: isFetching } = useGetPriceHistoryById(id ?? 0, isEdit);
 
   const [productId, setProductId] = useState<number | undefined>(defaultProductId);
+  // Collapsed by default: a plain repricing needs neither an offer nor dates. It opens
+  // itself whenever the row actually carries one, so nothing stays hidden.
+  const [offerOpen, setOfferOpen] = useState(false);
   const { data: productsResponse } = useGetAllProducts({ showAllRecords: true });
   const { data: variantsResponse } = useGetProductVariants(productId ?? 0, { recordPerPage: 100 }, !!productId);
 
@@ -71,6 +76,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
       variantId: defaultVariantId ?? 0,
       sellingPrice: 0,
       offerPrice: null,
+      isOffer: false,
       costPrice: null,
       effectiveFrom: null,
       effectiveTo: null,
@@ -96,11 +102,13 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
         variantId: existing.variantId,
         sellingPrice: existing.sellingPrice,
         offerPrice: existing.offerPrice,
+        isOffer: existing.isOffer,
         costPrice: existing.costPrice,
         effectiveFrom: toDateValue(existing.effectiveFrom) ?? null,
         effectiveTo: toDateValue(existing.effectiveTo) ?? null,
         reason: existing.reason ?? '',
       });
+      setOfferOpen(existing.isOffer || existing.effectiveTo != null || isScheduled(existing.effectiveFrom));
     }
   }, [isEdit, existing, form]);
 
@@ -115,6 +123,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
         variantId: currentLedgerRow?.variantId ?? selectedVariant!.id,
         sellingPrice: currentLedgerRow?.sellingPrice ?? selectedVariant?.sellingPrice ?? 0,
         offerPrice: currentLedgerRow?.offerPrice ?? selectedVariant?.offerPrice ?? null,
+        isOffer: currentLedgerRow?.isOffer ?? selectedVariant?.isOffer ?? false,
         costPrice: currentLedgerRow?.costPrice ?? selectedVariant?.costPrice ?? null,
         // A new row opens its own period: the dates start blank rather than inheriting
         // the window of the row it supersedes.
@@ -122,12 +131,14 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
         effectiveTo: null,
         reason: '',
       });
+      if (currentLedgerRow?.isOffer ?? selectedVariant?.isOffer) setOfferOpen(true);
     }
   }, [isEdit, currentLedgerRow, selectedVariant, form]);
 
   const sellingPrice = form.watch('sellingPrice');
   const costPrice = form.watch('costPrice');
   const offerPrice = form.watch('offerPrice');
+  const isOffer = form.watch('isOffer');
   const effectiveFrom = form.watch('effectiveFrom');
   const effectiveTo = form.watch('effectiveTo');
 
@@ -138,9 +149,17 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
     ? (existing?.variant?.product?.name ?? `Variant #${existing?.variantId ?? ''}`)
     : (productName ?? selectedVariant?.name ?? `Variant #${watchedVariantId || ''}`);
   const variantSku = isEdit ? existing?.variant?.sku : selectedVariant?.sku;
+  const asDate = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value, true) : null);
+  const offerSummary = [
+    isOffer && offerPrice != null ? `Offer ${formatPrice(Number(offerPrice))}` : 'No offer',
+    effectiveFrom ? `from ${asDate(effectiveFrom)}` : 'live now',
+    effectiveTo ? `to ${asDate(effectiveTo)}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   // What the customer is actually charged while this row is in force - the offer when there
   // is one, otherwise the selling price. That is also what the margin has to be read against.
-  const payablePrice = toPriceValue(offerPrice as number | '' | null | undefined) ?? Number(sellingPrice);
+  const payablePrice = (isOffer ? toPriceValue(offerPrice as number | '' | null | undefined) : null) ?? Number(sellingPrice);
   const margin = marginPercent(payablePrice, toPriceValue(costPrice as number | '' | null | undefined));
   // The ledger is the authority on the price in force; the variant row covers the moment the
   // ledger for a freshly picked variant is still loading. The id check keeps a stale cached
@@ -155,6 +174,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
     const payload = {
       ...model,
       offerPrice: toPriceValue(model.offerPrice as number | '' | null | undefined),
+      isOffer: model.isOffer ?? false,
       costPrice: toPriceValue(model.costPrice as number | '' | null | undefined),
       reason: model.reason?.trim() ? model.reason.trim() : null,
       // An empty date means "now" (and "no end") - let the API default it rather than sending "".
@@ -169,6 +189,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
           model: {
             sellingPrice: payload.sellingPrice,
             offerPrice: payload.offerPrice,
+            isOffer: payload.isOffer,
             costPrice: payload.costPrice,
             effectiveFrom: payload.effectiveFrom,
             effectiveTo: payload.effectiveTo,
@@ -184,6 +205,11 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
       const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
     }
+  };
+
+  // A message inside a collapsed section would never be read, so a failed submit opens it.
+  const openSectionWithErrors = (errors: FieldErrors<CreatePriceHistoryModel>) => {
+    if (errors.offerPrice || errors.isOffer || errors.effectiveFrom || errors.effectiveTo) setOfferOpen(true);
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
@@ -204,7 +230,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
           <ManagePriceHistorySkeleton />
         ) : (
           <Form {...form}>
-            <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-3">
+            <form autoComplete="off" onSubmit={form.handleSubmit(submitData, openSectionWithErrors)} className="space-y-3">
               <div className="rounded-md border bg-muted/40 px-3 py-2">
                 <span className="text-xs font-medium uppercase text-muted-foreground">Variant</span>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -213,7 +239,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="costPrice"
@@ -221,11 +247,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                     <FormItem>
                       <FormLabel>Cost Price</FormLabel>
                       <FormControl>
-                        <CurrencyInput
-                          placeholder="800.00"
-                          value={field.value ?? ''}
-                          onChange={(value) => field.onChange(value === '' ? null : value)}
-                        />
+                        <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? null : value)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -238,35 +260,116 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                     <FormItem>
                       <FormLabel>Selling Price *</FormLabel>
                       <FormControl>
-                        <CurrencyInput
-                          placeholder="1,099.99"
-                          value={field.value ?? ''}
-                          onChange={(value) => field.onChange(value === '' ? 0 : value)}
-                        />
+                        <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? 0 : value)} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="offerPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Offer Price</FormLabel>
-                      <FormControl>
-                        <CurrencyInput
-                          placeholder="No offer"
-                          value={field.value ?? ''}
-                          onChange={(value) => field.onChange(value === '' ? null : value)}
-                        />
-                      </FormControl>
-                      <FormDescription className="text-[11px]">Charged instead of the selling price while the offer is on.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              <OptionalSection
+                title="Offer & schedule"
+                summary={offerSummary}
+                open={offerOpen}
+                onOpenChange={setOfferOpen}
+                contentClassName="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="isOffer"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between gap-4 space-y-0 rounded-lg border p-3">
+                      <div>
+                        <FormLabel className="font-medium">Run an offer on this price</FormLabel>
+                        <FormDescription className="text-[11px]">The offer price is charged while this row is in force.</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value ?? false}
+                          aria-label="Run an offer on this price"
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            // Nothing stale is left hidden behind the toggle.
+                            if (!checked) form.setValue('offerPrice', null, { shouldValidate: true });
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {isOffer && (
+                  <FormField
+                    control={form.control}
+                    name="offerPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Offer Price *</FormLabel>
+                        <FormControl>
+                          <CurrencyInput
+                            placeholder="899.99"
+                            value={field.value ?? ''}
+                            onChange={(value) => field.onChange(value === '' ? null : value)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="effectiveFrom"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Effective From</FormLabel>
+                        <FormControl>
+                          <DateRangePicker
+                            value={toDateValue(field.value) ? { from: toDateValue(field.value) } : undefined}
+                            onSelect={(range) => field.onChange(range?.from ?? null)}
+                            numberOfMonthsToShow={1}
+                            placeholder="Immediately"
+                            buttonClass="w-full"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">
+                          {willBeScheduled ? 'Future date — the price is staged and is not current until then.' : 'Leave empty to take effect now.'}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="effectiveTo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Effective To</FormLabel>
+                        <FormControl>
+                          <DateRangePicker
+                            value={toDateValue(field.value) ? { from: toDateValue(field.value) } : undefined}
+                            onSelect={(range) => field.onChange(range?.from ?? null)}
+                            numberOfMonthsToShow={1}
+                            placeholder="No end date"
+                            buttonClass="w-full"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Leave empty to run until the next price change.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Closing the period ends the price itself, not just the offer. */}
+                  {effectiveTo && (
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 sm:col-span-2">
+                      After this date the variant has no price in force and cannot be bought until a later row starts.
+                    </p>
+                  )}
+                </div>
+              </OptionalSection>
 
               {(showDelta || margin !== null) && (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
@@ -305,57 +408,6 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                   </span>
                 </div>
               )}
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="effectiveFrom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Effective From</FormLabel>
-                      <FormControl>
-                        <DateRangePicker
-                          value={toDateValue(field.value) ? { from: toDateValue(field.value) } : undefined}
-                          onSelect={(range) => field.onChange(range?.from ?? null)}
-                          numberOfMonthsToShow={1}
-                          placeholder="Immediately"
-                          buttonClass="w-full"
-                        />
-                      </FormControl>
-                      <FormDescription className="text-[11px]">
-                        {willBeScheduled ? 'Future date — the price is staged and is not current until then.' : 'Leave empty to take effect now.'}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="effectiveTo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Effective To</FormLabel>
-                      <FormControl>
-                        <DateRangePicker
-                          value={toDateValue(field.value) ? { from: toDateValue(field.value) } : undefined}
-                          onSelect={(range) => field.onChange(range?.from ?? null)}
-                          numberOfMonthsToShow={1}
-                          placeholder="No end date"
-                          buttonClass="w-full"
-                        />
-                      </FormControl>
-                      <FormDescription className="text-[11px]">Leave empty to run until the next price change.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {/* Closing the period ends the price itself, not just the offer. */}
-                {effectiveTo && (
-                  <p className="text-[11px] text-amber-700 dark:text-amber-400 sm:col-span-2">
-                    After this date the variant has no price in force and cannot be bought until a later row starts.
-                  </p>
-                )}
-              </div>
 
               <FormField
                 control={form.control}
