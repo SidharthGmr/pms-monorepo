@@ -81,7 +81,8 @@ export default function ProductVariantList({ onCountChange }: ProductVariantList
   }, [total, onCountChange]);
 
   const openEditor = (variant: ProductVariantListItemDto) => router.push(`/admin/products/variants/${variant.id}?edit=1`);
-  const openPriceHistory = (variant: ProductVariantListItemDto) => router.push(`/admin/price-histories?productId=${variant.product?.id}&variantId=${variant.id}`);
+  const openPriceHistory = (variant: ProductVariantListItemDto) =>
+    router.push(`/admin/price-histories?productId=${variant.product?.id}&variantId=${variant.id}`);
 
   // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.
   const columns = useProductVariantColumns(openEditor);
@@ -128,7 +129,14 @@ export default function ProductVariantList({ onCountChange }: ProductVariantList
       />
 
       <Card size="sm">
-        <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+        <ListPagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          loading={listQuery.isFetching}
+          onPageChange={setPage}
+          onPageSizeChange={changePageSize}
+        />
       </Card>
 
       {listQuery.isError ? (
@@ -171,23 +179,36 @@ export default function ProductVariantList({ onCountChange }: ProductVariantList
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold">{isFiltered ? 'No variants match these filters' : 'No variants yet'}</p>
-            <p className="text-xs text-muted-foreground">{isFiltered ? 'Try a different search, product, category or status.' : 'Use "Add variant" above to create the first one.'}</p>
+            <p className="text-xs text-muted-foreground">
+              {isFiltered ? 'Try a different search, product, category or status.' : 'Use "Add variant" above to create the first one.'}
+            </p>
           </div>
         </Card>
       ) : (
         <div className={cn(GRID, listQuery.isFetching && 'opacity-60 transition-opacity')} aria-busy={listQuery.isFetching}>
           {variants.map((variant) => (
-            <AdminVariantCard key={variant.id} variant={variant} onEdit={() => openEditor(variant)} onPriceHistory={() => openPriceHistory(variant)} />
+            <AdminVariantCard
+              key={variant.id}
+              variant={variant}
+              onEdit={() => openEditor(variant)}
+              onPriceHistory={() => openPriceHistory(variant)}
+            />
           ))}
         </div>
       )}
 
       {total > pageSize && (
         <Card size="sm">
-          <ListPagination page={page} pageSize={pageSize} total={total} loading={listQuery.isFetching} onPageChange={setPage} onPageSizeChange={changePageSize} />
+          <ListPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={listQuery.isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
         </Card>
       )}
-
     </div>
   );
 }

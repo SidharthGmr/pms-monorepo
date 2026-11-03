@@ -21,7 +21,7 @@ import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import ManageBrandNameSkeleton from '@/components/skelton/manageBrandName-Skeleton';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
@@ -113,11 +113,7 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
           <DialogHeader>
             <DialogTitle>Edit Brand Name</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4" aria-busy="true" aria-label="Loading brand name">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
+          <ManageBrandNameSkeleton />
         </DialogContent>
       </Dialog>
     );
@@ -217,6 +213,30 @@ export default function ManageBrandName({ id, isOpen, onClose }: ManageBrandName
   );
 }
 ```
+
+---
+
+## The skeleton component
+
+The loading skeleton is **not written inline** — it lives in `components/skelton/` (the folder
+is spelled `skelton`) as its own file, `manage<Entity>-Skeleton.tsx`, and the dialog imports it:
+
+```tsx
+// apps/web/src/components/skelton/manageBrandName-Skeleton.tsx
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function ManageBrandNameSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true">
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+    </div>
+  );
+}
+```
+
+Shape the rows to roughly mirror the form's fields so the dialog doesn't jump when the data lands.
 
 ---
 

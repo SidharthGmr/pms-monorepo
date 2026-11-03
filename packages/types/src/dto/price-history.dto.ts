@@ -26,26 +26,14 @@ export interface PriceHistoryDto {
   variantId: number;
   productId: number;
   storeCode: string;
-  /** Prisma exposes these as `Decimal`; the API contract is plain numbers. */
   sellingPrice: number;
-  /** The promotional amount for this period; charged only while the variant's `isOffer` is on. */
   offerPrice: number | null;
   costPrice: number | null;
   compareAtPrice: number | null;
   effectiveFrom: Date | string;
-  /** Null while this is the row in force; set when a later price supersedes it. */
   effectiveTo: Date | string | null;
-  /**
-   * True on the single row per variant in force right now. Derived from the dates above, which
-   * stay the source of truth - read this instead of comparing `effectiveFrom`/`effectiveTo`.
-   */
   isCurrent: boolean;
   reason: string | null;
-  /**
-   * The price this row replaced for the same variant, or null when it is the variant's
-   * first. Resolved in SQL rather than by comparing adjacent rows in the client, which
-   * only works when the whole ledger happens to sit on one page.
-   */
   previousPrice: number | null;
   variant?: PriceHistoryVariantDto | null;
 }

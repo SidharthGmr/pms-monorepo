@@ -326,6 +326,10 @@ Rules, each of which has already cost a bug here:
   backwards fails at the DB, not at validation. Table in the reference file.
 - **Loading and error states** are `isEdit && getResponse.isLoading` / `.isError` — the fetch
   query, never the create/update `isPending`, which is false while fetching.
+- **Loading skeletons are their own components in `components/skelton/`** (folder is spelled
+  `skelton`), named `<thing>-Skeleton.tsx` with a default-exported `<Thing>Skeleton` — e.g.
+  `managePriceHistory-Skeleton.tsx` → `ManagePriceHistorySkeleton`. Never inline a block of
+  `<Skeleton />`s in the feature component; import the skeleton component instead.
 - **Cancel routes through one handler** that raises a `ConfirmBox` when `isDirty`, and
   `onClose(false)` — a cancel changed nothing, so the list must not refetch. `onClose(true)` is
   for a successful save only. Pair it with `useUnsavedChangesWarning(isDirty)` and

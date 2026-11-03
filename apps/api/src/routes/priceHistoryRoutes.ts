@@ -277,6 +277,10 @@ priceHistoryRouter.get('/:id', authenticateToken, storeRequiredMiddleware, async
  *               sellingPrice:
  *                 type: number
  *                 example: 1099.99
+ *               offerPrice:
+ *                 type: number
+ *                 nullable: true
+ *                 example: 899.99
  *               costPrice:
  *                 type: number
  *                 nullable: true
@@ -285,6 +289,10 @@ priceHistoryRouter.get('/:id', authenticateToken, storeRequiredMiddleware, async
  *                 type: string
  *                 format: date-time
  *                 description: Defaults to now. A future date stages the price without making it current.
+ *               effectiveTo:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
  *               reason:
  *                 type: string
  *                 nullable: true
@@ -340,12 +348,19 @@ priceHistoryRouter.post(
  *             properties:
  *               sellingPrice:
  *                 type: number
+ *               offerPrice:
+ *                 type: number
+ *                 nullable: true
  *               costPrice:
  *                 type: number
  *                 nullable: true
  *               effectiveFrom:
  *                 type: string
  *                 format: date-time
+ *               effectiveTo:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
  *               reason:
  *                 type: string
  *                 nullable: true

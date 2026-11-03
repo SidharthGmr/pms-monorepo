@@ -268,49 +268,6 @@ export default function ManageProduct({ id, onCancel, onSaved, backLabel = 'Back
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        {/* {isEdit && (
-          <>
-            <div className="min-w-0">
-             {isInline ? (
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              {backLabel}
-            </button>
-          ) : (
-            <Link href="/admin/products" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Products
-            </Link>
-          )}
-              <div className="mt-1 flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
-                  {thumbnail ? <img src={thumbnail} alt="" className="h-full w-full object-cover" /> : <Package className="h-5 w-5" />}
-                </span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                      {isEdit ? productName || 'Edit product' : 'New product'}
-                    </h1>
-                    {isEdit && (
-                      <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
-                        Editing
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Ctrl</kbd> +{' '}
-                    <kbd className="rounded border bg-background px-1 font-mono text-[10px]">Enter</kbd> saves.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </>
-        )} */}
-
         {isEdit && !isInline && (
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">

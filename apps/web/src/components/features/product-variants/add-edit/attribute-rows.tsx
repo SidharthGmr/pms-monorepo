@@ -10,14 +10,6 @@ import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 const emptyRow = { attributeid: null, attributeValueId: null };
 
-/**
- * Turns a variant's stored attributes JSON into form rows.
- *
- * The current shape is a list of `{ attributeid, attributeValueId }` master-data ids and passes
- * straight through. Rows saved before that migration hold the old `{ size: 'L' }` record, so the
- * key is matched to an attribute code and the value to one of its entries to recover the ids.
- * Anything that cannot be matched is left blank, so it is re-picked instead of saved wrong.
- */
 export function toAttributeRows(attributes: unknown, masterAttributes: MasterAttributeDto[], masterEntries: MasterEntryDto[]) {
   if (Array.isArray(attributes)) {
     return attributes.map((row) => ({ attributeid: row?.attributeid ?? null, attributeValueId: row?.attributeValueId ?? null }));
@@ -36,11 +28,6 @@ interface AttributeRowsProps {
   masterAttributes: MasterAttributeDto[];
 }
 
-/**
- * The `Size = L` rows on the variant form, one compact line per pick: attribute, value, remove.
- * Reads the form off `<Form>`'s context. The placeholders carry the column meaning, so the rows
- * stay short enough to stack several without swallowing the screen.
- */
 export default function AttributeRows({ masterAttributes }: AttributeRowsProps) {
   const { control, setValue } = useFormContext<ProductVariantModel>();
   const { fields, append, remove } = useFieldArray({ control, name: 'attributes', keyName: 'key' });

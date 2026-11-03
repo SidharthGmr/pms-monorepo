@@ -18,9 +18,9 @@ export interface ProductVariantModel {
   status: Status;
   isFeatured?: boolean;
   lowStockThreshold?: number | null;
-  stockQuantity?: number | null;
-  costPrice?: number | null;
-  sellingPrice?: number | null;
+  stockQuantity?: number;
+  costPrice: number;
+  sellingPrice: number;
   offerPrice?: number | null;
   compareAtPrice?: number | null;
   effectiveFrom?: Date;
@@ -35,7 +35,6 @@ export interface attributesModelRow {
   attributeValueId: number | null;
 }
 
-
 /**
  * What the client actually PUTs/POSTs for a variant.
  *
@@ -49,7 +48,14 @@ export interface attributesModelRow {
  */
 export type ProductVariantCreateRequest = Omit<
   ProductVariantModel,
-  'storeCode' | 'createdById' | 'updatedById' | 'images' | 'isActive' | 'status' | 'effectiveFrom' | 'effectiveTo'
+  | "storeCode"
+  | "createdById"
+  | "updatedById"
+  | "images"
+  | "isActive"
+  | "status"
+  | "effectiveFrom"
+  | "effectiveTo"
 > & {
   images?: string[];
   isActive?: boolean;
@@ -61,4 +67,6 @@ export type ProductVariantCreateRequest = Omit<
 };
 
 /** Same contract for an edit, where every field is optional except the ones being changed. */
-export type ProductVariantUpdateRequest = Partial<Omit<ProductVariantCreateRequest, 'productId'>>;
+export type ProductVariantUpdateRequest = Partial<
+  Omit<ProductVariantCreateRequest, "productId">
+>;

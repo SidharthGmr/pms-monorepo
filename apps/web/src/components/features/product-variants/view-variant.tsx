@@ -12,11 +12,13 @@ import { useGetProductVariantById } from '@/hooks/service-hooks/useProductVarian
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { ProductVariantAttributeDto, ProductVariantListItemDto } from '@pms/types';
-import { AlertTriangle, Boxes, ChevronLeft, History, ImageOff, IndianRupee, Pencil, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Boxes, ChevronLeft, History, ImageOff, IndianRupee, Pencil, Plus, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import ManageVariant from './add-edit';
 import VariantRating from './variant-rating';
+import VariantPriceTable from '../price-histories/variant-price-table';
+import ManagePriceHistory from '../price-histories/add-edit';
 
 const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -29,6 +31,8 @@ interface ViewVariantProps {
 // Read-only page for one variant: media, price tiles, resolved option pairs and the ledger
 // details, with editing handed to the shared ManageVariant form in a dialog.
 export default function ViewVariant({ id }: ViewVariantProps) {
+  const [showAddModal, setShowAddModal] = useState(false);
+
   const { data, isPending, isError } = useGetProductVariantById(id, id > 0);
   const variant = data?.data?.data as ProductVariantListItemDto | undefined;
 
@@ -86,136 +90,150 @@ export default function ViewVariant({ id }: ViewVariantProps) {
   ];
 
   return (
-    <div className="space-y-4">
-      <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 gap-1 text-muted-foreground hover:text-foreground">
-        <Link href={variant.product ? `/admin/products/${variant.product.id}` : '/admin/products/variants'}>
-          <ChevronLeft className="h-4 w-4" />
-          {variant.product ? `Back to ${variant.product.name}` : 'Back to variants'}
-        </Link>
-      </Button>
+    <>
+      <div className="space-y-4">
+        <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 gap-1 text-muted-foreground hover:text-foreground">
+          <Link href={variant.product ? `/admin/products/${variant.product.id}` : '/admin/products/variants'}>
+            <ChevronLeft className="h-4 w-4" />
+            {variant.product ? `Back to ${variant.product.name}` : 'Back to variants'}
+          </Link>
+        </Button>
 
-      <Card className="!p-0 overflow-hidden">
-        <div className="flex flex-col gap-3 border-b bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-              <span className="truncate">{variant.product?.name ?? '—'}</span>
-              <code className="font-mono text-xs">{variant.sku}</code>
-              <StatusBadge status={variant.isActive ? 'ACTIVE' : 'INACTIVE'} label={variant.isActive ? 'Active (sellable)' : 'Retired'} />
-              <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} size="sm" />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild type="button" variant="outline" size="sm" className="h-9 gap-1.5">
-              <Link href={`/admin/price-histories?productId=${variant.product?.id}&variantId=${variant.id}`}>
-                <History className="h-3.5 w-3.5" />
-                Price history
-              </Link>
-            </Button>
-            <Button type="button" size="sm" className="h-9 gap-1.5" onClick={() => setShowEdit(true)}>
-              <Pencil className="h-3.5 w-3.5" />
-              Edit variant
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <div className="space-y-2">
-            {images.length ? (
-              <>
-                <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted/20">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={images[activeImage]} alt={title} className="h-full w-full object-cover" />
-                </div>
-                {images.length > 1 && (
-                  <div className="flex gap-1.5 overflow-x-auto">
-                    {images.map((image, index) => (
-                      <button
-                        key={image}
-                        type="button"
-                        onClick={() => setActiveImage(index)}
-                        aria-label={`Photo ${index + 1}`}
-                        className={cn('h-14 w-14 shrink-0 overflow-hidden rounded-lg border', index === activeImage && 'ring-2 ring-primary')}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={image} alt="" className="h-full w-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/20 text-muted-foreground/60">
-                <div className="rounded-full bg-muted p-3">
-                  <ImageOff className="h-6 w-6" />
-                </div>
-                <p className="text-xs font-medium">No photos yet</p>
+        <Card className="!p-0 overflow-hidden">
+          <div className="flex flex-col gap-3 border-b bg-muted/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                <span className="truncate">{variant.product?.name ?? '—'}</span>
+                <code className="font-mono text-xs">{variant.sku}</code>
+                <StatusBadge status={variant.isActive ? 'ACTIVE' : 'INACTIVE'} label={variant.isActive ? 'Active (sellable)' : 'Retired'} />
+                <VariantRating variantId={variant.id} rating={variant.rating} ratingCount={variant.ratingCount} size="sm" />
               </div>
-            )}
-          </div>
-
-          <div className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Tile
-                icon={IndianRupee}
-                label="Customer pays"
-                value={payable != null ? money(payable) : 'Unpriced'}
-                hint={
-                  variant.isOffer && variant.offerPrice != null && variant.sellingPrice
-                    ? `offer · was ${money(variant.sellingPrice)}`
-                    : variant.costPrice != null
-                      ? `cost ${money(variant.costPrice)}`
-                      : undefined
-                }
-                warn={payable == null}
-              />
-              <Tile
-                icon={Boxes}
-                label="Stock on hand"
-                value={String(variant.stockQuantity)}
-                hint={lowStock ? 'at or below threshold' : undefined}
-                warn={lowStock}
-              />
-              <Tile
-                icon={TrendingUp}
-                label="Margin"
-                value={margin != null ? `${margin.toFixed(1)}%` : '—'}
-                hint={margin != null ? 'on selling price' : 'needs cost price'}
-                warn={margin != null && margin < 0}
-              />
             </div>
 
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-xl border px-4 py-3 sm:grid-cols-3">
-              {specs.map((spec) => (
-                <div key={spec.label} className="min-w-0">
-                  <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{spec.label}</dt>
-                  <dd className={cn('mt-0.5 truncate text-sm font-semibold', spec.mono && 'font-mono text-xs leading-5')} title={spec.value}>
-                    {spec.value}
-                  </dd>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button icon={Plus} type="button" className="h-9 gap-1.5" onClick={() => setShowAddModal(true)}>
+                Record price
+              </Button>
+              <Button icon={Pencil} type="button" size="sm" className="h-9 gap-1.5" onClick={() => setShowEdit(true)}>
+                Edit variant
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="space-y-2">
+              {images.length ? (
+                <>
+                  <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border bg-muted/20">
+                    <img src={images[activeImage]} alt={title} className="h-full w-full object-cover" />
+                  </div>
+                  {images.length > 1 && (
+                    <div className="flex gap-1.5 overflow-x-auto">
+                      {images.map((image, index) => (
+                        <button
+                          key={image}
+                          type="button"
+                          onClick={() => setActiveImage(index)}
+                          aria-label={`Photo ${index + 1}`}
+                          className={cn('h-14 w-14 shrink-0 overflow-hidden rounded-lg border', index === activeImage && 'ring-2 ring-primary')}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={image} alt="" className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-muted/20 text-muted-foreground/60">
+                  <div className="rounded-full bg-muted p-3">
+                    <ImageOff className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs font-medium">No photos yet</p>
                 </div>
-              ))}
-            </dl>
-
-            {variant.description && <p className="text-sm leading-relaxed text-muted-foreground">{variant.description}</p>}
-          </div>
-        </div>
-      </Card>
-
-      {showEdit && (
-        <Dialog open onOpenChange={(open) => !open && setShowEdit(false)}>
-          <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
-            <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
-              <DialogTitle className="truncate text-base">{showEdit && title ? title : 'Edit variant'}</DialogTitle>
-              <DialogDescription className="mt-1 text-xs">{title}</DialogDescription>
-            </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-              <ManageVariant id={variant.id} onCancel={() => setShowEdit(false)} onSaved={() => setShowEdit(false)} />
+              )}
             </div>
-          </DialogContent>
-        </Dialog>
+
+            <div className="space-y-5">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Tile
+                  icon={IndianRupee}
+                  label="Customer pays"
+                  value={payable != null ? money(payable) : 'Unpriced'}
+                  hint={
+                    variant.isOffer && variant.offerPrice != null && variant.sellingPrice
+                      ? `offer · was ${money(variant.sellingPrice)}`
+                      : variant.costPrice != null
+                        ? `cost ${money(variant.costPrice)}`
+                        : undefined
+                  }
+                  warn={payable == null}
+                />
+                <Tile
+                  icon={Boxes}
+                  label="Stock on hand"
+                  value={String(variant.stockQuantity)}
+                  hint={lowStock ? 'at or below threshold' : undefined}
+                  warn={lowStock}
+                />
+                <Tile
+                  icon={TrendingUp}
+                  label="Margin"
+                  value={margin != null ? `${margin.toFixed(1)}%` : '—'}
+                  hint={margin != null ? 'on selling price' : 'needs cost price'}
+                  warn={margin != null && margin < 0}
+                />
+              </div>
+
+              <dl className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-xl border px-4 py-3 sm:grid-cols-3">
+                {specs.map((spec) => (
+                  <div key={spec.label} className="min-w-0">
+                    <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{spec.label}</dt>
+                    <dd className={cn('mt-0.5 truncate text-sm font-semibold', spec.mono && 'font-mono text-xs leading-5')} title={spec.value}>
+                      {spec.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              {variant.description && <p className="text-sm leading-relaxed text-muted-foreground">{variant.description}</p>}
+            </div>
+          </div>
+        </Card>
+
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-sm font-semibold">
+            <History className="h-4 w-4 text-muted-foreground" />
+            Price history
+          </div>
+          <VariantPriceTable variantId={variant.id} />
+        </div>
+
+        {showEdit && (
+          <Dialog open onOpenChange={(open) => !open && setShowEdit(false)}>
+            <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" onInteractOutside={(e) => e.preventDefault()}>
+              <DialogHeader className="space-y-0 border-b bg-muted/30 px-6 py-4 text-left">
+                <DialogTitle className="truncate text-base">{showEdit && title ? title : 'Edit variant'}</DialogTitle>
+                <DialogDescription className="mt-1 text-xs">{title}</DialogDescription>
+              </DialogHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <ManageVariant id={variant.id} onCancel={() => setShowEdit(false)} onSaved={() => setShowEdit(false)} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {showAddModal && (
+        <ManagePriceHistory
+          defaultProductId={variant.product.id}
+          defaultVariantId={variant.id}
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
