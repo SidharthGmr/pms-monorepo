@@ -46,7 +46,7 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
   const variantQuery = useGetAllProductVariants({ productId: id, recordPerPage: 100 }, id > 0);
   const variants: ProductVariantListItemDto[] = useMemo(() => variantQuery.data?.data?.data?.data ?? [], [variantQuery.data]);
 
-  const columns = useProductVariantColumns((variant) => router.push(`/admin/products/variants/${variant.id}?edit=1`));
+  const columns = useProductVariantColumns();
   const table = useCustomDataTable({
     columns,
     data: variants,

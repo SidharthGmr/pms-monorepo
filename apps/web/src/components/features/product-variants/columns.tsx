@@ -235,20 +235,19 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
               href={viewHrefFor(row.original)}
               target="_blank"
             />
-            <ActionTooltip
+            {/* <ActionTooltip
               variant="history"
               tooltip="Price history"
               ariaLabel={`Price history for ${row.original.name ?? row.original.sku}`}
               href={`/admin/price-histories?productId=${row.original?.product?.id}&variantId=${row.original.id}`}
+            /> */}
+
+            <ActionTooltip
+              variant="edit"
+              tooltip="Edit"
+              ariaLabel={`Edit ${row.original.name ?? row.original.sku}`}
+              href={`/admin/products/variants/${row.original.id}`}
             />
-            {onEdit && (
-              <ActionTooltip
-                variant="edit"
-                tooltip="Edit"
-                ariaLabel={`Edit ${row.original.name ?? row.original.sku}`}
-                onClick={() => onEdit(row.original)}
-              />
-            )}
           </div>
         ),
         meta: { thClassName: 'w-32 pr-4', tdClassName: 'pr-4' },
