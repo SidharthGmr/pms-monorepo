@@ -94,7 +94,7 @@ export default function ProductVariantFilter({ value, onChange, onReset, view, o
             items={productItems}
             valueType="number"
             onChange={(next) => onChange({ productId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="sm:w-44"
+
             containerName="variant-product-filter"
           />
           <SelectSearch
@@ -103,7 +103,7 @@ export default function ProductVariantFilter({ value, onChange, onReset, view, o
             items={categoryItems}
             valueType="number"
             onChange={(next) => onChange({ categoryId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="sm:w-44"
+
             containerName="variant-category-filter"
           />
         </>

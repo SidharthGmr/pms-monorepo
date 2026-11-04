@@ -12,7 +12,7 @@ import logger from "../utils/logger";
 
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
-import { payablePrice } from "../utils/variant-pricing";
+import { discountedUnitPrice, payablePrice } from "../utils/variant-pricing";
 import { INotificationService } from "./interfaces/Inotification.service";
 import { IOrderService } from "./interfaces/Iorder.service";
 import { OrderStatus, Prisma, Role } from "@prisma/client";
@@ -97,7 +97,9 @@ export class OrderService implements IOrderService {
           if (!priceRow) {
             throw new ClientError(`No price found for ${label}. Please set a price before selling it.`);
           }
-          const unitPrice = payablePrice(
+          // The ledger row's own discount is part of the price, so the charged unit price
+          // already has it applied - the POS line preview computes the same number.
+          const payable = payablePrice(
             {
               effectiveFrom: new Date(priceRow.effectiveFrom),
               effectiveTo: priceRow.effectiveTo != null ? new Date(priceRow.effectiveTo) : null,
@@ -105,9 +107,14 @@ export class OrderService implements IOrderService {
               offerPrice: priceRow.offerPrice,
               costPrice: priceRow.costPrice,
               compareAtPrice: priceRow.compareAtPrice,
+              taxType: priceRow.taxType,
+              taxId: priceRow.taxId,
+              discountType: priceRow.discountType,
+              discountValue: priceRow.discountValue,
             },
             variant.isOffer
           ) as number;
+          const unitPrice = discountedUnitPrice(payable, priceRow.discountType, priceRow.discountValue);
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 

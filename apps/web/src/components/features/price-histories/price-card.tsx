@@ -75,7 +75,7 @@ export default function PriceCard({ row, canManage, onEdit, onDelete, onViewTime
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div className="rounded-lg border bg-muted/30 px-3 py-2">
-            <p className="text-[11px] text-muted-foreground">Cost</p>
+            <p className="text-[11px] text-muted-foreground">Purchase</p>
             <p className="text-sm font-semibold tabular-nums">{formatPrice(row.costPrice)}</p>
           </div>
           <div className="rounded-lg border bg-muted/30 px-3 py-2">

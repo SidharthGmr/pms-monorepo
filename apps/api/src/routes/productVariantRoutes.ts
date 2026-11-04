@@ -305,7 +305,7 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                 type: number
  *                 nullable: true
  *                 example: 800.00
- *                 description: Cost price (optional)
+ *                 description: Purchase price (optional)
  *               offerPrice:
  *                 type: number
  *                 nullable: true
@@ -321,6 +321,21 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                   Turns the promotion on (optional). A column on the variant, not the ledger. With
  *                   it on and an offerPrice set, carts and orders are billed the offerPrice;
  *                   otherwise the sellingPrice. Defaults to false.
+ *               taxType:
+ *                 type: string
+ *                 enum: [WithTax, WithoutTax]
+ *                 nullable: true
+ *               taxId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *               discountType:
+ *                 type: string
+ *                 enum: [PERCENTAGE, FLAT]
+ *                 nullable: true
+ *               discountValue:
+ *                 type: number
+ *                 nullable: true
  *               effectiveFrom:
  *                 type: string
  *                 format: date-time
@@ -428,6 +443,21 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
  *                   Part of the same reprice - a changed offer amount files a new ledger row too.
  *                   Omit it to carry the current offer amount forward unchanged.
  *               costPrice:
+ *                 type: number
+ *                 nullable: true
+ *               taxType:
+ *                 type: string
+ *                 enum: [WithTax, WithoutTax]
+ *                 nullable: true
+ *               taxId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *               discountType:
+ *                 type: string
+ *                 enum: [PERCENTAGE, FLAT]
+ *                 nullable: true
+ *               discountValue:
  *                 type: number
  *                 nullable: true
  *               effectiveFrom:

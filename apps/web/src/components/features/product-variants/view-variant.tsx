@@ -162,7 +162,7 @@ export default function ViewVariant({ id }: ViewVariantProps) {
                     variant.isOffer && variant.offerPrice != null && variant.sellingPrice
                       ? `offer · was ${money(variant.sellingPrice)}`
                       : variant.costPrice != null
-                        ? `cost ${money(variant.costPrice)}`
+                        ? `purchase ${money(variant.costPrice)}`
                         : undefined
                   }
                   warn={payable == null}
@@ -178,7 +178,7 @@ export default function ViewVariant({ id }: ViewVariantProps) {
                   icon={TrendingUp}
                   label="Margin"
                   value={margin != null ? `${margin.toFixed(1)}%` : '—'}
-                  hint={margin != null ? 'on selling price' : 'needs cost price'}
+                  hint={margin != null ? 'on selling price' : 'needs purchase price'}
                   warn={margin != null && margin < 0}
                 />
               </div>

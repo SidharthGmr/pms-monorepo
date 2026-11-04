@@ -34,6 +34,7 @@ export const TYPES = {
   ICmsPageService: Symbol.for("CmsPageService"),
   INotificationService: Symbol.for("NotificationService"),
   ICatalogService: Symbol.for("CatalogService"),
+  ITaxService: Symbol.for("TaxService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -69,6 +70,7 @@ export const TYPES = {
   CmsPageController: Symbol.for("CmsPageController"),
   NotificationController: Symbol.for("NotificationController"),
   CatalogController: Symbol.for("CatalogController"),
+  TaxController: Symbol.for("TaxController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -104,4 +106,5 @@ export const TYPES = {
   ICmsPageRepository: Symbol.for("CmsPageRepository"),
   INotificationRepository: Symbol.for("NotificationRepository"),
   ICatalogRepository: Symbol.for("CatalogRepository"),
+  ITaxRepository: Symbol.for("TaxRepository"),
 };

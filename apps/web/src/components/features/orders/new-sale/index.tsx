@@ -14,16 +14,26 @@ import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hoo
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { CreateOrderModel, OrderStatusEnum, orderFormFields, Roles, type OrderFormValues, type ProductVariantListItemDto } from '@pms/types';
+import {
+  CreateOrderModel,
+  DiscountTypeEnum,
+  OrderStatusEnum,
+  orderFormFields,
+  Roles,
+  TaxTypeEnum,
+  type OrderFormValues,
+  type ProductVariantListItemDto,
+} from '@pms/types';
+import { useGetAllTaxes } from '@/hooks/service-hooks/useTaxService';
 import { Download, Plus, ReceiptText, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { InputSelect, type InputSelectItem } from '@/components/common/input-select';
-import ClassicTemplate from '@/components/features/settings/invoice-templates/classic';
 import { downloadInvoicePdf } from '../invoice-pdf';
-import { type SampleInvoice } from '@/components/features/settings/invoice-templates/sample-data';
 import { useGetSettings } from '@/hooks/service-hooks/useSettingService';
+import { amountInWords } from '@/lib/amount-in-words';
+import { cn } from '@/lib/utils';
 
 const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -31,24 +41,23 @@ const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString
 const unitPriceOf = (variant?: ProductVariantListItemDto) =>
   variant ? Number(variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice) || 0 : 0;
 
+// The variant's own discount, per unit - the same rule the server applies when pricing the line.
+const perUnitDiscount = (variant?: ProductVariantListItemDto) => {
+  if (!variant || variant.discountValue == null || variant.discountValue <= 0) return 0;
+  const unit = unitPriceOf(variant);
+  const discount = variant.discountType === DiscountTypeEnum.Percentage ? (unit * variant.discountValue) / 100 : variant.discountValue;
+  return Math.min(Math.max(Math.round(discount * 100) / 100, 0), unit);
+};
+
 export default function NewSale() {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const createOrder = useCreateOrder();
 
-  // Branding for the invoice preview, and a zoom factor that fits the 794px sheet to the column.
+  // Branding for the downloaded bill.
   const { data: settingsResponse } = useGetSettings();
   const settings = settingsResponse?.data?.data;
-  const previewRef = useRef<HTMLDivElement>(null);
-  const [previewZoom, setPreviewZoom] = useState(0.6);
   const [isDownloading, setIsDownloading] = useState(false);
-  useEffect(() => {
-    const element = previewRef.current;
-    if (!element) return;
-    const observer = new ResizeObserver(() => setPreviewZoom(Math.min(1, element.clientWidth / 794)));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
   const customers = useMemo(
@@ -63,6 +72,16 @@ export default function NewSale() {
     [customersResponse]
   );
   const customerOptions = useMemo(() => customers.map((c) => ({ label: c.email ? `${c.name} (${c.email})` : c.name, value: c.id })), [customers]);
+
+  const { data: taxesResponse } = useGetAllTaxes({ showAllRecords: true });
+  const taxById = useMemo(() => new Map((taxesResponse?.data?.data?.data ?? []).map((tax) => [tax.id, tax])), [taxesResponse]);
+
+  // GST here is tax-inclusive ("With Tax"), so the shown amount is the portion inside the price.
+  const lineTaxAmount = (variant: ProductVariantListItemDto | undefined, netAmount: number) => {
+    if (!variant || variant.taxType !== TaxTypeEnum.WithTax || !variant.taxId) return 0;
+    const rate = taxById.get(variant.taxId)?.rate ?? 0;
+    return rate > 0 ? Math.round(((netAmount * rate) / (100 + rate)) * 100) / 100 : 0;
+  };
 
   const { data: variantsResponse } = useGetAllPublicProductVariants({ showAllRecords: true });
   const variants = useMemo(() => variantsResponse?.data?.data?.data || [], [variantsResponse]);
@@ -109,36 +128,20 @@ export default function NewSale() {
       const variant = variantById.get(variantId);
       const quantity = Number(it.quantity) || 0;
       const unitPrice = unitPriceOf(variant);
-      return { variantId, variant, quantity, unitPrice, amount: unitPrice * quantity };
+      const netUnitPrice = unitPrice - perUnitDiscount(variant);
+      const discountAmount = perUnitDiscount(variant) * quantity;
+      const amount = netUnitPrice * quantity;
+      const taxAmount = lineTaxAmount(variant, amount);
+      return { variantId, variant, quantity, unitPrice, netUnitPrice, discountAmount, taxAmount, amount };
     });
   const totalQty = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
+  const itemDiscountTotal = lines.reduce((sum, line) => sum + line.discountAmount, 0);
+  const itemTaxTotal = lines.reduce((sum, line) => sum + line.taxAmount, 0);
   const discount = Number(values.discount) || 0;
   const tax = Number(values.tax) || 0;
   const shipping = Number(values.shippingCost) || 0;
   const grandTotal = subtotal - discount + tax + shipping;
-
-  // The Classic template computes tax from a rate, so the entered absolute tax is converted back.
-  const taxable = subtotal - discount;
-  const previewInvoice: SampleInvoice = {
-    number: 'PREVIEW',
-    status: (['PENDING', 'CONFIRMED', 'DELIVERED', 'CANCELLED'] as const).find((s) => s === values.status) ?? 'CONFIRMED',
-    issuedAt: new Date(),
-    store: { name: settings?.siteName || config.appName, code: '', address: '', phone: '', email: '' },
-    customer: { name: customer?.name || 'Walk-in customer', address: '', phone: '', email: customer?.email || '' },
-    items: lines.map((line) => ({
-      name: line.variant?.product?.name || line.variant?.name || line.variant?.sku || `Variant #${line.variantId}`,
-      variant: [line.variant?.name, line.variant?.sku].filter(Boolean).join(' · ') || undefined,
-      quantity: line.quantity,
-      unitPrice: line.unitPrice,
-    })),
-    discount,
-    taxRate: taxable > 0 ? tax / taxable : 0,
-    shipping,
-    received: 0,
-    payment: { method: '—', status: 'Due' },
-    notes: values.notes || '',
-  };
 
   const downloadBillPdf = async () => {
     setIsDownloading(true);
@@ -148,9 +151,13 @@ export default function NewSale() {
           orderNumber: 'PREVIEW',
           status: values.status,
           createdAt: new Date().toISOString(),
-          totalAmount: subtotal,
-          discount,
+          // Items print at their gross rate, so the item discounts surface on the Discount
+          // row instead of hiding inside the unit price. The math lands on the same total:
+          // (subtotal + itemDiscounts) - (discount + itemDiscounts) = subtotal - discount.
+          totalAmount: subtotal + itemDiscountTotal,
+          discount: discount + itemDiscountTotal,
           tax,
+          taxIncluded: itemTaxTotal,
           shippingCost: shipping,
           grandTotal,
           notes: values.notes || null,
@@ -199,7 +206,7 @@ export default function NewSale() {
       <ListPageHeader icon={ReceiptText} title="New Sale" description="Bill a sale and preview the invoice as you type" backHref="/admin/orders" />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-12">
           <Form {...form}>
             <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4 rounded-xl border bg-card p-4 sm:p-5">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -268,6 +275,8 @@ export default function NewSale() {
                         <th className="px-2 py-2 text-left font-semibold">Item</th>
                         <th className="w-20 px-2 py-2 text-right font-semibold">Qty</th>
                         <th className="w-28 px-2 py-2 text-right font-semibold">Price/Unit</th>
+                        <th className="w-24 px-2 py-2 text-right font-semibold">Discount</th>
+                        <th className="w-24 px-2 py-2 text-right font-semibold">Tax</th>
                         <th className="w-28 px-2 py-2 text-right font-semibold">Amount</th>
                         <th className="w-10 px-1 py-2" />
                       </tr>
@@ -278,7 +287,10 @@ export default function NewSale() {
                           const variant = variantById.get(Number(values.items?.[index]?.variantId));
                           const quantity = Number(values.items?.[index]?.quantity) || 0;
                           const unitPrice = unitPriceOf(variant);
-                          return { variant, unitPrice, amount: unitPrice * quantity };
+                          const discountAmount = perUnitDiscount(variant) * quantity;
+                          const amount = (unitPrice - perUnitDiscount(variant)) * quantity;
+                          const taxAmount = lineTaxAmount(variant, amount);
+                          return { variant, unitPrice, discountAmount, taxAmount, amount };
                         })();
 
                         return (
@@ -330,7 +342,15 @@ export default function NewSale() {
                                 )}
                               />
                             </td>
-                            <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">{line.variant ? money(line.unitPrice) : '—'}</td>
+                            <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">
+                              {line.variant ? money(line.unitPrice) : '—'}
+                            </td>
+                            <td className="px-2 py-3 text-right text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
+                              {line.variant && line.discountAmount > 0 ? `−${money(line.discountAmount)}` : '—'}
+                            </td>
+                            <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">
+                              {line.variant && line.taxAmount > 0 ? money(line.taxAmount) : '—'}
+                            </td>
                             <td className="px-2 py-3 text-right text-xs font-semibold tabular-nums">{line.variant ? money(line.amount) : '—'}</td>
                             <td className="px-1 py-1.5">
                               <Button
@@ -355,6 +375,12 @@ export default function NewSale() {
                         <td className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total</td>
                         <td className="px-2 py-2 text-right text-sm font-semibold tabular-nums">{totalQty || ''}</td>
                         <td />
+                        <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                          {itemDiscountTotal > 0 ? `−${money(itemDiscountTotal)}` : ''}
+                        </td>
+                        <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-muted-foreground">
+                          {itemTaxTotal > 0 ? money(itemTaxTotal) : ''}
+                        </td>
                         <td className="px-2 py-2 text-right text-sm font-bold tabular-nums">{money(subtotal)}</td>
                         <td />
                       </tr>
@@ -372,80 +398,131 @@ export default function NewSale() {
                 >
                   Add Row
                 </Button>
-              </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <FormField
-                  control={control}
-                  name="discount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Discount</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name="tax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tax</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name="shippingCost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Shipping Cost</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Sale notes" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                {(itemDiscountTotal > 0 || itemTaxTotal > 0) && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Item discounts are already applied to Amount; Tax is the GST included in tax-inclusive prices.
+                  </p>
                 )}
-              />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-4">
+                  <FormField
+                    control={control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Sale notes" rows={4} className="h-full min-h-24 resize-none" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="rounded-lg border border-dashed px-3 py-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Amount in words</p>
+                    <p className="mt-1 text-xs font-medium italic leading-relaxed text-muted-foreground">{amountInWords(grandTotal)}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between py-1.5 text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-semibold tabular-nums">{money(subtotal)}</span>
+                  </div>
+
+                  {itemDiscountTotal > 0 && (
+                    <div className="flex items-center justify-between py-1 text-xs text-muted-foreground">
+                      <span>Item discounts (applied)</span>
+                      <span className="tabular-nums text-emerald-700 dark:text-emerald-400">−{money(itemDiscountTotal)}</span>
+                    </div>
+                  )}
+                  {itemTaxTotal > 0 && (
+                    <div className="flex items-center justify-between py-1 text-xs text-muted-foreground">
+                      <span>GST included</span>
+                      <span className="tabular-nums">{money(itemTaxTotal)}</span>
+                    </div>
+                  )}
+
+                  <FormField
+                    control={control}
+                    name="discount"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-3 space-y-0 border-t py-1.5">
+                        <FormLabel className="text-sm font-normal text-muted-foreground">Discount</FormLabel>
+                        <div>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="0"
+                              className={cn('h-8 w-32 text-right tabular-nums', discount > 0 && 'text-rose-600 dark:text-rose-400')}
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="tax"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-3 space-y-0 py-1.5">
+                        <FormLabel className="text-sm font-normal text-muted-foreground">Tax</FormLabel>
+                        <div>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="0"
+                              className="h-8 w-32 text-right tabular-nums"
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="shippingCost"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-3 space-y-0 py-1.5">
+                        <FormLabel className="text-sm font-normal text-muted-foreground">Shipping &amp; fees</FormLabel>
+                        <div>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="0"
+                              className="h-8 w-32 text-right tabular-nums"
+                              value={field.value ?? ''}
+                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="mt-2 flex items-center justify-between rounded-md bg-primary px-3 py-2.5 text-primary-foreground">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Total payable</span>
+                    <span className="text-lg font-bold tabular-nums">{money(grandTotal)}</span>
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-muted-foreground">Payment and received amount are recorded on the order after the sale.</p>
+                </div>
+              </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button
@@ -471,7 +548,7 @@ export default function NewSale() {
         </div>
 
         {/* Live preview rendered with the real Classic invoice template, zoomed to fit the column; real prices land on save. */}
-        <div className="lg:col-span-5">
+        {/* <div className="lg:col-span-5">
           <div ref={previewRef} className="overflow-hidden rounded-xl border bg-white shadow-sm lg:sticky lg:top-6">
             <div style={{ zoom: previewZoom }}>
               <ClassicTemplate invoice={previewInvoice} logoUrl={settings?.logoUrl} />
@@ -480,7 +557,7 @@ export default function NewSale() {
               Preview only - prices shown are indicative; the saved invoice uses the effective price at sale time.
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

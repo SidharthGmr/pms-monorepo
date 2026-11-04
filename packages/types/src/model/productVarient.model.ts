@@ -1,4 +1,6 @@
+import { DiscountType } from "../enum/discount.enum";
 import { Status } from "../enum/status.enum";
+import { TaxType } from "../enum/tax.enum";
 
 export interface ProductVariantModel {
   productId: number;
@@ -23,6 +25,10 @@ export interface ProductVariantModel {
   sellingPrice: number;
   offerPrice?: number | null;
   compareAtPrice?: number | null;
+  taxType?: TaxType | null;
+  taxId?: string | null;
+  discountType?: DiscountType | null;
+  discountValue?: number | null;
   effectiveFrom?: Date;
   effectiveTo?: Date | null;
   reason?: string | null;

@@ -164,6 +164,13 @@ production, so that row is production data.
 - **No screen for it yet?** Build the dialog (see *Admin UI* below) - or, if the UI genuinely
   is not the point, call the API over HTTP: Swagger at `http://localhost:4000/api`, or curl
   with the `clientId` header and a bearer token. That is still the real pipeline.
+- **Getting a bearer token**: log in against the local API and read `data.token` from the
+  response (with `SITE_MODE=local` no `clientId` header is needed). Local dev admin login:
+
+  ```bash
+  curl -s -X POST http://localhost:4000/auth/login -H 'Content-Type: application/json' \
+    -d '{"email":"sidharth@gmrwebteam.com","password":"Admin123!@#"}'
+  ```
 - **Direct SQL or Prisma is for reading**, plus one exception: a schema migration and the
   backfill that ships with it, under `apps/api/prisma/migrations`.
 

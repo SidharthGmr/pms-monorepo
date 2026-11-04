@@ -85,6 +85,10 @@ export class ProductVariantService implements IProductVariantService {
             offerPrice: data.offerPrice ?? null,
             isOffer: data.isOffer ?? false,
             compareAtPrice: data.compareAtPrice ?? null,
+            taxType: data.taxType ?? null,
+            taxId: data.taxId ?? null,
+            discountType: data.discountType ?? null,
+            discountValue: data.discountValue ?? null,
             effectiveFrom: data.effectiveFrom ? new Date(data.effectiveFrom) : new Date(),
             ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo == null ? null : new Date(data.effectiveTo) }),
             reason: data.reason ?? null,
@@ -171,6 +175,10 @@ export class ProductVariantService implements IProductVariantService {
           (data.costPrice ?? null) !== (existing.costPrice ?? null) ||
           (data.offerPrice !== undefined && (data.offerPrice ?? null) !== (existing.offerPrice ?? null)) ||
           (data.isOffer !== undefined && data.isOffer !== existing.isOffer) ||
+          (data.taxType !== undefined && (data.taxType ?? null) !== (existing.taxType ?? null)) ||
+          (data.taxId !== undefined && (data.taxId ?? null) !== (existing.taxId ?? null)) ||
+          (data.discountType !== undefined && (data.discountType ?? null) !== (existing.discountType ?? null)) ||
+          (data.discountValue !== undefined && (data.discountValue ?? null) !== (existing.discountValue ?? null)) ||
           (effectiveTo !== undefined && effectiveTo?.getTime() !== existing.effectiveTo?.getTime()) ||
           effectiveFrom !== undefined);
       if (priceChanged) {
@@ -182,6 +190,10 @@ export class ProductVariantService implements IProductVariantService {
             offerPrice: data.offerPrice !== undefined ? data.offerPrice : existing.offerPrice,
             isOffer: data.isOffer !== undefined ? data.isOffer : existing.isOffer,
             costPrice: data.costPrice ?? null,
+            taxType: data.taxType !== undefined ? data.taxType : existing.taxType,
+            taxId: data.taxId !== undefined ? data.taxId : existing.taxId,
+            discountType: data.discountType !== undefined ? data.discountType : existing.discountType,
+            discountValue: data.discountValue !== undefined ? data.discountValue : existing.discountValue,
             ...(effectiveFrom !== undefined && { effectiveFrom }),
             ...(effectiveTo !== undefined && { effectiveTo }),
             reason: data.reason ?? 'Price updated',

@@ -1,3 +1,6 @@
+import { DiscountType } from "../enum/discount.enum";
+import { TaxType } from "../enum/tax.enum";
+
 export type JsonObject = { [key: string]: JsonValue | undefined };
 export type JsonValue =
   string | number | boolean | null | JsonObject | JsonValue[];
@@ -15,6 +18,10 @@ export interface ProductVariantResponseDto {
   sellingPrice: number | null;
   offerPrice: number | null;
   costPrice: number | null;
+  taxType: TaxType | null;
+  taxId: string | null;
+  discountType: DiscountType | null;
+  discountValue: number | null;
   lowStockThreshold: number | null;
   description: string | null;
   isActive: boolean;

@@ -12,6 +12,7 @@ import {
   List,
   Package,
   PackagePlus,
+  Percent,
   Settings2,
   ShoppingBag,
   ShoppingCart,
@@ -24,6 +25,9 @@ import {
   UserCog,
   Undo2,
   Users,
+  TrendingUp,
+  Layers,
+  ListChecks,
 } from 'lucide-react';
 import { Roles } from '@pms/types';
 
@@ -122,14 +126,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
         role: [Roles.ADMIN],
         isActive: false,
       },
-      // {
-      //   id: 'master-entries',
-      //   title: 'Option Values',
-      //   icon: ListChecks,
-      //   url: '/admin/master-entries/',
-      //   role: [Roles.ADMIN],
-      //   isActive: false,
-      // },
+
       {
         id: 'suppliers',
         title: 'Suppliers',
@@ -149,6 +146,99 @@ export const SideBarMenu: SideBarMenuDto[] = [
     role: [Roles.ADMIN],
     isActive: false,
   },
+  {
+    id: 'master',
+    title: 'Master',
+    icon: UserCircle,
+    url: '',
+    group: '',
+    role: [Roles.ADMIN, Roles.SUPER_ADMIN],
+    isActive: true,
+    submenu: [
+      {
+        id: 'addstock',
+        title: 'Add Stock',
+        icon: PackagePlus,
+        url: '/admin/stock-purchase/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+
+      {
+        id: 'product-variants',
+        title: 'Variants',
+        icon: Layers,
+        url: '/admin/products/variants/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'purchaseshistory',
+        title: 'Purchase History',
+        icon: History,
+        url: '/admin/stock-purchase/history',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'pricehistories',
+        title: 'Price History',
+        icon: TrendingUp,
+        url: '/admin/price-histories/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'master-entries',
+        title: 'Option Values',
+        icon: ListChecks,
+        url: '/admin/master-entries/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'taxes',
+        title: 'Taxes',
+        icon: Percent,
+        url: '/admin/taxes/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'contact-messages',
+        title: 'Contact Messages',
+        icon: Inbox,
+        url: '/admin/contact-messages/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'subscribers',
+        title: 'Subscribers',
+        icon: MailPlus,
+        url: '/admin/subscribers/',
+        role: [Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'media',
+        title: 'Media',
+        icon: Images,
+        url: '/admin/media/',
+        role: [Roles.SUPER_ADMIN, Roles.ADMIN],
+        isActive: false,
+      },
+      {
+        id: 'users',
+        title: 'Users',
+        icon: Users,
+        url: '/admin/users/',
+        role: [Roles.SUPER_ADMIN, Roles.ADMIN],
+        isActive: false,
+      },
+    ],
+  },
+
   // {
   //   id: 'products-group',
   //   title: 'Products',
@@ -166,22 +256,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
   //       role: [Roles.ADMIN],
   //       isActive: false,
   //     },
-  //     {
-  //       id: 'product-variants',
-  //       title: 'Variants',
-  //       icon: Layers,
-  //       url: '/admin/products/variants/',
-  //       role: [Roles.ADMIN],
-  //       isActive: false,
-  //     },
-  //     {
-  //       id: 'price-histories',
-  //       title: 'Price History',
-  //       icon: TrendingUp,
-  //       url: '/admin/price-histories/',
-  //       role: [Roles.ADMIN],
-  //       isActive: false,
-  //     },
+  //
   //   ],
   // },
   {
@@ -256,6 +331,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
       },
     ],
   },
+
   // {
   //   id: 'pages',
   //   title: 'Pages',
@@ -274,24 +350,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
     role: [Roles.ADMIN],
     isActive: false,
   },
-  {
-    id: 'contact-messages',
-    title: 'Contact Messages',
-    icon: Inbox,
-    url: '/admin/contact-messages/',
-    group: 'Customers',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'subscribers',
-    title: 'Subscribers',
-    icon: MailPlus,
-    url: '/admin/subscribers/',
-    group: 'Customers',
-    role: [Roles.ADMIN],
-    isActive: false,
-  },
+
   // {
   //   id: 'reviews',
   //   title: 'Reviews',
@@ -373,24 +432,7 @@ export const SideBarMenu: SideBarMenuDto[] = [
     role: [Roles.SUPER_ADMIN],
     isActive: false,
   },
-  {
-    id: 'media',
-    title: 'Media',
-    icon: Images,
-    url: '/admin/media/',
-    group: 'Administration',
-    role: [Roles.SUPER_ADMIN, Roles.ADMIN],
-    isActive: false,
-  },
-  {
-    id: 'users',
-    title: 'Users',
-    icon: Users,
-    url: '/admin/users/',
-    group: 'Administration',
-    role: [Roles.SUPER_ADMIN, Roles.ADMIN],
-    isActive: false,
-  },
+
   // {
   //   id: 'settings',
   //   title: 'Settings',

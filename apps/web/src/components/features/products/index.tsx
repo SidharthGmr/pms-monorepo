@@ -159,16 +159,18 @@ export default function ProductList({ onCountChange, onEdit }: ProductListProps)
         loading={listQuery.isFetching}
       />
 
-      <Card size="sm">
-        <ListPagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          loading={listQuery.isFetching}
-          onPageChange={setPage}
-          onPageSizeChange={changePageSize}
-        />
-      </Card>
+      {total > pageSize && (
+        <Card size="sm">
+          <ListPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            loading={listQuery.isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={changePageSize}
+          />
+        </Card>
+      )}
 
       {listQuery.isError ? (
         <Card className="py-16 text-center">

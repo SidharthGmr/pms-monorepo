@@ -245,7 +245,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                   name="costPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cost Price</FormLabel>
+                      <FormLabel>Purchase Price</FormLabel>
                       <FormControl>
                         <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? null : value)} />
                       </FormControl>

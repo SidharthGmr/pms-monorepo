@@ -86,9 +86,11 @@ export default function ClassicTemplate({ invoice, logoUrl }: InvoiceTemplatePro
           <tr className="text-[10px] uppercase tracking-widest text-white" style={{ backgroundColor: NAVY }}>
             <th className="w-10 py-2.5 pl-3 pr-2 text-left font-bold">#</th>
             <th className="px-2 py-2.5 text-left font-bold">Description</th>
-            <th className="w-28 px-2 py-2.5 text-right font-bold">Rate</th>
-            <th className="w-16 px-2 py-2.5 text-center font-bold">Qty</th>
-            <th className="w-32 py-2.5 pl-2 pr-3 text-right font-bold">Amount</th>
+            <th className="w-24 px-2 py-2.5 text-right font-bold">Rate</th>
+            <th className="w-20 px-2 py-2.5 text-right font-bold">Discount</th>
+            <th className="w-20 px-2 py-2.5 text-right font-bold">Tax</th>
+            <th className="w-12 px-2 py-2.5 text-center font-bold">Qty</th>
+            <th className="w-28 py-2.5 pl-2 pr-3 text-right font-bold">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -100,6 +102,12 @@ export default function ClassicTemplate({ invoice, logoUrl }: InvoiceTemplatePro
                 {item.variant && <span className="mt-0.5 text-xs text-slate-500 block">{[item.variant].filter(Boolean).join(' · ')}</span>}
               </td>
               <td className="px-2 py-3 text-right tabular-nums text-slate-600">{money(item.unitPrice)}</td>
+              <td className="px-2 py-3 text-right tabular-nums">
+                {item.discount ? <span className="text-rose-600">- {money(item.discount)}</span> : <span className="text-slate-300">—</span>}
+              </td>
+              <td className="px-2 py-3 text-right tabular-nums text-slate-600">
+                {item.tax ? money(item.tax) : <span className="text-slate-300">—</span>}
+              </td>
               <td className="px-2 py-3 text-center tabular-nums text-slate-600">{item.quantity}</td>
               <td className="py-3 pl-2 pr-3 text-right font-semibold tabular-nums" style={{ color: NAVY }}>
                 {money(lineTotal(item))}
@@ -107,7 +115,7 @@ export default function ClassicTemplate({ invoice, logoUrl }: InvoiceTemplatePro
             </tr>
           ))}
           <tr className="border-b-2" style={{ borderBottomColor: NAVY }}>
-            <td colSpan={3} className="py-2 pl-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <td colSpan={5} className="py-2 pl-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
               Total quantity
             </td>
             <td className="px-2 py-2 text-center text-sm font-bold tabular-nums text-slate-900">{totalQuantity}</td>

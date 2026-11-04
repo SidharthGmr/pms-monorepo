@@ -159,7 +159,7 @@ export default function PurchaseDetailsView({ id }: PurchaseDetailsViewProps) {
                 <TableHead className="w-10 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
                 <TableHead className="px-4 py-3 text-xs font-semibold uppercase tracking-wider">Product</TableHead>
                 <TableHead className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">Qty</TableHead>
-                <TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider">Cost Price</TableHead>
+                <TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider">Purchase Price</TableHead>
                 <TableHead className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider">Total</TableHead>
               </TableRow>
             </TableHeader>

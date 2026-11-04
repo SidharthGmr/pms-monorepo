@@ -102,7 +102,7 @@ export default function PurchaseItemsModal({ purchase, isOpen, onClose }: Purcha
                   <TableHead className="text-xs font-semibold uppercase">Product</TableHead>
                   <TableHead className="text-xs font-semibold uppercase">Slug</TableHead>
                   <TableHead className="text-right text-xs font-semibold uppercase">Qty</TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase">Cost Price</TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase">Purchase Price</TableHead>
                   <TableHead className="text-right text-xs font-semibold uppercase">Total</TableHead>
                 </TableRow>
               </TableHeader>

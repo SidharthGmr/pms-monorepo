@@ -53,7 +53,7 @@ const DIRECTION_ITEMS = [
 const SORT_OPTIONS: SortOption[] = [
   { value: 'effectiveFrom', label: 'Effective date' },
   { value: 'sellingPrice', label: 'Selling price' },
-  { value: 'costPrice', label: 'Cost price' },
+  { value: 'costPrice', label: 'Purchase price' },
   { value: 'id', label: 'Recorded' },
 ];
 

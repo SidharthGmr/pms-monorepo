@@ -126,6 +126,8 @@ export async function downloadInvoicePdf(order: AnyOrder, logoUrl?: string) {
   const subtotal = Number(order.totalAmount ?? 0);
   const discount = Number(order.discount ?? 0);
   const tax = Number(order.tax ?? 0);
+  // GST already inside tax-inclusive prices: shown on its own row but never added to the total.
+  const taxIncluded = Number(order.taxIncluded ?? 0);
   const shipping = Number(order.shippingCost ?? 0);
   const grandTotal = Number(order.grandTotal ?? 0);
   const totalQuantity = items.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
@@ -313,9 +315,10 @@ export async function downloadInvoicePdf(order: AnyOrder, logoUrl?: string) {
   });
 
   // --- Totals -------------------------------------------------------------
-  const rows: { label: string; text: string; negative?: boolean }[] = [{ label: 'Subtotal', text: amount(subtotal) }];
+  const rows: { label: string; text: string; negative?: boolean; muted?: boolean }[] = [{ label: 'Subtotal', text: amount(subtotal) }];
   if (discount > 0) rows.push({ label: 'Discount', text: `- ${amount(discount)}`, negative: true });
   if (tax > 0) rows.push({ label: 'Tax', text: amount(tax) });
+  if (taxIncluded > 0) rows.push({ label: 'GST (incl. in price)', text: amount(taxIncluded), muted: true });
   if (shipping > 0) rows.push({ label: 'Shipping & fees', text: amount(shipping) });
 
   const words = pdf.splitTextToSize(amountInWords(grandTotal), CONTENT_WIDTH / 2 - 8) as string[];
@@ -335,7 +338,7 @@ export async function downloadInvoicePdf(order: AnyOrder, logoUrl?: string) {
   let rowY = y + 5;
   rows.forEach((row) => {
     value(row.label, totalsX + 1, rowY, 8.5, 'normal', MUTED);
-    value(row.text, totalsX + totalsWidth, rowY, 8.5, 'bold', row.negative ? ROSE : INK, 'right');
+    value(row.text, totalsX + totalsWidth, rowY, 8.5, row.muted ? 'normal' : 'bold', row.negative ? ROSE : row.muted ? MUTED : INK, 'right');
     rowY += 6.2;
   });
 

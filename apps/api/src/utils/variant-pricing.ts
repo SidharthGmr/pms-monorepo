@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { DiscountType, Prisma, TaxType } from '@prisma/client';
 import prisma from '../config/prisma';
 
 /**
@@ -16,6 +16,10 @@ export interface EffectivePrice {
   offerPrice: number | null;
   costPrice: number | null;
   compareAtPrice: number | null;
+  taxType: TaxType | null;
+  taxId: string | null;
+  discountType: DiscountType | null;
+  discountValue: number | null;
 }
 
 const toNumber = (value: Prisma.Decimal | null | undefined): number | null => value?.toNumber() ?? null;
@@ -43,6 +47,10 @@ export function toEffectivePrice(row: {
   offerPrice: Prisma.Decimal | null;
   costPrice: Prisma.Decimal | null;
   compareAtPrice: Prisma.Decimal | null;
+  taxType: TaxType | null;
+  taxId: string | null;
+  discountType: DiscountType | null;
+  discountValue: Prisma.Decimal | null;
 }): EffectivePrice {
   return {
     effectiveFrom: row.effectiveFrom,
@@ -51,6 +59,10 @@ export function toEffectivePrice(row: {
     offerPrice: toNumber(row.offerPrice),
     costPrice: toNumber(row.costPrice),
     compareAtPrice: toNumber(row.compareAtPrice),
+    taxType: row.taxType,
+    taxId: row.taxId,
+    discountType: row.discountType,
+    discountValue: toNumber(row.discountValue),
   };
 }
 
@@ -65,6 +77,21 @@ export function toEffectivePrice(row: {
 export function payablePrice(price: EffectivePrice | null, isOffer: boolean): number | null {
   if (!price) return null;
   return isOffer && price.offerPrice != null ? price.offerPrice : price.sellingPrice;
+}
+
+/**
+ * The per-unit price after the row's own discount. A percentage discounts the payable price,
+ * a flat amount comes straight off it, and the result never goes below zero - the ledger row
+ * is the source, so a sale and the POS preview agree on the same number.
+ */
+export function discountedUnitPrice(
+  unitPrice: number,
+  discountType: DiscountType | null | undefined,
+  discountValue: number | null | undefined
+): number {
+  if (discountValue == null || discountValue <= 0) return unitPrice;
+  const discount = discountType === 'PERCENTAGE' ? (unitPrice * discountValue) / 100 : discountValue;
+  return Math.max(0, Math.round((unitPrice - discount) * 100) / 100);
 }
 
 /** The same rule applied to an already-decorated variant, which carries all three fields. */

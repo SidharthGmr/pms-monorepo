@@ -7,6 +7,10 @@ export interface SampleInvoiceItem {
   hsn?: string;
   quantity: number;
   unitPrice: number;
+  /** Discount amount off this line; the Amount column is net of it. */
+  discount?: number;
+  /** GST attributed to this line, shown in the Tax column. */
+  tax?: number;
 }
 
 export interface SampleInvoice {
@@ -35,7 +39,9 @@ export { amountInWords } from '@/lib/amount-in-words';
 
 export const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export const lineTotal = (item: SampleInvoiceItem) => item.quantity * item.unitPrice;
+export const lineGross = (item: SampleInvoiceItem) => item.quantity * item.unitPrice;
+
+export const lineTotal = (item: SampleInvoiceItem) => lineGross(item) - (item.discount ?? 0);
 
 export const invoiceTotals = (invoice: SampleInvoice) => {
   const subtotal = invoice.items.reduce((sum, item) => sum + lineTotal(item), 0);
@@ -64,10 +70,10 @@ export const SAMPLE_INVOICE: SampleInvoice = {
     email: 'aarav.sharma@example.com',
   },
   items: [
-    { name: 'Wireless Optical Mouse', variant: 'Black · 1600 DPI', sku: 'MS-1600-BLK', hsn: '8471', quantity: 2, unitPrice: 649 },
-    { name: 'Mechanical Keyboard', variant: 'Blue Switch · TKL', sku: 'KB-MX-BLU', hsn: '8471', quantity: 1, unitPrice: 2499 },
-    { name: 'USB-C Charging Cable 1m', sku: 'CB-UC-100', hsn: '8544', quantity: 3, unitPrice: 299 },
-    { name: 'Aluminium Laptop Stand', variant: 'Silver', sku: 'LS-AL-SLV', hsn: '7616', quantity: 1, unitPrice: 1299 },
+    { name: 'Wireless Optical Mouse', variant: 'Black · 1600 DPI', sku: 'MS-1600-BLK', hsn: '8471', quantity: 2, unitPrice: 649, discount: 98, tax: 216 },
+    { name: 'Mechanical Keyboard', variant: 'Blue Switch · TKL', sku: 'KB-MX-BLU', hsn: '8471', quantity: 1, unitPrice: 2499, discount: 199, tax: 414 },
+    { name: 'USB-C Charging Cable 1m', sku: 'CB-UC-100', hsn: '8544', quantity: 3, unitPrice: 299, tax: 161.46 },
+    { name: 'Aluminium Laptop Stand', variant: 'Silver', sku: 'LS-AL-SLV', hsn: '7616', quantity: 1, unitPrice: 1299, tax: 233.82 },
   ],
   discount: 300,
   taxRate: 0.18,

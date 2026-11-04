@@ -79,7 +79,7 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
       return;
     }
     if (costPrice !== '' && costPrice < 0) {
-      toast({ title: 'Error', description: 'Cost price must be zero or greater', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Purchase price must be zero or greater', variant: 'destructive' });
       return;
     }
 
@@ -199,7 +199,7 @@ export default function AddStockModal({ productId, productName, isOpen, onClose,
                 <div className="space-y-1.5">
                   <Label htmlFor="costPrice" className="flex items-center gap-1 text-xs text-slate-500 font-normal">
                     <Wallet className="w-3 h-3" />
-                    Cost price
+                    Purchase Price
                   </Label>
                   <CurrencyInput id="costPrice" value={costPrice} onChange={setCostPrice} />
                 </div>

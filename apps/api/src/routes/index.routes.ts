@@ -32,6 +32,7 @@ import subscriberRouter from "./subscriberRoutes";
 import cmsPageRouter from "./cmsPageRoutes";
 import notificationRouter from "./notificationRoutes";
 import catalogRouter from "./catalogRoutes";
+import taxRouter from "./taxRoutes";
 
 const routes = express.Router();
 
@@ -68,5 +69,6 @@ routes.use("/subscribers", subscriberRouter);
 routes.use("/cms-pages", cmsPageRouter);
 routes.use("/notifications", notificationRouter);
 routes.use("/catalog", catalogRouter);
+routes.use("/taxes", taxRouter);
 
 export default routes;

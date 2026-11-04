@@ -76,6 +76,8 @@ import NotificationService from '@/services/NotificationService';
 import INotificationService from '@/services/interfaces/INotificationService';
 import CatalogService from '@/services/CatalogService';
 import ICatalogService from '@/services/interfaces/ICatalogService';
+import TaxService from '@/services/TaxService';
+import ITaxService from '@/services/interfaces/ITaxService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -118,6 +120,7 @@ container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberServic
 container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
+container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
 
 export { container };
 

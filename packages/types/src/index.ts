@@ -22,6 +22,7 @@ export * from "./params/staff.params";
 export * from "./params/staff-salary.params";
 export * from "./params/store.params";
 export * from "./params/supplier.params";
+export * from "./params/tax.params";
 
 // dtos
 export * from "./dto/list-response.dto";
@@ -65,6 +66,7 @@ export * from "./dto/dashboard.dto";
 export * from "./dto/low-stock.dto";
 export * from "./dto/media.dto";
 export * from "./dto/newsletter.dto";
+export * from "./dto/tax.dto";
 
 // enums
 export * from "./enum/role.enum";
@@ -84,6 +86,7 @@ export * from "./enum/payment-method.enum";
 export * from "./enum/attendance-status.enum";
 export * from "./enum/gender.enum";
 export * from "./enum/tax.enum";
+export * from "./enum/discount.enum";
 
 // models
 export * from "./model/product.model";
@@ -116,6 +119,7 @@ export * from "./model/staff-attendance.model";
 export * from "./model/store.model";
 export * from "./model/supplier.model";
 export * from "./model/newsletter.model";
+export * from "./model/tax.model";
 
 // validators
 export * from "./validator/product.validator";
@@ -146,6 +150,7 @@ export * from "./validator/master-entry.validator";
 export * from "./validator/receive-stock.validator";
 export * from "./validator/order.validator";
 export * from "./validator/checkout.validator";
+export * from "./validator/tax.validator";
 
 // common
 export * from "./common/email-template-defs";

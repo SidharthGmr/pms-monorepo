@@ -11,7 +11,7 @@ export default function ProductListingWrapper() {
   const handleCount = useCallback((value: number) => setTotal(value), []);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4">
+    <div className="space-y-4">
       <ListPageHeader
         icon={Package}
         title="Products"
@@ -27,9 +27,7 @@ export default function ProductListingWrapper() {
         }
       />
 
-      <>
-        <ProductList onCountChange={handleCount} />
-      </>
+      <ProductList onCountChange={handleCount} />
     </div>
   );
 }

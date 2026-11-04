@@ -38,6 +38,10 @@ function toDto(row: PriceHistoryWithVariant, previousPrice: number | null = null
     isOffer: row.isOffer,
     costPrice: row.costPrice?.toNumber() ?? null,
     compareAtPrice: row.compareAtPrice?.toNumber() ?? null,
+    taxType: row.taxType,
+    taxId: row.taxId,
+    discountType: row.discountType,
+    discountValue: row.discountValue?.toNumber() ?? null,
     effectiveFrom: row.effectiveFrom,
     effectiveTo: row.effectiveTo,
     reason: row.reason,
@@ -360,6 +364,10 @@ export class PriceHistoryRepository implements IPriceHistoryRepository {
         isOffer: data.isOffer ?? false,
         costPrice: data.costPrice ?? null,
         compareAtPrice: data.compareAtPrice ?? null,
+        taxType: data.taxType ?? null,
+        taxId: data.taxId ?? null,
+        discountType: data.discountType ?? null,
+        discountValue: data.discountValue ?? null,
         effectiveFrom,
         // Usually null: the next price to arrive closes this row via the updateMany above.
         // An explicit value time-boxes it, and the variant is unpriced once it passes.

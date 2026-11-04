@@ -13,7 +13,7 @@ export default function ProductVariantListingWrapper() {
   const handleCount = useCallback((value: number) => setTotal(value), []);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4">
+    <div className="space-y-4">
       <ListPageHeader
         icon={Layers}
         title="Variants"

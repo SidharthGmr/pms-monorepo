@@ -23,10 +23,10 @@ export const priceHistoryFields = z.object({
     )
     .nullable(),
   isOffer: z.boolean().optional(),
-  costPrice: optionalNumberField("Cost price must be a number")
+  costPrice: optionalNumberField("Purchase price must be a number")
     .refine(
       (value) => value === undefined || value >= 0,
-      "Cost price cannot be negative",
+      "Purchase price cannot be negative",
     )
     .nullable(),
   effectiveFrom: dateField,

@@ -12,7 +12,7 @@ export const variantInlineFields = z.object({
     .optional(),
   sellingPrice: z.number({ message: "Selling price is required" }).nonnegative("Selling price must be zero or greater"),
   offerPrice: z.number().nonnegative("Offer price must be zero or greater").nullable().optional(),
-  costPrice: z.number().nonnegative("Cost price must be zero or greater").nullable().optional(),
+  costPrice: z.number().nonnegative("Purchase price must be zero or greater").nullable().optional(),
   compareAtPrice: z.number().nonnegative("Compare-at price must be zero or greater").nullable().optional(),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").nullable().optional(),
   isActive: z.boolean().optional(),
@@ -42,7 +42,7 @@ export const productFields = z.object({
   slug: z.string().min(1, "Slug is required"),
   description: z.string().nullable().optional(),
   sellingPrice: z.number().nonnegative("Selling price must be zero or greater").optional(),
-  costPrice: z.number().nonnegative("Cost price must be zero or greater").nullable().optional(),
+  costPrice: z.number().nonnegative("Purchase price must be zero or greater").nullable().optional(),
   stock: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").nullable().optional(),
   lowStockThreshold: z.number().int().nonnegative().nullable().optional(),
   images: z.array(z.string()).min(1, "Add at least one product image"),
@@ -96,7 +96,7 @@ export const addStockFields = z.object({
   // Optional price update applied alongside the stock change. When `sellingPrice` is
   // provided, a row is appended to that variant's PriceHistory ledger.
   sellingPrice: z.number().nonnegative("Selling price must be zero or greater").optional(),
-  costPrice: z.number().nonnegative("Cost price must be zero or greater").nullable().optional(),
+  costPrice: z.number().nonnegative("Purchase price must be zero or greater").nullable().optional(),
 });
 
 // Express `validate(schema)` middleware parses `{ body, query, params }`.

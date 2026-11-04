@@ -32,6 +32,7 @@ import ISubscriberService from './ISubscriberService';
 import ICmsPageService from './ICmsPageService';
 import INotificationService from './INotificationService';
 import ICatalogService from './ICatalogService';
+import ITaxService from './ITaxService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -70,4 +71,5 @@ export default interface IUnitOfService {
   CmsPageService: ICmsPageService;
   NotificationService: INotificationService;
   CatalogService: ICatalogService;
+  TaxService: ITaxService;
 }

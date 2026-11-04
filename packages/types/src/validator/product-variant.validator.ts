@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { DiscountTypeEnum } from "../enum/discount.enum";
 import { StatusEnum } from "../enum/status.enum";
+import { TaxTypeEnum } from "../enum/tax.enum";
 
 export const productVariantValidator = z.object({
   productId: z
@@ -43,8 +45,16 @@ export const productVariantValidator = z.object({
     .nullable(),
   costPrice: z
     .number()
-    .nonnegative("Cost price must be a non-negative number")
+    .nonnegative("Purchase price must be a non-negative number")
     .nullable(),
+  taxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  taxId: z.string().nullable().optional(),
+  discountType: z.nativeEnum(DiscountTypeEnum).nullable().optional(),
+  discountValue: z
+    .number()
+    .nonnegative("Discount must be zero or greater")
+    .nullable()
+    .optional(),
   effectiveFrom: z.coerce.date().optional(),
   effectiveTo: z.coerce.date().nullable().optional(),
   reason: z.string().nullable().optional(),
@@ -122,7 +132,15 @@ export const productVariantFields = z.object({
     .optional(),
   costPrice: z
     .number()
-    .nonnegative("Cost price must be a non-negative number")
+    .nonnegative("Purchase price must be a non-negative number")
+    .nullable()
+    .optional(),
+  taxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  taxId: z.string().nullable().optional(),
+  discountType: z.nativeEnum(DiscountTypeEnum).nullable().optional(),
+  discountValue: z
+    .number()
+    .nonnegative("Discount must be zero or greater")
     .nullable()
     .optional(),
   effectiveFrom: z.coerce.date().optional(),
@@ -150,12 +168,61 @@ const periodIsOrdered = (
   }
 };
 
+const taxIsPicked = (
+  values: {
+    taxType?: TaxTypeEnum | null | undefined;
+    taxId?: string | null | undefined;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (values.taxType === TaxTypeEnum.WithTax && !values.taxId) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["taxId"],
+      message: "Select a tax",
+    });
+  }
+};
+
+const discountIsComplete = (
+  values: {
+    discountType?: DiscountTypeEnum | null | undefined;
+    discountValue?: number | null | undefined;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (values.discountType && values.discountValue == null) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["discountValue"],
+      message: "Enter a discount value",
+    });
+  }
+  if (
+    values.discountType === DiscountTypeEnum.Percentage &&
+    values.discountValue != null &&
+    values.discountValue > 100
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["discountValue"],
+      message: "Percentage cannot exceed 100",
+    });
+  }
+};
+
 /**
  * What the add/edit form binds to. `productVariantValidator` is the API's own shape, where
  * `offerPrice`/`costPrice` are nullable but not optional - binding a form to it rejects a
  * submit on a field the offer toggle keeps hidden, with no message anywhere to show for it.
  */
-export const productVariantFormFields = productVariantFields.superRefine(periodIsOrdered);
+export const productVariantFormFields = productVariantFields.superRefine(
+  (values, ctx) => {
+    periodIsOrdered(values, ctx);
+    taxIsPicked(values, ctx);
+    discountIsComplete(values, ctx);
+  },
+);
 
 export const CreateProductVariantValidator = z.object({
   body: productVariantFormFields,
@@ -213,7 +280,15 @@ export const updateProductVariantFields = z.object({
     .optional(),
   costPrice: z
     .number()
-    .nonnegative("Cost price must be a non-negative number")
+    .nonnegative("Purchase price must be a non-negative number")
+    .nullable()
+    .optional(),
+  taxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  taxId: z.string().nullable().optional(),
+  discountType: z.nativeEnum(DiscountTypeEnum).nullable().optional(),
+  discountValue: z
+    .number()
+    .nonnegative("Discount must be zero or greater")
     .nullable()
     .optional(),
   effectiveFrom: z.coerce.date().optional(),

@@ -5,6 +5,9 @@
  * future; a future-dated row stages a price without making it current.
  */
 
+import { DiscountType } from "../enum/discount.enum";
+import { TaxType } from "../enum/tax.enum";
+
 /** Trimmed product shape carried alongside a price row, for list/detail screens. */
 export interface PriceHistoryProductDto {
   id: number;
@@ -32,6 +35,10 @@ export interface PriceHistoryDto {
   isOffer: boolean;
   costPrice: number | null;
   compareAtPrice: number | null;
+  taxType: TaxType | null;
+  taxId: string | null;
+  discountType: DiscountType | null;
+  discountValue: number | null;
   effectiveFrom: Date | string;
   effectiveTo: Date | string | null;
   isCurrent: boolean;

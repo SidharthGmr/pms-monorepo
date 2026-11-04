@@ -63,7 +63,7 @@ export default function VariantPriceTable({ variantId }: { variantId: number }) 
           <TableRow>
             <TableHead className={cn(HEADER, 'pl-4')}>Status</TableHead>
             <TableHead className={HEADER}>Selling price</TableHead>
-            <TableHead className={cn(HEADER, 'hidden md:table-cell')}>Cost</TableHead>
+            <TableHead className={cn(HEADER, 'hidden md:table-cell')}>Purchase</TableHead>
             <TableHead className={cn(HEADER, 'hidden md:table-cell text-center')}>Margin</TableHead>
             <TableHead className={HEADER}>In force</TableHead>
             <TableHead className={cn(HEADER, 'hidden lg:table-cell pr-4')}>Reason</TableHead>

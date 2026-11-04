@@ -176,6 +176,11 @@ import { IPriceHistoryService } from '../services/interfaces/Iprice-history.serv
 import { PriceHistoryService } from '../services/price-history.service';
 import { IPriceHistoryRepository } from '../repository/interfaces/iprice-history.repository';
 import { PriceHistoryRepository } from '../repository/price-history.repository';
+import { TaxController } from '../controllers/tax.controller';
+import { ITaxService } from '../services/interfaces/Itax.service';
+import { TaxService } from '../services/tax.service';
+import { ITaxRepository } from '../repository/interfaces/itax.repository';
+import { TaxRepository } from '../repository/tax.repository';
 
 export const container = new Container();
 
@@ -212,6 +217,7 @@ container.bind<SubscriberController>(TYPES.SubscriberController).to(SubscriberCo
 container.bind<CmsPageController>(TYPES.CmsPageController).to(CmsPageController);
 container.bind<NotificationController>(TYPES.NotificationController).to(NotificationController);
 container.bind<CatalogController>(TYPES.CatalogController).to(CatalogController);
+container.bind<TaxController>(TYPES.TaxController).to(TaxController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -246,6 +252,7 @@ container.bind<ISubscriberService>(TYPES.ISubscriberService).to(SubscriberServic
 container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
+container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -279,6 +286,7 @@ container.bind<ISubscriberRepository>(TYPES.ISubscriberRepository).to(Subscriber
 container.bind<ICmsPageRepository>(TYPES.ICmsPageRepository).to(CmsPageRepository);
 container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepository);
 container.bind<ICatalogRepository>(TYPES.ICatalogRepository).to(CatalogRepository);
+container.bind<ITaxRepository>(TYPES.ITaxRepository).to(TaxRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

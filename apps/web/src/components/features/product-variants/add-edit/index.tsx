@@ -20,7 +20,19 @@ import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { ProductVariantCreateRequest, ProductVariantModel, ProductVariantUpdateRequest, productVariantFormFields, StatusValues } from '@pms/types';
+import {
+  DiscountType,
+  ProductVariantCreateRequest,
+  ProductVariantModel,
+  ProductVariantUpdateRequest,
+  productVariantFormFields,
+  StatusValues,
+  TaxType,
+  TaxTypeEnum,
+} from '@pms/types';
+import TaxTypeData from '@/data/tax.data';
+import DiscountTypeData from '@/data/discount.data';
+import { useGetAllTaxes } from '@/hooks/service-hooks/useTaxService';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -56,6 +68,9 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const { data: getEntriesResponse } = useGetAllMasterEntries({ showAllRecords: true, status: StatusValues.Published });
   const masterEntries = useMemo(() => getEntriesResponse?.data?.data?.data ?? [], [getEntriesResponse]);
 
+  const { data: getTaxesResponse } = useGetAllTaxes({ showAllRecords: true, isActive: true });
+  const taxOptions = useMemo(() => (getTaxesResponse?.data?.data?.data ?? []).map((tax) => ({ value: tax.id, label: tax.name })), [getTaxesResponse]);
+
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // isActive starts false so a new variant lands as the schema defaults it: Draft and not yet
@@ -76,6 +91,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
       sellingPrice: undefined,
       costPrice: undefined,
       offerPrice: undefined,
+      taxType: null,
+      taxId: null,
+      discountType: null,
+      discountValue: null,
       isOffer: false,
       effectiveFrom: undefined,
       effectiveTo: null,
@@ -86,6 +105,8 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const { isDirty } = form.formState;
   const isOffer = form.watch('isOffer');
   const effectiveTo = form.watch('effectiveTo');
+  const taxType = form.watch('taxType');
+  const discountType = form.watch('discountType');
 
   useEffect(() => {
     // `isDirty` stops a background refetch of the master data from overwriting typed-in edits.
@@ -105,6 +126,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
       sellingPrice: variant.sellingPrice ?? undefined,
       costPrice: variant.costPrice ?? undefined,
       offerPrice: variant.offerPrice ?? undefined,
+      taxType: variant.taxType ?? null,
+      taxId: variant.taxId ?? null,
+      discountType: variant.discountType ?? null,
+      discountValue: variant.discountValue ?? null,
       isOffer: variant.isOffer ?? false,
       effectiveFrom: undefined,
       effectiveTo: variant.effectiveTo ? new Date(variant.effectiveTo) : null,
@@ -201,7 +226,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 name="costPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cost price*</FormLabel>
+                    <FormLabel>Purchase Price*</FormLabel>
                     <FormControl>
                       <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? null : value)} />
                     </FormControl>
@@ -242,6 +267,105 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="taxType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Type</FormLabel>
+                    <FormControl>
+                      <SelectSearch
+                        buttonClass="w-full"
+                        placeholder="Select Tax Type"
+                        containerName="variant-tax-type"
+                        disableSearch
+                        items={TaxTypeData}
+                        value={field.value ?? ''}
+                        onChange={(value) => {
+                          const next = value ? (value as TaxType) : null;
+                          field.onChange(next);
+                          // A tax only makes sense on a tax-inclusive price.
+                          if (next !== TaxTypeEnum.WithTax) form.setValue('taxId', null);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {taxType === TaxTypeEnum.WithTax && (
+                <FormField
+                  control={form.control}
+                  name="taxId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tax *</FormLabel>
+                      <FormControl>
+                        <SelectSearch
+                          buttonClass="w-full"
+                          placeholder="Select Tax"
+                          containerName="variant-tax"
+                          items={taxOptions}
+                          value={field.value ?? ''}
+                          onChange={(value) => field.onChange(value ? String(value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="discountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount Type</FormLabel>
+                    <FormControl>
+                      <SelectSearch
+                        buttonClass="w-full"
+                        placeholder="No discount"
+                        containerName="variant-discount-type"
+                        disableSearch
+                        items={DiscountTypeData}
+                        value={field.value ?? ''}
+                        onChange={(value) => {
+                          const next = value ? (value as DiscountType) : null;
+                          field.onChange(next);
+                          if (!next) form.setValue('discountValue', null);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {!!discountType && (
+                <FormField
+                  control={form.control}
+                  name="discountValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Discount {discountType === 'PERCENTAGE' ? '(%)' : '(₹)'} *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="0"
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? null : +e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
             <div className="rounded-lg border">
               <FormField

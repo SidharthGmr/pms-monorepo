@@ -464,7 +464,7 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
                               name={`variants.${index}.costPrice`}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Cost price</FormLabel>
+                                  <FormLabel>Purchase Price</FormLabel>
                                   <FormControl>
                                     <PriceInput value={field.value ?? null} onChange={field.onChange} />
                                   </FormControl>

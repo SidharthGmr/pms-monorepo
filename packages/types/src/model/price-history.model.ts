@@ -1,3 +1,6 @@
+import { DiscountType } from "../enum/discount.enum";
+import { TaxType } from "../enum/tax.enum";
+
 export interface CreatePriceHistoryModel {
   variantId: number;
   storeCode?: string;
@@ -6,6 +9,10 @@ export interface CreatePriceHistoryModel {
   isOffer?: boolean;
   costPrice?: number | null;
   compareAtPrice?: number | null;
+  taxType?: TaxType | null;
+  taxId?: string | null;
+  discountType?: DiscountType | null;
+  discountValue?: number | null;
   effectiveFrom?: Date | string | null;
   effectiveTo?: Date | string | null;
   reason?: string | null;

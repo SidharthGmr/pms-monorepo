@@ -99,7 +99,7 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         id: 'costPrice',
         accessorKey: 'costPrice',
         enableSorting: false,
-        header: () => <span className={HEADER}>Cost</span>,
+        header: () => <span className={HEADER}>Purchase</span>,
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
             {row.original.costPrice != null ? money(Number(row.original.costPrice)) : '—'}
