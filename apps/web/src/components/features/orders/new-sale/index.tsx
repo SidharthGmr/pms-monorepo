@@ -333,17 +333,19 @@ export default function NewSale() {
                         </tr>
                       );
                     })}
-                    <tr className="p-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        icon={Plus}
-                        iconPlacement="left"
-                        onClick={() => append({ variantId: undefined as any, quantity: 1 })}
-                      >
-                        Add Row
-                      </Button>
+                    <tr>
+                      <td colSpan={8} className="p-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          icon={Plus}
+                          iconPlacement="left"
+                          onClick={() => append({ variantId: undefined as any, quantity: 1 })}
+                        >
+                          Add Row
+                        </Button>
+                      </td>
                     </tr>
                   </tbody>
                   <tfoot>

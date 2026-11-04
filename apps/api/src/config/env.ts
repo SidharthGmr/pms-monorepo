@@ -65,6 +65,14 @@ const schema = z.object({
   JSON_BODY_LIMIT: z.string().default('1mb'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
+  // Twilio SMS (bill summaries). All optional: with any of the three unset, SMS sending is
+  // simply disabled - a sale must never depend on the SMS provider being configured.
+  TWILIO_ACCOUNT_SID: z.preprocess((raw) => (raw === '' ? undefined : raw), z.string().optional()),
+  TWILIO_AUTH_TOKEN: z.preprocess((raw) => (raw === '' ? undefined : raw), z.string().optional()),
+  TWILIO_PHONE_NUMBER: z.preprocess((raw) => (raw === '' ? undefined : raw), z.string().optional()),
+  // Prefixed onto bare 10-digit local numbers to make them E.164 for Twilio.
+  SMS_DEFAULT_COUNTRY_CODE: z.string().default('+91'),
+
   // Charges added to every cart (utils/cart-charges.ts). The tax rate is a percentage of the
   // subtotal; the other amounts are flat, in the store currency. Shipping is waived once the
   // subtotal reaches CART_FREE_SHIPPING_ABOVE; leave it empty to always charge shipping.

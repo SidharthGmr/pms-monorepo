@@ -9,6 +9,7 @@ import NotFoundError from "../exceptions/not-found-error";
 
 import { notifyAdminOfNewOrder } from "../utils/email/order-notification";
 import logger from "../utils/logger";
+import { isSmsEnabled, sendSMS } from "../utils/twilio";
 
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
@@ -199,8 +200,41 @@ export class OrderService implements IOrderService {
     // the order must not be able to slow a sale down or roll one back.
     void this.notifyAdmin(order.id);
     void this.raiseOrderNotifications(order.id, storeCode, [...new Set((data.items ?? []).map((item) => item.variantId))]);
+    void this.sendBillSms(order.id);
 
     return order;
+  }
+
+  // Texts the bill summary to the customer's phone. Fire-and-forget like notifyAdmin: a missing
+  // phone, unset Twilio credentials or a provider error must never surface on the sale itself.
+  private async sendBillSms(orderId: number): Promise<void> {
+    try {
+      if (!isSmsEnabled()) return;
+      const order = await this.unitOfWork.Order.findById(orderId);
+      const details = order as unknown as {
+        customer?: { phone?: string | null } | null;
+        store?: { name?: string | null } | null;
+        items?: { quantity?: number }[];
+      } | null;
+      const phone = details?.customer?.phone;
+      if (!order || !phone) return;
+
+      const money = (value: number) => `Rs ${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const quantity = (details?.items ?? []).reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+      const body = [
+        `${details?.store?.name || 'Your store'}: Bill ${order.orderNumber}`,
+        `${quantity} item${quantity === 1 ? '' : 's'}, total ${money(order.grandTotal)}.`,
+        order.discount > 0 ? `Discount ${money(order.discount)}.` : '',
+        order.tax > 0 ? `Incl. GST ${money(order.tax)}.` : '',
+        'Thank you for shopping with us!',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      await sendSMS(phone, body);
+    } catch (error) {
+      logger.error('bill sms failed', { orderId, error: (error as Error)?.message });
+    }
   }
 
   // In-app counterpart to notifyAdmin: the new order itself, plus a warning for any variant the
