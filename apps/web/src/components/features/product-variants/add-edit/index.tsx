@@ -20,18 +20,13 @@ import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import {
-  ProductVariantCreateRequest,
-  ProductVariantModel,
-  ProductVariantUpdateRequest,
-  productVariantFormFields,
-  StatusValues,
-} from '@pms/types';
+import { ProductVariantCreateRequest, ProductVariantModel, ProductVariantUpdateRequest, productVariantFormFields, StatusValues } from '@pms/types';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import AttributeRows, { toAttributeRows } from './attribute-rows';
+import { SelectSearch } from '@/components/common/select-search';
 
 interface ManageVariantProps {
   id?: number;
@@ -187,7 +182,6 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
           className={cn('flex flex-col', !isInline && 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm')}
         >
           <div className={cn('space-y-4', !isInline && 'px-4 py-5 sm:px-5')}>
-
             <FormField
               control={form.control}
               name="name"
@@ -204,6 +198,19 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <FormField
                 control={form.control}
+                name="costPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cost price*</FormLabel>
+                    <FormControl>
+                      <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? null : value)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="sellingPrice"
                 render={({ field }) => (
                   <FormItem>
@@ -216,19 +223,6 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="costPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cost price*</FormLabel>
-                    <FormControl>
-                      <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? null : value)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="stockQuantity"

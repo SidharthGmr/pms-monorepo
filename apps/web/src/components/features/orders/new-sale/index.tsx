@@ -1,6 +1,5 @@
 'use client';
 import ListPageHeader from '@/components/common/list-page-header';
-import { SelectSearch } from '@/components/common/select-search';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,12 +15,13 @@ import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { CreateOrderModel, OrderStatusEnum, orderFormFields, Roles, type OrderFormValues, type ProductVariantListItemDto } from '@pms/types';
-import { Plus, ReceiptText, Trash2 } from 'lucide-react';
+import { Download, Plus, ReceiptText, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { InputSelect } from '@/components/common/input-select';
+import { InputSelect, type InputSelectItem } from '@/components/common/input-select';
 import ClassicTemplate from '@/components/features/settings/invoice-templates/classic';
+import { downloadInvoicePdf } from '../invoice-pdf';
 import { type SampleInvoice } from '@/components/features/settings/invoice-templates/sample-data';
 import { useGetSettings } from '@/hooks/service-hooks/useSettingService';
 
@@ -41,6 +41,7 @@ export default function NewSale() {
   const settings = settingsResponse?.data?.data;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewZoom, setPreviewZoom] = useState(0.6);
+  const [isDownloading, setIsDownloading] = useState(false);
   useEffect(() => {
     const element = previewRef.current;
     if (!element) return;
@@ -66,8 +67,18 @@ export default function NewSale() {
   const { data: variantsResponse } = useGetAllPublicProductVariants({ showAllRecords: true });
   const variants = useMemo(() => variantsResponse?.data?.data?.data || [], [variantsResponse]);
   const variantById = useMemo(() => new Map<number, ProductVariantListItemDto>(variants.map((v) => [v.id, v])), [variants]);
-  const productOptions = useMemo(
-    () => variants.map((v) => ({ label: v.name ? (v.sku ? `${v.name} (${v.sku})` : v.name) : v.sku, value: v.id })),
+  const productOptions = useMemo<InputSelectItem[]>(
+    () =>
+      variants.map((v) => ({
+        label: v.name ? (v.sku ? `${v.name} (${v.sku})` : v.name) : v.sku,
+        value: v.id,
+        details: [
+          money(unitPriceOf(v)),
+          <span key="stock" className={v.stockQuantity <= 0 ? 'text-red-500' : ''}>
+            {v.stockQuantity}
+          </span>,
+        ],
+      })),
     [variants]
   );
 
@@ -100,10 +111,12 @@ export default function NewSale() {
       const unitPrice = unitPriceOf(variant);
       return { variantId, variant, quantity, unitPrice, amount: unitPrice * quantity };
     });
+  const totalQty = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
   const discount = Number(values.discount) || 0;
   const tax = Number(values.tax) || 0;
   const shipping = Number(values.shippingCost) || 0;
+  const grandTotal = subtotal - discount + tax + shipping;
 
   // The Classic template computes tax from a rate, so the entered absolute tax is converted back.
   const taxable = subtotal - discount;
@@ -125,6 +138,37 @@ export default function NewSale() {
     received: 0,
     payment: { method: '—', status: 'Due' },
     notes: values.notes || '',
+  };
+
+  const downloadBillPdf = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadInvoicePdf(
+        {
+          orderNumber: 'PREVIEW',
+          status: values.status,
+          createdAt: new Date().toISOString(),
+          totalAmount: subtotal,
+          discount,
+          tax,
+          shippingCost: shipping,
+          grandTotal,
+          notes: values.notes || null,
+          items: lines.map((line) => ({
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            product: { name: line.variant?.product?.name || line.variant?.name || `Variant #${line.variantId}` },
+            variant: { name: line.variant?.name, sku: line.variant?.sku },
+          })),
+          store: { name: settings?.siteName || config.appName },
+          customer: { name: customer?.name || 'Walk-in customer', email: customer?.email },
+          payments: [],
+        },
+        settings?.logoUrl
+      );
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const submitData = async (model: OrderFormValues) => {
@@ -214,97 +258,120 @@ export default function NewSale() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <FormLabel>Products *</FormLabel>
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    icon={Plus}
-                    iconPlacement="left"
-                    className="h-auto p-0 text-xs font-medium"
-                    onClick={() => append({ variantId: undefined as any, quantity: 1 })}
-                  >
-                    Add Product
-                  </Button>
+                <FormLabel>Products *</FormLabel>
+
+                <div className="overflow-hidden rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <th className="w-8 px-2 py-2 text-left font-semibold">#</th>
+                        <th className="px-2 py-2 text-left font-semibold">Item</th>
+                        <th className="w-20 px-2 py-2 text-right font-semibold">Qty</th>
+                        <th className="w-28 px-2 py-2 text-right font-semibold">Price/Unit</th>
+                        <th className="w-28 px-2 py-2 text-right font-semibold">Amount</th>
+                        <th className="w-10 px-1 py-2" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fields.map((f, index) => {
+                        const line = (() => {
+                          const variant = variantById.get(Number(values.items?.[index]?.variantId));
+                          const quantity = Number(values.items?.[index]?.quantity) || 0;
+                          const unitPrice = unitPriceOf(variant);
+                          return { variant, unitPrice, amount: unitPrice * quantity };
+                        })();
+
+                        return (
+                          <tr key={f.id} className="border-b align-top last:border-b-0">
+                            <td className="px-2 py-3 text-xs tabular-nums text-muted-foreground">{index + 1}</td>
+                            <td className="px-1 py-1.5">
+                              <FormField
+                                control={control}
+                                name={`items.${index}.variantId`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <InputSelect
+                                        placeholder="Type or select an item"
+                                        items={productOptions}
+                                        detailHeaders={['Price', 'Stock']}
+                                        contentClass="w-[460px]"
+                                        inputClass="h-9"
+                                        allowCustomValue={false}
+                                        value={field.value ?? ''}
+                                        valueType="number"
+                                        containerName={`new-sale-product-${index}`}
+                                        onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </td>
+                            <td className="px-1 py-1.5">
+                              <FormField
+                                control={control}
+                                name={`items.${index}.quantity`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        placeholder="1"
+                                        className="h-9 text-right"
+                                        value={field.value ?? ''}
+                                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </td>
+                            <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">{line.variant ? money(line.unitPrice) : '—'}</td>
+                            <td className="px-2 py-3 text-right text-xs font-semibold tabular-nums">{line.variant ? money(line.amount) : '—'}</td>
+                            <td className="px-1 py-1.5">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 shrink-0 text-slate-400 hover:text-red-500"
+                                onClick={() => fields.length > 1 && remove(index)}
+                                disabled={fields.length <= 1}
+                                title="Remove row"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t bg-muted/40">
+                        <td className="px-2 py-2" />
+                        <td className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total</td>
+                        <td className="px-2 py-2 text-right text-sm font-semibold tabular-nums">{totalQty || ''}</td>
+                        <td />
+                        <td className="px-2 py-2 text-right text-sm font-bold tabular-nums">{money(subtotal)}</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
 
-                <div className="space-y-2 rounded-lg border p-3">
-                  {fields.map((f, index) => {
-                    const line = (() => {
-                      const variant = variantById.get(Number(values.items?.[index]?.variantId));
-                      const quantity = Number(values.items?.[index]?.quantity) || 0;
-                      const unitPrice = unitPriceOf(variant);
-                      return { variant, unitPrice, amount: unitPrice * quantity };
-                    })();
-
-                    return (
-                      <div key={f.id} className="space-y-1">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            <FormField
-                              control={control}
-                              name={`items.${index}.variantId`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <SelectSearch
-                                      buttonClass="w-full h-10 font-normal"
-                                      placeholder="Select a variant"
-                                      items={productOptions}
-                                      value={field.value ?? ''}
-                                      valueType="number"
-                                      containerName={`new-sale-product-${index}`}
-                                      onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <div className="w-24">
-                            <FormField
-                              control={control}
-                              name={`items.${index}.quantity`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min={1}
-                                      placeholder="Qty"
-                                      value={field.value ?? ''}
-                                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className={`h-10 w-10 shrink-0 text-slate-400 hover:text-red-500 ${fields.length <= 1 ? 'cursor-not-allowed opacity-30' : ''}`}
-                            onClick={() => fields.length > 1 && remove(index)}
-                            disabled={fields.length <= 1}
-                            title="Remove product"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        {line.variant && (
-                          <p className="px-1 text-right text-xs tabular-nums text-muted-foreground">
-                            {money(line.unitPrice)} each · {money(line.amount)}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  icon={Plus}
+                  iconPlacement="left"
+                  onClick={() => append({ variantId: undefined as any, quantity: 1 })}
+                >
+                  Add Row
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -381,6 +448,17 @@ export default function NewSale() {
               />
 
               <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  icon={Download}
+                  iconPlacement="left"
+                  loading={isDownloading}
+                  disabled={lines.length === 0 || isDownloading}
+                  onClick={() => void downloadBillPdf()}
+                >
+                  Download Bill PDF
+                </Button>
                 <Button type="button" variant="outline" onClick={() => router.push('/admin/orders')}>
                   Cancel
                 </Button>

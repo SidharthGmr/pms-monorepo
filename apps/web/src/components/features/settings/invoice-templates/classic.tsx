@@ -8,13 +8,6 @@ import { amountInWords, invoiceTotals, InvoiceTemplateProps, lineTotal, money } 
 const NAVY = '#092a55';
 const TEAL = '#02a98f';
 
-const STATUS_CLASS: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  CONFIRMED: 'bg-sky-100 text-sky-700',
-  DELIVERED: 'bg-emerald-100 text-emerald-700',
-  CANCELLED: 'bg-rose-100 text-rose-700',
-};
-
 function Label({ children, align }: { children: React.ReactNode; align?: 'right' }) {
   return <p className={`text-[10px] font-bold uppercase tracking-widest text-slate-400 ${align === 'right' ? 'text-right' : ''}`}>{children}</p>;
 }
@@ -62,19 +55,6 @@ export default function ClassicTemplate({ invoice, logoUrl }: InvoiceTemplatePro
           <p className="mt-1.5 text-[26px] font-bold border-b-2 pb-0.5 leading-none tracking-tight" style={{ color: NAVY }}>
             #{invoice.number}
           </p>
-
-          {/* <div className="mt-1.5 flex items-center justify-end gap-1.5">
-            <span className={`inline-block rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest ${STATUS_CLASS[invoice.status]}`}>
-              {invoice.status}
-            </span>
-            <span
-              className={`inline-block rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
-                balance <= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-              }`}
-            >
-              {balance <= 0 ? 'Paid' : 'Balance due'}
-            </span>
-          </div> */}
         </div>
       </div>
 

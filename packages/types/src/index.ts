@@ -83,6 +83,7 @@ export * from "./enum/payment-status.enum";
 export * from "./enum/payment-method.enum";
 export * from "./enum/attendance-status.enum";
 export * from "./enum/gender.enum";
+export * from "./enum/tax.enum";
 
 // models
 export * from "./model/product.model";
