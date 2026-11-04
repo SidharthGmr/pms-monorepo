@@ -16,7 +16,7 @@ export default function CatalogProductCard({ product }: { product: CatalogProduc
 
   const cover = product.variants.find((variant) => variant.images?.length)?.images?.[0] ?? product.images?.[0];
   const anyInStock = product.variants.some((variant) => variant.inStock);
-  const onOffer = product.variants.some((variant) => variant.isOffer && variant.offerPrice != null);
+  const onOffer = product.variants.some((variant) => variant.isOffer && variant.wholesalePrice != null);
   const compareAt = product.variants.find((variant) => variant.isOffer && variant.compareAtPrice != null)?.compareAtPrice ?? null;
   const swatches = Array.from(new Map(product.variants.flatMap((variant) => variant.attributes).filter((attribute) => attribute.colorHex).map((attribute) => [attribute.entryId, attribute])).values());
   const href = `/products/${encodeURIComponent(product.slug)}`;

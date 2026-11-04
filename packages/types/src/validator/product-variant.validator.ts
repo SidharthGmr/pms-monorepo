@@ -39,15 +39,17 @@ export const productVariantValidator = z.object({
   sellingPrice: z
     .number({ error: "Selling price is required" })
     .nonnegative("Selling price must be a non-negative number"),
-  offerPrice: z
+  wholesalePrice: z
     .number()
-    .nonnegative("Offer price must be a non-negative number")
+    .nonnegative("Wholesale price must be a non-negative number")
     .nullable(),
   costPrice: z
     .number()
     .nonnegative("Purchase price must be a non-negative number")
     .nullable(),
-  taxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  purchaseTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  wholesaleTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  saleTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
   taxId: z.string().nullable().optional(),
   discountType: z.nativeEnum(DiscountTypeEnum).nullable().optional(),
   discountValue: z
@@ -125,9 +127,9 @@ export const productVariantFields = z.object({
   sellingPrice: z
     .number({ error: "Selling price is required" })
     .nonnegative("Selling price must be a non-negative number"),
-  offerPrice: z
+  wholesalePrice: z
     .number()
-    .nonnegative("Offer price must be a non-negative number")
+    .nonnegative("Wholesale price must be a non-negative number")
     .nullable()
     .optional(),
   costPrice: z
@@ -135,7 +137,9 @@ export const productVariantFields = z.object({
     .nonnegative("Purchase price must be a non-negative number")
     .nullable()
     .optional(),
-  taxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  purchaseTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  wholesaleTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  saleTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
   taxId: z.string().nullable().optional(),
   discountType: z.nativeEnum(DiscountTypeEnum).nullable().optional(),
   discountValue: z
@@ -170,12 +174,19 @@ const periodIsOrdered = (
 
 const taxIsPicked = (
   values: {
-    taxType?: TaxTypeEnum | null | undefined;
+    purchaseTaxType?: TaxTypeEnum | null | undefined;
+    wholesaleTaxType?: TaxTypeEnum | null | undefined;
+    saleTaxType?: TaxTypeEnum | null | undefined;
     taxId?: string | null | undefined;
   },
   ctx: z.RefinementCtx,
 ) => {
-  if (values.taxType === TaxTypeEnum.WithTax && !values.taxId) {
+  const anyWithTax = [
+    values.purchaseTaxType,
+    values.wholesaleTaxType,
+    values.saleTaxType,
+  ].includes(TaxTypeEnum.WithTax);
+  if (anyWithTax && !values.taxId) {
     ctx.addIssue({
       code: "custom",
       path: ["taxId"],
@@ -213,7 +224,7 @@ const discountIsComplete = (
 
 /**
  * What the add/edit form binds to. `productVariantValidator` is the API's own shape, where
- * `offerPrice`/`costPrice` are nullable but not optional - binding a form to it rejects a
+ * `wholesalePrice`/`costPrice` are nullable but not optional - binding a form to it rejects a
  * submit on a field the offer toggle keeps hidden, with no message anywhere to show for it.
  */
 export const productVariantFormFields = productVariantFields.superRefine(
@@ -273,9 +284,9 @@ export const updateProductVariantFields = z.object({
     .number()
     .nonnegative("Selling price must be a non-negative number")
     .optional(),
-  offerPrice: z
+  wholesalePrice: z
     .number()
-    .nonnegative("Offer price must be a non-negative number")
+    .nonnegative("Wholesale price must be a non-negative number")
     .nullable()
     .optional(),
   costPrice: z
@@ -283,7 +294,9 @@ export const updateProductVariantFields = z.object({
     .nonnegative("Purchase price must be a non-negative number")
     .nullable()
     .optional(),
-  taxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  purchaseTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  wholesaleTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
+  saleTaxType: z.nativeEnum(TaxTypeEnum).nullable().optional(),
   taxId: z.string().nullable().optional(),
   discountType: z.nativeEnum(DiscountTypeEnum).nullable().optional(),
   discountValue: z

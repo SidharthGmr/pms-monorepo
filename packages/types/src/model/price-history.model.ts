@@ -5,11 +5,13 @@ export interface CreatePriceHistoryModel {
   variantId: number;
   storeCode?: string;
   sellingPrice: number;
-  offerPrice?: number | null;
+  wholesalePrice?: number | null;
   isOffer?: boolean;
   costPrice?: number | null;
   compareAtPrice?: number | null;
-  taxType?: TaxType | null;
+  purchaseTaxType?: TaxType | null;
+  wholesaleTaxType?: TaxType | null;
+  saleTaxType?: TaxType | null;
   taxId?: string | null;
   discountType?: DiscountType | null;
   discountValue?: number | null;
@@ -25,7 +27,7 @@ export interface CreatePriceHistoryModel {
  */
 export interface UpdatePriceHistoryModel {
   sellingPrice?: number;
-  offerPrice?: number | null;
+  wholesalePrice?: number | null;
   isOffer?: boolean;
   costPrice?: number | null;
   compareAtPrice?: number | null;

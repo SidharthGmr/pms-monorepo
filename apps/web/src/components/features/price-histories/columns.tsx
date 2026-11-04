@@ -78,22 +78,24 @@ export const usePriceHistoryColumns = ({ editRecord, deleteRecord, viewTimeline,
           const delta =
             previous !== null && previous !== undefined && previous !== 0 ? ((row.original.sellingPrice - previous) / previous) * 100 : null;
           const up = (delta ?? 0) > 0;
-          // An offer price only costs the customer anything while the row's own flag is on;
+          // A wholesale price only costs the customer anything while the row's own flag is on;
           // set with the flag off it is staged, exactly like the variant screens show it.
-          const { offerPrice, isOffer } = row.original;
-          const offerLive = isOffer && offerPrice != null;
+          const { wholesalePrice, isOffer } = row.original;
+          const offerLive = isOffer && wholesalePrice != null;
 
           return (
             <div className="flex items-center gap-2 whitespace-nowrap">
               {offerLive ? (
                 <span className="flex items-baseline gap-1.5">
-                  <span className="text-sm font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{formatPrice(offerPrice)}</span>
+                  <span className="text-sm font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{formatPrice(wholesalePrice)}</span>
                   <span className="text-xs tabular-nums text-muted-foreground line-through">{formatPrice(row.original.sellingPrice)}</span>
                 </span>
               ) : (
                 <span className="text-sm font-semibold tabular-nums">{formatPrice(row.original.sellingPrice)}</span>
               )}
-              {!isOffer && offerPrice != null && <span className="text-[11px] text-muted-foreground">Offer {formatPrice(offerPrice)} staged</span>}
+              {!isOffer && wholesalePrice != null && (
+                <span className="text-[11px] text-muted-foreground">Wholesale {formatPrice(wholesalePrice)} staged</span>
+              )}
               {delta !== null && delta !== 0 && (
                 <span
                   className={cn(

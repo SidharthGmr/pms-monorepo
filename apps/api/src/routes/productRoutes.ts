@@ -295,7 +295,7 @@ productRouter.get('/:id', authenticateToken, asyncHandler(productController.getB
  *                             type: integer
  *                     sellingPrice:
  *                       type: number
- *                     offerPrice:
+ *                     wholesalePrice:
  *                       type: number
  *                     costPrice:
  *                       type: number

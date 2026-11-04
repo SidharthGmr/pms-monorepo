@@ -277,7 +277,7 @@ priceHistoryRouter.get('/:id', authenticateToken, storeRequiredMiddleware, async
  *               sellingPrice:
  *                 type: number
  *                 example: 1099.99
- *               offerPrice:
+ *               wholesalePrice:
  *                 type: number
  *                 nullable: true
  *                 example: 899.99
@@ -351,7 +351,7 @@ priceHistoryRouter.post(
  *             properties:
  *               sellingPrice:
  *                 type: number
- *               offerPrice:
+ *               wholesalePrice:
  *                 type: number
  *                 nullable: true
  *               isOffer:

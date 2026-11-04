@@ -63,9 +63,11 @@ function decorate<T extends { id: number }>(row: T, price: EffectivePrice | null
   return {
     ...row,
     sellingPrice: price?.sellingPrice ?? null,
-    offerPrice: price?.offerPrice ?? null,
+    wholesalePrice: price?.wholesalePrice ?? null,
     costPrice: price?.costPrice ?? null,
-    taxType: price?.taxType ?? null,
+    purchaseTaxType: price?.purchaseTaxType ?? null,
+    wholesaleTaxType: price?.wholesaleTaxType ?? null,
+    saleTaxType: price?.saleTaxType ?? null,
     taxId: price?.taxId ?? null,
     discountType: price?.discountType ?? null,
     discountValue: price?.discountValue ?? null,

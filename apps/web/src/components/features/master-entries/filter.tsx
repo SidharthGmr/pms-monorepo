@@ -65,17 +65,14 @@ export default function MasterEntryFilter({ value, onChange, onReset, view, onVi
       search={{ value: value.search, onChange: (search) => onChange({ search }), placeholder: 'Search by label or value…' }}
       status={{ value: value.status, onChange: (status) => onChange({ status }), options: STATUS_FILTER_OPTIONS, total, loading }}
       leading={
-        <div className="sm:w-56">
-          <SelectSearch
-            value={value.attributeId ?? ''}
-            placeholder="All attributes"
-            items={attributeItems}
-            valueType="number"
-            containerName="master-entry-attribute-filter"
-            buttonClass="h-9 w-full"
-            onChange={(next) => onChange({ attributeId: next === '' || next === undefined ? undefined : +next })}
-          />
-        </div>
+        <SelectSearch
+          value={value.attributeId ?? ''}
+          placeholder="All attributes"
+          items={attributeItems}
+          valueType="number"
+          containerName="master-entry-attribute-filter"
+          onChange={(next) => onChange({ attributeId: next === '' || next === undefined ? undefined : +next })}
+        />
       }
       sort={{
         value: value.sortBy,

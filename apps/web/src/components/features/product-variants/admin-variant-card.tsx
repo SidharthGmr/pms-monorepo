@@ -23,9 +23,9 @@ export default function AdminVariantCard({ variant, onEdit, onPriceHistory }: Ad
   const image = imageFor(variant);
   const stock = variant.stockQuantity ?? 0;
   const low = variant.lowStockThreshold != null && stock <= variant.lowStockThreshold;
-  const live = variant.isOffer && variant.offerPrice != null;
-  const payable = variant.sellingPrice == null ? null : live ? Number(variant.offerPrice) : Number(variant.sellingPrice);
-  const savings = live && variant.sellingPrice ? Math.round((1 - Number(variant.offerPrice) / Number(variant.sellingPrice)) * 100) : 0;
+  const live = variant.isOffer && variant.wholesalePrice != null;
+  const payable = variant.sellingPrice == null ? null : live ? Number(variant.wholesalePrice) : Number(variant.sellingPrice);
+  const savings = live && variant.sellingPrice ? Math.round((1 - Number(variant.wholesalePrice) / Number(variant.sellingPrice)) * 100) : 0;
   const margin =
     variant.sellingPrice != null && variant.costPrice != null && Number(variant.sellingPrice) !== 0
       ? ((Number(variant.sellingPrice) - Number(variant.costPrice)) / Number(variant.sellingPrice)) * 100

@@ -30,12 +30,14 @@ export interface PriceHistoryDto {
   productId: number;
   storeCode: string;
   sellingPrice: number;
-  offerPrice: number | null;
-  /** Whether the offer price is actually charged while this row is in force. */
+  wholesalePrice: number | null;
+  /** Whether the wholesale price is actually charged while this row is in force. */
   isOffer: boolean;
   costPrice: number | null;
   compareAtPrice: number | null;
-  taxType: TaxType | null;
+  purchaseTaxType: TaxType | null;
+  wholesaleTaxType: TaxType | null;
+  saleTaxType: TaxType | null;
   taxId: string | null;
   discountType: DiscountType | null;
   discountValue: number | null;

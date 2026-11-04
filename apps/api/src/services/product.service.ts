@@ -106,7 +106,7 @@ export class ProductService implements IProductService {
           storeCode,
           sellingPrice: inline.sellingPrice,
           costPrice: inline.costPrice ?? null,
-          offerPrice: inline.offerPrice ?? null,
+          wholesalePrice: inline.wholesalePrice ?? null,
           isOffer: inline.isOffer ?? false,
           compareAtPrice: inline.compareAtPrice ?? null,
           effectiveFrom: inline.effectiveFrom ? new Date(inline.effectiveFrom) : new Date(),
@@ -261,7 +261,7 @@ export class ProductService implements IProductService {
             (!price ||
               offerFlagChanged ||
               price.sellingPrice !== inline.sellingPrice ||
-              (price.offerPrice ?? null) !== (inline.offerPrice ?? null) ||
+              (price.wholesalePrice ?? null) !== (inline.wholesalePrice ?? null) ||
               (price.costPrice ?? null) !== (inline.costPrice ?? null) ||
               (inline.effectiveFrom != null && !sameInstant(new Date(inline.effectiveFrom), price.effectiveFrom)) ||
               (inline.effectiveTo !== undefined && !sameInstant(inline.effectiveTo == null ? null : new Date(inline.effectiveTo), price.effectiveTo)));
@@ -272,7 +272,7 @@ export class ProductService implements IProductService {
                 storeCode,
                 sellingPrice: inline.sellingPrice as number,
                 costPrice: inline.costPrice ?? null,
-                offerPrice: inline.offerPrice ?? null,
+                wholesalePrice: inline.wholesalePrice ?? null,
                 isOffer: inline.isOffer ?? current.isOffer,
                 compareAtPrice: inline.compareAtPrice ?? null,
                 effectiveFrom: inline.effectiveFrom ? new Date(inline.effectiveFrom) : new Date(),

@@ -235,7 +235,7 @@ export class CatalogRepository implements ICatalogRepository {
         const price = prices.get(variant.id);
         const payable = payableForVariant({
           sellingPrice: price?.sellingPrice ?? null,
-          offerPrice: price?.offerPrice ?? null,
+          wholesalePrice: price?.wholesalePrice ?? null,
           isOffer: variant.isOffer,
         });
         if (payable != null) payables.push(payable);
@@ -331,9 +331,9 @@ export class CatalogRepository implements ICatalogRepository {
       stock: onHand,
       inStock: onHand > 0,
       sellingPrice: price?.sellingPrice ?? null,
-      offerPrice: price?.offerPrice ?? null,
+      wholesalePrice: price?.wholesalePrice ?? null,
       compareAtPrice: price?.compareAtPrice ?? null,
-      payablePrice: payableForVariant({ sellingPrice: price?.sellingPrice ?? null, offerPrice: price?.offerPrice ?? null, isOffer: variant.isOffer }),
+      payablePrice: payableForVariant({ sellingPrice: price?.sellingPrice ?? null, wholesalePrice: price?.wholesalePrice ?? null, isOffer: variant.isOffer }),
       attributes,
     };
   }
@@ -341,7 +341,7 @@ export class CatalogRepository implements ICatalogRepository {
   private variantMatches(variant: CatalogVariantDto, filters: CatalogFilterParams | undefined, entryGroups: number[][]): boolean {
     if (!filters) return true;
     if (filters.inStockOnly && !variant.inStock) return false;
-    if (filters.offersOnly && !(variant.isOffer && variant.offerPrice != null)) return false;
+    if (filters.offersOnly && !(variant.isOffer && variant.wholesalePrice != null)) return false;
     if (filters.minPrice != null && (variant.payablePrice == null || variant.payablePrice < filters.minPrice)) return false;
     if (filters.maxPrice != null && (variant.payablePrice == null || variant.payablePrice > filters.maxPrice)) return false;
     for (const group of entryGroups) {

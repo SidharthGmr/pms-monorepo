@@ -394,7 +394,7 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
             <dl className="space-y-1.5 text-sm">
               <Line label="Subtotal" value={formatPrice(order.totalAmount)} />
               {order.discount > 0 && <Line label="Discount" value={`−${formatPrice(order.discount)}`} className="text-emerald-700 dark:text-emerald-400" />}
-              {order.tax > 0 && <Line label="Tax" value={formatPrice(order.tax)} />}
+              {order.tax > 0 && <Line label="GST (incl. in price)" value={formatPrice(order.tax)} className="text-muted-foreground" />}
               <Line
                 label="Shipping & platform fee"
                 value={order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}

@@ -11,7 +11,7 @@ export const variantInlineFields = z.object({
     )
     .optional(),
   sellingPrice: z.number({ message: "Selling price is required" }).nonnegative("Selling price must be zero or greater"),
-  offerPrice: z.number().nonnegative("Offer price must be zero or greater").nullable().optional(),
+  wholesalePrice: z.number().nonnegative("Wholesale price must be zero or greater").nullable().optional(),
   costPrice: z.number().nonnegative("Purchase price must be zero or greater").nullable().optional(),
   compareAtPrice: z.number().nonnegative("Compare-at price must be zero or greater").nullable().optional(),
   stockQuantity: z.number().int("Stock must be a whole number").nonnegative("Stock must be zero or greater").nullable().optional(),
@@ -25,9 +25,9 @@ export const variantInlineFields = z.object({
  * A row that runs an offer needs the offer amount, and its period must point forward.
  * Shared by the API schema and the form schema, which wrap variantInlineFields differently.
  */
-const offerIsComplete = (row: { isOffer?: boolean; offerPrice?: number | null; effectiveFrom?: Date; effectiveTo?: Date | null }, ctx: z.RefinementCtx) => {
-  if (row.isOffer && row.offerPrice == null) {
-    ctx.addIssue({ code: "custom", path: ["offerPrice"], message: "Offer price is required" });
+const offerIsComplete = (row: { isOffer?: boolean; wholesalePrice?: number | null; effectiveFrom?: Date; effectiveTo?: Date | null }, ctx: z.RefinementCtx) => {
+  if (row.isOffer && row.wholesalePrice == null) {
+    ctx.addIssue({ code: "custom", path: ["wholesalePrice"], message: "Wholesale price is required" });
   }
   if (row.effectiveTo != null && row.effectiveTo <= (row.effectiveFrom ?? new Date())) {
     ctx.addIssue({ code: "custom", path: ["effectiveTo"], message: "The end date must be after the start date." });

@@ -37,9 +37,8 @@ import { cn } from '@/lib/utils';
 
 const money = (value?: number | null) => `₹${Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-// Same effective-price rule the POS cart uses; the server recomputes from the price history on save.
 const unitPriceOf = (variant?: ProductVariantListItemDto) =>
-  variant ? Number(variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice) || 0 : 0;
+  variant ? Number(variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : variant.sellingPrice) || 0 : 0;
 
 // The variant's own discount, per unit - the same rule the server applies when pricing the line.
 const perUnitDiscount = (variant?: ProductVariantListItemDto) => {
@@ -64,21 +63,20 @@ export default function NewSale() {
     () =>
       (customersResponse?.data?.data?.data || [])
         .map((c) => {
-          // API returns the GUID under `userId`; the DTO mislabels it `usersId`.
           const cid = ((c as any).userId ?? (c as any).usersId ?? '') as string;
           return { id: cid, name: c.name, email: c.email };
         })
         .filter((c) => c.id),
     [customersResponse]
   );
-  const customerOptions = useMemo(() => customers.map((c) => ({ label: c.email ? `${c.name} (${c.email})` : c.name, value: c.id })), [customers]);
+  const customerOptions = useMemo(() => customers.map((c) => ({ label: c.name, value: c.id })), [customers]);
 
   const { data: taxesResponse } = useGetAllTaxes({ showAllRecords: true });
   const taxById = useMemo(() => new Map((taxesResponse?.data?.data?.data ?? []).map((tax) => [tax.id, tax])), [taxesResponse]);
 
   // GST here is tax-inclusive ("With Tax"), so the shown amount is the portion inside the price.
   const lineTaxAmount = (variant: ProductVariantListItemDto | undefined, netAmount: number) => {
-    if (!variant || variant.taxType !== TaxTypeEnum.WithTax || !variant.taxId) return 0;
+    if (!variant || variant.saleTaxType !== TaxTypeEnum.WithTax || !variant.taxId) return 0;
     const rate = taxById.get(variant.taxId)?.rate ?? 0;
     return rate > 0 ? Math.round(((netAmount * rate) / (100 + rate)) * 100) / 100 : 0;
   };
@@ -116,11 +114,14 @@ export default function NewSale() {
 
   const { control, handleSubmit, watch, formState } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+
   useUnsavedChangesWarning(formState.isDirty && !createOrder.isSuccess);
 
   // Everything the invoice preview shows is derived live from the form values.
   const values = watch();
   const customer = customers.find((c) => c.id === values.customerId);
+  // The customer box allows free text, so an unmatched value is a typed walk-in name for the bill.
+  const billCustomerName = customer?.name || String(values.customerId ?? '').trim() || 'Walk-in customer';
   const lines = (values.items ?? [])
     .filter((it) => it.variantId != null && it.variantId !== ('' as any))
     .map((it) => {
@@ -134,14 +135,16 @@ export default function NewSale() {
       const taxAmount = lineTaxAmount(variant, amount);
       return { variantId, variant, quantity, unitPrice, netUnitPrice, discountAmount, taxAmount, amount };
     });
+  // The discount field holds a percentage; prices are tax-inclusive, so GST is informational.
   const totalQty = lines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
   const itemDiscountTotal = lines.reduce((sum, line) => sum + line.discountAmount, 0);
-  const itemTaxTotal = lines.reduce((sum, line) => sum + line.taxAmount, 0);
-  const discount = Number(values.discount) || 0;
-  const tax = Number(values.tax) || 0;
+  const itemTaxTotal = Math.round(lines.reduce((sum, line) => sum + line.taxAmount, 0) * 100) / 100;
+  const grossSubtotal = subtotal + itemDiscountTotal;
+  const discountPercent = Math.min(Math.max(Number(values.discount) || 0, 0), 100);
+  const additionalDiscount = Math.round(subtotal * discountPercent) / 100;
   const shipping = Number(values.shippingCost) || 0;
-  const grandTotal = subtotal - discount + tax + shipping;
+  const grandTotal = subtotal - additionalDiscount + shipping;
 
   const downloadBillPdf = async () => {
     setIsDownloading(true);
@@ -151,13 +154,9 @@ export default function NewSale() {
           orderNumber: 'PREVIEW',
           status: values.status,
           createdAt: new Date().toISOString(),
-          // Items print at their gross rate, so the item discounts surface on the Discount
-          // row instead of hiding inside the unit price. The math lands on the same total:
-          // (subtotal + itemDiscounts) - (discount + itemDiscounts) = subtotal - discount.
-          totalAmount: subtotal + itemDiscountTotal,
-          discount: discount + itemDiscountTotal,
-          tax,
-          taxIncluded: itemTaxTotal,
+          totalAmount: grossSubtotal,
+          discount: itemDiscountTotal + additionalDiscount,
+          tax: itemTaxTotal,
           shippingCost: shipping,
           grandTotal,
           notes: values.notes || null,
@@ -168,7 +167,7 @@ export default function NewSale() {
             variant: { name: line.variant?.name, sku: line.variant?.sku },
           })),
           store: { name: settings?.siteName || config.appName },
-          customer: { name: customer?.name || 'Walk-in customer', email: customer?.email },
+          customer: { name: billCustomerName, email: customer?.email },
           payments: [],
         },
         settings?.logoUrl
@@ -179,10 +178,12 @@ export default function NewSale() {
   };
 
   const submitData = async (model: OrderFormValues) => {
+    // The form's discount is a percentage; the API takes the amount. GST is recomputed
+    // server-side from the ledger, so the tax sent here is informational.
     const payload: CreateOrderModel = {
       customerId: model.customerId,
-      discount: model.discount,
-      tax: model.tax,
+      discount: additionalDiscount,
+      tax: itemTaxTotal,
       shippingCost: model.shippingCost,
       status: model.status,
       notes: model.notes,
@@ -205,284 +206,190 @@ export default function NewSale() {
     <div className="mx-auto w-full max-w-7xl space-y-4">
       <ListPageHeader icon={ReceiptText} title="New Sale" description="Bill a sale and preview the invoice as you type" backHref="/admin/orders" />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        <div className="lg:col-span-12">
-          <Form {...form}>
-            <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4 rounded-xl border bg-card p-4 sm:p-5">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={control}
-                  name="customerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer *</FormLabel>
-                      <FormControl>
-                        <InputSelect
-                          placeholder="Select a customer"
-                          items={customerOptions}
-                          value={field.value ?? ''}
-                          valueType="string"
-                          containerName="new-sale-customer"
-                          onChange={(value) => field.onChange(value ? String(value) : '')}
-                        />
-                        {/* <SelectSearch
-                          buttonClass="w-full"
-                          placeholder="Select a customer"
-                          items={customerOptions}
-                          value={field.value ?? ''}
-                          valueType="string"
-                          containerName="new-sale-customer"
-                          onChange={(value) => field.onChange(value ? String(value) : '')}
-                        /> */}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* <FormField
-                  control={control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <FormControl>
-                        <SelectSearch
-                          buttonClass="w-full"
-                          placeholder="Select Status"
-                          disableSearch={true}
-                          items={Object.values(OrderStatusEnum).map((s) => ({ label: s.charAt(0) + s.slice(1).toLowerCase(), value: s }))}
-                          value={field.value ?? ''}
-                          valueType="string"
-                          containerName="new-sale-status"
-                          onChange={(value) => field.onChange(value)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
-              </div>
-
-              <div className="space-y-2">
-                <FormLabel>Products *</FormLabel>
-
-                <div className="overflow-hidden rounded-lg border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/60 text-[10px] uppercase tracking-wider text-muted-foreground">
-                        <th className="w-8 px-2 py-2 text-left font-semibold">#</th>
-                        <th className="px-2 py-2 text-left font-semibold">Item</th>
-                        <th className="w-20 px-2 py-2 text-right font-semibold">Qty</th>
-                        <th className="w-28 px-2 py-2 text-right font-semibold">Price/Unit</th>
-                        <th className="w-24 px-2 py-2 text-right font-semibold">Discount</th>
-                        <th className="w-24 px-2 py-2 text-right font-semibold">Tax</th>
-                        <th className="w-28 px-2 py-2 text-right font-semibold">Amount</th>
-                        <th className="w-10 px-1 py-2" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fields.map((f, index) => {
-                        const line = (() => {
-                          const variant = variantById.get(Number(values.items?.[index]?.variantId));
-                          const quantity = Number(values.items?.[index]?.quantity) || 0;
-                          const unitPrice = unitPriceOf(variant);
-                          const discountAmount = perUnitDiscount(variant) * quantity;
-                          const amount = (unitPrice - perUnitDiscount(variant)) * quantity;
-                          const taxAmount = lineTaxAmount(variant, amount);
-                          return { variant, unitPrice, discountAmount, taxAmount, amount };
-                        })();
-
-                        return (
-                          <tr key={f.id} className="border-b align-top last:border-b-0">
-                            <td className="px-2 py-3 text-xs tabular-nums text-muted-foreground">{index + 1}</td>
-                            <td className="px-1 py-1.5">
-                              <FormField
-                                control={control}
-                                name={`items.${index}.variantId`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormControl>
-                                      <InputSelect
-                                        placeholder="Type or select an item"
-                                        items={productOptions}
-                                        detailHeaders={['Price', 'Stock']}
-                                        contentClass="w-[460px]"
-                                        inputClass="h-9"
-                                        allowCustomValue={false}
-                                        value={field.value ?? ''}
-                                        valueType="number"
-                                        containerName={`new-sale-product-${index}`}
-                                        onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </td>
-                            <td className="px-1 py-1.5">
-                              <FormField
-                                control={control}
-                                name={`items.${index}.quantity`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        min={1}
-                                        placeholder="1"
-                                        className="h-9 text-right"
-                                        value={field.value ?? ''}
-                                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </td>
-                            <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">
-                              {line.variant ? money(line.unitPrice) : '—'}
-                            </td>
-                            <td className="px-2 py-3 text-right text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
-                              {line.variant && line.discountAmount > 0 ? `−${money(line.discountAmount)}` : '—'}
-                            </td>
-                            <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">
-                              {line.variant && line.taxAmount > 0 ? money(line.taxAmount) : '—'}
-                            </td>
-                            <td className="px-2 py-3 text-right text-xs font-semibold tabular-nums">{line.variant ? money(line.amount) : '—'}</td>
-                            <td className="px-1 py-1.5">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 shrink-0 text-slate-400 hover:text-red-500"
-                                onClick={() => fields.length > 1 && remove(index)}
-                                disabled={fields.length <= 1}
-                                title="Remove row"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t bg-muted/40">
-                        <td className="px-2 py-2" />
-                        <td className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total</td>
-                        <td className="px-2 py-2 text-right text-sm font-semibold tabular-nums">{totalQty || ''}</td>
-                        <td />
-                        <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
-                          {itemDiscountTotal > 0 ? `−${money(itemDiscountTotal)}` : ''}
-                        </td>
-                        <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-muted-foreground">
-                          {itemTaxTotal > 0 ? money(itemTaxTotal) : ''}
-                        </td>
-                        <td className="px-2 py-2 text-right text-sm font-bold tabular-nums">{money(subtotal)}</td>
-                        <td />
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  icon={Plus}
-                  iconPlacement="left"
-                  onClick={() => append({ variantId: undefined as any, quantity: 1 })}
-                >
-                  Add Row
-                </Button>
-
-                {(itemDiscountTotal > 0 || itemTaxTotal > 0) && (
-                  <p className="text-[11px] text-muted-foreground">
-                    Item discounts are already applied to Amount; Tax is the GST included in tax-inclusive prices.
-                  </p>
+      <div>
+        <Form {...form}>
+          <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="space-y-4 rounded-xl border bg-card p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField
+                control={control}
+                name="customerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <InputSelect
+                        placeholder="Select a customer"
+                        items={customerOptions}
+                        value={field.value ?? ''}
+                        valueType="string"
+                        containerName="new-sale-customer"
+                        onChange={(value) => field.onChange(value ? String(value) : '')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="overflow-hidden rounded-lg border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <th className="w-8 px-2 py-2 text-left font-semibold">#</th>
+                      <th className="px-2 py-2 text-left font-semibold">Item</th>
+                      <th className="w-20 px-2 py-2 text-right font-semibold">Qty</th>
+                      <th className="w-28 px-2 py-2 text-right font-semibold">Price/Unit</th>
+                      <th className="w-24 px-2 py-2 text-right font-semibold">Discount</th>
+                      <th className="w-24 px-2 py-2 text-right font-semibold">Tax</th>
+                      <th className="w-28 px-2 py-2 text-right font-semibold">Amount</th>
+                      <th className="w-10 px-1 py-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fields.map((f, index) => {
+                      const line = (() => {
+                        const variant = variantById.get(Number(values.items?.[index]?.variantId));
+                        const quantity = Number(values.items?.[index]?.quantity) || 0;
+                        const unitPrice = unitPriceOf(variant);
+                        const discountAmount = perUnitDiscount(variant) * quantity;
+                        const amount = (unitPrice - perUnitDiscount(variant)) * quantity;
+                        const taxAmount = lineTaxAmount(variant, amount);
+                        return { variant, unitPrice, discountAmount, taxAmount, amount };
+                      })();
+
+                      return (
+                        <tr key={f.id} className="border-b align-top last:border-b-0">
+                          <td className="px-2 py-3 text-xs tabular-nums text-muted-foreground">{index + 1}</td>
+                          <td className="px-1 py-1.5">
+                            <FormField
+                              control={control}
+                              name={`items.${index}.variantId`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <InputSelect
+                                      placeholder="Type or select an item"
+                                      items={productOptions}
+                                      detailHeaders={['Price', 'Stock']}
+                                      contentClass="w-[460px]"
+                                      inputClass="h-9"
+                                      allowCustomValue={false}
+                                      value={field.value ?? ''}
+                                      valueType="number"
+                                      containerName={`new-sale-product-${index}`}
+                                      onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </td>
+                          <td className="px-1 py-1.5">
+                            <FormField
+                              control={control}
+                              name={`items.${index}.quantity`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      placeholder="1"
+                                      className="h-9 text-right"
+                                      value={field.value ?? ''}
+                                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">
+                            {line.variant ? money(line.unitPrice) : '—'}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
+                            {line.variant && line.discountAmount > 0 ? `−${money(line.discountAmount)}` : '—'}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs tabular-nums text-muted-foreground">
+                            {line.variant && line.taxAmount > 0 ? money(line.taxAmount) : '—'}
+                          </td>
+                          <td className="px-2 py-3 text-right text-xs font-semibold tabular-nums">{line.variant ? money(line.amount) : '—'}</td>
+                          <td className="px-1 py-1.5">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 shrink-0 text-slate-400 hover:text-red-500"
+                              onClick={() => fields.length > 1 && remove(index)}
+                              disabled={fields.length <= 1}
+                              title="Remove row"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="p-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        icon={Plus}
+                        iconPlacement="left"
+                        onClick={() => append({ variantId: undefined as any, quantity: 1 })}
+                      >
+                        Add Row
+                      </Button>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t bg-muted/40">
+                      <td className="px-2 py-2" />
+                      <td className="px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total</td>
+                      <td className="px-2 py-2 text-right text-sm font-semibold tabular-nums">{totalQty || ''}</td>
+                      <td />
+                      <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                        {itemDiscountTotal > 0 ? `−${money(itemDiscountTotal)}` : ''}
+                      </td>
+                      <td className="px-2 py-2 text-right text-xs font-semibold tabular-nums text-muted-foreground">
+                        {itemTaxTotal > 0 ? money(itemTaxTotal) : ''}
+                      </td>
+                      <td className="px-2 py-2 text-right text-sm font-bold tabular-nums">{money(subtotal)}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-4">
-                  <FormField
-                    control={control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Sale notes" rows={4} className="h-full min-h-24 resize-none" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              {(itemDiscountTotal > 0 || itemTaxTotal > 0) && (
+                <p className="text-[11px] text-muted-foreground">
+                  Item discounts are already applied to Amount; Tax is the GST included in tax-inclusive prices.
+                </p>
+              )}
+            </div>
 
-                  <div className="rounded-lg border border-dashed px-3 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Amount in words</p>
-                    <p className="mt-1 text-xs font-medium italic leading-relaxed text-muted-foreground">{amountInWords(grandTotal)}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between py-1.5 text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-semibold tabular-nums">{money(subtotal)}</span>
-                  </div>
-
-                  {itemDiscountTotal > 0 && (
-                    <div className="flex items-center justify-between py-1 text-xs text-muted-foreground">
-                      <span>Item discounts (applied)</span>
-                      <span className="tabular-nums text-emerald-700 dark:text-emerald-400">−{money(itemDiscountTotal)}</span>
-                    </div>
-                  )}
-                  {itemTaxTotal > 0 && (
-                    <div className="flex items-center justify-between py-1 text-xs text-muted-foreground">
-                      <span>GST included</span>
-                      <span className="tabular-nums">{money(itemTaxTotal)}</span>
-                    </div>
-                  )}
-
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-4">
+                <div>
                   <FormField
                     control={control}
                     name="discount"
                     render={({ field }) => (
                       <FormItem className="flex items-center justify-between gap-3 space-y-0 border-t py-1.5">
-                        <FormLabel className="text-sm font-normal text-muted-foreground">Discount</FormLabel>
+                        <FormLabel className="text-sm font-normal text-muted-foreground">Additional discount (%)</FormLabel>
                         <div>
                           <FormControl>
                             <Input
                               type="number"
                               min={0}
+                              max={100}
+                              step="0.01"
                               placeholder="0"
-                              className={cn('h-8 w-32 text-right tabular-nums', discount > 0 && 'text-rose-600 dark:text-rose-400')}
-                              value={field.value ?? ''}
-                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={control}
-                    name="tax"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between gap-3 space-y-0 py-1.5">
-                        <FormLabel className="text-sm font-normal text-muted-foreground">Tax</FormLabel>
-                        <div>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              placeholder="0"
-                              className="h-8 w-32 text-right tabular-nums"
+                              className={cn('h-8 w-32 text-right tabular-nums', discountPercent > 0 && 'text-rose-600 dark:text-rose-400')}
                               value={field.value ?? ''}
                               onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                             />
@@ -515,49 +422,86 @@ export default function NewSale() {
                       </FormItem>
                     )}
                   />
-
-                  <div className="mt-2 flex items-center justify-between rounded-md bg-primary px-3 py-2.5 text-primary-foreground">
-                    <span className="text-[11px] font-bold uppercase tracking-wider">Total payable</span>
-                    <span className="text-lg font-bold tabular-nums">{money(grandTotal)}</span>
-                  </div>
-                  <p className="mt-1.5 text-[10px] text-muted-foreground">Payment and received amount are recorded on the order after the sale.</p>
                 </div>
+                <FormField
+                  control={control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Sale notes" rows={2} className="h-full min-h-24 resize-none" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  icon={Download}
-                  iconPlacement="left"
-                  loading={isDownloading}
-                  disabled={lines.length === 0 || isDownloading}
-                  onClick={() => void downloadBillPdf()}
-                >
-                  Download Bill PDF
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.push('/admin/orders')}>
-                  Cancel
-                </Button>
-                <Button type="submit" loading={createOrder.isPending}>
-                  Complete Sale
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+              <div className="rounded-lg border p-3">
+                <div className="flex items-center justify-between py-1.5 text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-semibold tabular-nums">{money(grossSubtotal)}</span>
+                </div>
 
-        {/* Live preview rendered with the real Classic invoice template, zoomed to fit the column; real prices land on save. */}
-        {/* <div className="lg:col-span-5">
-          <div ref={previewRef} className="overflow-hidden rounded-xl border bg-white shadow-sm lg:sticky lg:top-6">
-            <div style={{ zoom: previewZoom }}>
-              <ClassicTemplate invoice={previewInvoice} logoUrl={settings?.logoUrl} />
+                {itemDiscountTotal > 0 && (
+                  <div className="flex items-center justify-between py-1.5 text-sm">
+                    <span className="text-muted-foreground">Discount (incl. in price)</span>
+                    <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">−{money(itemDiscountTotal)}</span>
+                  </div>
+                )}
+                {additionalDiscount > 0 && (
+                  <div className="flex items-center justify-between py-1.5 text-sm">
+                    <span className="text-muted-foreground">Additional discount ({discountPercent}%)</span>
+                    <span className="font-semibold tabular-nums text-rose-600 dark:text-rose-400">−{money(additionalDiscount)}</span>
+                  </div>
+                )}
+                {itemTaxTotal > 0 && (
+                  <div className="flex items-center justify-between py-1.5 text-sm">
+                    <span className="text-muted-foreground">GST (incl. in price)</span>
+                    <span className="font-semibold tabular-nums text-muted-foreground">{money(itemTaxTotal)}</span>
+                  </div>
+                )}
+                {shipping > 0 && (
+                  <div className="flex items-center justify-between py-1.5 text-sm">
+                    <span className="text-muted-foreground">Shipping &amp; fees</span>
+                    <span className="font-semibold tabular-nums">{money(shipping)}</span>
+                  </div>
+                )}
+
+                <div className="mt-2 flex items-center justify-between rounded-md bg-primary px-3 py-2.5 text-primary-foreground">
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Total payable</span>
+                  <span className="text-lg font-bold tabular-nums">{money(grandTotal)}</span>
+                </div>
+                <div className="rounded-lg border border-dashed px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Amount in words</p>
+                  <p className="mt-1 text-xs font-medium italic leading-relaxed text-muted-foreground">{amountInWords(grandTotal)}</p>
+                </div>
+                <p className="mt-1.5 text-[10px] text-muted-foreground">Payment and received amount are recorded on the order after the sale.</p>
+              </div>
             </div>
-            <div className="border-t bg-slate-50 px-6 py-2.5 text-[10px] text-slate-400">
-              Preview only - prices shown are indicative; the saved invoice uses the effective price at sale time.
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                icon={Download}
+                iconPlacement="left"
+                loading={isDownloading}
+                disabled={lines.length === 0 || isDownloading}
+                onClick={() => void downloadBillPdf()}
+              >
+                Download Bill PDF
+              </Button>
+              <Button type="button" variant="outline" onClick={() => router.push('/admin/orders')}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={createOrder.isPending}>
+                Complete Sale
+              </Button>
             </div>
-          </div>
-        </div> */}
+          </form>
+        </Form>
       </div>
     </div>
   );

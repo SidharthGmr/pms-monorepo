@@ -82,10 +82,12 @@ export class ProductVariantService implements IProductVariantService {
             storeCode,
             costPrice: data.costPrice ?? null,
             sellingPrice: data.sellingPrice,
-            offerPrice: data.offerPrice ?? null,
+            wholesalePrice: data.wholesalePrice ?? null,
             isOffer: data.isOffer ?? false,
             compareAtPrice: data.compareAtPrice ?? null,
-            taxType: data.taxType ?? null,
+            purchaseTaxType: data.purchaseTaxType ?? null,
+            wholesaleTaxType: data.wholesaleTaxType ?? null,
+            saleTaxType: data.saleTaxType ?? null,
             taxId: data.taxId ?? null,
             discountType: data.discountType ?? null,
             discountValue: data.discountValue ?? null,
@@ -173,9 +175,11 @@ export class ProductVariantService implements IProductVariantService {
         data.sellingPrice != null &&
         (data.sellingPrice !== existing.sellingPrice ||
           (data.costPrice ?? null) !== (existing.costPrice ?? null) ||
-          (data.offerPrice !== undefined && (data.offerPrice ?? null) !== (existing.offerPrice ?? null)) ||
+          (data.wholesalePrice !== undefined && (data.wholesalePrice ?? null) !== (existing.wholesalePrice ?? null)) ||
           (data.isOffer !== undefined && data.isOffer !== existing.isOffer) ||
-          (data.taxType !== undefined && (data.taxType ?? null) !== (existing.taxType ?? null)) ||
+          (data.purchaseTaxType !== undefined && (data.purchaseTaxType ?? null) !== (existing.purchaseTaxType ?? null)) ||
+          (data.wholesaleTaxType !== undefined && (data.wholesaleTaxType ?? null) !== (existing.wholesaleTaxType ?? null)) ||
+          (data.saleTaxType !== undefined && (data.saleTaxType ?? null) !== (existing.saleTaxType ?? null)) ||
           (data.taxId !== undefined && (data.taxId ?? null) !== (existing.taxId ?? null)) ||
           (data.discountType !== undefined && (data.discountType ?? null) !== (existing.discountType ?? null)) ||
           (data.discountValue !== undefined && (data.discountValue ?? null) !== (existing.discountValue ?? null)) ||
@@ -187,10 +191,12 @@ export class ProductVariantService implements IProductVariantService {
             variantId: id,
             storeCode,
             sellingPrice: data.sellingPrice as number,
-            offerPrice: data.offerPrice !== undefined ? data.offerPrice : existing.offerPrice,
+            wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : existing.wholesalePrice,
             isOffer: data.isOffer !== undefined ? data.isOffer : existing.isOffer,
             costPrice: data.costPrice ?? null,
-            taxType: data.taxType !== undefined ? data.taxType : existing.taxType,
+            purchaseTaxType: data.purchaseTaxType !== undefined ? data.purchaseTaxType : existing.purchaseTaxType,
+            wholesaleTaxType: data.wholesaleTaxType !== undefined ? data.wholesaleTaxType : existing.wholesaleTaxType,
+            saleTaxType: data.saleTaxType !== undefined ? data.saleTaxType : existing.saleTaxType,
             taxId: data.taxId !== undefined ? data.taxId : existing.taxId,
             discountType: data.discountType !== undefined ? data.discountType : existing.discountType,
             discountValue: data.discountValue !== undefined ? data.discountValue : existing.discountValue,

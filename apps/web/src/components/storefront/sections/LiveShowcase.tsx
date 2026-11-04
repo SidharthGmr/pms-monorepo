@@ -66,15 +66,15 @@ export default function LiveShowcase() {
       (variants.length > 0
         ? variants
         : [
-            { id: -1, sku: 'SKU-001', name: 'Sample product', sellingPrice: 1299, offerPrice: null, isOffer: false, product: { name: 'Sample product' } },
-            { id: -2, sku: 'SKU-002', name: 'Sample product', sellingPrice: 2499, offerPrice: null, isOffer: false, product: { name: 'Sample product' } },
-            { id: -3, sku: 'SKU-003', name: 'Sample product', sellingPrice: 899, offerPrice: null, isOffer: false, product: { name: 'Sample product' } },
+            { id: -1, sku: 'SKU-001', name: 'Sample product', sellingPrice: 1299, wholesalePrice: null, isOffer: false, product: { name: 'Sample product' } },
+            { id: -2, sku: 'SKU-002', name: 'Sample product', sellingPrice: 2499, wholesalePrice: null, isOffer: false, product: { name: 'Sample product' } },
+            { id: -3, sku: 'SKU-003', name: 'Sample product', sellingPrice: 899, wholesalePrice: null, isOffer: false, product: { name: 'Sample product' } },
           ]
       ).map((variant: Record<string, any>, index: number) => ({
         id: variant.id ?? index,
         sku: variant.sku ?? `SKU-00${index + 1}`,
         name: variant.product?.name ?? variant.name ?? 'Product',
-        price: Number(variant.isOffer && variant.offerPrice != null ? variant.offerPrice : (variant.sellingPrice ?? 0)),
+        price: Number(variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : (variant.sellingPrice ?? 0)),
       })),
     [variants]
   );

@@ -8,7 +8,7 @@ const HELD_KEY = 'pos.held.v1';
 
 // The price the till charges: the offer price while one is on, else the selling price.
 export const payableOf = (variant: ProductVariantListItemDto): number =>
-  Number(variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice) || 0;
+  Number(variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : variant.sellingPrice) || 0;
 
 const read = <T,>(key: string, fallback: T): T => {
   try {

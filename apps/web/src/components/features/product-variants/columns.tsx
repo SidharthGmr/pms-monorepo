@@ -67,22 +67,22 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
         meta: { sortingKey: 'name', thClassName: 'pl-4', tdClassName: 'pl-4' },
       },
       {
-        // One column for what is actually charged. `offerPrice` on its own said nothing about
-        // whether the offer was live, so the table could not be read against the storefront.
+        // One column for what is actually charged. `wholesalePrice` on its own said nothing about
+        // whether wholesale billing was live, so the table could not be read against the storefront.
         id: 'price',
         enableSorting: false,
         header: () => <span className={HEADER}>Price</span>,
         cell: ({ row }) => {
-          const { sellingPrice, offerPrice, isOffer } = row.original;
+          const { sellingPrice, wholesalePrice, isOffer } = row.original;
           if (sellingPrice == null) return <span className="text-xs text-muted-foreground/60">Unpriced</span>;
 
-          const live = isOffer && offerPrice != null;
-          const savings = live ? Math.round((1 - Number(offerPrice) / Number(sellingPrice)) * 100) : 0;
+          const live = isOffer && wholesalePrice != null;
+          const savings = live ? Math.round((1 - Number(wholesalePrice) / Number(sellingPrice)) * 100) : 0;
 
           return (
             <div className="flex flex-col gap-0.5 whitespace-nowrap">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold tabular-nums">{money(live ? Number(offerPrice) : Number(sellingPrice))}</span>
+                <span className="text-sm font-semibold tabular-nums">{money(live ? Number(wholesalePrice) : Number(sellingPrice))}</span>
                 {live && <span className="text-xs tabular-nums text-muted-foreground line-through">{money(Number(sellingPrice))}</span>}
                 {live && savings > 0 && (
                   <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
@@ -90,7 +90,9 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
                   </span>
                 )}
               </div>
-              {!isOffer && offerPrice != null && <span className="text-[11px] text-muted-foreground">Offer {money(Number(offerPrice))} staged</span>}
+              {!isOffer && wholesalePrice != null && (
+                <span className="text-[11px] text-muted-foreground">Wholesale {money(Number(wholesalePrice))} staged</span>
+              )}
             </div>
           );
         },

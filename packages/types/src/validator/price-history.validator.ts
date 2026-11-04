@@ -16,10 +16,10 @@ export const priceHistoryFields = z.object({
       .number({ error: "Selling price must be a number" })
       .min(0, "Selling price cannot be negative"),
   ),
-  offerPrice: optionalNumberField("Offer price must be a number")
+  wholesalePrice: optionalNumberField("Wholesale price must be a number")
     .refine(
       (value) => value === undefined || value >= 0,
-      "Offer price cannot be negative",
+      "Wholesale price cannot be negative",
     )
     .nullable(),
   isOffer: z.boolean().optional(),
@@ -42,7 +42,7 @@ export const priceHistoryFields = z.object({
 const priceRulesAreCoherent = (
   values: {
     sellingPrice?: number;
-    offerPrice?: number | null;
+    wholesalePrice?: number | null;
     isOffer?: boolean;
     effectiveFrom?: Date | string | null;
     effectiveTo?: Date | string | null;
@@ -50,23 +50,23 @@ const priceRulesAreCoherent = (
   ctx: z.RefinementCtx,
 ) => {
   if (
-    values.offerPrice != null &&
+    values.wholesalePrice != null &&
     values.sellingPrice != null &&
-    values.offerPrice > values.sellingPrice
+    values.wholesalePrice > values.sellingPrice
   ) {
     ctx.addIssue({
       code: "custom",
-      path: ["offerPrice"],
-      message: "Offer price cannot be higher than the selling price",
+      path: ["wholesalePrice"],
+      message: "Wholesale price cannot be higher than the selling price",
     });
   }
 
-  // An offer with no price to charge would silently fall back to the selling price.
-  if (values.isOffer && values.offerPrice == null) {
+  // A wholesale deal with no price to charge would silently fall back to the selling price.
+  if (values.isOffer && values.wholesalePrice == null) {
     ctx.addIssue({
       code: "custom",
-      path: ["offerPrice"],
-      message: "Enter the offer price, or turn the offer off",
+      path: ["wholesalePrice"],
+      message: "Enter the wholesale price, or turn it off",
     });
   }
 

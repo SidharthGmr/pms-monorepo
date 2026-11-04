@@ -69,7 +69,7 @@ export default function ViewVariant({ id }: ViewVariantProps) {
 
   const images = variant.images ?? [];
   const title = variant.name ?? variant.sku;
-  const payable = variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice;
+  const payable = variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : variant.sellingPrice;
   const margin = variant.costPrice != null && variant.sellingPrice ? ((variant.sellingPrice - variant.costPrice) / variant.sellingPrice) * 100 : null;
   const lowStock = variant.lowStockThreshold != null && variant.stockQuantity <= variant.lowStockThreshold;
   const date = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value as Date, true) : '—');
@@ -159,8 +159,8 @@ export default function ViewVariant({ id }: ViewVariantProps) {
                   label="Customer pays"
                   value={payable != null ? money(payable) : 'Unpriced'}
                   hint={
-                    variant.isOffer && variant.offerPrice != null && variant.sellingPrice
-                      ? `offer · was ${money(variant.sellingPrice)}`
+                    variant.isOffer && variant.wholesalePrice != null && variant.sellingPrice
+                      ? `wholesale · was ${money(variant.sellingPrice)}`
                       : variant.costPrice != null
                         ? `purchase ${money(variant.costPrice)}`
                         : undefined

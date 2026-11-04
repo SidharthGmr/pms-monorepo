@@ -82,7 +82,7 @@ export default function Hero() {
           ) : (
             variants.map((variant, index) => {
               const image = variant.images?.[0];
-              const price = variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice;
+              const price = variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : variant.sellingPrice;
 
               return (
                 <Link

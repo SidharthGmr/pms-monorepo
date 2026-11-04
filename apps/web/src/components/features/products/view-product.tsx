@@ -75,7 +75,7 @@ export default function ProductView({ id, onEdit }: ProductViewProps) {
   const active = variants.filter((variant) => variant.isActive);
   const stock = variants.reduce((sum, variant) => sum + (variant.stockQuantity ?? 0), 0);
   const priced = active
-    .map((variant) => Number(variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice))
+    .map((variant) => Number(variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : variant.sellingPrice))
     .filter((value) => Number.isFinite(value));
   const low = priced.length ? Math.min(...priced) : null;
   const high = priced.length ? Math.max(...priced) : null;

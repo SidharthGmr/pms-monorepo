@@ -306,22 +306,30 @@ productVariantRouter.get('/public', asyncHandler(productVariantController.getAll
  *                 nullable: true
  *                 example: 800.00
  *                 description: Purchase price (optional)
- *               offerPrice:
+ *               wholesalePrice:
  *                 type: number
  *                 nullable: true
  *                 example: 400.00
  *                 description: >
- *                   Promotional amount for this price period (optional). Filed on the same ledger
- *                   row as sellingPrice, but only charged while isOffer is true - so an offerPrice
- *                   sent with isOffer false stages a promotion without applying it.
+ *                   Wholesale amount for this price period (optional). Filed on the same ledger
+ *                   row as sellingPrice, but only charged while isOffer is true - so a wholesalePrice
+ *                   sent with isOffer false stages the rate without applying it.
  *               isOffer:
  *                 type: boolean
  *                 example: false
  *                 description: >
- *                   Turns the promotion on (optional). A column on the variant, not the ledger. With
- *                   it on and an offerPrice set, carts and orders are billed the offerPrice;
+ *                   Turns wholesale billing on (optional). A column on the variant, not the ledger. With
+ *                   it on and a wholesalePrice set, carts and orders are billed the wholesalePrice;
  *                   otherwise the sellingPrice. Defaults to false.
- *               taxType:
+ *               purchaseTaxType:
+ *                 type: string
+ *                 enum: [WithTax, WithoutTax]
+ *                 nullable: true
+ *               wholesaleTaxType:
+ *                 type: string
+ *                 enum: [WithTax, WithoutTax]
+ *                 nullable: true
+ *               saleTaxType:
  *                 type: string
  *                 enum: [WithTax, WithoutTax]
  *                 nullable: true
@@ -436,16 +444,24 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
  *               sellingPrice:
  *                 type: number
  *                 description: Reprice. Appended to the PriceHistory ledger when it differs from the effective row.
- *               offerPrice:
+ *               wholesalePrice:
  *                 type: number
  *                 nullable: true
  *                 description: >
- *                   Part of the same reprice - a changed offer amount files a new ledger row too.
- *                   Omit it to carry the current offer amount forward unchanged.
+ *                   Part of the same reprice - a changed wholesale amount files a new ledger row too.
+ *                   Omit it to carry the current wholesale amount forward unchanged.
  *               costPrice:
  *                 type: number
  *                 nullable: true
- *               taxType:
+ *               purchaseTaxType:
+ *                 type: string
+ *                 enum: [WithTax, WithoutTax]
+ *                 nullable: true
+ *               wholesaleTaxType:
+ *                 type: string
+ *                 enum: [WithTax, WithoutTax]
+ *                 nullable: true
+ *               saleTaxType:
  *                 type: string
  *                 enum: [WithTax, WithoutTax]
  *                 nullable: true
@@ -481,7 +497,7 @@ productVariantRouter.post('/', authenticateToken, validate(CreateProductVariantV
  *                 nullable: true
  *     description: >
  *       Plain columns (name, sku, barcode, attributes, images, threshold, isActive, isOffer) are
- *       written directly. Price and stock are not columns: a changed sellingPrice/offerPrice/costPrice
+ *       written directly. Price and stock are not columns: a changed sellingPrice/wholesalePrice/costPrice
  *       is appended to the PriceHistory ledger, and a changed stockQuantity is booked as a stock
  *       adjustment - so neither history is ever overwritten.
  *     responses:

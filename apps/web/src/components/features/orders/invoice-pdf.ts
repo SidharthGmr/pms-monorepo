@@ -125,9 +125,8 @@ export async function downloadInvoicePdf(order: AnyOrder, logoUrl?: string) {
 
   const subtotal = Number(order.totalAmount ?? 0);
   const discount = Number(order.discount ?? 0);
-  const tax = Number(order.tax ?? 0);
   // GST already inside tax-inclusive prices: shown on its own row but never added to the total.
-  const taxIncluded = Number(order.taxIncluded ?? 0);
+  const taxIncluded = Number(order.taxIncluded ?? order.tax ?? 0);
   const shipping = Number(order.shippingCost ?? 0);
   const grandTotal = Number(order.grandTotal ?? 0);
   const totalQuantity = items.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
@@ -317,7 +316,6 @@ export async function downloadInvoicePdf(order: AnyOrder, logoUrl?: string) {
   // --- Totals -------------------------------------------------------------
   const rows: { label: string; text: string; negative?: boolean; muted?: boolean }[] = [{ label: 'Subtotal', text: amount(subtotal) }];
   if (discount > 0) rows.push({ label: 'Discount', text: `- ${amount(discount)}`, negative: true });
-  if (tax > 0) rows.push({ label: 'Tax', text: amount(tax) });
   if (taxIncluded > 0) rows.push({ label: 'GST (incl. in price)', text: amount(taxIncluded), muted: true });
   if (shipping > 0) rows.push({ label: 'Shipping & fees', text: amount(shipping) });
 

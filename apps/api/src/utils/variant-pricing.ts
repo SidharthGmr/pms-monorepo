@@ -12,11 +12,13 @@ export interface EffectivePrice {
   effectiveFrom: Date;
   effectiveTo: Date | null;
   sellingPrice: number;
-  /** The promotional amount on this ledger row. Only charged while the variant's `isOffer` is on. */
-  offerPrice: number | null;
+  /** The wholesale amount on this ledger row. Only charged while the variant's `isOffer` is on. */
+  wholesalePrice: number | null;
   costPrice: number | null;
   compareAtPrice: number | null;
-  taxType: TaxType | null;
+  purchaseTaxType: TaxType | null;
+  wholesaleTaxType: TaxType | null;
+  saleTaxType: TaxType | null;
   taxId: string | null;
   discountType: DiscountType | null;
   discountValue: number | null;
@@ -44,10 +46,12 @@ export function toEffectivePrice(row: {
   effectiveFrom: Date;
   effectiveTo: Date | null;
   sellingPrice: Prisma.Decimal;
-  offerPrice: Prisma.Decimal | null;
+  wholesalePrice: Prisma.Decimal | null;
   costPrice: Prisma.Decimal | null;
   compareAtPrice: Prisma.Decimal | null;
-  taxType: TaxType | null;
+  purchaseTaxType: TaxType | null;
+  wholesaleTaxType: TaxType | null;
+  saleTaxType: TaxType | null;
   taxId: string | null;
   discountType: DiscountType | null;
   discountValue: Prisma.Decimal | null;
@@ -56,10 +60,12 @@ export function toEffectivePrice(row: {
     effectiveFrom: row.effectiveFrom,
     effectiveTo: row.effectiveTo,
     sellingPrice: row.sellingPrice.toNumber(),
-    offerPrice: toNumber(row.offerPrice),
+    wholesalePrice: toNumber(row.wholesalePrice),
     costPrice: toNumber(row.costPrice),
     compareAtPrice: toNumber(row.compareAtPrice),
-    taxType: row.taxType,
+    purchaseTaxType: row.purchaseTaxType,
+    wholesaleTaxType: row.wholesaleTaxType,
+    saleTaxType: row.saleTaxType,
     taxId: row.taxId,
     discountType: row.discountType,
     discountValue: toNumber(row.discountValue),
@@ -67,16 +73,16 @@ export function toEffectivePrice(row: {
 }
 
 /**
- * What the customer actually pays. The offer amount lives on the ledger row but the switch
- * lives on the variant, so neither alone decides it: an offer price with the flag off is a
- * staged promotion, and the flag with no offer price falls back to the selling price.
+ * What the customer actually pays. The wholesale amount lives on the ledger row but the switch
+ * lives on the variant, so neither alone decides it: a wholesale price with the flag off is a
+ * staged rate, and the flag with no wholesale price falls back to the selling price.
  *
  * Every money path - cart line, order line - must price through this rather than reading
  * `sellingPrice` directly, or the cart total will disagree with the card.
  */
 export function payablePrice(price: EffectivePrice | null, isOffer: boolean): number | null {
   if (!price) return null;
-  return isOffer && price.offerPrice != null ? price.offerPrice : price.sellingPrice;
+  return isOffer && price.wholesalePrice != null ? price.wholesalePrice : price.sellingPrice;
 }
 
 /**
@@ -95,9 +101,9 @@ export function discountedUnitPrice(
 }
 
 /** The same rule applied to an already-decorated variant, which carries all three fields. */
-export function payableForVariant(variant: { sellingPrice: number | null; offerPrice: number | null; isOffer: boolean }): number | null {
+export function payableForVariant(variant: { sellingPrice: number | null; wholesalePrice: number | null; isOffer: boolean }): number | null {
   if (variant.sellingPrice == null) return null;
-  return variant.isOffer && variant.offerPrice != null ? variant.offerPrice : variant.sellingPrice;
+  return variant.isOffer && variant.wholesalePrice != null ? variant.wholesalePrice : variant.sellingPrice;
 }
 
 /** The price in force for one variant on a date, or null if it has never been priced. */

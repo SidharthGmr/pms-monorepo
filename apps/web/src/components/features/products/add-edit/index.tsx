@@ -49,7 +49,7 @@ const productFormSchema = productFormFields;
 const EMPTY_VARIANT_ROW = {
   attributes: [],
   sellingPrice: undefined as unknown as number,
-  offerPrice: undefined,
+  wholesalePrice: undefined,
   costPrice: undefined,
   stockQuantity: undefined,
   isOffer: false,
@@ -153,7 +153,7 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
               .map((row) => ({ attributeid: row.attributeid as number, attributeValueId: row.attributeValueId as number }))
           : [],
         sellingPrice: variant.sellingPrice ?? (undefined as unknown as number),
-        offerPrice: variant.offerPrice ?? undefined,
+        wholesalePrice: variant.wholesalePrice ?? undefined,
         costPrice: variant.costPrice ?? undefined,
         stockQuantity: variant.stockQuantity ?? undefined,
         isOffer: variant.isOffer ?? false,
@@ -511,7 +511,7 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
                               name={`variants.${index}.isOffer`}
                               render={({ field }) => (
                                 <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
-                                  <FormLabel className="font-medium">Run an offer</FormLabel>
+                                  <FormLabel className="font-medium">Bill at wholesale price</FormLabel>
                                   <FormControl>
                                     <Switch
                                       checked={field.value ?? false}
@@ -520,7 +520,7 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
                                         field.onChange(checked);
                                         // Nothing stale is left hidden behind the toggle.
                                         if (!checked) {
-                                          setValue(`variants.${index}.offerPrice`, undefined);
+                                          setValue(`variants.${index}.wholesalePrice`, undefined);
                                           setValue(`variants.${index}.effectiveFrom`, undefined);
                                           setValue(`variants.${index}.effectiveTo`, null);
                                         }
@@ -535,10 +535,10 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
                               <div className="grid grid-cols-1 gap-3 border-t p-3 sm:grid-cols-3">
                                 <FormField
                                   control={form.control}
-                                  name={`variants.${index}.offerPrice`}
+                                  name={`variants.${index}.wholesalePrice`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Offer price *</FormLabel>
+                                      <FormLabel>Wholesale price *</FormLabel>
                                       <FormControl>
                                         <PriceInput value={field.value ?? null} onChange={field.onChange} />
                                       </FormControl>

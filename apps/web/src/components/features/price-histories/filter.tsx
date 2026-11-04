@@ -119,7 +119,7 @@ export default function PriceHistoryFilter({ value, onChange, onReset, view, onV
             items={productItems}
             valueType="number"
             onChange={(next) => onChange({ productId: next === '' || next === undefined ? undefined : +next, variantId: undefined })}
-            buttonClass="sm:w-44"
+
             containerName="price-history-product-filter"
           />
           <SelectSearch
@@ -128,7 +128,7 @@ export default function PriceHistoryFilter({ value, onChange, onReset, view, onV
             items={variantItems}
             valueType="number"
             onChange={(next) => onChange({ variantId: next === '' || next === undefined ? undefined : +next })}
-            buttonClass="sm:w-40"
+
             containerName="price-history-variant-filter"
           />
           <DateRangePicker
@@ -150,7 +150,7 @@ export default function PriceHistoryFilter({ value, onChange, onReset, view, onV
             onChange={(next) =>
               onChange({ changeDirection: next === '' || next === undefined ? undefined : (String(next) as 'increase' | 'decrease') })
             }
-            buttonClass="sm:w-36"
+
             containerName="price-history-direction-filter"
           />
         </>

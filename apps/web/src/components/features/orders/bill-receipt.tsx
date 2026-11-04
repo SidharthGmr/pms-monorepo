@@ -143,7 +143,7 @@ const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(({ order 
             <div className="space-y-2.5 rounded-lg border border-slate-200 px-5 py-4 text-sm">
               <Row label="Subtotal" value={money(subtotal)} />
               {discount > 0 && <Row label="Discount" value={`- ${money(discount)}`} negative />}
-              {tax > 0 && <Row label="Tax" value={money(tax)} />}
+              {tax > 0 && <Row label="GST (incl. in price)" value={money(tax)} />}
               {shipping > 0 && <Row label="Shipping &amp; fees" value={money(shipping)} />}
             </div>
             <div className="mt-2 flex items-center justify-between rounded-lg bg-slate-900 px-5 py-3.5 text-white">

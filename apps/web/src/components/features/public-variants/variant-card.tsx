@@ -42,10 +42,10 @@ export default function VariantCard({ variant }: VariantCardProps) {
   const lowStock = !soldOut && stock <= (variant.lowStockThreshold || 5);
 
   // Mirrors the API's `payablePrice`: the offer amount only counts while the flag is on, so a
-  // staged offerPrice with isOffer off still shows - and charges - the list price.
-  const onOffer = variant.isOffer === true && variant.offerPrice != null && variant.sellingPrice != null;
-  const payable = onOffer ? (variant.offerPrice as number) : variant.sellingPrice;
-  const discountPercent = onOffer ? Math.round((1 - (variant.offerPrice as number) / (variant.sellingPrice as number)) * 100) : 0;
+  // staged wholesalePrice with isOffer off still shows - and charges - the list price.
+  const onOffer = variant.isOffer === true && variant.wholesalePrice != null && variant.sellingPrice != null;
+  const payable = onOffer ? (variant.wholesalePrice as number) : variant.sellingPrice;
+  const discountPercent = onOffer ? Math.round((1 - (variant.wholesalePrice as number) / (variant.sellingPrice as number)) * 100) : 0;
   const attributes = attributesOf(variant);
   const image = imageFor(variant);
   const title = variant.product?.name ?? variant.sku ?? 'Product';

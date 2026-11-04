@@ -75,7 +75,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
     defaultValues: {
       variantId: defaultVariantId ?? 0,
       sellingPrice: 0,
-      offerPrice: null,
+      wholesalePrice: null,
       isOffer: false,
       costPrice: null,
       effectiveFrom: null,
@@ -101,7 +101,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
       form.reset({
         variantId: existing.variantId,
         sellingPrice: existing.sellingPrice,
-        offerPrice: existing.offerPrice,
+        wholesalePrice: existing.wholesalePrice,
         isOffer: existing.isOffer,
         costPrice: existing.costPrice,
         effectiveFrom: toDateValue(existing.effectiveFrom) ?? null,
@@ -122,7 +122,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
       form.reset({
         variantId: currentLedgerRow?.variantId ?? selectedVariant!.id,
         sellingPrice: currentLedgerRow?.sellingPrice ?? selectedVariant?.sellingPrice ?? 0,
-        offerPrice: currentLedgerRow?.offerPrice ?? selectedVariant?.offerPrice ?? null,
+        wholesalePrice: currentLedgerRow?.wholesalePrice ?? selectedVariant?.wholesalePrice ?? null,
         isOffer: currentLedgerRow?.isOffer ?? selectedVariant?.isOffer ?? false,
         costPrice: currentLedgerRow?.costPrice ?? selectedVariant?.costPrice ?? null,
         // A new row opens its own period: the dates start blank rather than inheriting
@@ -137,7 +137,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
 
   const sellingPrice = form.watch('sellingPrice');
   const costPrice = form.watch('costPrice');
-  const offerPrice = form.watch('offerPrice');
+  const wholesalePrice = form.watch('wholesalePrice');
   const isOffer = form.watch('isOffer');
   const effectiveFrom = form.watch('effectiveFrom');
   const effectiveTo = form.watch('effectiveTo');
@@ -151,7 +151,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
   const variantSku = isEdit ? existing?.variant?.sku : selectedVariant?.sku;
   const asDate = (value?: Date | string | null) => (value ? unitOfService.DateTimeService.convertToLocalDate(value, true) : null);
   const offerSummary = [
-    isOffer && offerPrice != null ? `Offer ${formatPrice(Number(offerPrice))}` : 'No offer',
+    isOffer && wholesalePrice != null ? `Wholesale ${formatPrice(Number(wholesalePrice))}` : 'No wholesale price',
     effectiveFrom ? `from ${asDate(effectiveFrom)}` : 'live now',
     effectiveTo ? `to ${asDate(effectiveTo)}` : null,
   ]
@@ -159,7 +159,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
     .join(' · ');
   // What the customer is actually charged while this row is in force - the offer when there
   // is one, otherwise the selling price. That is also what the margin has to be read against.
-  const payablePrice = (isOffer ? toPriceValue(offerPrice as number | '' | null | undefined) : null) ?? Number(sellingPrice);
+  const payablePrice = (isOffer ? toPriceValue(wholesalePrice as number | '' | null | undefined) : null) ?? Number(sellingPrice);
   const margin = marginPercent(payablePrice, toPriceValue(costPrice as number | '' | null | undefined));
   // The ledger is the authority on the price in force; the variant row covers the moment the
   // ledger for a freshly picked variant is still loading. The id check keeps a stale cached
@@ -173,7 +173,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
   const submitData = async (model: CreatePriceHistoryModel) => {
     const payload = {
       ...model,
-      offerPrice: toPriceValue(model.offerPrice as number | '' | null | undefined),
+      wholesalePrice: toPriceValue(model.wholesalePrice as number | '' | null | undefined),
       isOffer: model.isOffer ?? false,
       costPrice: toPriceValue(model.costPrice as number | '' | null | undefined),
       reason: model.reason?.trim() ? model.reason.trim() : null,
@@ -188,7 +188,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
           // variantId is not part of the update contract - a row cannot change variant.
           model: {
             sellingPrice: payload.sellingPrice,
-            offerPrice: payload.offerPrice,
+            wholesalePrice: payload.wholesalePrice,
             isOffer: payload.isOffer,
             costPrice: payload.costPrice,
             effectiveFrom: payload.effectiveFrom,
@@ -209,7 +209,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
 
   // A message inside a collapsed section would never be read, so a failed submit opens it.
   const openSectionWithErrors = (errors: FieldErrors<CreatePriceHistoryModel>) => {
-    if (errors.offerPrice || errors.isOffer || errors.effectiveFrom || errors.effectiveTo) setOfferOpen(true);
+    if (errors.wholesalePrice || errors.isOffer || errors.effectiveFrom || errors.effectiveTo) setOfferOpen(true);
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
@@ -269,7 +269,7 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
               </div>
 
               <OptionalSection
-                title="Offer & schedule"
+                title="Wholesale & schedule"
                 summary={offerSummary}
                 open={offerOpen}
                 onOpenChange={setOfferOpen}
@@ -281,17 +281,17 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between gap-4 space-y-0 rounded-lg border p-3">
                       <div>
-                        <FormLabel className="font-medium">Run an offer on this price</FormLabel>
-                        <FormDescription className="text-[11px]">The offer price is charged while this row is in force.</FormDescription>
+                        <FormLabel className="font-medium">Bill at wholesale price</FormLabel>
+                        <FormDescription className="text-[11px]">The wholesale price is charged while this row is in force.</FormDescription>
                       </div>
                       <FormControl>
                         <Switch
                           checked={field.value ?? false}
-                          aria-label="Run an offer on this price"
+                          aria-label="Bill at wholesale price"
                           onCheckedChange={(checked) => {
                             field.onChange(checked);
                             // Nothing stale is left hidden behind the toggle.
-                            if (!checked) form.setValue('offerPrice', null, { shouldValidate: true });
+                            if (!checked) form.setValue('wholesalePrice', null, { shouldValidate: true });
                           }}
                         />
                       </FormControl>
@@ -302,10 +302,10 @@ export default function ManagePriceHistory({ id, defaultProductId, defaultVarian
                 {isOffer && (
                   <FormField
                     control={form.control}
-                    name="offerPrice"
+                    name="wholesalePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Offer Price *</FormLabel>
+                        <FormLabel>Wholesale Price *</FormLabel>
                         <FormControl>
                           <CurrencyInput
                             placeholder="899.99"

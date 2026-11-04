@@ -51,6 +51,7 @@ export class OrderService implements IOrderService {
 
       const orderItemsToCreate: { productId: number; variantId: number; quantity: number; unitPrice: number; totalPrice: number }[] = [];
       let calculatedTotalAmount = 0;
+      let includedTax = 0;
 
       if (items.length > 0) {
         // Serialise competing sales of the same variants: without this row lock two
@@ -72,6 +73,12 @@ export class OrderService implements IOrderService {
 
         const variantById = new Map(variants.map((variant) => [variant.id, variant] as const));
         const stockByVariant = new Map(stockRows.map((row) => [row.variantId as number, row._sum.quantity ?? 0] as const));
+
+        // Sale prices are tax-inclusive, so the order's tax is the GST portion already inside
+        // the line totals - recorded for the invoice, never added on top of the total.
+        const taxIds = [...new Set([...prices.values()].map((row) => row.taxId).filter((id): id is string => id != null))];
+        const taxRows = taxIds.length > 0 ? await transactionClient.tax.findMany({ where: { id: { in: taxIds } }, select: { id: true, rate: true } }) : [];
+        const taxRateById = new Map(taxRows.map((row) => [row.id, row.rate.toNumber()] as const));
 
         // Two lines for the same variant compete for the same stock, so the check is on the summed request.
         const requestedByVariant = new Map<number, number>();
@@ -104,10 +111,12 @@ export class OrderService implements IOrderService {
               effectiveFrom: new Date(priceRow.effectiveFrom),
               effectiveTo: priceRow.effectiveTo != null ? new Date(priceRow.effectiveTo) : null,
               sellingPrice: priceRow.sellingPrice,
-              offerPrice: priceRow.offerPrice,
+              wholesalePrice: priceRow.wholesalePrice,
               costPrice: priceRow.costPrice,
               compareAtPrice: priceRow.compareAtPrice,
-              taxType: priceRow.taxType,
+              purchaseTaxType: priceRow.purchaseTaxType,
+              wholesaleTaxType: priceRow.wholesaleTaxType,
+              saleTaxType: priceRow.saleTaxType,
               taxId: priceRow.taxId,
               discountType: priceRow.discountType,
               discountValue: priceRow.discountValue,
@@ -118,15 +127,20 @@ export class OrderService implements IOrderService {
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 
+          if (priceRow.saleTaxType === 'WithTax' && priceRow.taxId) {
+            const rate = taxRateById.get(priceRow.taxId) ?? 0;
+            if (rate > 0) includedTax += (totalPrice * rate) / (100 + rate);
+          }
+
           orderItemsToCreate.push({ productId: variant.productId, variantId: item.variantId, quantity: item.quantity, unitPrice, totalPrice });
         }
       }
 
       const orderNumber = generateOrderNumber();
       const discount = data.discount || 0;
-      const tax = data.tax || 0;
+      const tax = Math.round(includedTax * 100) / 100;
       const shippingCost = data.shippingCost || 0;
-      const grandTotal = calculatedTotalAmount + tax + shippingCost - discount;
+      const grandTotal = calculatedTotalAmount + shippingCost - discount;
       if (grandTotal < 0) {
         throw new ClientError('The discount cannot be larger than the order total.');
       }

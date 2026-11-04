@@ -90,8 +90,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
       stockQuantity: undefined,
       sellingPrice: undefined,
       costPrice: undefined,
-      offerPrice: undefined,
-      taxType: null,
+      wholesalePrice: undefined,
+      purchaseTaxType: null,
+      wholesaleTaxType: null,
+      saleTaxType: null,
       taxId: null,
       discountType: null,
       discountValue: null,
@@ -105,7 +107,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const { isDirty } = form.formState;
   const isOffer = form.watch('isOffer');
   const effectiveTo = form.watch('effectiveTo');
-  const taxType = form.watch('taxType');
+  const purchaseTaxType = form.watch('purchaseTaxType');
+  const wholesaleTaxType = form.watch('wholesaleTaxType');
+  const saleTaxType = form.watch('saleTaxType');
+  const anyWithTax = [purchaseTaxType, wholesaleTaxType, saleTaxType].includes(TaxTypeEnum.WithTax);
   const discountType = form.watch('discountType');
 
   useEffect(() => {
@@ -125,8 +130,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
       stockQuantity: variant.stockQuantity ?? undefined,
       sellingPrice: variant.sellingPrice ?? undefined,
       costPrice: variant.costPrice ?? undefined,
-      offerPrice: variant.offerPrice ?? undefined,
-      taxType: variant.taxType ?? null,
+      wholesalePrice: variant.wholesalePrice ?? undefined,
+      purchaseTaxType: variant.purchaseTaxType ?? null,
+      wholesaleTaxType: variant.wholesaleTaxType ?? null,
+      saleTaxType: variant.saleTaxType ?? null,
       taxId: variant.taxId ?? null,
       discountType: variant.discountType ?? null,
       discountValue: variant.discountValue ?? null,
@@ -268,34 +275,43 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="taxType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Type</FormLabel>
-                    <FormControl>
-                      <SelectSearch
-                        buttonClass="w-full"
-                        placeholder="Select Tax Type"
-                        containerName="variant-tax-type"
-                        disableSearch
-                        items={TaxTypeData}
-                        value={field.value ?? ''}
-                        onChange={(value) => {
-                          const next = value ? (value as TaxType) : null;
-                          field.onChange(next);
-                          // A tax only makes sense on a tax-inclusive price.
-                          if (next !== TaxTypeEnum.WithTax) form.setValue('taxId', null);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* One tax rate serves all three prices; each price only carries its own With/Without tax mode. */}
+              {(
+                [
+                  { name: 'purchaseTaxType', label: 'Purchase tax type' },
+                  { name: 'wholesaleTaxType', label: 'Wholesale tax type' },
+                  { name: 'saleTaxType', label: 'Sale tax type' },
+                ] as const
+              ).map((taxField) => (
+                <FormField
+                  key={taxField.name}
+                  control={form.control}
+                  name={taxField.name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{taxField.label}</FormLabel>
+                      <FormControl>
+                        <SelectSearch
+                          buttonClass="w-full"
+                          placeholder="Select Tax Type"
+                          containerName={`variant-${taxField.name}`}
+                          disableSearch
+                          items={TaxTypeData}
+                          value={field.value ?? ''}
+                          onChange={(value) => {
+                            field.onChange(value ? (value as TaxType) : null);
+                            const next = { purchaseTaxType, wholesaleTaxType, saleTaxType, [taxField.name]: value || null };
+                            if (!Object.values(next).includes(TaxTypeEnum.WithTax)) form.setValue('taxId', null);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
 
-              {taxType === TaxTypeEnum.WithTax && (
+              {anyWithTax && (
                 <FormField
                   control={form.control}
                   name="taxId"
@@ -373,16 +389,16 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 name="isOffer"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between gap-4 space-y-0 p-3">
-                    <FormLabel className="font-medium">Run an offer</FormLabel>
+                    <FormLabel className="font-medium">Bill at wholesale price</FormLabel>
                     <FormControl>
                       <Switch
                         checked={field.value ?? false}
-                        aria-label="Run an offer"
+                        aria-label="Bill at wholesale price"
                         onCheckedChange={(checked) => {
                           field.onChange(checked);
                           // Nothing stale is left hidden behind the toggle.
                           if (!checked) {
-                            form.setValue('offerPrice', undefined);
+                            form.setValue('wholesalePrice', undefined);
                             form.setValue('effectiveFrom', undefined);
                             form.setValue('effectiveTo', null);
                           }
@@ -397,10 +413,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 <div className="grid grid-cols-1 gap-4 border-t p-3 sm:grid-cols-3">
                   <FormField
                     control={form.control}
-                    name="offerPrice"
+                    name="wholesalePrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Offer price *</FormLabel>
+                        <FormLabel>Wholesale price *</FormLabel>
                         <FormControl>
                           <CurrencyInput value={field.value ?? ''} onChange={(value) => field.onChange(value === '' ? undefined : value)} />
                         </FormControl>

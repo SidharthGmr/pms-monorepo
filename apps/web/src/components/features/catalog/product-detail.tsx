@@ -143,7 +143,7 @@ function BuyBox({ product }: { product: CatalogProductDto }) {
           {price != null ? formatCurrency(price) : 'Price on request'}
         </span>
         {showCompareAt != null && <span className="text-base tabular-nums text-muted-foreground line-through">{formatCurrency(showCompareAt)}</span>}
-        {selected?.isOffer && selected.offerPrice != null && (
+        {selected?.isOffer && selected.wholesalePrice != null && (
           <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Offer</span>
         )}
       </div>

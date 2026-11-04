@@ -22,9 +22,9 @@ export interface CatalogVariantDto {
   stock: number;
   inStock: boolean;
   sellingPrice: number | null;
-  offerPrice: number | null;
+  wholesalePrice: number | null;
   compareAtPrice: number | null;
-  /** What the customer pays now: the offer price while `isOffer` is on, else the selling price. */
+  /** What the customer pays now: the wholesale price while `isOffer` is on, else the selling price. */
   payablePrice: number | null;
   attributes: CatalogVariantAttributeDto[];
 }

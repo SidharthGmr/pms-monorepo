@@ -11,7 +11,7 @@ export interface ProductVariantInlineModel {
   id?: number;
   attributes?: { attributeid: number; attributeValueId: number }[];
   sellingPrice: number;
-  offerPrice?: number | null;
+  wholesalePrice?: number | null;
   costPrice?: number | null;
   compareAtPrice?: number | null;
   stockQuantity?: number | null;
