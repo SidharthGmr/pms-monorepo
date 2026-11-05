@@ -70,9 +70,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: `File exceeds ${BLOB_MAX_SIZE_MB}MB` }, { status: 400 });
     }
 
-    const userFolder = `uploads/user_${userId}`;
+    // Files land FLAT under assets/ so the database can keep just the file name and the
+    // URL is rebuilt from NEXT_PUBLIC_MEDIA_BASE_URL. The timestamp keeps names unique.
+    // A caller-supplied folder (kept for the future) nests under assets/ when present.
     const subFolder = sanitizeFolder(formData.get('folder'));
-    const pathname = `${subFolder ? `${userFolder}/${subFolder}` : userFolder}/${Date.now()}-${sanitizeFileName(file.name)}`;
+    const name = `${Date.now()}-${sanitizeFileName(file.name)}`;
+    const pathname = `assets/${subFolder ? `${subFolder}/` : ''}${name}`;
 
     const blob = await put(pathname, file, {
       access: 'private',
@@ -87,6 +90,8 @@ export async function POST(req: NextRequest) {
         // The store is private, so the usable URL is this app's authenticated serving route.
         url: `/api/blob/view/${blob.pathname}`,
         pathname: blob.pathname,
+        // What forms persist: the bare file name, prefixed back at read time.
+        name,
         contentType: file.type || undefined,
         size: file.size,
         uploadedAt: new Date().toISOString(),

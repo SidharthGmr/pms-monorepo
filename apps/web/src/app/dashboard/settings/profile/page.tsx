@@ -1,6 +1,6 @@
 'use client';
 
-import { ProfileImageUploader } from '@/components/common/admin-media/profile-image-uploader';
+import { FileUpload } from '@/components/common/file-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -205,10 +205,13 @@ export default function ProfilePage() {
                     <FormItem className="md:col-span-2">
                       <FormLabel>Profile Image</FormLabel>
                       <FormControl>
-                        <ProfileImageUploader
+                        <FileUpload
+                          shape="avatar"
+                          cameraFacing="user"
                           value={field.value || ''}
                           onChange={field.onChange}
-                          folder="profile"
+                          label="profile photo"
+                          className="mx-auto"
                         />
                       </FormControl>
                       <FormMessage />

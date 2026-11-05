@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Upload, File, Video, Copy, Check, Trash2, ExternalLink, RefreshCw, FolderOpen, User, Search } from 'lucide-react';
+import { Upload, File, Video, Copy, Check, Trash2, ExternalLink, RefreshCw, FolderOpen, User, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import CameraCaptureButton from '@/components/common/admin-media/camera-capture';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { useDeleteMedia, useGetAllMedia, useBlobUpload } from '@/hooks/service-hooks/useMediaService';
 import { PageHeader } from '../page-header';
@@ -37,6 +38,12 @@ export default function AdminMediaDashboard() {
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFolderFilter, setSelectedFolderFilter] = useState('all');
+
+  // Multi-select + pagination. The list endpoint returns everything, so paging is client-side.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   const mediaQuery = useGetAllMedia(!!session);
   const deleteMedia = useDeleteMedia({ silent: true });
@@ -120,10 +127,53 @@ export default function AdminMediaDashboard() {
     try {
       await deleteMedia.mutateAsync(pathname);
       setFiles((prev) => prev.filter((f) => f.pathname !== pathname));
+      setSelected((prev) => {
+        if (!prev.has(pathname)) return prev;
+        const next = new Set(prev);
+        next.delete(pathname);
+        return next;
+      });
       toast.success('File deleted successfully');
     } catch (error) {
       toast.error((error as Error)?.message || 'Error deleting file');
     }
+  };
+
+  const toggleSelected = (pathname: string, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(pathname);
+      else next.delete(pathname);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const pathnames = Array.from(selected);
+    if (pathnames.length === 0) return;
+    if (!confirm(`Delete ${pathnames.length} file${pathnames.length === 1 ? '' : 's'} permanently? This cannot be undone.`)) return;
+
+    setIsBulkDeleting(true);
+    const failed: string[] = [];
+    // Sequential on purpose: the delete route is per-file and hammering it in parallel trips rate limits.
+    for (const pathname of pathnames) {
+      try {
+        await deleteMedia.mutateAsync(pathname);
+        setFiles((prev) => prev.filter((f) => f.pathname !== pathname));
+        setSelected((prev) => {
+          const next = new Set(prev);
+          next.delete(pathname);
+          return next;
+        });
+      } catch {
+        failed.push(pathname);
+      }
+    }
+    setIsBulkDeleting(false);
+
+    const deleted = pathnames.length - failed.length;
+    if (deleted > 0) toast.success(`Deleted ${deleted} file${deleted === 1 ? '' : 's'}`);
+    if (failed.length > 0) toast.error(`${failed.length} file${failed.length === 1 ? '' : 's'} could not be deleted`);
   };
 
   const copyToClipboard = async (url: string, id: string) => {
@@ -173,6 +223,24 @@ export default function AdminMediaDashboard() {
     return matchesSearch && fileFolder === selectedFolderFilter;
   });
 
+  // Pagination over the filtered list; changing the search/filter jumps back to page 1.
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedFolderFilter, perPage]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredFiles.length / perPage));
+  const currentPage = Math.min(page, pageCount);
+  const pagedFiles = useMemo(() => filteredFiles.slice((currentPage - 1) * perPage, currentPage * perPage), [filteredFiles, currentPage, perPage]);
+
+  const allOnPageSelected = pagedFiles.length > 0 && pagedFiles.every((file) => selected.has(file.pathname));
+  const toggleAllOnPage = (checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      pagedFiles.forEach((file) => (checked ? next.add(file.pathname) : next.delete(file.pathname)));
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Gallery Section */}
@@ -213,11 +281,18 @@ export default function AdminMediaDashboard() {
                   <option value="all">All Folders</option>
                   {uniqueFolders.map((folder) => (
                     <option key={folder} value={folder}>
-                      {folder.replace('uploads/', '')}
+                      {folder.replace(/^(assets|uploads)\//, '')}
                     </option>
                   ))}
                 </select>
               </div>
+            )}
+
+            {selected.size > 0 && (
+              <Button type="button" variant="destructive" className="h-9 gap-1.5" disabled={isBulkDeleting} onClick={() => void handleBulkDelete()}>
+                {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {isBulkDeleting ? 'Deleting…' : `Delete selected (${selected.size})`}
+              </Button>
             )}
 
             <Button type="button" className="h-9 gap-1.5" onClick={() => setUploadOpen(true)}>
@@ -249,6 +324,13 @@ export default function AdminMediaDashboard() {
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40 font-medium text-muted-foreground">
+                    <th className="w-[44px] p-4">
+                      <Checkbox
+                        checked={allOnPageSelected}
+                        onCheckedChange={(checked) => toggleAllOnPage(checked === true)}
+                        aria-label="Select all files on this page"
+                      />
+                    </th>
                     <th className="p-4 w-[80px]">Thumbnail</th>
                     <th className="p-4 min-w-[200px]">File Name</th>
                     <th className="p-4">Owner/Folder</th>
@@ -258,14 +340,23 @@ export default function AdminMediaDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredFiles.map((file) => {
+                  {pagedFiles.map((file) => {
                     const fileName = file.pathname.split('/').pop() || file.pathname;
                     const folderOwner = getFolderOwner(file.pathname);
                     const isImage = IMAGE_EXT.test(file.pathname);
                     const isVideo = VIDEO_EXT.test(file.pathname);
 
                     return (
-                      <tr key={file.pathname} className="hover:bg-muted/20 transition-colors group">
+                      <tr key={file.pathname} className={`transition-colors group hover:bg-muted/20 ${selected.has(file.pathname) ? 'bg-primary/5' : ''}`}>
+                        {/* Select */}
+                        <td className="p-4">
+                          <Checkbox
+                            checked={selected.has(file.pathname)}
+                            onCheckedChange={(checked) => toggleSelected(file.pathname, checked === true)}
+                            aria-label={`Select ${fileName}`}
+                          />
+                        </td>
+
                         {/* Thumbnail */}
                         <td className="p-4">
                           <div className="relative h-12 w-12 rounded border overflow-hidden bg-muted/40 flex items-center justify-center">
@@ -351,6 +442,59 @@ export default function AdminMediaDashboard() {
                   })}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 px-4 py-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Rows per page</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => setPerPage(Number(e.target.value))}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {[10, 25, 50].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {filteredFiles.length === 0
+                      ? '0 of 0'
+                      : `${(currentPage - 1) * perPage + 1}–${Math.min(currentPage * perPage, filteredFiles.length)} of ${filteredFiles.length}`}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={currentPage <= 1}
+                      onClick={() => setPage(currentPage - 1)}
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-[70px] text-center text-sm tabular-nums text-muted-foreground">
+                      Page {currentPage} / {pageCount}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={currentPage >= pageCount}
+                      onClick={() => setPage(currentPage + 1)}
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

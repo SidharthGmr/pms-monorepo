@@ -1,6 +1,7 @@
 'use client';
 
-import { ProfileImageUploader } from '@/components/common/admin-media/profile-image-uploader';
+import { FileUpload } from '@/components/common/file-upload';
+import ProfileSkeleton from '@/components/skelton/profile-skeleton';
 import { SelectSearch } from '@/components/common/select-search';
 import { COUNTRIES, districtItemsFor, INDIAN_STATES } from '@/data/location.data';
 import DateTimePicker from '@/components/common/data-time-picker/date-time-picker';
@@ -32,7 +33,6 @@ import {
   FileText,
   Globe,
   Hash,
-  Loader2,
   Mail,
   Map,
   MapPin,
@@ -198,15 +198,10 @@ export default function AdminProfilePage() {
     }
   };
 
-  if (status === 'loading' || !isAuthenticated) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm font-medium text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    );
+  // Skeleton until both the session and the profile record are in, so the form never
+  // flashes empty fields before reset() fills them.
+  if (status === 'loading' || !isAuthenticated || isUserLoading) {
+    return <ProfileSkeleton />;
   }
 
   const values = form.watch();
@@ -264,12 +259,12 @@ export default function AdminProfilePage() {
                       <FormItem className="m-0">
                         <FormControl>
                           <div className="rounded-full bg-card p-1.5 shadow-md ring-1 ring-border">
-                            <ProfileImageUploader
+                            <FileUpload
+                              shape="avatar"
+                              cameraFacing="user"
                               value={field.value || ''}
                               onChange={field.onChange}
-                              showUrlInput={false}
-                              folder="profile"
-                              className="w-auto max-w-none gap-0"
+                              label="profile photo"
                             />
                           </div>
                         </FormControl>

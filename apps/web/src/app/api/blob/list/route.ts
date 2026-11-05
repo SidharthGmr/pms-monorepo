@@ -15,12 +15,16 @@ export async function GET() {
     const user = session.user as any;
     const userId = user.id ?? user.userId;
 
-    // Super admin sees every user's folder; a regular admin only their own - the same
-    // namespacing the upload route writes to.
+    // New uploads land flat under assets/ and are shared between admins; legacy files still
+    // sit under uploads/ in per-user folders, which only their owner (or the super admin) sees.
     const isSuperAdmin = user.role === Roles.SUPER_ADMIN;
-    const prefix = isSuperAdmin ? 'uploads/' : `uploads/user_${userId}/`;
+    const ownLegacyPrefix = `uploads/user_${userId}/`;
 
-    const { blobs } = await list({ prefix, limit: 500 });
+    const [assetsResult, legacyResult] = await Promise.all([list({ prefix: 'assets/', limit: 500 }), list({ prefix: 'uploads/', limit: 500 })]);
+    const allBlobs = [...assetsResult.blobs, ...legacyResult.blobs];
+    const blobs = isSuperAdmin
+      ? allBlobs
+      : allBlobs.filter((blob) => !blob.pathname.startsWith('uploads/user_') || blob.pathname.startsWith(ownLegacyPrefix));
 
     return NextResponse.json({
       success: true,
@@ -33,7 +37,7 @@ export async function GET() {
           size: blob.size,
           uploadedAt: blob.uploadedAt,
         })),
-      userFolder: prefix,
+      userFolder: 'assets/',
       isSuperAdmin,
     });
   } catch (error: any) {

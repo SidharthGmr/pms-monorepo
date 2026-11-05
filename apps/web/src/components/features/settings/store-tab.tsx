@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 import { zodResolver } from '@/lib/zod-resolver';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 import { myStoreFields, UpdateMyStoreModel } from '@pms/types';
-import { AlertCircle, ImageOff, Save, Store as StoreIcon, Trash2, UploadCloud } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { AlertCircle, Save, Store as StoreIcon } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { FileUpload } from '@/components/common/file-upload';
 
 const SURFACE = 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm';
 
@@ -30,7 +31,9 @@ export default function StoreTab() {
 
   const updateMyStore = useUpdateMyStore();
   const uploadLogo = useUploadStoreLogo();
-  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  // The logo goes through its own public branding route, not the default private blob store.
+  const uploadStoreLogo = async (file: File) => (await uploadLogo.mutateAsync({ file })).url;
 
   const form = useForm<UpdateMyStoreModel>({
     resolver: zodResolver(myStoreFields),
@@ -48,19 +51,6 @@ export default function StoreTab() {
       });
     }
   }, [store, form]);
-
-  const handleLogoFile = async (file: File | undefined) => {
-    if (!file || uploadLogo.isPending) return;
-    try {
-      const uploaded = await uploadLogo.mutateAsync({ file });
-      form.setValue('storeLogo', uploaded.url, { shouldDirty: true });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Upload failed', description: (error as Error)?.message || 'The logo could not be uploaded.' });
-    } finally {
-      // Reset so picking the SAME file again still fires onChange.
-      if (logoInputRef.current) logoInputRef.current.value = '';
-    }
-  };
 
   const submitData = async (model: UpdateMyStoreModel) => {
     const response = await updateMyStore.mutateAsync(model);
@@ -177,46 +167,14 @@ export default function StoreTab() {
                   <FormItem>
                     <FormLabel>Store Logo</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-                          {field.value ? (
-                            // Blob URLs are not in next.config's remotePatterns, so a plain <img> is correct here.
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={field.value} alt="Store logo" className="max-h-full max-w-full object-contain" />
-                          ) : (
-                            <ImageOff className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </span>
-                        <input
-                          ref={logoInputRef}
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                          className="hidden"
-                          onChange={(event) => handleLogoFile(event.target.files?.[0])}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          icon={UploadCloud}
-                          iconPlacement="left"
-                          loading={uploadLogo.isPending}
-                          onClick={() => logoInputRef.current?.click()}
-                        >
-                          {field.value ? 'Replace' : 'Upload'}
-                        </Button>
-                        {field.value && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            aria-label="Remove logo"
-                            onClick={() => form.setValue('storeLogo', '', { shouldDirty: true })}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      <FileUpload
+                        value={field.value ?? ''}
+                        onChange={(url) => form.setValue('storeLogo', url, { shouldDirty: true })}
+                        label="store logo"
+                        hint="PNG, JPG, WEBP or SVG · up to 2MB. Shown on invoices and emails."
+                        maxSizeMb={2}
+                        uploadOverride={uploadStoreLogo}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -41,9 +41,6 @@ export const useProductVariantColumns = (onEdit?: (variant: ProductVariantListIt
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40">
                 {image ? (
-                  // Variant images come from arbitrary CDNs; next/image would need each host in
-                  // `next.config.mjs` remotePatterns, so a plain <img> keeps unknown hosts working.
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={image} alt={variant.name ?? variant.sku} className="h-full w-full object-cover" />
                 ) : (
                   <ImageOff className="h-4 w-4 text-muted-foreground/40" />

@@ -22,9 +22,9 @@ export async function GET(_req: NextRequest, { params }: { params: { path: strin
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only the namespace the upload route writes to is servable - anything else 404s so the
-    // route cannot be used to probe the rest of the store.
-    if (!pathname.startsWith('uploads/')) {
+    // Only the namespaces the upload route writes to are servable - anything else 404s so the
+    // route cannot be used to probe the rest of the store. uploads/ is the legacy prefix.
+    if (!pathname.startsWith('assets/') && !pathname.startsWith('uploads/')) {
       return NextResponse.json({ success: false, message: 'File not found' }, { status: 404 });
     }
   }

@@ -15,6 +15,9 @@ const config = {
   // deployment keeps its CDN after the rename. Empty falls back to /public.
   cdnUrl: (process.env.NEXT_PUBLIC_CDN_BASE_URL || process.env.NEXT_PUBLIC_CDN_MAIN_DOMAIN_URL || '').replace(/\/$/, ''),
   apiBaseUrl: (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, ''),
+  // Where uploaded media is served from. The database keeps only the bare file name;
+  // this prefix turns it back into a fetchable URL (see lib/media-url.ts).
+  mediaBaseUrl: (process.env.NEXT_PUBLIC_MEDIA_BASE_URL || '/api/blob/view/assets/').replace(/\/?$/, '/'),
   clientId: process.env.NEXT_PUBLIC_API_CLIENT_ID || '',
   recordPerPage: Number(process.env.NEXT_PUBLIC_DEFAULT_RECORD_PER_PAGE) || 25,
   environment: process.env.NODE_ENV || 'development',

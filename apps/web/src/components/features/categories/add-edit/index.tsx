@@ -1,5 +1,5 @@
 'use client';
-import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
+import { FileUpload } from '@/components/common/file-upload';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import CharCounter from '@/components/common/char-counter';
 import ConfirmBox from '@/components/common/confirm-box';
@@ -261,11 +261,10 @@ export default function ManageCategory({ id, isOpen, mode = 'edit', parentName, 
                             <FormItem>
                               <FormLabel>Image</FormLabel>
                               <FormControl>
-                                <SingleImageUpload
+                                <FileUpload
                                   value={field.value?.[0] ?? ''}
                                   onChange={(path) => field.onChange(path ? [path] : [])}
-                                  folder="categories"
-                                  alt="Category image"
+                                  label="category image"
                                 />
                               </FormControl>
                               <FormMessage />

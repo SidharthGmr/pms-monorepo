@@ -6,6 +6,8 @@
 export interface BlobFileDto {
   url: string;
   pathname: string;
+  /** Bare file name, the value forms persist; the URL is rebuilt from it at read time. */
+  name?: string;
   contentType?: string;
   size?: number;
   /** ISO timestamp (Dates are serialized on the wire). */

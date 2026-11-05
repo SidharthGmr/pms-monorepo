@@ -16,14 +16,15 @@ export async function DELETE(req: NextRequest) {
     const userId = user.id ?? user.userId;
 
     const { pathname } = await req.json();
-    if (!pathname || typeof pathname !== 'string' || !pathname.startsWith('uploads/')) {
+    if (!pathname || typeof pathname !== 'string' || (!pathname.startsWith('assets/') && !pathname.startsWith('uploads/'))) {
       return NextResponse.json({ success: false, message: 'pathname is required' }, { status: 400 });
     }
 
-    // A regular admin can only delete files inside their own prefix; the super admin can
-    // delete anything under uploads/ - the same rule the list route scopes by.
+    // Flat assets are shared between admins; legacy per-user folders (uploads/user_*) stay
+    // deletable only by their owner. The super admin can delete anything - same as the list route.
     const isSuperAdmin = user.role === Roles.SUPER_ADMIN;
-    if (!isSuperAdmin && !pathname.startsWith(`uploads/user_${userId}/`)) {
+    const isLegacyUserFile = pathname.startsWith('uploads/user_');
+    if (!isSuperAdmin && isLegacyUserFile && !pathname.startsWith(`uploads/user_${userId}/`)) {
       return NextResponse.json({ success: false, message: 'Unauthorized: You can only delete your own files' }, { status: 403 });
     }
 

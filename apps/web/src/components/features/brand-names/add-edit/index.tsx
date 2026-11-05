@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { BrandNameDto, brandNameFields, CreateBrandNameModel, CustomResponse, StatusValues } from '@pms/types';
-import { SingleImageUpload } from '@/components/common/admin-media/single-image-upload';
+import { FileUpload } from '@/components/common/file-upload';
 import CharCounter from '@/components/common/char-counter';
 import { DirtyNote } from '@/components/common/field';
 import ConfirmBox from '@/components/common/confirm-box';
@@ -221,11 +221,10 @@ export default function ManageBrandName({ id, isOpen, mode = 'edit', onClose }: 
                       <FormItem>
                         <FormLabel>Logo</FormLabel>
                         <FormControl>
-                          <SingleImageUpload
+                          <FileUpload
                             value={field.value?.[0] ?? ''}
                             onChange={(path) => field.onChange(path ? [path] : [])}
-                            folder="brands"
-                            alt="Brand logo"
+                            label="brand logo"
                           />
                         </FormControl>
                         <FormMessage />

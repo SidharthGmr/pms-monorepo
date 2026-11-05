@@ -1,6 +1,6 @@
 'use client';
 
-import { ProfileImageUploader } from '@/components/common/admin-media/profile-image-uploader';
+import { FileUpload } from '@/components/common/file-upload';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
@@ -57,7 +57,7 @@ export default function EditUserPhoto({ isOpen, userId, currentImageUrl, userNam
         </DialogHeader>
 
         <div className="py-2">
-          <ProfileImageUploader value={imageUrl} onChange={setImageUrl} folder="profile" />
+          <FileUpload shape="avatar" cameraFacing="user" value={imageUrl} onChange={setImageUrl} label="profile photo" className="mx-auto" />
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground">Square images work best. Drop a file on the circle, click it to browse, or paste a link.</p>

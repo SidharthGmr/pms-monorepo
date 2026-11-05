@@ -1,5 +1,5 @@
 'use client';
-import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { FileUpload } from '@/components/common/file-upload';
 import ConfirmBox from '@/components/common/confirm-box';
 import OptionalSection from '@/components/common/optional-section';
 import { CurrencyInput } from '@/components/common/currency-input';
@@ -482,7 +482,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 <FormItem>
                   <FormLabel>Images *</FormLabel>
                   <FormControl>
-                    <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="product-variants" />
+                    <FileUpload multiple value={field.value || []} onChange={field.onChange} label="variant image" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

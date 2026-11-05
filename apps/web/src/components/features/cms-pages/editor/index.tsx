@@ -1,5 +1,5 @@
 'use client';
-import ImagePicker from '@/components/common/admin-media/image-picker';
+import { FileUpload } from '@/components/common/file-upload';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -445,7 +445,7 @@ export default function CmsPageEditor({ id }: CmsPageEditorProps) {
                   <FormItem>
                     <FormLabel>Thumbnail image</FormLabel>
                     <FormControl>
-                      <ImagePicker value={field.value} onChange={(url) => field.onChange(url ?? '')} label="thumbnail" />
+                      <FileUpload value={field.value} onChange={field.onChange} label="thumbnail" withGallery />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -604,7 +604,7 @@ export default function CmsPageEditor({ id }: CmsPageEditorProps) {
                     <FormItem>
                       <FormLabel>Open Graph image</FormLabel>
                       <FormControl>
-                        <ImagePicker value={field.value} onChange={(url) => field.onChange(url ?? '')} label="social image" />
+                        <FileUpload value={field.value} onChange={field.onChange} label="social image" withGallery />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

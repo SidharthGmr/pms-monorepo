@@ -1,5 +1,5 @@
 'use client';
-import { ProductImageUploader } from '@/components/common/admin-media/product-image-uploader';
+import { FileUpload } from '@/components/common/file-upload';
 import { submitOnCtrlEnter } from '@/lib/form-shortcuts';
 import ConfirmBox from '@/components/common/confirm-box';
 import { DateRangePicker } from '@/components/common/date-range-picker';
@@ -429,7 +429,7 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
                     <FormItem>
                       <FormLabel>Images *</FormLabel>
                       <FormControl>
-                        <ProductImageUploader value={field.value || []} onChange={field.onChange} folder="products" />
+                        <FileUpload multiple value={field.value || []} onChange={field.onChange} label="product image" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
