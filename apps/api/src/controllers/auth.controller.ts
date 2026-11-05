@@ -26,6 +26,11 @@ import { isExpired } from '../utils/timeExpiry.util';
 import { generateStoreCode, nowISO } from '../utils/authHelpers.service';
 import { dispatchEmailAsync } from '../utils/email/emailDispatcher.util';
 import { clientIpAddress } from '../utils/token.util';
+import { isSmsEnabled, sendSMS } from '../utils/twilio';
+import logger from '../utils/logger';
+
+// Must match the getOtpExpiryDate(...) the account service stamps on the token.
+const OTP_EXPIRY_MINUTES = 10;
 
 /** OTP comparison must not leak how many leading digits matched. */
 const constantTimeEquals = (expected: string, presented: string): boolean => {
@@ -56,6 +61,36 @@ const toAuthUser = (user: UserDto, token: string, refreshToken: string): UserDto
 });
 
 export class AccountController {
+  /**
+   * The verification OTP goes out on both channels: email always, SMS when the user left a
+   * phone and Twilio is configured. Fire-and-forget - neither channel may fail the request.
+   */
+  private sendOtpToUser(user: UserDto): void {
+    if (!user.emailVerificationToken) return;
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Stocklivo';
+
+    dispatchEmailAsync({
+      userId: user.userId,
+      to: user.email,
+      subject: `Your ${appName} verification code`,
+      templateName: 'otp',
+      templateData: {
+        FirstName: user.name || user.userName || 'there',
+        PlatformName: appName,
+        OTP_CODE: user.emailVerificationToken,
+        OtpExpiryMinutes: OTP_EXPIRY_MINUTES,
+        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
+        Year: String(new Date().getFullYear()),
+      },
+    });
+
+    if (user.phone && isSmsEnabled()) {
+      void sendSMS(user.phone, `${appName}: ${user.emailVerificationToken} is your verification code. It expires in ${OTP_EXPIRY_MINUTES} minutes.`).catch(
+        (error) => logger.error('otp sms failed', { userId: user.userId, error: (error as Error)?.message })
+      );
+    }
+  }
+
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {
     this.unitOfService = unitOfService;
   }
@@ -191,19 +226,8 @@ export class AccountController {
       },
     });
 
-    // dispatchEmailAsync({
-    //   to: otpUser.email,
-    //   subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
-    //   templateName: 'otp',
-    //   templateData: {
-    //     FirstName: otpUser.name || otpUser.userName || 'there',
-    //     PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
-    //     OTP_CODE: otpUser.emailVerificationToken,
-    //     OtpExpiryMinutes: otpUser.emailVerificationExpires,
-    //     LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
-    //     Year: String(new Date().getFullYear()),
-    //   },
-    // });
+    // The verification code itself, on email and (when a phone was given) SMS, alongside the link.
+    this.sendOtpToUser(otpUser);
 
     response = {
       success: true,
@@ -227,6 +251,10 @@ export class AccountController {
     if (!newUser) {
       throw new CustomError('User creation failed', 400);
     }
+
+    // Admin-created users verify the same way self-signups do: OTP by email, and by SMS too.
+    const otpUser = await this.unitOfService.User.getUserOtp(newUser.userId);
+    if (otpUser) this.sendOtpToUser(otpUser);
 
     const response: CustomResponse<UserDto> = {
       success: true,
@@ -350,19 +378,8 @@ export class AccountController {
 
     const user = await this.unitOfService.Account.sendVerificationOtp(userByEmail.userId);
 
-    dispatchEmailAsync({
-      to: user.email,
-      subject: `Your ${process.env.NEXT_PUBLIC_APP_NAME} verification code`,
-      templateName: 'otp',
-      templateData: {
-        FirstName: user.name || user.userName || 'there',
-        PlatformName: process.env.NEXT_PUBLIC_APP_NAME,
-        OTP_CODE: user.emailVerificationToken,
-        OtpExpiryMinutes: user.emailVerificationExpires,
-        LoginLink: `${process.env.NEXT_PUBLIC_MAIN_DOMAIN_URL}/login`,
-        Year: String(new Date().getFullYear()),
-      },
-    });
+    // Same dual-channel send as signup; also fixes the expiry that used to render as a raw Date.
+    this.sendOtpToUser(user);
 
     const response: CustomResponse<UserDto> = {
       success: true,

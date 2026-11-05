@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import React from 'react';
-import { amountInWords, invoiceTotals, InvoiceTemplateProps, lineTotal, money } from './sample-data';
+import { amountInWords, InvoiceTemplateProps, invoiceTotals, lineTotal, money, taxLabel } from './sample-data';
 
 // Classic - the brand navy/teal layout mirroring the jsPDF invoice: masthead, summary strip,
 // ruled zebra table, navy total bar with received/balance settlement, bookended brand strips.
@@ -147,7 +147,7 @@ export default function ClassicTemplate({ invoice, logoUrl }: InvoiceTemplatePro
               <span className="font-semibold tabular-nums text-rose-600">- {money(invoice.discount)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">GST ({invoice.taxRate * 100}%)</span>
+              <span className="text-slate-500">{taxLabel(invoice)}</span>
               <span className="font-semibold tabular-nums text-slate-900">{money(tax)}</span>
             </div>
             <div className="flex justify-between border-b border-slate-200 pb-2">

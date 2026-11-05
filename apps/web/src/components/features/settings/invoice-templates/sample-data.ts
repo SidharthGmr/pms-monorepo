@@ -24,6 +24,10 @@ export interface SampleInvoice {
   items: SampleInvoiceItem[];
   discount: number;
   taxRate: number;
+  /** Exact GST amount when the caller already knows it; overrides the taxRate computation. */
+  taxAmount?: number;
+  /** True when prices already include GST: the tax row is informational and not added to the total. */
+  taxIncluded?: boolean;
   shipping: number;
   /** Amount already paid against this invoice; balance = grand total - received. */
   received: number;
@@ -48,11 +52,15 @@ export const lineTotal = (item: SampleInvoiceItem) => lineGross(item) - (item.di
 export const invoiceTotals = (invoice: SampleInvoice) => {
   const subtotal = invoice.items.reduce((sum, item) => sum + lineTotal(item), 0);
   const taxable = subtotal - invoice.discount;
-  const tax = Math.round(taxable * invoice.taxRate * 100) / 100;
-  const grandTotal = taxable + tax + invoice.shipping;
+  const tax = invoice.taxAmount ?? Math.round(taxable * invoice.taxRate * 100) / 100;
+  // Included GST is informational - already inside the prices - so it never adds to the total.
+  const grandTotal = taxable + (invoice.taxIncluded ? 0 : tax) + invoice.shipping;
   const totalQuantity = invoice.items.reduce((sum, item) => sum + item.quantity, 0);
   return { subtotal, tax, grandTotal, totalQuantity };
 };
+
+/** The GST row's label: a rate when GST is added on top, a note when it is already in the prices. */
+export const taxLabel = (invoice: SampleInvoice) => (invoice.taxIncluded ? 'GST (incl. in price)' : `GST (${invoice.taxRate * 100}%)`);
 
 /**
  * The sample invoice with the signed-in user's own store on the masthead - logo aside (passed

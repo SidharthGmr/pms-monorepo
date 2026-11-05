@@ -24,6 +24,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CartIndicator } from '../cart-indicator';
+import { FullscreenToggle } from '../fullscreen-toggle';
 import { GlobalSearch } from '../global-search';
 import { NotificationBell } from '../notification-bell';
 import { QuickCreate } from '../quick-create';
@@ -73,6 +74,7 @@ export default function HeaderDashboard() {
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           {/* <Separator orientation="vertical" className="hidden h-5 sm:block" /> */}
           {currentUser?.role === Roles.USER && <CartIndicator />}
+          <FullscreenToggle />
           <NotificationBell />
           <SettingsMenu />
           <AccountMenuRoot>

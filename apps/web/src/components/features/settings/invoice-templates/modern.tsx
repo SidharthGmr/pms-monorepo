@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import React from 'react';
-import { invoiceTotals, InvoiceTemplateProps, lineTotal, money } from './sample-data';
+import { InvoiceTemplateProps, invoiceTotals, lineTotal, money, taxLabel } from './sample-data';
 
 // Modern - a full-bleed gradient masthead, card-based details and a teal total panel; built for screens first.
 
@@ -105,7 +105,7 @@ export default function ModernTemplate({ invoice, logoUrl }: InvoiceTemplateProp
               <span className="font-medium text-rose-600">- {money(invoice.discount)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">GST ({invoice.taxRate * 100}%)</span>
+              <span className="text-slate-500">{taxLabel(invoice)}</span>
               <span className="font-medium">{money(tax)}</span>
             </div>
             <div className="flex justify-between">

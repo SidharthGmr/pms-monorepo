@@ -31,7 +31,9 @@ import { useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { InputSelect, type InputSelectItem } from '@/components/common/input-select';
 import { downloadInvoicePdf } from '../invoice-pdf';
+import { downloadTemplateBill } from '../template-bill';
 import { useGetMyStore } from '@/hooks/service-hooks/useStoreService';
+import { useGetSettings } from '@/hooks/service-hooks/useSettingService';
 import { amountInWords } from '@/lib/amount-in-words';
 import { cn } from '@/lib/utils';
 
@@ -53,9 +55,12 @@ export default function NewSale() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const createOrder = useCreateOrder();
 
-  // Branding for the downloaded bill now lives on the user's own store.
+  // Branding for the downloaded bill now lives on the user's own store; the bill's layout
+  // is whatever template is saved as default under Settings → Invoice Templates.
   const { data: myStoreResponse } = useGetMyStore();
   const myStore = myStoreResponse?.data?.data;
+  const { data: settingsResponse } = useGetSettings();
+  const invoiceTemplate = settingsResponse?.data?.data?.invoiceTemplate;
   const [isDownloading, setIsDownloading] = useState(false);
 
   const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
@@ -149,6 +154,45 @@ export default function NewSale() {
   const downloadBillPdf = async () => {
     setIsDownloading(true);
     try {
+      // The bill renders through the saved invoice template, carrying this sale's data.
+      await downloadTemplateBill(
+        invoiceTemplate,
+        {
+          number: 'PREVIEW',
+          status: 'CONFIRMED',
+          issuedAt: new Date(),
+          store: {
+            name: myStore?.siteName || myStore?.name || config.appName,
+            code: myStore?.code ?? '',
+            address: '',
+            phone: myStore?.phone ?? '',
+            email: myStore?.email ?? '',
+          },
+          customer: { name: billCustomerName, address: '', phone: '', email: customer?.email ?? '' },
+          items: lines.map((line) => ({
+            name: line.variant?.product?.name || line.variant?.name || `Variant #${line.variantId}`,
+            variant: line.variant?.name ?? undefined,
+            sku: line.variant?.sku ?? undefined,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            discount: line.discountAmount || undefined,
+            tax: line.taxAmount || undefined,
+          })),
+          discount: additionalDiscount,
+          // Prices are GST-inclusive: the exact amount is shown, never added to the total.
+          taxRate: 0,
+          taxAmount: itemTaxTotal,
+          taxIncluded: true,
+          shipping,
+          received: 0,
+          payment: { method: '—', status: 'Pending' },
+          notes: values.notes || 'Payment and received amount are recorded on the order after the sale.',
+        },
+        myStore?.storeLogo ?? undefined,
+        `bill-${new Date().toISOString().slice(0, 10)}.pdf`
+      );
+    } catch {
+      // The drawn jsPDF bill stays as the fallback if template rendering fails.
       await downloadInvoicePdf(
         {
           orderNumber: 'PREVIEW',

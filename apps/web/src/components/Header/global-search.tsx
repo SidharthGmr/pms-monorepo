@@ -33,7 +33,8 @@ export function GlobalSearch() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
+      // event.key is undefined on some synthetic keydowns (browser autofill, certain IMEs).
+      if (event.key?.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         setOpen((v) => !v);
       }

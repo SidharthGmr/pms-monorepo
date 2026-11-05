@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import React from 'react';
-import { amountInWords, invoiceTotals, InvoiceTemplateProps, lineTotal, money } from './sample-data';
+import { amountInWords, InvoiceTemplateProps, invoiceTotals, lineTotal, money, taxLabel } from './sample-data';
 
 // Tax Invoice - the GST-style boxed layout from the accounting-app bills: ruled boxes throughout,
 // an HSN/SAC column, received/balance rows and a "For <company>" signatory box. The whole sheet
@@ -171,7 +171,7 @@ export default function TaxTemplate({ invoice, logoUrl }: InvoiceTemplateProps) 
                     <td className={`${CELL} text-right`}>- {money(invoice.discount)}</td>
                   </tr>
                   <tr>
-                    <td className={CELL}>GST ({invoice.taxRate * 100}%)</td>
+                    <td className={CELL}>{taxLabel(invoice)}</td>
                     <td className={`${CELL} text-right`}>{money(tax)}</td>
                   </tr>
                   <tr>

@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import React from 'react';
-import { amountInWords, invoiceTotals, InvoiceTemplateProps, lineTotal, money } from './sample-data';
+import { amountInWords, InvoiceTemplateProps, invoiceTotals, lineTotal, money, taxLabel } from './sample-data';
 
 // Minimal - monochrome, serif display heading, hairline rules and generous whitespace; prints cleanly on any printer.
 
@@ -90,7 +90,7 @@ export default function MinimalTemplate({ invoice, logoUrl }: InvoiceTemplatePro
             <span>- {money(invoice.discount)}</span>
           </div>
           <div className="flex justify-between text-neutral-500">
-            <span>GST ({invoice.taxRate * 100}%)</span>
+            <span>{taxLabel(invoice)}</span>
             <span>{money(tax)}</span>
           </div>
           <div className="flex justify-between text-neutral-500">

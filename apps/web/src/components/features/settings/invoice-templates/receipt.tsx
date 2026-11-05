@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import React from 'react';
-import { invoiceTotals, InvoiceTemplateProps, lineTotal, money } from './sample-data';
+import { InvoiceTemplateProps, invoiceTotals, lineTotal, money, taxLabel } from './sample-data';
 
 // Receipt - an 80mm POS thermal-printer slip: monospace, dashed rules, centred masthead.
 
@@ -58,7 +58,7 @@ export default function ReceiptTemplate({ invoice }: InvoiceTemplateProps) {
         <span>- {money(invoice.discount)}</span>
       </div>
       <div className="flex justify-between text-neutral-600">
-        <span>GST ({invoice.taxRate * 100}%)</span>
+        <span>{taxLabel(invoice)}</span>
         <span>{money(tax)}</span>
       </div>
       <div className="flex justify-between text-neutral-600">
