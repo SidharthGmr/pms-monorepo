@@ -3,7 +3,8 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Row } from '@tanstack/react-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { StoreDto } from '@pms/types';
+import useGetCurrentUser from '@/hooks/useGetCurrentUser';
+import { Roles, StoreDto } from '@pms/types';
 
 interface StoreRowActionsProps<TData> {
   row: Row<TData>;
@@ -13,6 +14,11 @@ interface StoreRowActionsProps<TData> {
 
 export default function StoreRowActions<TData>({ row, editRecord, deleteRecord }: StoreRowActionsProps<TData>) {
   const item = row.original as StoreDto;
+
+  // Editing/deleting a store is super-admin-only on the API; admins edit their
+  // own store from Settings, so showing the menu here would just 403.
+  const { currentUser } = useGetCurrentUser();
+  if (currentUser?.role !== Roles.SUPER_ADMIN) return null;
 
   return (
     <DropdownMenu modal={false}>

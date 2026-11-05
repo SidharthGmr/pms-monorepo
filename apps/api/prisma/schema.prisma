@@ -151,7 +151,11 @@ model store {
   code             String            @unique
   address          String?
   phone            String?
-  email            String?
+  email            String
+  /// Brand name shown on invoices and emails in place of the app name.
+  siteName         String?
+  /// URL of the store's uploaded logo; null means the bundled default.
+  storeLogo        String?
   isActive         Boolean           @default(true)
   returnWindowDays Int               @default(3)
   createdAt        DateTime          @default(now())

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@/lib/zod-resolver';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -12,11 +12,12 @@ import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
 
 import { storeFields } from '@pms/types';
-import { useCreateStore, useGetStoreById, useUpdateStore } from '@/hooks/service-hooks/useStoreService';
+import { useCreateStore, useGetStoreById, useUpdateStore, useUploadStoreLogo } from '@/hooks/service-hooks/useStoreService';
 import { SelectSearch } from '@/components/common/select-search';
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreateStoreModel, StatusValues } from '@pms/types';
+import { ImageOff, Trash2, UploadCloud } from 'lucide-react';
 
 interface ManageStoreProps {
   id?: number;
@@ -24,12 +25,20 @@ interface ManageStoreProps {
   onClose: (refresh: boolean) => void;
 }
 
-export default function ManageStore({ id, isOpen, onClose }: ManageStoreProps) {
+interface StoreFormProps {
+  id?: number;
+  onClose: (refresh: boolean) => void;
+}
+
+/** The full store form - super admin only; admins edit their own store from Settings. */
+export function StoreForm({ id, onClose }: StoreFormProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const isEdit = !!id && id > 0;
 
   const createMutation = useCreateStore();
   const updateMutation = useUpdateStore();
+  const uploadLogo = useUploadStoreLogo();
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const { data: storeResponse, isLoading: isFetching } = useGetStoreById(id ?? 0, isEdit);
 
   const form = useForm<CreateStoreModel>({
@@ -37,9 +46,10 @@ export default function ManageStore({ id, isOpen, onClose }: ManageStoreProps) {
     defaultValues: {
       name: '',
       code: '',
-      address: '',
       phone: '',
       email: '',
+      siteName: '',
+      storeLogo: '',
       isActive: true,
       status: StatusValues.Published,
     },
@@ -51,17 +61,34 @@ export default function ManageStore({ id, isOpen, onClose }: ManageStoreProps) {
       form.reset({
         name: store.name,
         code: store.code,
-        address: store.address ?? '',
         phone: store.phone ?? '',
         email: store.email ?? '',
+        siteName: store.siteName ?? '',
+        storeLogo: store.storeLogo ?? '',
         isActive: store.isActive,
         status: store.status,
       });
     }
   }, [isEdit, storeResponse, form]);
 
+  const handleLogoFile = async (file: File | undefined) => {
+    if (!file || uploadLogo.isPending) return;
+    try {
+      const uploaded = await uploadLogo.mutateAsync({ file });
+      form.setValue('storeLogo', uploaded.url, { shouldDirty: true });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Upload failed', description: (error as Error)?.message || 'The logo could not be uploaded.' });
+    } finally {
+      // Reset so picking the SAME file again still fires onChange.
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
   const submitData = async (model: CreateStoreModel) => {
-    const response = isEdit ? await updateMutation.mutateAsync({ id: id!, model }) : await createMutation.mutateAsync(model);
+    // A store's code is written once at creation and can never change - the update
+    // payload (UpdateStoreModel) doesn't carry it.
+    const { code: _code, ...updatable } = model;
+    const response = isEdit ? await updateMutation.mutateAsync({ id: id!, model: updatable }) : await createMutation.mutateAsync(model);
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: `Store ${isEdit ? 'updated' : 'created'} successfully` });
@@ -75,143 +102,206 @@ export default function ManageStore({ id, isOpen, onClose }: ManageStoreProps) {
   const isLoading = createMutation.isPending || updateMutation.isPending || isFetching;
 
   return (
+    <Form {...form}>
+      <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Store Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Main Branch" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Store Code *</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. STORE001" disabled={isEdit} {...field} />
+                </FormControl>
+                {isEdit ? <p className="text-xs text-muted-foreground">The store code is permanent and cannot be changed.</p> : <FormMessage />}
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. +1234567890" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email *</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="e.g. store@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="siteName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Site Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Brand name on invoices & emails" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="storeLogo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Store Logo</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+                      {field.value ? (
+                        // Blob URLs are not in next.config's remotePatterns, so a plain <img> is correct here.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={field.value} alt="Store logo" className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <ImageOff className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </span>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={(event) => handleLogoFile(event.target.files?.[0])}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      icon={UploadCloud}
+                      iconPlacement="left"
+                      loading={uploadLogo.isPending}
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      {field.value ? 'Replace' : 'Upload'}
+                    </Button>
+                    {field.value && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        aria-label="Remove logo"
+                        onClick={() => form.setValue('storeLogo', '', { shouldDirty: true })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Status *</FormLabel>
+                <FormControl>
+                  <div className="flex">
+                    <SelectSearch
+                      placeholder="Select Status*"
+                      buttonClass="w-full"
+                      disableSearch={true}
+                      items={[
+                        { label: 'Published', value: StatusValues.Published },
+                        { label: 'Draft', value: StatusValues.Draft },
+                      ]}
+                      value={field.value}
+                      valueType="string"
+                      containerName="store-status"
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isActive"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-7">
+                <FormControl>
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Is Active</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" onClick={() => onClose(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={isLoading}>
+            {isEdit ? 'Update' : 'Add'} Store
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+export default function ManageStore({ id, isOpen, onClose }: ManageStoreProps) {
+  const isEdit = !!id && id > 0;
+
+  return (
     <Dialog open={isOpen} onOpenChange={() => onClose(false)}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit' : 'Add'} Store</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form autoComplete="off" onSubmit={form.handleSubmit(submitData)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Main Branch" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Store Code *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. STORE001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 123 Main Street, City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. +1234567890" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="e.g. store@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status *</FormLabel>
-                    <FormControl>
-                      <div className="flex">
-                        <SelectSearch
-                          placeholder="Select Status*"
-                          buttonClass="w-full"
-                          disableSearch={true}
-                          items={[
-                            { label: 'Published', value: StatusValues.Published },
-                            { label: 'Draft', value: StatusValues.Draft },
-                          ]}
-                          value={field.value}
-                          valueType="string"
-                          containerName="store-status"
-                          onChange={(value) => field.onChange(value)}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-7">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Is Active</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onClose(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" loading={isLoading}>
-                {isEdit ? 'Update' : 'Add'} Store
-              </Button>
-            </div>
-          </form>
-        </Form>
+        {/* Mounted only while open so the form state resets between stores. */}
+        {isOpen && <StoreForm id={id} onClose={onClose} />}
       </DialogContent>
     </Dialog>
   );

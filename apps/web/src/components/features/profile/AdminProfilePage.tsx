@@ -1,6 +1,8 @@
 'use client';
 
 import { ProfileImageUploader } from '@/components/common/admin-media/profile-image-uploader';
+import { SelectSearch } from '@/components/common/select-search';
+import { COUNTRIES, districtItemsFor, INDIAN_STATES } from '@/data/location.data';
 import DateTimePicker from '@/components/common/data-time-picker/date-time-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,8 +54,6 @@ import { useForm } from 'react-hook-form';
 
 const SURFACE = 'rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm';
 
-// Fields shown in the UI drive the completeness meter and the "add this" chips. `dateOfBirth` is
-// kept in the DTO/model (@pms/types) but not counted, since not everyone wants it on file.
 const TRACKED_FIELDS: { key: keyof UpdateProfileModel; label: string }[] = [
   { key: 'profileImageUrl', label: 'Photo' },
   { key: 'name', label: 'Full name' },
@@ -61,7 +61,7 @@ const TRACKED_FIELDS: { key: keyof UpdateProfileModel; label: string }[] = [
   { key: 'phone', label: 'Phone' },
   { key: 'bio', label: 'Bio' },
   { key: 'address', label: 'Address' },
-  { key: 'city', label: 'City' },
+  { key: 'city', label: 'District' },
   { key: 'state', label: 'State' },
   { key: 'country', label: 'Country' },
   { key: 'pincode', label: 'Pincode' },
@@ -175,20 +175,17 @@ export default function AdminProfilePage() {
   }, [dbUser, currentUser, form]);
 
   const submitData = async (model: UpdateProfileModel) => {
-    const formData = new FormData();
-
-    Object.keys(model).forEach((key) => {
-      const value = model[key as keyof UpdateProfileModel];
-      if (key === 'dateOfBirth' && model[key] !== undefined) {
-        formData.append(key, new Date(value as string).toISOString());
-      } else {
-        formData.append(key, value as string);
-      }
-    });
+    // The API takes JSON (there is no multipart parser on the route). An empty dateOfBirth
+    // means "clear it"; a set one goes up as an ISO string.
+    const dob = model.dateOfBirth ? new Date(model.dateOfBirth) : undefined;
+    const payload: UpdateProfileModel = {
+      ...model,
+      dateOfBirth: dob && !isNaN(dob.getTime()) ? dob.toISOString() : '',
+    };
 
     setIsSubmitting(true);
 
-    const response: AxiosResponse<Response<UserDto>> = await updateProfileMutation.mutateAsync(formData);
+    const response: AxiosResponse<Response<UserDto>> = await updateProfileMutation.mutateAsync(payload);
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: 'Profile updated successfully' });
@@ -246,7 +243,11 @@ export default function AdminProfilePage() {
           <aside className="space-y-4 sm:space-y-5 lg:sticky lg:top-[72px]">
             <section className={cn(SURFACE, 'overflow-hidden')}>
               <div className="relative h-24 bg-gradient-to-br from-primary via-primary to-indigo-700">
-                <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '16px 16px' }} aria-hidden />
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-[0.12]"
+                  style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '16px 16px' }}
+                  aria-hidden
+                />
                 <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/15 blur-2xl" aria-hidden />
                 <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
                   <Shield className="h-3 w-3" />
@@ -263,7 +264,13 @@ export default function AdminProfilePage() {
                       <FormItem className="m-0">
                         <FormControl>
                           <div className="rounded-full bg-card p-1.5 shadow-md ring-1 ring-border">
-                            <ProfileImageUploader value={field.value || ''} onChange={field.onChange} showUrlInput={false} folder="profile" className="w-auto max-w-none gap-0" />
+                            <ProfileImageUploader
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              showUrlInput={false}
+                              folder="profile"
+                              className="w-auto max-w-none gap-0"
+                            />
                           </div>
                         </FormControl>
                         <FormMessage className="text-center" />
@@ -286,10 +293,15 @@ export default function AdminProfilePage() {
                 <div className="mt-4 rounded-lg border border-border/70 bg-muted/40 p-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-medium">Profile completeness</span>
-                    <span className={cn('font-bold tabular-nums', complete ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary')}>{completeness}%</span>
+                    <span className={cn('font-bold tabular-nums', complete ? 'text-emerald-600 dark:text-emerald-400' : 'text-primary')}>
+                      {completeness}%
+                    </span>
                   </div>
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className={cn('h-full rounded-full transition-all duration-500', complete ? 'bg-emerald-500' : 'bg-primary')} style={{ width: `${completeness}%` }} />
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-500', complete ? 'bg-emerald-500' : 'bg-primary')}
+                      style={{ width: `${completeness}%` }}
+                    />
                   </div>
                   {complete ? (
                     <p className="mt-2 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
@@ -328,14 +340,40 @@ export default function AdminProfilePage() {
                 </div>
               ) : (
                 <ul className="mt-1 divide-y divide-border/70">
-                  <AccountRow icon={Mail} label="Email" value={<span className="break-all" title={email}>{email || '—'}</span>} />
+                  <AccountRow
+                    icon={Mail}
+                    label="Email"
+                    value={
+                      <span className="break-all" title={email}>
+                        {email || '—'}
+                      </span>
+                    }
+                  />
                   {storeCode && <AccountRow icon={Store} label="Store" value={<span className="font-mono">{storeCode}</span>} />}
-                  <AccountRow icon={ShieldCheck} label="Verification" value={<VerifiedBadge ok={!!dbUser?.isEmailVerified} yes="Email verified" no="Email not verified" />} />
-                  <AccountRow icon={Phone} label="Phone" value={<VerifiedBadge ok={!!dbUser?.isPhoneVerified} yes="Phone verified" no="Phone not verified" />} />
+                  <AccountRow
+                    icon={ShieldCheck}
+                    label="Verification"
+                    value={<VerifiedBadge ok={!!dbUser?.isEmailVerified} yes="Email verified" no="Email not verified" />}
+                  />
+                  <AccountRow
+                    icon={Phone}
+                    label="Phone"
+                    value={<VerifiedBadge ok={!!dbUser?.isPhoneVerified} yes="Phone verified" no="Phone not verified" />}
+                  />
                   {dbUser?.lastLoginAt && (
-                    <AccountRow icon={Clock} label="Last sign-in" value={<span title={format(new Date(dbUser.lastLoginAt), 'PPpp')}>{formatDistanceToNow(new Date(dbUser.lastLoginAt), { addSuffix: true })}</span>} />
+                    <AccountRow
+                      icon={Clock}
+                      label="Last sign-in"
+                      value={
+                        <span title={format(new Date(dbUser.lastLoginAt), 'PPpp')}>
+                          {formatDistanceToNow(new Date(dbUser.lastLoginAt), { addSuffix: true })}
+                        </span>
+                      }
+                    />
                   )}
-                  {dbUser?.createdAt && <AccountRow icon={CalendarDays} label="Member since" value={format(new Date(dbUser.createdAt), 'd MMM yyyy')} />}
+                  {dbUser?.createdAt && (
+                    <AccountRow icon={CalendarDays} label="Member since" value={format(new Date(dbUser.createdAt), 'd MMM yyyy')} />
+                  )}
                   <AccountRow
                     icon={User}
                     label="Status"
@@ -420,7 +458,11 @@ export default function AdminProfilePage() {
                     <FormItem className="sm:col-span-2">
                       <FieldLabel icon={FileText}>Bio</FieldLabel>
                       <FormControl>
-                        <Textarea placeholder="A line or two about you, your role or what you look after." className="min-h-[96px] resize-none" {...field} />
+                        <Textarea
+                          placeholder="A line or two about you, your role or what you look after."
+                          className="min-h-[96px] resize-none"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -446,25 +488,22 @@ export default function AdminProfilePage() {
                 />
                 <FormField
                   control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FieldLabel icon={Building2}>City</FieldLabel>
-                      <FormControl>
-                        <Input placeholder="City" autoComplete="address-level2" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FieldLabel icon={Map}>State / province</FieldLabel>
+                      <FieldLabel icon={Map}>State</FieldLabel>
                       <FormControl>
-                        <Input placeholder="State" autoComplete="address-level1" {...field} />
+                        <div className="flex">
+                          <SelectSearch
+                            placeholder="Select state"
+                            buttonClass="w-full"
+                            items={INDIAN_STATES}
+                            value={field.value ?? ''}
+                            valueType="string"
+                            containerName="profile-state"
+                            onChange={(value) => field.onChange(value)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -472,12 +511,22 @@ export default function AdminProfilePage() {
                 />
                 <FormField
                   control={form.control}
-                  name="country"
+                  name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FieldLabel icon={Globe}>Country</FieldLabel>
+                      <FieldLabel icon={Building2}>District</FieldLabel>
                       <FormControl>
-                        <Input placeholder="Country" autoComplete="country-name" {...field} />
+                        <div className="flex">
+                          <SelectSearch
+                            placeholder="Select district"
+                            buttonClass="w-full"
+                            items={districtItemsFor(form.watch('state'))}
+                            value={field.value ?? ''}
+                            valueType="string"
+                            containerName="profile-district"
+                            onChange={(value) => field.onChange(value)}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -496,6 +545,30 @@ export default function AdminProfilePage() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel icon={Globe}>Country</FieldLabel>
+                      <FormControl>
+                        <div className="flex">
+                          <SelectSearch
+                            placeholder="Select country"
+                            buttonClass="w-full"
+                            disableSearch={true}
+                            items={COUNTRIES}
+                            value={field.value ?? ''}
+                            valueType="string"
+                            containerName="profile-country"
+                            onChange={(value) => field.onChange(value)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </SectionCard>
           </div>
@@ -508,7 +581,12 @@ export default function AdminProfilePage() {
             isDirty ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           )}
         >
-          <div className={cn('flex items-center justify-between gap-3 rounded-xl border bg-background/95 px-4 py-3 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-background/80', isDirty && 'pointer-events-auto')}>
+          <div
+            className={cn(
+              'flex items-center justify-between gap-3 rounded-xl border bg-background/95 px-4 py-3 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-background/80',
+              isDirty && 'pointer-events-auto'
+            )}
+          >
             <p className="flex min-w-0 items-center gap-2 text-sm">
               <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
               <span className="truncate">You have unsaved changes</span>

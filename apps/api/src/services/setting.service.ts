@@ -1,13 +1,12 @@
 import { DEFAULT_INVOICE_TEMPLATE, SettingsDto, UpdateSettingsModel } from "@pms/types";
 import { inject, injectable } from "inversify";
-import env from "../config/env";
 import { TYPES } from "../config/ioc.types";
 import type { SettingRow } from "../repository/interfaces/isetting.repository";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { ISettingService } from "./interfaces/Isetting.service";
 
 /** Keys the API recognises; anything else in the table is ignored rather than surfaced. */
-const SETTING_KEYS = ["logoUrl", "siteName", "supportEmail", "invoiceTemplate"] as const;
+const SETTING_KEYS = ["invoiceTemplate"] as const;
 
 @injectable()
 export class SettingService implements ISettingService {
@@ -18,9 +17,6 @@ export class SettingService implements ISettingService {
     const latest = rows.reduce<Date | null>((newest, row) => (!newest || row.updatedAt > newest ? row.updatedAt : newest), null);
 
     return {
-      logoUrl: byKey.get("logoUrl")?.value ?? "",
-      siteName: byKey.get("siteName")?.value ?? env.APP_NAME,
-      supportEmail: byKey.get("supportEmail")?.value ?? env.ADMIN_NOTIFY_EMAIL ?? "",
       invoiceTemplate: byKey.get("invoiceTemplate")?.value ?? DEFAULT_INVOICE_TEMPLATE,
       updatedAt: latest,
     };

@@ -42,6 +42,8 @@ export class AccountService implements IAccountService {
         data: {
           name: `${data.firstName} ${data.lastName}'s Store - ${storeCode}`,
           code: storeCode,
+          // The store's contact address starts as the owner's own email; editable later.
+          email: data.email,
           status: StatusEnum.Published,
         },
       });

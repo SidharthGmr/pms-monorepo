@@ -5,19 +5,24 @@ import { fillPlaceholders, renderTemplate, renderTemplateContent } from "../temp
 
 // Every templated email carries the brand: logo, name, site link and year, in both
 // placeholder casings the templates use. Shared with the admin editor's preview so
-// what the editor shows is what the dispatcher sends. The admin's uploaded logo and site
-// name win over the bundled defaults; a settings-table miss must never block a send, so a
-// failed lookup silently falls back.
-export const emailBrandDefaults = async (): Promise<Record<string, string>> => {
+// what the editor shows is what the dispatcher sends. Branding lives on the store now;
+// a caller that knows its store passes the storeCode, anything global falls back to the
+// first active store. A lookup miss must never block a send, so it falls back silently.
+export const emailBrandDefaults = async (storeCode?: string): Promise<Record<string, string>> => {
   const siteUrl = (env.APP_PUBLIC_URL || "").replace(/\/$/, "");
   const year = String(new Date().getFullYear());
 
-  const rows = await prisma.setting.findMany({ where: { key: { in: ["logoUrl", "siteName"] } } }).catch(() => []);
-  const stored = new Map(rows.map((row) => [row.key, row.value]));
+  const store = await prisma.store
+    .findFirst({
+      where: storeCode ? { code: storeCode } : { isActive: true, NOT: { status: "Trash" } },
+      orderBy: { id: "asc" },
+      select: { siteName: true, storeLogo: true },
+    })
+    .catch(() => null);
 
-  const appName = stored.get("siteName") || env.APP_NAME;
+  const appName = store?.siteName || env.APP_NAME;
   // An email client fetches with no session and no page context, so the logo must be absolute.
-  const storedLogo = stored.get("logoUrl");
+  const storedLogo = store?.storeLogo;
   const logoUrl = storedLogo ? (/^https?:\/\//i.test(storedLogo) ? storedLogo : `${siteUrl}${storedLogo.startsWith("/") ? "" : "/"}${storedLogo}`) : `${siteUrl}/logo-full-light.png`;
 
   return {

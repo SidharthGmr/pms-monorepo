@@ -66,15 +66,9 @@ settingRouter.get("/", authenticateToken, asyncHandler(settingController.get));
  *           schema:
  *             type: object
  *             properties:
- *               logoUrl:
- *                 type: string
- *               siteName:
- *                 type: string
- *               supportEmail:
- *                 type: string
  *               invoiceTemplate:
  *                 type: string
- *                 enum: [classic, modern, minimal, receipt]
+ *                 enum: [classic, modern, minimal, receipt, tax]
  *     responses:
  *       200:
  *         description: Settings saved successfully

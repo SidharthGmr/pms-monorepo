@@ -7,7 +7,7 @@ import { TYPES } from "../config/ioc.types";
 import { IStoreService } from "./interfaces/Istore.service";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import CustomError from "../exceptions/custom-error";
-import { ListResponseDto, StoreDto, StoreFilterParams, CreateStoreModel, UpdateStoreModel } from '@pms/types';
+import { ListResponseDto, StoreDto, StoreFilterParams, CreateStoreModel, UpdateMyStoreModel, UpdateStoreModel } from '@pms/types';
 @injectable()
 export class StoreService implements IStoreService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
@@ -32,9 +32,10 @@ export class StoreService implements IStoreService {
         data: {
           name: data.name,
           code: data.code,
-          address: data.address || null,
           phone: data.phone || null,
-          email: data.email || null,
+          email: data.email,
+          siteName: data.siteName || null,
+          storeLogo: data.storeLogo || null,
           isActive: data.isActive ?? true,
           status: data.status || "Published",
         },
@@ -93,22 +94,14 @@ export class StoreService implements IStoreService {
         }
       }
 
-      // Check if another store already uses this code.
-      if (data.code) {
-        const codeExists = await transactionClient.store.findFirst({
-          where: { code: data.code, id: { not: id } }
-        });
-        if (codeExists) {
-          throw new CustomError("Store with this code already exists", 400);
-        }
-      }
       // Only touch fields that were provided so partial updates don't wipe existing values.
+      // `code` is never written: the tenant key is immutable once the store exists.
       const updateData: Prisma.storeUpdateInput = {};
       if (data.name !== undefined) updateData.name = data.name;
-      if (data.code !== undefined) updateData.code = data.code;
-      if (data.address !== undefined) updateData.address = data.address || null;
       if (data.phone !== undefined) updateData.phone = data.phone || null;
-      if (data.email !== undefined) updateData.email = data.email || null;
+      if (data.email !== undefined && data.email !== "") updateData.email = data.email;
+      if (data.siteName !== undefined) updateData.siteName = data.siteName || null;
+      if (data.storeLogo !== undefined) updateData.storeLogo = data.storeLogo || null;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
       if (data.status !== undefined) updateData.status = data.status;
 
@@ -123,5 +116,37 @@ export class StoreService implements IStoreService {
 
   async delete(id: number): Promise<StoreDto> {
     return this.unitOfWork.Store.delete(id);
+  }
+
+  // The admin self-service slice: only contact details and branding, resolved by the
+  // caller's own storeCode - code, status and isActive stay with the super admin's edit.
+  async updateMyStore(code: string, data: UpdateMyStoreModel): Promise<StoreDto> {
+    return this.unitOfWork.transaction(async (transactionClient) => {
+      const existing = await transactionClient.store.findUnique({ where: { code } });
+      if (!existing) {
+        throw new CustomError("Store not found", 404);
+      }
+
+      // Check if another store already uses this name.
+      const nameExists = await transactionClient.store.findFirst({
+        where: { name: data.name, id: { not: existing.id } }
+      });
+      if (nameExists) {
+        throw new CustomError("Store with this name already exists", 400);
+      }
+
+      const storeData = await transactionClient.store.update({
+        where: { id: existing.id },
+        data: {
+          name: data.name,
+          phone: data.phone || null,
+          email: data.email,
+          siteName: data.siteName || null,
+          storeLogo: data.storeLogo || null,
+        },
+      });
+
+      return storeData;
+    });
   }
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { storeValidator, updateStoreValidator } from "@pms/types";
+import { storeValidator, updateMyStoreValidator, updateStoreValidator } from "@pms/types";
 import { validate } from "../middleware/validate";
 import asyncHandler from "../middleware/asyncHandler.middleware";
 import { StoreController } from "../controllers/store.controller";
@@ -81,6 +81,73 @@ storeRouter.get("/", authenticateToken, asyncHandler(storeController.getAll));
 
 /**
  * @swagger
+ * /stores/my-store:
+ *   get:
+ *     summary: Get the authenticated user's own store
+ *     description: The store is resolved from the storeCode in the bearer token.
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200: { description: Success }
+ *       400: { description: Token carries no storeCode }
+ *       404: { description: Store not found }
+ */
+storeRouter.get("/my-store", authenticateToken, asyncHandler(storeController.getMyStore));
+
+/**
+ * @swagger
+ * /stores/my-store:
+ *   put:
+ *     summary: Update the authenticated admin's own store (contact details and branding only)
+ *     description: The store is resolved from the storeCode in the bearer token. Code, status and isActive can only be changed by a super admin via PUT /stores/{id}.
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *             properties:
+ *               name: { type: string }
+ *               phone: { type: string }
+ *               email: { type: string }
+ *               siteName: { type: string }
+ *               storeLogo: { type: string }
+ *     responses:
+ *       200: { description: Store updated successfully }
+ *       400: { description: Validation failed or token carries no storeCode }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ *       404: { description: Store not found }
+ */
+storeRouter.put(
+  "/my-store",
+  authenticateToken,
+  authorization(ADMIN_ROLES),
+  [validate(updateMyStoreValidator)],
+  asyncHandler(storeController.updateMyStore)
+);
+
+/**
+ * @swagger
  * /stores/{id}:
  *   get:
  *     summary: Get store by id
@@ -130,18 +197,19 @@ storeRouter.get("/:id", authenticateToken, asyncHandler(storeController.getById)
  *             required:
  *               - name
  *               - code
+ *               - email
  *             properties:
  *               name: { type: string }
  *               code: { type: string }
- *               address: { type: string }
  *               phone: { type: string }
  *               email: { type: string }
+ *               siteName: { type: string }
+ *               storeLogo: { type: string }
  *               isActive: { type: boolean }
  *               status: { type: string, enum: [Published, Draft, Trash] }
  *             example:
  *               name: "Main Store"
  *               code: "STORE-001"
- *               address: "123 Main St"
  *               phone: "9876543210"
  *               email: "store@example.com"
  *               isActive: true
@@ -157,7 +225,7 @@ storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [val
  * @swagger
  * /stores/{id}:
  *   put:
- *     summary: Update store
+ *     summary: Update store (super admin only)
  *     tags: [Store]
  *     parameters:
  *       - in: path
@@ -182,10 +250,10 @@ storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [val
  *             type: object
  *             properties:
  *               name: { type: string }
- *               code: { type: string }
- *               address: { type: string }
  *               phone: { type: string }
  *               email: { type: string }
+ *               siteName: { type: string }
+ *               storeLogo: { type: string }
  *               isActive: { type: boolean }
  *               status: { type: string, enum: [Published, Draft, Trash] }
  *     responses:
@@ -194,7 +262,7 @@ storeRouter.post("/", authenticateToken, authorization([Role.SUPER_ADMIN]), [val
  *       404: { description: Store not found }
  *       500: { description: Server error }
  */
-storeRouter.put("/:id", authenticateToken, authorization(ADMIN_ROLES), [validate(updateStoreValidator)], asyncHandler(storeController.update));
+storeRouter.put("/:id", authenticateToken, authorization([Role.SUPER_ADMIN]), [validate(updateStoreValidator)], asyncHandler(storeController.update));
 
 /**
  * @swagger

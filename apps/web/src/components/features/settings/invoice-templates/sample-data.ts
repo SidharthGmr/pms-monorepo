@@ -1,5 +1,7 @@
 // Static sample invoice used by every template preview, so the designs can be compared on identical content.
 
+import type { StoreDto } from '@pms/types';
+
 export interface SampleInvoiceItem {
   name: string;
   variant?: string;
@@ -51,6 +53,26 @@ export const invoiceTotals = (invoice: SampleInvoice) => {
   const totalQuantity = invoice.items.reduce((sum, item) => sum + item.quantity, 0);
   return { subtotal, tax, grandTotal, totalQuantity };
 };
+
+/**
+ * The sample invoice with the signed-in user's own store on the masthead - logo aside (passed
+ * separately as logoUrl), the name, email and phone come from the store record. Any field the
+ * store has no value for falls back to the sample's, so the preview never shows a gap.
+ */
+export const withMyStore = (store?: Pick<StoreDto, 'name' | 'code' | 'phone' | 'email' | 'siteName'> | null): SampleInvoice =>
+  !store
+    ? SAMPLE_INVOICE
+    : {
+        ...SAMPLE_INVOICE,
+        store: {
+          name: store.siteName || store.name || SAMPLE_INVOICE.store.name,
+          code: store.code || SAMPLE_INVOICE.store.code,
+          // Stores no longer keep an address of their own, so the sample's stands in.
+          address: SAMPLE_INVOICE.store.address,
+          phone: store.phone || SAMPLE_INVOICE.store.phone,
+          email: store.email || SAMPLE_INVOICE.store.email,
+        },
+      };
 
 export const SAMPLE_INVOICE: SampleInvoice = {
   number: 'INV-2026-00148',

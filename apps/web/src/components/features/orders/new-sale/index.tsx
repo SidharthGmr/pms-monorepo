@@ -31,7 +31,7 @@ import { useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { InputSelect, type InputSelectItem } from '@/components/common/input-select';
 import { downloadInvoicePdf } from '../invoice-pdf';
-import { useGetSettings } from '@/hooks/service-hooks/useSettingService';
+import { useGetMyStore } from '@/hooks/service-hooks/useStoreService';
 import { amountInWords } from '@/lib/amount-in-words';
 import { cn } from '@/lib/utils';
 
@@ -53,9 +53,9 @@ export default function NewSale() {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const createOrder = useCreateOrder();
 
-  // Branding for the downloaded bill.
-  const { data: settingsResponse } = useGetSettings();
-  const settings = settingsResponse?.data?.data;
+  // Branding for the downloaded bill now lives on the user's own store.
+  const { data: myStoreResponse } = useGetMyStore();
+  const myStore = myStoreResponse?.data?.data;
   const [isDownloading, setIsDownloading] = useState(false);
 
   const { data: customersResponse } = useGetAllUserList({ role: Roles.USER, showAllRecords: true });
@@ -166,11 +166,11 @@ export default function NewSale() {
             product: { name: line.variant?.product?.name || line.variant?.name || `Variant #${line.variantId}` },
             variant: { name: line.variant?.name, sku: line.variant?.sku },
           })),
-          store: { name: settings?.siteName || config.appName },
+          store: { name: myStore?.siteName || myStore?.name || config.appName },
           customer: { name: billCustomerName, email: customer?.email },
           payments: [],
         },
-        settings?.logoUrl
+        myStore?.storeLogo ?? undefined
       );
     } finally {
       setIsDownloading(false);

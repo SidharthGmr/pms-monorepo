@@ -108,7 +108,11 @@ export class UserRepository implements IUserRepository {
 
   async update(userId: string, data: UpdateUserDto): Promise<UserDto> {
     // Profile fields have to be routed to the related `UserProfile` row.
-    const { userName, profileImageUrl, dateOfBirth, address, city, state, country, pincode, bio } = data;
+    const { userName, profileImageUrl, address, city, state, country, pincode, bio } = data;
+    // The form sends dateOfBirth as a string; '' means "clear it", and an unparseable value
+    // must not reach Prisma's DateTime column (an invalid invocation surfaces as a 500).
+    const rawDob = data.dateOfBirth;
+    const dateOfBirth = rawDob === undefined || rawDob instanceof Date ? rawDob : !rawDob || isNaN(Date.parse(rawDob)) ? null : new Date(rawDob);
     // Whitelist, never spread: this method serves self-service profile edits, so privileged
     // columns (role, status, isActive, isEmailVerified, storeCode, password, token, ...)
     // must be unreachable from here whatever the body carried.

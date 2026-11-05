@@ -37,15 +37,6 @@ export const useStoreColumns = (editRecord: (id: number) => void, deleteRecord: 
         meta: { sortingKey: 'code' },
       },
       {
-        id: 'address',
-        accessorKey: 'address',
-        enableSorting: false,
-        enableHiding: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} className="text-xs font-semibold uppercase" title="Address" />,
-        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.address ?? '—'}</span>,
-        meta: { sortingKey: 'address' },
-      },
-      {
         id: 'phone',
         accessorKey: 'phone',
         enableSorting: false,

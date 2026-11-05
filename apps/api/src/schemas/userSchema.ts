@@ -156,7 +156,9 @@ export const updateProfileSchema = z.object({
     phone: z.string().min(10, "Phone number must be at least 10 digits").or(z.literal("")).optional(),
     userName: z.string().optional(),
     profileImageUrl: urlOrAppPath("Invalid URL").or(z.literal("")).optional(),
-    dateOfBirth: z.string().or(z.date()).optional(),
+    dateOfBirth: z
+      .union([z.literal(""), z.string().refine((value) => !isNaN(Date.parse(value)), "Invalid date"), z.date()])
+      .optional(),
     address: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),

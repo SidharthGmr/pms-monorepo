@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useGetSettings } from '@/hooks/service-hooks/useSettingService';
+import { useGetMyStore } from '@/hooks/service-hooks/useStoreService';
 import { cn } from '@/lib/utils';
 import { DEFAULT_INVOICE_TEMPLATE, INVOICE_TEMPLATE_META, InvoiceTemplateKey } from '@pms/types';
 import { ArrowLeft, Printer, ZoomIn, ZoomOut } from 'lucide-react';
@@ -13,7 +14,7 @@ import MinimalTemplate from './minimal';
 import ModernTemplate from './modern';
 import { a3PrintScale, InvoiceA3PrintStyle } from './print-style';
 import ReceiptTemplate from './receipt';
-import { InvoiceTemplateProps, SAMPLE_INVOICE } from './sample-data';
+import { InvoiceTemplateProps, withMyStore } from './sample-data';
 import TaxTemplate from './tax';
 
 const COMPONENTS: Record<InvoiceTemplateKey, React.ComponentType<InvoiceTemplateProps>> = {
@@ -33,6 +34,11 @@ export default function InvoiceTemplatePreview() {
   const searchParams = useSearchParams();
   const { data, isLoading } = useGetSettings();
   const settings = data?.data?.data ?? null;
+  // Branding lives on the user's store: the logo plus the masthead details (name, email, phone).
+  const { data: myStoreResponse } = useGetMyStore();
+  const myStore = myStoreResponse?.data?.data;
+  const logoUrl = myStore?.storeLogo ?? undefined;
+  const previewInvoice = withMyStore(myStore);
 
   const requested = searchParams.get('template');
   const savedDefault = isTemplateKey(settings?.invoiceTemplate ?? null) ? (settings!.invoiceTemplate as InvoiceTemplateKey) : DEFAULT_INVOICE_TEMPLATE;
@@ -75,7 +81,7 @@ export default function InvoiceTemplatePreview() {
               )}
             >
               {meta.name}
-              {meta.key === savedDefault && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600">Default</span>}
+              {meta.key === savedDefault && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-primary">Default</span>}
             </button>
           ))}
         </div>
@@ -110,14 +116,14 @@ export default function InvoiceTemplatePreview() {
         ) : (
           <div id="invoice-print-area" className="flex justify-center" style={{ zoom }}>
             <div id="invoice-print-sheet" className="shadow-lg">
-              <SelectedTemplate invoice={SAMPLE_INVOICE} logoUrl={settings?.logoUrl} />
+              <SelectedTemplate invoice={previewInvoice} logoUrl={logoUrl} />
             </div>
           </div>
         )}
       </div>
 
       <p className="text-center text-xs text-muted-foreground print:hidden">
-        Previews use sample order data and your uploaded logo. Printing produces one A3 portrait sheet.
+        Previews use sample order data with your store&apos;s details and logo. Printing produces one A3 portrait sheet.
       </p>
 
       <InvoiceA3PrintStyle scale={a3PrintScale(selected)} />

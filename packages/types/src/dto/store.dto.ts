@@ -4,9 +4,12 @@ export interface StoreDto {
   id: number;
   name: string;
   code: string;
-  address?: string | null;
   phone?: string | null;
-  email?: string | null;
+  email: string;
+  /** Brand name shown on invoices and emails in place of the app name. */
+  siteName?: string | null;
+  /** URL of the store's uploaded logo; null means the bundled default. */
+  storeLogo?: string | null;
   isActive: boolean;
   status: Status;
   createdAt: Date | string;
@@ -17,19 +20,21 @@ export interface StoreDto {
 export interface CreateStoreDto {
   name: string;
   code: string;
-  address?: string;
   phone?: string;
-  email?: string;
+  email: string;
+  siteName?: string;
+  storeLogo?: string;
   isActive?: boolean;
   status?: Status;
 }
 
+// `code` is deliberately absent: the tenant key is written once at creation, never updated.
 export interface UpdateStoreDto {
   name?: string;
-  code?: string;
-  address?: string;
   phone?: string;
   email?: string;
+  siteName?: string;
+  storeLogo?: string;
   isActive?: boolean;
   status?: Status;
 }

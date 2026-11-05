@@ -3,8 +3,9 @@ import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import IUnitOfService from "../services/interfaces/iunitof.service";
 
-import { CustomResponse, ListResponseDto, StoreDto, CreateStoreDto, UpdateStoreDto, StoreFilterParams } from '@pms/types';
-import { Role, Status } from "@prisma/client";
+import { CustomResponse, ListResponseDto, StoreDto, CreateStoreDto, UpdateMyStoreModel, UpdateStoreDto, StoreFilterParams } from '@pms/types';
+import { Status } from "@prisma/client";
+import { MISSING_STORE_CODE } from "../constants/responses";
 
 export class StoreController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) { }
@@ -47,17 +48,10 @@ export class StoreController {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
 
+    // The code - the tenant key every row hangs off - is immutable: UpdateStoreDto
+    // doesn't carry it and the service never writes it, whatever the caller sends.
+    // The route is super-admin-only; admins edit their own store via /stores/my-store.
     const body = req.body as UpdateStoreDto;
-
-    // A super admin manages every store; an admin only their own, and the code -
-    // the tenant key every row hangs off - never changes through this endpoint.
-    if (req.user?.role !== Role.SUPER_ADMIN) {
-      const existing = await this.unitOfService.Store.getById(id);
-      if (!existing || existing.code !== req.user?.storeCode) {
-        return res.status(403).json({ success: false, message: "You can only update your own store" });
-      }
-      delete body.code;
-    }
 
     const store = await this.unitOfService.Store.update(id, body);
     return res.status(200).json({ success: true, message: "Store updated successfully", data: store });
@@ -69,5 +63,28 @@ export class StoreController {
 
     await this.unitOfService.Store.delete(id);
     return res.status(204).send();
+  };
+
+  // The caller's own store, resolved from the JWT - how the web reads its branding
+  // (siteName, storeLogo) without needing to know its numeric id.
+  getMyStore = async (req: Request, res: Response): Promise<Response<CustomResponse<StoreDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
+    const store = await this.unitOfService.Store.getByCode(storeCode);
+    if (!store) return res.status(404).json({ success: false, message: "Store not found" });
+
+    return res.status(200).json({ success: true, message: "Store fetched successfully", data: store });
+  };
+
+  // Admin self-service: updates only the contact/branding slice of the caller's own store.
+  updateMyStore = async (req: Request, res: Response): Promise<Response<CustomResponse<StoreDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
+    const body = req.body as UpdateMyStoreModel;
+    const store = await this.unitOfService.Store.updateMyStore(storeCode, body);
+
+    return res.status(200).json({ success: true, message: "Store updated successfully", data: store });
   };
 }

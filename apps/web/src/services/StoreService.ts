@@ -7,7 +7,7 @@ import IStoreService from './interfaces/IStoreService';
 
 
 
-import { CustomResponse as Response, ListResponseDto, StoreDto, CreateStoreModel, UpdateStoreModel, StoreFilterParams } from '@pms/types';
+import { CustomResponse as Response, ListResponseDto, StoreDto, CreateStoreModel, UpdateMyStoreModel, UpdateStoreModel, StoreFilterParams } from '@pms/types';
 @injectable()
 export default class StoreService implements IStoreService {
     private readonly httpService: IHttpService;
@@ -34,6 +34,18 @@ export default class StoreService implements IStoreService {
         return this.httpService
             .call()
             .get<StoreDto, AxiosResponse<Response<StoreDto>>>(`/stores/${id}`);
+    }
+
+    getMyStore(): Promise<AxiosResponse<Response<StoreDto>>> {
+        return this.httpService
+            .call()
+            .get<StoreDto, AxiosResponse<Response<StoreDto>>>('/stores/my-store');
+    }
+
+    updateMyStore(model: UpdateMyStoreModel): Promise<AxiosResponse<Response<StoreDto>>> {
+        return this.httpService
+            .call()
+            .put<StoreDto, AxiosResponse<Response<StoreDto>>>('/stores/my-store', model);
     }
 
     update(id: number | string, model: UpdateStoreModel): Promise<AxiosResponse<Response<StoreDto>>> {
