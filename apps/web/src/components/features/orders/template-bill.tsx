@@ -1,25 +1,15 @@
 'use client';
 
-import ClassicTemplate from '@/components/features/settings/invoice-templates/classic';
-import MinimalTemplate from '@/components/features/settings/invoice-templates/minimal';
-import ModernTemplate from '@/components/features/settings/invoice-templates/modern';
-import ReceiptTemplate from '@/components/features/settings/invoice-templates/receipt';
 import { InvoiceTemplateProps, SampleInvoice } from '@/components/features/settings/invoice-templates/sample-data';
 import TaxTemplate from '@/components/features/settings/invoice-templates/tax';
-import { DEFAULT_INVOICE_TEMPLATE, INVOICE_TEMPLATE_META, InvoiceTemplateKey } from '@pms/types';
+import { INVOICE_TEMPLATE_META } from '@pms/types';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-const COMPONENTS: Record<InvoiceTemplateKey, React.ComponentType<InvoiceTemplateProps>> = {
-  classic: ClassicTemplate,
-  modern: ModernTemplate,
-  minimal: MinimalTemplate,
-  receipt: ReceiptTemplate,
-  tax: TaxTemplate,
-};
-
-export const resolveTemplateKey = (value?: string | null): InvoiceTemplateKey =>
-  (INVOICE_TEMPLATE_META.find((meta) => meta.key === value)?.key as InvoiceTemplateKey | undefined) ?? DEFAULT_INVOICE_TEMPLATE;
+// The downloaded bill is ALWAYS the Tax Invoice layout - the GST-style ruled sheet - exactly
+// as it renders under Settings → Invoice Templates → Tax Invoice.
+const Template: React.ComponentType<InvoiceTemplateProps> = TaxTemplate;
+const SHEET_WIDTH = INVOICE_TEMPLATE_META.find((meta) => meta.key === 'tax')?.width ?? 794;
 
 /** Resolves once every <img> inside the node has either loaded or failed. */
 const imagesSettled = (node: HTMLElement) =>
@@ -35,20 +25,15 @@ const imagesSettled = (node: HTMLElement) =>
   );
 
 /**
- * Renders the chosen invoice template off-screen with the given data, snapshots it and saves
- * a PDF sized to the sheet - so the downloaded bill IS the layout picked under Settings →
- * Invoice Templates, pixel for pixel, receipt strips included.
+ * Renders the Tax Invoice template off-screen with the given data and snapshots it into a
+ * jsPDF document sized to the sheet - the bill matches the template preview pixel for pixel.
  */
-export async function downloadTemplateBill(templateKey: string | null | undefined, invoice: SampleInvoice, logoUrl?: string, fileName = 'bill.pdf') {
-  const key = resolveTemplateKey(templateKey);
-  const Template = COMPONENTS[key];
-  const sheetWidth = INVOICE_TEMPLATE_META.find((meta) => meta.key === key)?.width ?? 794;
-
+async function renderBillPdf(invoice: SampleInvoice, logoUrl?: string) {
   // Loaded on demand - neither library should sit in the page bundle for everyone.
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')]);
 
   const host = document.createElement('div');
-  host.style.cssText = `position:fixed;left:-10000px;top:0;width:${sheetWidth}px;background:#ffffff;z-index:-1;`;
+  host.style.cssText = `position:fixed;left:-10000px;top:0;width:${SHEET_WIDTH}px;background:#ffffff;z-index:-1;`;
   document.body.appendChild(host);
   const root = createRoot(host);
 
@@ -62,15 +47,20 @@ export async function downloadTemplateBill(templateKey: string | null | undefine
 
     const canvas = await html2canvas(host, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
 
-    // One page sized to the sheet (pt = px * 72/96), so A4-ish layouts and narrow receipt
-    // strips both come out at their natural proportions.
+    // One page sized to the sheet (pt = px * 72/96), at its natural proportions.
     const pageWidth = (canvas.width / 2) * 0.75;
     const pageHeight = (canvas.height / 2) * 0.75;
     const pdf = new jsPDF({ orientation: pageWidth > pageHeight ? 'l' : 'p', unit: 'pt', format: [pageWidth, pageHeight] });
     pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageWidth, pageHeight);
-    pdf.save(fileName);
+    return pdf;
   } finally {
     root.unmount();
     host.remove();
   }
+}
+
+/** Saves the bill as a file. */
+export async function downloadTemplateBill(invoice: SampleInvoice, logoUrl?: string, fileName = 'bill.pdf') {
+  const pdf = await renderBillPdf(invoice, logoUrl);
+  pdf.save(fileName);
 }

@@ -2,11 +2,6 @@ import { format } from 'date-fns';
 import React from 'react';
 import { amountInWords, InvoiceTemplateProps, invoiceTotals, lineTotal, money, taxLabel } from './sample-data';
 
-// Tax Invoice - the GST-style boxed layout from the accounting-app bills: ruled boxes throughout,
-// an HSN/SAC column, received/balance rows and a "For <company>" signatory box. The whole sheet
-// is table markup (no <p>, no flex/grid), the way the classic GST registers are built, so the
-// layout survives print engines and email clients that ignore modern CSS.
-
 const CELL = 'border border-slate-300 px-2 py-1.5';
 const LABEL = 'bg-slate-100 text-[11px] font-bold text-slate-800';
 const BOX = 'border border-slate-400 px-3';
