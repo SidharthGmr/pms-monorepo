@@ -13,11 +13,9 @@ interface EstimateDetailsPageProps {
 }
 
 export default function EstimateDetailsPage({ params }: EstimateDetailsPageProps) {
-  const id = parseInt(params.id, 10);
-
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <EstimateDetailsView id={id} />
+      <EstimateDetailsView idOrNumber={decodeURIComponent(params.id)} />
     </div>
   );
 }

@@ -69,6 +69,7 @@ export * from "./dto/media.dto";
 export * from "./dto/newsletter.dto";
 export * from "./dto/tax.dto";
 export * from "./dto/estimate.dto";
+export * from "./dto/public-document.dto";
 
 // enums
 export * from "./enum/role.enum";

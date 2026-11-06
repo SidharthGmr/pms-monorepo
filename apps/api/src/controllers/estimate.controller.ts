@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import { container } from '../config/ioc.config';
 import { TYPES } from '../config/ioc.types';
-import { CustomResponse, EstimateDto, EstimateFilterParams, EstimateModel, EstimateStatus, ListResponseDto } from '@pms/types';
+import {
+  CustomResponse,
+  EstimateDto,
+  EstimateFilterParams,
+  EstimateModel,
+  EstimateStatus,
+  EstimateStatusModel,
+  ListResponseDto,
+  ShareLinkDto,
+} from '@pms/types';
 import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 import IUnitOfService from '../services/interfaces/iunitof.service';
 
@@ -48,6 +57,15 @@ export class EstimateController {
     return res.status(200).json({ success: true, message: 'Estimate fetched successfully', data });
   };
 
+  getByNumber = async (req: Request, res: Response): Promise<Response<CustomResponse<EstimateDto>>> => {
+    const estimateNumber = (req.params['estimateNumber'] as string)?.trim();
+    if (!estimateNumber) return res.status(400).json({ success: false, message: 'Invalid estimate number' });
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    const data = await this.unitOfService.Estimate.getByNumber(estimateNumber, storeCode);
+    return res.status(200).json({ success: true, message: 'Estimate fetched successfully', data });
+  };
+
   update = async (req: Request, res: Response): Promise<Response<CustomResponse<EstimateDto>>> => {
     const id = parseInt(req.params['id'] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
@@ -66,5 +84,36 @@ export class EstimateController {
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
     const data = await this.unitOfService.Estimate.delete(id, storeCode);
     return res.status(200).json({ success: true, message: 'Estimate deleted successfully', data });
+  };
+
+  updateStatus = async (req: Request, res: Response): Promise<Response<CustomResponse<EstimateDto>>> => {
+    const id = parseInt(req.params['id'] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+    const storeCode = req.user?.storeCode;
+    const userId = req.user?.userId;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
+    const data = await this.unitOfService.Estimate.updateStatus(id, req.body as EstimateStatusModel, storeCode, userId);
+    return res.status(200).json({ success: true, message: 'Estimate status updated successfully', data });
+  };
+
+  share = async (req: Request, res: Response): Promise<Response<CustomResponse<ShareLinkDto>>> => {
+    const id = parseInt(req.params['id'] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    const data = await this.unitOfService.Estimate.createShareLink(id, storeCode);
+    return res.status(200).json({ success: true, message: 'Share link ready', data });
+  };
+
+  duplicate = async (req: Request, res: Response): Promise<Response<CustomResponse<EstimateDto>>> => {
+    const id = parseInt(req.params['id'] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+    const storeCode = req.user?.storeCode;
+    const userId = req.user?.userId;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
+    const data = await this.unitOfService.Estimate.duplicate(id, storeCode, userId);
+    return res.status(201).json({ success: true, message: 'Estimate duplicated successfully', data });
   };
 }

@@ -15,6 +15,7 @@
     "build:api": "npm run build:types && npm run build -w @pms/api",
     "typecheck": "npm run typecheck -w @pms/api && npm run typecheck -w @pms/web",
     "lint": "npm run lint -w @pms/web",
+    "test": "npm run test -w @pms/types",
     "start:api": "npm run start -w @pms/api",
     "start:web": "npm run start -w @pms/web",
     "migrate:deploy": "npm run migrate:deploy -w @pms/api"

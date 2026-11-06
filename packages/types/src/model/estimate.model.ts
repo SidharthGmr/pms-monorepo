@@ -11,6 +11,12 @@ export interface EstimateItemModel {
   taxId?: string | null;
 }
 
+export interface EstimateStatusModel {
+  /** CONVERTED is never set here - conversion happens through its own endpoint. */
+  status: 'SENT' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED';
+  note?: string | null;
+}
+
 export interface EstimateModel {
   customerId?: string | null;
   customerName: string;

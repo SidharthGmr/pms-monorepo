@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { swaggerOptions, relaxSpecForLocalMode } from './src/config/swagger';
 import routes from './src/routes/index.routes';
+import publicRouter from './src/routes/publicRoutes';
 import prisma from './src/config/prisma';
 import logger from './src/utils/logger';
 import asyncHandler from './src/middleware/asyncHandler.middleware';
@@ -144,6 +145,12 @@ if (env.ENABLE_API_DOCS) {
 // --- Application routes ------------------------------------------------------
 
 app.use(apiLimiter);
+
+// Share links are opened by recipients who have no account and no clientId, so the public
+// document routes sit before the gate - rate limited, but reachable from a plain browser.
+// They accept nothing but an unguessable token.
+app.use('/public', publicRouter);
+
 app.use(asyncHandler(clientidMiddleware.verify));
 app.use('/', routes);
 

@@ -143,6 +143,37 @@ orderRouter.get("/customer/:customerId", authenticateToken, asyncHandler(orderCo
  *       404:
  *         description: Order not found
  */
+/**
+ * @swagger
+ * /orders/number/{orderNumber}:
+ *   get:
+ *     summary: Get order by its order number
+ *     tags: [Order]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: path
+ *         name: orderNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Order fetched successfully
+ *       400:
+ *         description: Invalid order number
+ *       403:
+ *         description: The order belongs to another store, or a customer asked for someone else's order
+ *       404:
+ *         description: Order not found
+ */
+orderRouter.get("/number/:orderNumber", authenticateToken, asyncHandler(orderController.getByNumber));
+
 orderRouter.get("/:id", authenticateToken, asyncHandler(orderController.getById));
 
 /**
@@ -326,5 +357,37 @@ orderRouter.patch("/:id/status", authenticateToken, authorization(STAFF_ROLES), 
  *         description: Order deleted successfully
  */
 orderRouter.delete("/:id", authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), asyncHandler(orderController.delete));
+
+/**
+ * @swagger
+ * /orders/{id}/share:
+ *   post:
+ *     summary: Mint (or re-read) the public share link for an order
+ *     tags: [Order]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Share link ready
+ *       400:
+ *         description: Invalid id or store code not found
+ *       403:
+ *         description: The order belongs to another store
+ *       404:
+ *         description: Order not found
+ *     description: Returns the same token on every call, so a link already emailed to a customer keeps working.
+ */
+orderRouter.post("/:id/share", authenticateToken, authorization(STAFF_ROLES), asyncHandler(orderController.share));
 
 export default orderRouter;

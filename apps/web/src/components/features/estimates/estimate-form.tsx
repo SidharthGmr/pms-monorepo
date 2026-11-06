@@ -253,8 +253,8 @@ export default function EstimateForm({ id }: EstimateFormProps) {
     if (response && (response.status === 200 || response.status === 201)) {
       setSaved(true);
       toast({ variant: 'success', title: isEdit ? 'Estimate updated successfully' : 'Estimate created successfully' });
-      const estimateId = response.data?.data?.id ?? id;
-      router.push(estimateId ? `/admin/estimates/${estimateId}` : '/admin/estimates');
+      const saved = response.data?.data;
+      router.push(saved?.estimateNumber ? `/admin/estimates/${saved.estimateNumber}` : '/admin/estimates');
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
@@ -289,7 +289,7 @@ export default function EstimateForm({ id }: EstimateFormProps) {
         icon={FileText}
         title={isEdit ? `Edit ${existing?.estimateNumber ?? 'Estimate'}` : 'New Estimate'}
         description="Quote products to a customer — stock and payments are untouched until it converts to an order"
-        backHref={isEdit && id ? `/admin/estimates/${id}` : '/admin/estimates'}
+        backHref={isEdit && existing?.estimateNumber ? `/admin/estimates/${existing.estimateNumber}` : '/admin/estimates'}
       />
 
       <Form {...form}>
@@ -830,7 +830,11 @@ export default function EstimateForm({ id }: EstimateFormProps) {
           </div>
 
           <div className="flex flex-wrap justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => router.push(isEdit && id ? `/admin/estimates/${id}` : '/admin/estimates')}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push(isEdit && existing?.estimateNumber ? `/admin/estimates/${existing.estimateNumber}` : '/admin/estimates')}
+            >
               Cancel
             </Button>
             {isEdit ? (

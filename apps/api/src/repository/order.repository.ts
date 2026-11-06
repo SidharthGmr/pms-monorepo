@@ -110,6 +110,47 @@ export class OrderRepository implements IOrderRepository {
     });
   }
 
+  async findByNumber(orderNumber: string): Promise<OrderDto | null> {
+    return prisma.order.findFirst({
+      where: { orderNumber: { equals: orderNumber, mode: 'insensitive' } },
+      include: {
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+        store: true,
+        items: {
+          include: {
+            product: true,
+            variant: { select: { id: true, name: true, sku: true, images: true } },
+          },
+        },
+        payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
+      },
+    });
+  }
+
+  async findByPublicToken(publicToken: string): Promise<OrderDto | null> {
+    return prisma.order.findFirst({
+      where: { publicToken },
+      include: {
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+        store: true,
+        items: {
+          include: {
+            product: true,
+            variant: { select: { id: true, name: true, sku: true, images: true } },
+          },
+        },
+        payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
+      },
+    });
+  }
+
+  async ensurePublicToken(id: number, token: string): Promise<string> {
+    const existing = await prisma.order.findUnique({ where: { id }, select: { publicToken: true } });
+    if (existing?.publicToken) return existing.publicToken;
+    const updated = await prisma.order.update({ where: { id }, data: { publicToken: token }, select: { publicToken: true } });
+    return updated.publicToken as string;
+  }
+
   async update(id: number, data: UpdateOrderDto): Promise<OrderDto> {
     return prisma.order.update({ where: { id }, data });
   }

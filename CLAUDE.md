@@ -44,7 +44,7 @@ npx prisma migrate dev       # create/apply a migration (prisma/schema.prisma)
 npx prisma generate          # regenerate Prisma client (also runs on postinstall)
 ```
 
-There is no test runner configured in `apps/api` or `apps/web` — do not assume `npm test` exists.
+There is no test runner in `apps/api` or `apps/web`. `packages/types` has vitest: root `npm test` runs its unit tests (currently the shared estimate money pipeline), and CI runs them after `build:types`. Test files are `src/**/*.test.ts`, excluded from the dist build.
 
 **Environment is validated at boot** by `src/config/env.ts` (Zod). A missing/invalid variable throws before the server starts; in `NODE_ENV=production` it additionally refuses `SITE_MODE=local`, `CORS_ORIGINS=*`, and a missing `APP_PUBLIC_URL`. Read config through `env` (or `src/config/index.ts`, which wraps it), not `process.env`. `apps/api/.env.example` lists every key.
 

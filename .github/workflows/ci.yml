@@ -45,6 +45,10 @@ jobs:
       - name: Build @pms/types
         run: npm run build:types
 
+      # The money pipeline both apps share; a drift here corrupts every document.
+      - name: Unit tests
+        run: npm test
+
       - name: Prisma generate
         run: npx prisma generate
         working-directory: apps/api

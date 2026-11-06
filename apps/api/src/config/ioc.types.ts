@@ -73,6 +73,7 @@ export const TYPES = {
   CatalogController: Symbol.for("CatalogController"),
   TaxController: Symbol.for("TaxController"),
   EstimateController: Symbol.for("EstimateController"),
+  PublicDocumentController: Symbol.for("PublicDocumentController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),

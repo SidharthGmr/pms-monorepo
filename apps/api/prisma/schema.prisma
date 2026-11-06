@@ -655,6 +655,8 @@ model order {
   grandTotal      Float         @default(0)
   status          OrderStatus   @default(PENDING)
   notes           String?
+  /// Unguessable share token for the public read-only page; minted lazily on first share.
+  publicToken     String?       @unique
   deliveredAt     DateTime?
   createdById     String?
   createdByName   String?
@@ -767,6 +769,8 @@ model estimate {
 
   convertedOrderId Int?      @unique
   convertedAt      DateTime?
+  /// Unguessable share token for the public read-only page; minted lazily on first share.
+  publicToken      String?   @unique
   createdById      String
   updatedById      String?
   createdAt        DateTime  @default(now())

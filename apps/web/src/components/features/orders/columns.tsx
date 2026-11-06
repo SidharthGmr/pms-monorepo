@@ -14,7 +14,7 @@ const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-fo
 // Register layout for the invoice list: one row per document, read left to right the way a
 // ledger is - number, who it was billed to, when it was issued, what it came to, where it stands.
 // The handlers are kept (underscored) for when the commented-out actions column returns.
-export const useOrderColumns = (_editRecord: (id: number) => void, _deleteRecord: (id: number) => void, _viewRecord: (id: number) => void) =>
+export const useOrderColumns = (_editRecord: (id: number) => void, _deleteRecord: (id: number) => void, _viewRecord: (orderNumber: string) => void) =>
   useMemo<ColumnDef<OrderDto>[]>(
     () => [
       {
@@ -35,7 +35,7 @@ export const useOrderColumns = (_editRecord: (id: number) => void, _deleteRecord
               <div className="min-w-0">
                 <Link
                   title={order.orderNumber}
-                  href={`/admin/orders/${order.id}`}
+                  href={`/admin/orders/${order.orderNumber}`}
                   className="block max-w-[220px] truncate text-sm font-semibold capitalize hover:underline"
                 >
                   {order.orderNumber}

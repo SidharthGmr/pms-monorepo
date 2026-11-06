@@ -6,7 +6,7 @@ import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
 import authorization from '../middleware/authorization.middleware';
 import { validate } from '../middleware/validate';
-import { estimateValidator } from '@pms/types';
+import { estimateStatusValidator, estimateValidator } from '@pms/types';
 import { Role } from '@prisma/client';
 
 const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
@@ -135,6 +135,34 @@ estimateRouter.get('/', authenticateToken, asyncHandler(estimateController.getAl
 
 /**
  * @swagger
+ * /estimates/number/{estimateNumber}:
+ *   get:
+ *     summary: Get estimate by its number (e.g. EST-0001)
+ *     tags: [Estimate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: path
+ *         name: estimateNumber
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Estimate fetched successfully
+ *       400:
+ *         description: Invalid estimate number or store code not found
+ *       404:
+ *         description: Estimate not found
+ *     description: The number is unique per store and the lookup is scoped to the authenticated user's store.
+ */
+estimateRouter.get('/number/:estimateNumber', authenticateToken, asyncHandler(estimateController.getByNumber));
+
+/**
+ * @swagger
  * /estimates/{id}:
  *   get:
  *     summary: Get estimate by ID
@@ -256,5 +284,111 @@ estimateRouter.put('/:id', authenticateToken, authorization(STAFF_ROLES), valida
  *         description: Estimate not found
  */
 estimateRouter.delete('/:id', authenticateToken, authorization([Role.SUPER_ADMIN, Role.ADMIN]), asyncHandler(estimateController.delete));
+
+/**
+ * @swagger
+ * /estimates/{id}/status:
+ *   patch:
+ *     summary: Move an estimate through its lifecycle (send, accept, reject, cancel, expire)
+ *     tags: [Estimate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status: { type: string, enum: [SENT, ACCEPTED, REJECTED, CANCELLED, EXPIRED] }
+ *               note: { type: string, maxLength: 500 }
+ *     responses:
+ *       200:
+ *         description: Estimate status updated successfully
+ *       400:
+ *         description: Validation error, invalid id, a transition the lifecycle does not allow, or accepting an estimate whose validity has passed (it is marked EXPIRED instead)
+ *       403:
+ *         description: The estimate belongs to another store
+ *       404:
+ *         description: Estimate not found
+ *     description: Transitions follow DRAFT→SENT→ACCEPTED; REJECTED/EXPIRED/CANCELLED close the estimate. CONVERTED is set only by the convert endpoint. Every change writes a status-history row.
+ */
+estimateRouter.patch(
+  '/:id/status',
+  authenticateToken,
+  authorization(STAFF_ROLES),
+  validate(estimateStatusValidator),
+  asyncHandler(estimateController.updateStatus)
+);
+
+/**
+ * @swagger
+ * /estimates/{id}/duplicate:
+ *   post:
+ *     summary: Duplicate an estimate as a new draft
+ *     tags: [Estimate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Estimate duplicated successfully
+ *       400:
+ *         description: Invalid id
+ *       403:
+ *         description: The estimate belongs to another store
+ *       404:
+ *         description: Estimate not found
+ *     description: Copies the snapshots exactly - prices and taxes are NOT re-read from the ledger. The new draft gets the next number, today's date, and the same validity duration.
+ */
+estimateRouter.post('/:id/duplicate', authenticateToken, authorization(STAFF_ROLES), asyncHandler(estimateController.duplicate));
+
+/**
+ * @swagger
+ * /estimates/{id}/share:
+ *   post:
+ *     summary: Mint (or re-read) the public share link for an estimate
+ *     tags: [Estimate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Share link ready
+ *       400:
+ *         description: Invalid id or store code not found
+ *       403:
+ *         description: The estimate belongs to another store
+ *       404:
+ *         description: Estimate not found
+ *     description: Returns the same token on every call, so a link already emailed to a customer keeps working. The token grants read-only access to the public document page.
+ */
+estimateRouter.post('/:id/share', authenticateToken, authorization(STAFF_ROLES), asyncHandler(estimateController.share));
 
 export default estimateRouter;

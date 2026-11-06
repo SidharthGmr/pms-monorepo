@@ -2,7 +2,7 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 
-import { ListResponseDto, OrderDto, UpdateOrderDto, CreateOrderModel, OrderFilterParams } from '@pms/types';
+import { ListResponseDto, OrderDto, UpdateOrderDto, CreateOrderModel, OrderFilterParams, PublicDocumentDto, ShareLinkDto } from '@pms/types';
 import ClientError from "../exceptions/client-error";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
@@ -13,6 +13,8 @@ import { isSmsEnabled, sendSMS } from "../utils/twilio";
 
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { generateOrderNumber } from "../utils/authHelpers.service";
+import { toPublicOrder } from "../utils/public-document";
+import { buildShareUrl, generateShareToken } from "../utils/share-token";
 import { discountedUnitPrice, payablePrice } from "../utils/variant-pricing";
 import { INotificationService } from "./interfaces/Inotification.service";
 import { IOrderService } from "./interfaces/Iorder.service";
@@ -37,6 +39,29 @@ export class OrderService implements IOrderService {
     const order = await this.unitOfWork.Order.findById(id);
     if (!order) throw new NotFoundError("Order not found");
     return order;
+  }
+
+  async getByNumber(orderNumber: string): Promise<OrderDto | null> {
+    const order = await this.unitOfWork.Order.findByNumber(orderNumber);
+    if (!order) throw new NotFoundError("Order not found");
+    return order;
+  }
+
+  async createShareLink(id: number, storeCode: string): Promise<ShareLinkDto> {
+    const existing = await this.unitOfWork.Order.findById(id);
+    if (!existing) throw new NotFoundError("Order not found");
+    if (existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
+
+    const token = await this.unitOfWork.Order.ensurePublicToken(id, generateShareToken());
+    return { token, url: buildShareUrl('order', token) };
+  }
+
+  // The token in the URL is the only credential a recipient has, so a bad one must look
+  // exactly like a document that does not exist.
+  async getPublic(publicToken: string): Promise<PublicDocumentDto> {
+    const order = await this.unitOfWork.Order.findByPublicToken(publicToken);
+    if (!order) throw new NotFoundError("Document not found");
+    return toPublicOrder(order);
   }
 
   // Every read and write here is batched so the transaction runs a fixed handful of queries

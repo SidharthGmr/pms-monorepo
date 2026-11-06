@@ -1,6 +1,15 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { CustomResponse as Response, ListResponseDto, OrderDto, CreateOrderModel, UpdateOrderModel, UpdateOrderStatusModel, OrderFilterParams } from '@pms/types';
+import {
+  CustomResponse as Response,
+  ListResponseDto,
+  OrderDto,
+  CreateOrderModel,
+  UpdateOrderModel,
+  UpdateOrderStatusModel,
+  OrderFilterParams,
+  ShareLinkDto,
+} from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
 import IHttpService from './interfaces/IHttpService';
@@ -32,6 +41,12 @@ export default class OrderService implements IOrderService {
       .get<OrderDto, AxiosResponse<Response<OrderDto>>>(`/orders/${id}`);
   }
 
+  getByNumber(orderNumber: string): Promise<AxiosResponse<Response<OrderDto>>> {
+    return this.httpService
+      .call()
+      .get<OrderDto, AxiosResponse<Response<OrderDto>>>(`/orders/number/${encodeURIComponent(orderNumber)}`);
+  }
+
   getByCustomerId(customerId: string, params?: OrderFilterParams): Promise<AxiosResponse<Response<ListResponseDto<OrderDto>>>> {
     return this.httpService
       .call()
@@ -48,6 +63,12 @@ export default class OrderService implements IOrderService {
     return this.httpService
       .call()
       .patch<OrderDto, AxiosResponse<Response<OrderDto>>>(`/orders/${id}/status`, model);
+  }
+
+  share(id: number | string): Promise<AxiosResponse<Response<ShareLinkDto>>> {
+    return this.httpService
+      .call()
+      .post<ShareLinkDto, AxiosResponse<Response<ShareLinkDto>>>(`/orders/${id}/share`, {});
   }
 
   delete(id: number | string): Promise<AxiosResponse<Response<void>>> {

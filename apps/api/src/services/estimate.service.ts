@@ -2,13 +2,18 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '../config/ioc.types';
 import {
   computeEstimateTotals,
+  ESTIMATE_STATUS_TRANSITIONS,
   EstimateDto,
   EstimateFilterParams,
   EstimateLineInput,
   EstimateModel,
+  EstimateStatus,
   EstimateStatusEnum,
+  EstimateStatusModel,
   EstimateTotals,
   ListResponseDto,
+  PublicDocumentDto,
+  ShareLinkDto,
   TaxCategoryEnum,
   TaxType,
   TaxTypeEnum,
@@ -18,6 +23,8 @@ import ClientError from '../exceptions/client-error';
 import ForbiddenError from '../exceptions/forbidden-error';
 import NotFoundError from '../exceptions/not-found-error';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
+import { toPublicEstimate } from '../utils/public-document';
+import { buildShareUrl, generateShareToken } from '../utils/share-token';
 import { discountedUnitPrice } from '../utils/variant-pricing';
 import { IEstimateService } from './interfaces/Iestimate.service';
 
@@ -77,6 +84,14 @@ export class EstimateService implements IEstimateService {
     return estimate;
   }
 
+  // The lookup is scoped by storeCode (the number is only unique per store), so another
+  // store's number simply reads as not found rather than leaking across tenants.
+  async getByNumber(estimateNumber: string, storeCode: string): Promise<EstimateDto | null> {
+    const estimate = await this.unitOfWork.Estimate.findByNumber(storeCode, estimateNumber);
+    if (!estimate) throw new NotFoundError('Estimate not found');
+    return estimate;
+  }
+
   async update(id: number, data: EstimateModel, storeCode: string, updatedById: string): Promise<EstimateDto> {
     const existing = await this.unitOfWork.Estimate.findById(id);
     if (!existing) throw new NotFoundError('Estimate not found');
@@ -113,6 +128,151 @@ export class EstimateService implements IEstimateService {
       throw new ClientError('Only draft or cancelled estimates can be deleted');
     }
     return this.unitOfWork.Estimate.delete(id);
+  }
+
+  async updateStatus(id: number, data: EstimateStatusModel, storeCode: string, changedById: string): Promise<EstimateDto> {
+    const existing = await this.unitOfWork.Estimate.findById(id);
+    if (!existing) throw new NotFoundError('Estimate not found');
+    if (existing.storeCode !== storeCode) throw new ForbiddenError('This estimate belongs to another store');
+    if (existing.status === data.status) return existing;
+
+    const allowed = ESTIMATE_STATUS_TRANSITIONS[existing.status as EstimateStatus] ?? [];
+    if (!allowed.includes(data.status)) {
+      throw new ClientError(`An estimate cannot move from ${existing.status} to ${data.status}`);
+    }
+
+    // Lazy expiry: accepting past the validity date flips the estimate to EXPIRED instead,
+    // so the stored status catches up with what every screen already displays.
+    const lapsed = existing.validUntil != null && new Date(existing.validUntil).getTime() < Date.now();
+    if (lapsed && data.status === EstimateStatusEnum.Accepted) {
+      await this.transitionTo(id, existing.status, EstimateStatusEnum.Expired, 'Validity date passed', changedById);
+      throw new ClientError('This estimate has expired; extend its validity before accepting it.');
+    }
+
+    await this.transitionTo(id, existing.status, data.status, data.note ?? null, changedById);
+    const estimate = await this.unitOfWork.Estimate.findById(id);
+    return estimate!;
+  }
+
+  /** A new DRAFT carrying the source's snapshots untouched - prices are NOT re-read from the ledger. */
+  async duplicate(id: number, storeCode: string, createdById: string): Promise<EstimateDto> {
+    const source = await this.unitOfWork.Estimate.findById(id);
+    if (!source) throw new NotFoundError('Estimate not found');
+    if (source.storeCode !== storeCode) throw new ForbiddenError('This estimate belongs to another store');
+
+    const estimateDate = new Date();
+    const validityMs =
+      source.validUntil != null ? new Date(source.validUntil).getTime() - new Date(source.estimateDate).getTime() : null;
+    const validUntil = validityMs != null && validityMs > 0 ? new Date(estimateDate.getTime() + validityMs) : null;
+
+    let created: { id: number } | null = null;
+    for (let attempt = 0; created === null; attempt++) {
+      try {
+        created = await this.unitOfWork.transaction(async (transactionClient) => {
+          const estimateNumber = await this.nextEstimateNumber(storeCode, transactionClient);
+          const estimateData = await transactionClient.estimate.create({
+            data: {
+              estimateNumber,
+              storeCode,
+              customerId: source.customerId ?? null,
+              customerName: source.customerName,
+              customerPhone: source.customerPhone ?? null,
+              customerEmail: source.customerEmail ?? null,
+              billingAddress: source.billingAddress ?? null,
+              shippingAddress: source.shippingAddress ?? null,
+              estimateDate,
+              validUntil,
+              referenceNumber: source.referenceNumber ?? null,
+              notes: source.notes ?? null,
+              terms: source.terms ?? null,
+              status: EstimateStatusEnum.Draft,
+              subtotal: source.subtotal,
+              itemDiscountTotal: source.itemDiscountTotal,
+              additionalDiscountType: source.additionalDiscountType ?? null,
+              additionalDiscountValue: source.additionalDiscountValue ?? null,
+              additionalDiscount: source.additionalDiscount,
+              taxableAmount: source.taxableAmount,
+              cgstAmount: source.cgstAmount,
+              sgstAmount: source.sgstAmount,
+              igstAmount: source.igstAmount,
+              taxAmount: source.taxAmount,
+              shippingCharges: source.shippingCharges,
+              adjustment: source.adjustment,
+              grandTotal: source.grandTotal,
+              isInterState: source.isInterState,
+              createdById,
+              items: {
+                createMany: {
+                  data: (source.items ?? []).map((item) => ({
+                    storeCode,
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    productName: item.productName,
+                    variantName: item.variantName ?? null,
+                    sku: item.sku ?? null,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    discountType: item.discountType ?? null,
+                    discountValue: item.discountValue ?? null,
+                    discountAmount: item.discountAmount,
+                    taxId: item.taxId ?? null,
+                    taxName: item.taxName ?? null,
+                    taxRate: item.taxRate,
+                    taxType: item.taxType ?? null,
+                    taxableAmount: item.taxableAmount,
+                    taxAmount: item.taxAmount,
+                    lineTotal: item.lineTotal,
+                  })),
+                },
+              },
+              statusHistory: {
+                create: { toStatus: EstimateStatusEnum.Draft, note: `Duplicated from ${source.estimateNumber}`, changedById: createdById },
+              },
+            },
+            select: { id: true },
+          });
+          return estimateData;
+        });
+      } catch (error) {
+        if (attempt === 0 && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') continue;
+        throw error;
+      }
+    }
+
+    const estimate = await this.unitOfWork.Estimate.findById(created.id);
+    return estimate!;
+  }
+
+  async createShareLink(id: number, storeCode: string): Promise<ShareLinkDto> {
+    const existing = await this.unitOfWork.Estimate.findById(id);
+    if (!existing) throw new NotFoundError('Estimate not found');
+    if (existing.storeCode !== storeCode) throw new ForbiddenError('This estimate belongs to another store');
+
+    const token = await this.unitOfWork.Estimate.ensurePublicToken(id, generateShareToken());
+    return { token, url: buildShareUrl('estimate', token) };
+  }
+
+  // The token in the URL is the only credential a recipient has, so a bad one must look
+  // exactly like a document that does not exist.
+  async getPublic(publicToken: string): Promise<PublicDocumentDto> {
+    const estimate = await this.unitOfWork.Estimate.findByPublicToken(publicToken);
+    if (!estimate) throw new NotFoundError('Document not found');
+    return toPublicEstimate(estimate);
+  }
+
+  private async transitionTo(id: number, fromStatus: EstimateStatus, toStatus: EstimateStatus, note: string | null, changedById: string) {
+    return this.unitOfWork.transaction(async (transactionClient) => {
+      return transactionClient.estimate.update({
+        where: { id },
+        data: {
+          status: toStatus,
+          updatedById: changedById,
+          updatedAt: new Date(),
+          statusHistory: { create: { fromStatus, toStatus, note, changedById } },
+        },
+        select: { id: true },
+      });
+    });
   }
 
   private headerFields(data: EstimateModel, estimateDate: Date) {

@@ -13,11 +13,9 @@ interface OrderDetailsPageProps {
 }
 
 export default function OrderDetailsPage({ params }: OrderDetailsPageProps) {
-  const id = parseInt(params.id, 10);
-
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <OrderDetailsView id={id} />
+      <OrderDetailsView idOrNumber={decodeURIComponent(params.id)} />
     </div>
   );
 }

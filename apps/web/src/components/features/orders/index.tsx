@@ -99,7 +99,7 @@ export default function OrderList({ onCountChange }: OrderListProps) {
 
   // An order carries its items, bill and timeline, which is more than a dialog can hold, so
   // viewing one opens its own page.
-  const openView = useCallback((id: number) => router.push(`/admin/orders/${id}`), [router]);
+  const openView = useCallback((orderNumber: string) => router.push(`/admin/orders/${orderNumber}`), [router]);
 
   // Paging and sorting are already applied by the API, so the table is told it is manual and simply renders the page it is given.
   const columns = useOrderColumns(
@@ -223,7 +223,7 @@ export default function OrderList({ onCountChange }: OrderListProps) {
             <OrderCard
               key={order.id}
               order={order}
-              onView={() => openView(order.id)}
+              onView={() => openView(order.orderNumber)}
               onEdit={() => openEditModal(order.id)}
               onDelete={() => openDeleteModal(order.id)}
             />

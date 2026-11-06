@@ -235,8 +235,8 @@ export default function NewSale() {
 
     if (response && (response.status === 200 || response.status === 201)) {
       toast({ variant: 'success', title: 'Sale completed successfully' });
-      const orderId = response.data?.data?.id;
-      router.push(orderId ? `/admin/orders/${orderId}` : '/admin/orders');
+      const placedOrder = response.data?.data;
+      router.push(placedOrder?.orderNumber ? `/admin/orders/${placedOrder.orderNumber}` : '/admin/orders');
     } else {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(response);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });

@@ -21,23 +21,32 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
-import { useDeleteEstimate, useGetEstimateById } from '@/hooks/service-hooks/useEstimateService';
+import {
+  useDeleteEstimate,
+  useDuplicateEstimate,
+  useGetEstimate,
+  useShareEstimate,
+  useUpdateEstimateStatus,
+} from '@/hooks/service-hooks/useEstimateService';
 import { amountInWords } from '@/lib/amount-in-words';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { EstimateStatus, EstimateStatusEnum } from '@pms/types';
+import { EstimateStatus, EstimateStatusEnum, EstimateStatusModel } from '@pms/types';
 import { format } from 'date-fns';
 import {
   AlertTriangle,
   ArrowLeft,
   BadgeAlert,
+  Ban,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
   Clock,
+  Copy,
   FileText,
   History as HistoryIcon,
+  Link as LinkIcon,
   Pencil,
   Send,
   ShoppingBag,
@@ -52,7 +61,8 @@ import EstimateStatusBadge, { displayStatusOf } from './status-badge';
 import ListPageHeader from '@/components/common/list-page-header';
 
 interface EstimateDetailsViewProps {
-  id: number;
+  /** The database id (old links) or the estimate number (EST-0001). */
+  idOrNumber: string;
 }
 
 const STATUS: Record<EstimateStatus, { label: string; tone: string; icon: ReactNode; hint: string }> = {
@@ -112,12 +122,16 @@ const TIMELINE: DetailTimelineStep[] = [
  * in the middle, what the offer comes to at the end. Everything about the estimate rather than
  * on it - where it stands, its validity, its history - sits in the column on the right.
  */
-export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
+export default function EstimateDetailsView({ idOrNumber }: EstimateDetailsViewProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
-  const { data: response, isLoading, isError } = useGetEstimateById(id);
+  const { data: response, isLoading, isError, refetch } = useGetEstimate(idOrNumber);
   const deleteMutation = useDeleteEstimate();
+  const statusMutation = useUpdateEstimateStatus();
+  const duplicateMutation = useDuplicateEstimate();
+  const shareMutation = useShareEstimate();
   const [showDelete, setShowDelete] = useState(false);
+  const [confirmStatus, setConfirmStatus] = useState<Extract<EstimateStatusModel['status'], 'REJECTED' | 'CANCELLED'> | null>(null);
 
   const estimate = response?.data?.data;
 
@@ -144,6 +158,11 @@ export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
   const isClosedStatus = statusKey === 'REJECTED' || statusKey === 'EXPIRED' || statusKey === 'CANCELLED';
   const editable = estimate.status === EstimateStatusEnum.Draft;
   const deletable = estimate.status === EstimateStatusEnum.Draft || estimate.status === EstimateStatusEnum.Cancelled;
+  const canSend = estimate.status === EstimateStatusEnum.Draft;
+  const canDecide = estimate.status === EstimateStatusEnum.Sent;
+  const canCancel =
+    estimate.status === EstimateStatusEnum.Draft || estimate.status === EstimateStatusEnum.Sent || estimate.status === EstimateStatusEnum.Accepted;
+  const isActing = statusMutation.isPending || duplicateMutation.isPending;
 
   const items = estimate.items ?? [];
   const history = estimate.statusHistory ?? [];
@@ -154,7 +173,7 @@ export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
   const validityLapsed = !!validUntil && validUntil.getTime() < Date.now();
 
   const handleDelete = async () => {
-    const result = await deleteMutation.mutateAsync(id);
+    const result = await deleteMutation.mutateAsync(estimate.id);
     if (result && result.status === 200) {
       toast({ variant: 'success', title: 'Estimate deleted successfully' });
       router.push('/admin/estimates');
@@ -162,6 +181,57 @@ export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
       const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
       toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
       setShowDelete(false);
+    }
+  };
+
+  const STATUS_DONE: Record<EstimateStatusModel['status'], string> = {
+    SENT: 'Estimate marked as sent',
+    ACCEPTED: 'Estimate accepted',
+    REJECTED: 'Estimate rejected',
+    CANCELLED: 'Estimate cancelled',
+    EXPIRED: 'Estimate marked as expired',
+  };
+
+  const changeStatus = async (target: EstimateStatusModel['status']) => {
+    const result = await statusMutation.mutateAsync({ id: estimate.id, model: { status: target } });
+    if (result && result.status === 200) {
+      toast({ variant: 'success', title: STATUS_DONE[target] });
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
+      // Accepting past the validity flips the estimate to EXPIRED server-side, so re-read either way.
+      void refetch();
+    }
+    setConfirmStatus(null);
+  };
+
+  // The link is the credential, so it is only ever put somewhere the user chose - the
+  // clipboard - never rendered into the page.
+  const handleCopyLink = async () => {
+    const result = await shareMutation.mutateAsync(estimate.id);
+    const url = result?.data?.data?.url;
+    if (result && result.status === 200 && url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ variant: 'success', title: 'Public link copied', description: <span className="break-all text-xs">{url}</span> });
+      } catch {
+        toast({ title: 'Public link ready', description: <span className="break-all text-xs">{url}</span> });
+      }
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
+    }
+  };
+
+  const handleDuplicate = async () => {
+    const result = await duplicateMutation.mutateAsync(estimate.id);
+    const newId = result?.data?.data?.id;
+    if (result && result.status === 201 && newId) {
+      toast({ variant: 'success', title: `Duplicated as ${result.data?.data?.estimateNumber ?? 'a new draft'}` });
+      router.push(`/admin/estimates/${result.data?.data?.estimateNumber ?? newId}`);
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
     }
   };
 
@@ -173,7 +243,58 @@ export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
         description="All estimates"
         backHref="/admin/estimates"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {canSend && (
+              <Button className="h-9 gap-1.5" loading={statusMutation.isPending} disabled={isActing} onClick={() => changeStatus('SENT')}>
+                <Send className="h-4 w-4" />
+                Send
+              </Button>
+            )}
+            {canDecide && (
+              <Button className="h-9 gap-1.5" loading={statusMutation.isPending} disabled={isActing} onClick={() => changeStatus('ACCEPTED')}>
+                <CheckCircle2 className="h-4 w-4" />
+                Accept
+              </Button>
+            )}
+            {canDecide && (
+              <Button
+                variant="outline"
+                className="h-9 gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                disabled={isActing}
+                onClick={() => setConfirmStatus('REJECTED')}
+              >
+                <XCircle className="h-4 w-4" />
+                Reject
+              </Button>
+            )}
+            {canCancel && (
+              <Button variant="outline" className="h-9 gap-1.5 text-muted-foreground" disabled={isActing} onClick={() => setConfirmStatus('CANCELLED')}>
+                <Ban className="h-4 w-4" />
+                Cancel
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              title="Copy public link for the customer"
+              aria-label="Copy public link for the customer"
+              loading={shareMutation.isPending}
+              disabled={isActing || shareMutation.isPending}
+              onClick={handleCopyLink}
+            >
+              <LinkIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              title="Duplicate as a new draft"
+              aria-label="Duplicate as a new draft"
+              loading={duplicateMutation.isPending}
+              disabled={isActing}
+              onClick={handleDuplicate}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
             {editable && (
               <Button asChild variant="outline" size="icon" title="Edit draft" aria-label="Edit draft">
                 <Link href={`/admin/estimates/${estimate.id}/edit`}>
@@ -349,7 +470,7 @@ export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
             <section className={cn(SURFACE, 'p-4 sm:p-5')}>
               <DetailSectionHeader icon={<ShoppingBag className="h-4 w-4" />} title="Converted Order" />
               <Link
-                href={`/admin/orders/${estimate.convertedOrder.id}`}
+                href={`/admin/orders/${estimate.convertedOrder.orderNumber}`}
                 className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
               >
                 {estimate.convertedOrder.orderNumber}
@@ -400,6 +521,21 @@ export default function EstimateDetailsView({ id }: EstimateDetailsViewProps) {
           )}
         </aside>
       </div>
+
+      {confirmStatus && (
+        <ConfirmBox
+          isOpen={!!confirmStatus}
+          onClose={() => setConfirmStatus(null)}
+          onSubmit={() => changeStatus(confirmStatus)}
+          heading={confirmStatus === 'REJECTED' ? 'Reject estimate' : 'Cancel estimate'}
+          loading={statusMutation.isPending}
+          bodyText={
+            confirmStatus === 'REJECTED'
+              ? `Mark ${estimate.estimateNumber} as rejected by the customer? This closes the estimate.`
+              : `Cancel ${estimate.estimateNumber}? This withdraws the quotation and closes it.`
+          }
+        />
+      )}
 
       {showDelete && (
         <ConfirmBox

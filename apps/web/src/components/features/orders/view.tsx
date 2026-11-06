@@ -18,10 +18,11 @@ import CreateReturnDialog from '@/components/features/order-returns/create-retur
 import OrderItemReviewCell from '@/components/features/reviews/order-item-review-cell';
 import OrderStatusMenu from '@/components/features/orders/status-menu';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
-import { useGetOrderById } from '@/hooks/service-hooks/useOrderService';
+import { useGetOrder, useShareOrder } from '@/hooks/service-hooks/useOrderService';
 import { useFetchMyStore } from '@/hooks/service-hooks/useStoreService';
 import { useGetAllReviews } from '@/hooks/service-hooks/useReviewService';
 
@@ -37,6 +38,7 @@ import {
   ClipboardList,
   Download,
   FileText,
+  Link as LinkIcon,
   HelpCircle,
   Package,
   Receipt,
@@ -53,7 +55,8 @@ import { OrderItemDto, Roles } from '@pms/types';
 import ListPageHeader from '@/components/common/list-page-header';
 
 interface OrderDetailsViewProps {
-  id: number;
+  /** The database id (old links) or the order number. */
+  idOrNumber: string;
 }
 
 const STATUS: Record<string, { label: string; tone: string; dot: string; icon: ReactNode }> = {
@@ -102,11 +105,11 @@ const TIMELINE: DetailTimelineStep[] = [
  * middle, what is owed at the end. Everything about the order rather than on it - where it has
  * got to, what can be done with it, its notes - sits in the column on the right.
  */
-export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
+export default function OrderDetailsView({ idOrNumber }: OrderDetailsViewProps) {
   const router = useRouter();
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const fetchMyStore = useFetchMyStore();
-  const { data: response, isLoading, isError } = useGetOrderById(id);
+  const { data: response, isLoading, isError } = useGetOrder(idOrNumber);
   const order = response?.data?.data;
 
   // Rating is only offered to the buyer looking at their own order - the API rejects a
@@ -115,10 +118,11 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
   const isOwnOrder = !!order?.customerId && !!currentUser?.usersId && order.customerId === currentUser.usersId;
   // Moving an order through its stages is an operator action; customers only watch it move.
   const canChangeStatus = currentUser?.role === Roles.ADMIN || currentUser?.role === Roles.SUPER_ADMIN;
-  const { data: reviewsResponse } = useGetAllReviews({ orderId: id }, isOwnOrder);
+  const { data: reviewsResponse } = useGetAllReviews({ orderId: order?.id ?? 0 }, isOwnOrder && !!order?.id);
   const myReviews = reviewsResponse?.data?.data?.data ?? [];
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const shareMutation = useShareOrder();
   const [showReturnDialog, setShowReturnDialog] = useState(false);
 
   // Returns are raised at the counter by staff or admins, and only against a delivered order -
@@ -143,6 +147,25 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
       console.error('Failed to generate PDF', error);
     } finally {
       setIsGeneratingPdf(false);
+    }
+  };
+
+  // The link is the credential, so it is only ever put somewhere the user chose - the
+  // clipboard - never rendered into the page.
+  const handleCopyLink = async () => {
+    if (!order) return;
+    const result = await shareMutation.mutateAsync(order.id);
+    const url = result?.data?.data?.url;
+    if (result && result.status === 200 && url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ variant: 'success', title: 'Public link copied', description: <span className="break-all text-xs">{url}</span> });
+      } catch {
+        toast({ title: 'Public link ready', description: <span className="break-all text-xs">{url}</span> });
+      }
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Error', description: <span>{error}</span> });
     }
   };
 
@@ -195,6 +218,17 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
             <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background/60" onClick={generatePdf} disabled={isGeneratingPdf}>
               <Download className={cn('h-3.5 w-3.5', isGeneratingPdf && 'animate-bounce')} />
               {isGeneratingPdf ? 'Generating…' : 'PDF'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 bg-background/60"
+              loading={shareMutation.isPending}
+              disabled={shareMutation.isPending}
+              onClick={handleCopyLink}
+            >
+              <LinkIcon className="h-3.5 w-3.5" />
+              Copy link
             </Button>
             {canCreateReturn && (
               <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background/60" onClick={() => setShowReturnDialog(true)}>
@@ -254,7 +288,6 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
 
           {/* {showReturnDialog && <CreateReturnDialog order={order} isOpen={showReturnDialog} onClose={() => setShowReturnDialog(false)} />} */}
 
-          {/* Who it is from and who it is for, the way an invoice opens. */}
           <div className="grid grid-cols-1 gap-px border-t border-border/70 bg-border/70 sm:grid-cols-2">
             <DetailParty
               label="From"
@@ -265,12 +298,6 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
               className="bg-card px-4 py-4 sm:px-5"
             >
               {order.store?.address && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{order.store.address}</p>}
-              {/* <CopyInline
-                label="Store code"
-                value={order.storeCode}
-                copied={copiedId === 'store'}
-                onCopy={() => copyToClipboard(order.storeCode, 'store')}
-              /> */}
             </DetailParty>
 
             <DetailParty
@@ -279,23 +306,7 @@ export default function OrderDetailsView({ id }: OrderDetailsViewProps) {
               email={order.customer?.email}
               phone={order.customer?.phone}
               className="bg-card px-4 py-4 sm:px-5"
-            >
-              {/* <CopyInline
-                label="Customer ID"
-                value={order.customerId}
-                copied={copiedId === 'cust'}
-                onCopy={() => copyToClipboard(order.customerId, 'cust')}
-              />
-              {customerSearch && (
-                <Link
-                  href={`/admin/orders?search=${encodeURIComponent(customerSearch)}`}
-                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  <ShoppingBag className="h-3 w-3" />
-                  Their other orders
-                </Link>
-              )} */}
-            </DetailParty>
+            ></DetailParty>
 
             {/* {order.deliveredAt && (
               <div className="grid grid-cols-1 divide-y divide-border/70 border-t border-border/70 sm:grid-cols-2 sm:divide-x sm:divide-y-0">

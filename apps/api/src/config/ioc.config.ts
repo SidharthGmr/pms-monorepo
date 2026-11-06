@@ -182,6 +182,7 @@ import { TaxService } from '../services/tax.service';
 import { ITaxRepository } from '../repository/interfaces/itax.repository';
 import { TaxRepository } from '../repository/tax.repository';
 import { EstimateController } from '../controllers/estimate.controller';
+import { PublicDocumentController } from '../controllers/public-document.controller';
 import { IEstimateService } from '../services/interfaces/Iestimate.service';
 import { EstimateService } from '../services/estimate.service';
 import { IEstimateRepository } from '../repository/interfaces/iestimate.repository';
@@ -224,6 +225,7 @@ container.bind<NotificationController>(TYPES.NotificationController).to(Notifica
 container.bind<CatalogController>(TYPES.CatalogController).to(CatalogController);
 container.bind<TaxController>(TYPES.TaxController).to(TaxController);
 container.bind<EstimateController>(TYPES.EstimateController).to(EstimateController);
+container.bind<PublicDocumentController>(TYPES.PublicDocumentController).to(PublicDocumentController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);

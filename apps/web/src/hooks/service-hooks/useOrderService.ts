@@ -43,6 +43,19 @@ const useGetOrderById = (id: number | string, enabled: boolean = true) => {
   });
 };
 
+// Accepts either the database id (old links) or the order number. Shares the getById
+// cache key so the existing mutation invalidations refresh it too.
+const useGetOrder = (idOrNumber: number | string, enabled: boolean = true) => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  return useQuery({
+    queryKey: ['OrderService.getById', String(idOrNumber)],
+    queryFn: () =>
+      /^\d+$/.test(String(idOrNumber)) ? unitOfService.OrderService.getById(idOrNumber) : unitOfService.OrderService.getByNumber(String(idOrNumber)),
+    enabled: enabled && !!idOrNumber,
+  });
+};
+
 const useGetOrdersByCustomerId = (customerId: string, params?: OrderFilterParams, enabled: boolean = true) => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
 
@@ -90,6 +103,15 @@ const useUpdateOrderStatus = () => {
   });
 };
 
+const useShareOrder = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  return useMutation({
+    mutationFn: (id: number | string) => unitOfService.OrderService.share(id),
+    onError: (error) => error,
+  });
+};
+
 const useDeleteOrder = () => {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const queryClient = useQueryClient();
@@ -107,8 +129,10 @@ const useDeleteOrder = () => {
 
 export {
   useCreateOrder, useDeleteOrder, useGetAllOrders,
+  useGetOrder,
   useGetOrderById,
   useGetOrdersByCustomerId,
+  useShareOrder,
   useUpdateOrder,
   useUpdateOrderStatus
 };

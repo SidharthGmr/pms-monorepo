@@ -12,7 +12,11 @@ import EstimateStatusBadge, { displayStatusOf } from './status-badge';
 
 const HEADER = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
-export const useEstimateColumns = (editRecord: (id: number) => void, deleteRecord: (id: number) => void, viewRecord: (id: number) => void) =>
+export const useEstimateColumns = (
+  editRecord: (id: number) => void,
+  deleteRecord: (id: number) => void,
+  viewRecord: (estimateNumber: string) => void
+) =>
   useMemo<ColumnDef<EstimateDto>[]>(
     () => [
       {
@@ -30,7 +34,7 @@ export const useEstimateColumns = (editRecord: (id: number) => void, deleteRecor
               <div className="min-w-0">
                 <Link
                   title={estimate.estimateNumber}
-                  href={`/admin/estimates/${estimate.id}`}
+                  href={`/admin/estimates/${estimate.estimateNumber}`}
                   className="block max-w-[220px] truncate text-sm font-semibold hover:underline"
                 >
                   {estimate.estimateNumber}
@@ -121,7 +125,7 @@ export const useEstimateColumns = (editRecord: (id: number) => void, deleteRecor
           const deletable = estimate.status === EstimateStatusEnum.Draft || estimate.status === EstimateStatusEnum.Cancelled;
           return (
             <div className="flex items-center justify-end gap-0.5">
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8" title="View" onClick={() => viewRecord(estimate.id)}>
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8" title="View" onClick={() => viewRecord(estimate.estimateNumber)}>
                 <Eye className="h-4 w-4" />
               </Button>
               {editable && (

@@ -75,7 +75,7 @@ export default function EstimateList({ onCountChange }: EstimateListProps) {
 
   const { showModal: showDeleteModal, openModal: openDeleteModal, closeModal: closeDeleteModal, uniqueId: deleteId } = useModalShowHide();
 
-  const openView = useCallback((id: number) => router.push(`/admin/estimates/${id}`), [router]);
+  const openView = useCallback((estimateNumber: string) => router.push(`/admin/estimates/${estimateNumber}`), [router]);
   const openEdit = useCallback((id: number) => router.push(`/admin/estimates/${id}/edit`), [router]);
   const openDelete = useCallback((id: number) => openDeleteModal(id), [openDeleteModal]);
 

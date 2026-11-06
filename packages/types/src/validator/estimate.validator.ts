@@ -58,3 +58,16 @@ export const estimateFields = z
 export type EstimateFormValues = z.infer<typeof estimateFields>;
 
 export const estimateValidator = z.object({ body: estimateFields });
+
+export const estimateStatusFields = z.object({
+  status: z.enum([
+    EstimateStatusEnum.Sent,
+    EstimateStatusEnum.Accepted,
+    EstimateStatusEnum.Rejected,
+    EstimateStatusEnum.Cancelled,
+    EstimateStatusEnum.Expired,
+  ]),
+  note: z.string().trim().max(500, 'Note must be at most 500 characters').nullish(),
+});
+
+export const estimateStatusValidator = z.object({ body: estimateStatusFields });

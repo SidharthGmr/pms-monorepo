@@ -200,6 +200,26 @@ export class EstimateRepository implements IEstimateRepository {
     return row ? toDetailDto(row) : null;
   }
 
+  async findByNumber(storeCode: string, estimateNumber: string): Promise<EstimateDto | null> {
+    const row = await prisma.estimate.findFirst({
+      where: { storeCode, estimateNumber: { equals: estimateNumber, mode: 'insensitive' }, deletedAt: null },
+      select: estimateDetailSelect,
+    });
+    return row ? toDetailDto(row) : null;
+  }
+
+  async findByPublicToken(publicToken: string): Promise<EstimateDto | null> {
+    const row = await prisma.estimate.findFirst({ where: { publicToken, deletedAt: null }, select: estimateDetailSelect });
+    return row ? toDetailDto(row) : null;
+  }
+
+  async ensurePublicToken(id: number, token: string): Promise<string> {
+    const existing = await prisma.estimate.findUnique({ where: { id }, select: { publicToken: true } });
+    if (existing?.publicToken) return existing.publicToken;
+    const updated = await prisma.estimate.update({ where: { id }, data: { publicToken: token }, select: { publicToken: true } });
+    return updated.publicToken as string;
+  }
+
   async delete(id: number): Promise<EstimateDto> {
     const row = await prisma.estimate.update({
       where: { id },
