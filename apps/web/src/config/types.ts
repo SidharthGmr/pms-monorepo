@@ -37,4 +37,5 @@ export const TYPES = {
   INotificationService: Symbol.for('INotificationService'),
   ICatalogService: Symbol.for('ICatalogService'),
   ITaxService: Symbol.for('ITaxService'),
+  IEstimateService: Symbol.for('IEstimateService'),
 };

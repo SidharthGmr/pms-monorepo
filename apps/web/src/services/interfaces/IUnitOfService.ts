@@ -33,6 +33,7 @@ import ICmsPageService from './ICmsPageService';
 import INotificationService from './INotificationService';
 import ICatalogService from './ICatalogService';
 import ITaxService from './ITaxService';
+import IEstimateService from './IEstimateService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -72,4 +73,5 @@ export default interface IUnitOfService {
   NotificationService: INotificationService;
   CatalogService: ICatalogService;
   TaxService: ITaxService;
+  EstimateService: IEstimateService;
 }

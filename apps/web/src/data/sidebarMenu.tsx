@@ -1,6 +1,7 @@
 import {
   Bell,
   Boxes,
+  FileText,
   Images,
   Inbox,
   ScanBarcode,
@@ -264,6 +265,15 @@ export const SideBarMenu: SideBarMenuDto[] = [
     title: 'Invoice',
     icon: ShoppingBag,
     url: '/admin/orders/',
+    group: 'Sales',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
+    id: 'estimates',
+    title: 'Estimates',
+    icon: FileText,
+    url: '/admin/estimates/',
     group: 'Sales',
     role: [Roles.ADMIN],
     isActive: false,

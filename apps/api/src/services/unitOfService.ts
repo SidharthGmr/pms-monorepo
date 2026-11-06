@@ -35,6 +35,7 @@ import { ICmsPageService } from "./interfaces/Icms-page.service";
 import { INotificationService } from "./interfaces/Inotification.service";
 import { ICatalogService } from "./interfaces/Icatalog.service";
 import { ITaxService } from "./interfaces/Itax.service";
+import { IEstimateService } from "./interfaces/Iestimate.service";
 
 export default class UnitOfService implements IUnitOfService {
   public User: IUserService;
@@ -71,6 +72,7 @@ export default class UnitOfService implements IUnitOfService {
   public Notification: INotificationService;
   public Catalog: ICatalogService;
   public Tax: ITaxService;
+  public Estimate: IEstimateService;
 
   constructor(
     user = container.get<IUserService>(TYPES.IUserService),
@@ -107,6 +109,7 @@ export default class UnitOfService implements IUnitOfService {
     notification = container.get<INotificationService>(TYPES.INotificationService),
     catalog = container.get<ICatalogService>(TYPES.ICatalogService),
     tax = container.get<ITaxService>(TYPES.ITaxService),
+    estimate = container.get<IEstimateService>(TYPES.IEstimateService),
   ) {
     this.User = user;
     this.Account = account;
@@ -142,5 +145,6 @@ export default class UnitOfService implements IUnitOfService {
     this.Notification = notification;
     this.Catalog = catalog;
     this.Tax = tax;
+    this.Estimate = estimate;
   }
 }

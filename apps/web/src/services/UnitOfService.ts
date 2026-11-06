@@ -37,6 +37,7 @@ import ICmsPageService from './interfaces/ICmsPageService';
 import INotificationService from './interfaces/INotificationService';
 import ICatalogService from './interfaces/ICatalogService';
 import ITaxService from './interfaces/ITaxService';
+import IEstimateService from './interfaces/IEstimateService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -80,6 +81,7 @@ export default class UnitOfService implements IUnitOfService {
   public NotificationService: INotificationService;
   public CatalogService: ICatalogService;
   public TaxService: ITaxService;
+  public EstimateService: IEstimateService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -118,6 +120,7 @@ export default class UnitOfService implements IUnitOfService {
     notificationService = container.get<INotificationService>(TYPES.INotificationService),
     catalogService = container.get<ICatalogService>(TYPES.ICatalogService),
     taxService = container.get<ITaxService>(TYPES.ITaxService),
+    estimateService = container.get<IEstimateService>(TYPES.IEstimateService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -155,5 +158,6 @@ export default class UnitOfService implements IUnitOfService {
     this.NotificationService = notificationService;
     this.CatalogService = catalogService;
     this.TaxService = taxService;
+    this.EstimateService = estimateService;
   }
 }

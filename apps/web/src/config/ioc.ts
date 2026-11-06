@@ -78,6 +78,8 @@ import CatalogService from '@/services/CatalogService';
 import ICatalogService from '@/services/interfaces/ICatalogService';
 import TaxService from '@/services/TaxService';
 import ITaxService from '@/services/interfaces/ITaxService';
+import EstimateService from '@/services/EstimateService';
+import IEstimateService from '@/services/interfaces/IEstimateService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -121,6 +123,7 @@ container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
+container.bind<IEstimateService>(TYPES.IEstimateService).to(EstimateService);
 
 export { container };
 

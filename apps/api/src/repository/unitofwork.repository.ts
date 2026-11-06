@@ -36,6 +36,7 @@ import { ICmsPageRepository } from "./interfaces/icms-page.repository";
 import { INotificationRepository } from "./interfaces/inotification.repository";
 import { ICatalogRepository } from "./interfaces/icatalog.repository";
 import { ITaxRepository } from "./interfaces/itax.repository";
+import { IEstimateRepository } from "./interfaces/iestimate.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -71,6 +72,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Notification: INotificationRepository;
   public Catalog: ICatalogRepository;
   public Tax: ITaxRepository;
+  public Estimate: IEstimateRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -106,6 +108,7 @@ export default class UnitOfWork implements IUnitOfWork {
     notification = container.get<INotificationRepository>(TYPES.INotificationRepository),
     catalog = container.get<ICatalogRepository>(TYPES.ICatalogRepository),
     tax = container.get<ITaxRepository>(TYPES.ITaxRepository),
+    estimate = container.get<IEstimateRepository>(TYPES.IEstimateRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -140,6 +143,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Notification = notification;
     this.Catalog = catalog;
     this.Tax = tax;
+    this.Estimate = estimate;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

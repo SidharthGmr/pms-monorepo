@@ -35,6 +35,7 @@ export const TYPES = {
   INotificationService: Symbol.for("NotificationService"),
   ICatalogService: Symbol.for("CatalogService"),
   ITaxService: Symbol.for("TaxService"),
+  IEstimateService: Symbol.for("EstimateService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -71,6 +72,7 @@ export const TYPES = {
   NotificationController: Symbol.for("NotificationController"),
   CatalogController: Symbol.for("CatalogController"),
   TaxController: Symbol.for("TaxController"),
+  EstimateController: Symbol.for("EstimateController"),
 
   //Repositories
   IUnitOfWork: Symbol.for("UnitOfWork"),
@@ -107,4 +109,5 @@ export const TYPES = {
   INotificationRepository: Symbol.for("NotificationRepository"),
   ICatalogRepository: Symbol.for("CatalogRepository"),
   ITaxRepository: Symbol.for("TaxRepository"),
+  IEstimateRepository: Symbol.for("EstimateRepository"),
 };

@@ -3,7 +3,6 @@ export interface OrderItemDto {
   orderId: number;
   orderNumber: string;
   productId: number;
-  /** Which SKU was sold. Absent on rows written before variants were mandatory. */
   variantId?: number;
   storeCode: string;
   quantity: number;

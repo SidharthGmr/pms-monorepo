@@ -32,6 +32,7 @@ import { ICmsPageRepository } from "./icms-page.repository";
 import { INotificationRepository } from "./inotification.repository";
 import { ICatalogRepository } from "./icatalog.repository";
 import { ITaxRepository } from "./itax.repository";
+import { IEstimateRepository } from "./iestimate.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -67,6 +68,7 @@ export default interface IUnitOfWork {
   Notification: INotificationRepository;
   Catalog: ICatalogRepository;
   Tax: ITaxRepository;
+  Estimate: IEstimateRepository;
 
   /**
    * Executes a set of operations within a database transaction.

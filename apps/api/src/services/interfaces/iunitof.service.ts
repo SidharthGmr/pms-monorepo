@@ -32,6 +32,7 @@ import { ICmsPageService } from "./Icms-page.service";
 import { INotificationService } from "./Inotification.service";
 import { ICatalogService } from "./Icatalog.service";
 import { ITaxService } from "./Itax.service";
+import { IEstimateService } from "./Iestimate.service";
 
 export default interface IUnitOfService {
   User: IUserService;
@@ -68,4 +69,5 @@ export default interface IUnitOfService {
   Notification: INotificationService;
   Catalog: ICatalogService;
   Tax: ITaxService;
+  Estimate: IEstimateService;
 }

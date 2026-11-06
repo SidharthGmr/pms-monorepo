@@ -33,28 +33,50 @@ export default function ListPageHeader({ icon: Icon, title, hideBack, backHref, 
 
   return (
     <div className={cn('flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
-      <div className="flex min-w-0 items-center gap-3">
-        {Icon &&
-          (description ? (
-            <>
-              {/* Small screens keep only the chip; tapping it discloses the description. */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button type="button" className={cn(CHIP, 'flex sm:hidden')} aria-label={`About ${title}`}>
-                    <Icon className="h-5 w-5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" sideOffset={8} className="w-72 rounded-lg p-3 text-sm text-muted-foreground sm:hidden">
-                  {description}
-                </PopoverContent>
-              </Popover>
-            </>
-          ) : (
-            <>{/* Icon without a description: nothing to disclose, so no chip at all. */}</>
-          ))}
-        <div className="min-w-0">
-          <CardTitle className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</CardTitle>
-          {description && <CardDescription className={cn('text-xs text-muted-foreground', Icon && 'hidden sm:block')}>{description}</CardDescription>}
+      <div className=" min-w-0 ">
+        {/* {showBack && (
+          <Button
+            variant="ghost"
+            icon={ArrowLeft}
+            iconPlacement="left"
+            className="p-0 m-0 text-xs text-muted-foreground leading-tight h-auto"
+            aria-label="Go back"
+            title="Go back"
+            onClick={() => router.back()}
+          >
+            Back
+          </Button>
+        )} */}
+        <div className="flex min-w-0 items-center gap-3">
+          {Icon &&
+            (description ? (
+              <>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className={cn(CHIP, 'flex sm:hidden')} aria-label={`About ${title}`}>
+                      <Icon className="h-5 w-5" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" sideOffset={8} className="w-72 rounded-lg p-3 text-sm text-muted-foreground sm:hidden">
+                    {description}
+                  </PopoverContent>
+                </Popover>
+                <span aria-hidden className={cn(CHIP, 'hidden sm:flex')}>
+                  <Icon className="h-5 w-5" />
+                </span>
+              </>
+            ) : (
+              <span aria-hidden className={cn(CHIP, 'flex')}>
+                <Icon className="h-5 w-5" />
+              </span>
+            ))}
+
+          <div className="min-w-0">
+            <CardTitle className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</CardTitle>
+            {description && (
+              <CardDescription className={cn('text-xs text-muted-foreground', Icon && 'hidden sm:block')}>{description}</CardDescription>
+            )}
+          </div>
         </div>
       </div>
 

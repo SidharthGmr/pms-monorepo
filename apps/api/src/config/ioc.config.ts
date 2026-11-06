@@ -181,6 +181,11 @@ import { ITaxService } from '../services/interfaces/Itax.service';
 import { TaxService } from '../services/tax.service';
 import { ITaxRepository } from '../repository/interfaces/itax.repository';
 import { TaxRepository } from '../repository/tax.repository';
+import { EstimateController } from '../controllers/estimate.controller';
+import { IEstimateService } from '../services/interfaces/Iestimate.service';
+import { EstimateService } from '../services/estimate.service';
+import { IEstimateRepository } from '../repository/interfaces/iestimate.repository';
+import { EstimateRepository } from '../repository/estimate.repository';
 
 export const container = new Container();
 
@@ -218,6 +223,7 @@ container.bind<CmsPageController>(TYPES.CmsPageController).to(CmsPageController)
 container.bind<NotificationController>(TYPES.NotificationController).to(NotificationController);
 container.bind<CatalogController>(TYPES.CatalogController).to(CatalogController);
 container.bind<TaxController>(TYPES.TaxController).to(TaxController);
+container.bind<EstimateController>(TYPES.EstimateController).to(EstimateController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
 container.bind<IUserService>(TYPES.IUserService).to(UserService);
@@ -253,6 +259,7 @@ container.bind<ICmsPageService>(TYPES.ICmsPageService).to(CmsPageService);
 container.bind<INotificationService>(TYPES.INotificationService).to(NotificationService);
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
+container.bind<IEstimateService>(TYPES.IEstimateService).to(EstimateService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -287,6 +294,7 @@ container.bind<ICmsPageRepository>(TYPES.ICmsPageRepository).to(CmsPageRepositor
 container.bind<INotificationRepository>(TYPES.INotificationRepository).to(NotificationRepository);
 container.bind<ICatalogRepository>(TYPES.ICatalogRepository).to(CatalogRepository);
 container.bind<ITaxRepository>(TYPES.ITaxRepository).to(TaxRepository);
+container.bind<IEstimateRepository>(TYPES.IEstimateRepository).to(EstimateRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);
