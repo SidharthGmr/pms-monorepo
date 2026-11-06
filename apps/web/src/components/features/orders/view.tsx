@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  DETAIL_LABEL as LABEL,
   DETAIL_SURFACE as SURFACE,
   DetailDocumentHeader,
   DetailStatusPanel,
