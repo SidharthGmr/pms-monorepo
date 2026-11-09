@@ -80,6 +80,12 @@ import TaxService from '@/services/TaxService';
 import ITaxService from '@/services/interfaces/ITaxService';
 import EstimateService from '@/services/EstimateService';
 import IEstimateService from '@/services/interfaces/IEstimateService';
+import LedgerAccountService from '@/services/LedgerAccountService';
+import ILedgerAccountService from '@/services/interfaces/ILedgerAccountService';
+import JournalEntryService from '@/services/JournalEntryService';
+import IJournalEntryService from '@/services/interfaces/IJournalEntryService';
+import PaymentService from '@/services/PaymentService';
+import IPaymentService from '@/services/interfaces/IPaymentService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -124,6 +130,9 @@ container.bind<INotificationService>(TYPES.INotificationService).to(Notification
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
 container.bind<IEstimateService>(TYPES.IEstimateService).to(EstimateService);
+container.bind<ILedgerAccountService>(TYPES.ILedgerAccountService).to(LedgerAccountService);
+container.bind<IJournalEntryService>(TYPES.IJournalEntryService).to(JournalEntryService);
+container.bind<IPaymentService>(TYPES.IPaymentService).to(PaymentService);
 
 export { container };
 

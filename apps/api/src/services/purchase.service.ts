@@ -5,10 +5,14 @@ import { CreatePurchaseModel, ListResponseDto, PurchaseResponseDto } from '@pms/
 import IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import NotFoundError from '../exceptions/not-found-error';
 import { PricingUtils } from '../utils/authHelpers.service';
+import { IAccountingPostingService } from './interfaces/Iaccounting-posting.service';
 
 @injectable()
 export class PurchaseService implements IPurchaseService {
-  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
+  constructor(
+    @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
+    @inject(TYPES.IAccountingPostingService) private accountingPosting: IAccountingPostingService
+  ) { }
 
   async create(data: CreatePurchaseModel, userId: string, storeCode: string): Promise<PurchaseResponseDto> {
     return this.unitOfWork.transaction(async (transactionClient) => {
@@ -89,6 +93,8 @@ export class PurchaseService implements IPurchaseService {
           transactionClient
         );
       }
+
+      await this.accountingPosting.postPurchase(purchase.id, storeCode, userId, transactionClient);
 
       // Decimal columns serialize to strings; the API contract is plain numbers.
       return {

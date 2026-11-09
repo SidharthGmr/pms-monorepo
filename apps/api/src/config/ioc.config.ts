@@ -188,6 +188,27 @@ import { EstimateService } from '../services/estimate.service';
 import { IEstimateRepository } from '../repository/interfaces/iestimate.repository';
 import { EstimateRepository } from '../repository/estimate.repository';
 
+import { LedgerAccountController } from '../controllers/ledger-account.controller';
+import { ILedgerAccountService } from '../services/interfaces/Iledger-account.service';
+import { LedgerAccountService } from '../services/ledger-account.service';
+import { ILedgerAccountRepository } from '../repository/interfaces/iledger-account.repository';
+import { LedgerAccountRepository } from '../repository/ledger-account.repository';
+
+import { JournalEntryController } from '../controllers/journal-entry.controller';
+import { IJournalEntryService } from '../services/interfaces/Ijournal-entry.service';
+import { JournalEntryService } from '../services/journal-entry.service';
+import { IJournalEntryRepository } from '../repository/interfaces/ijournal-entry.repository';
+import { JournalEntryRepository } from '../repository/journal-entry.repository';
+
+import { FinancialYearController } from '../controllers/financial-year.controller';
+import { IFinancialYearService } from '../services/interfaces/Ifinancial-year.service';
+import { FinancialYearService } from '../services/financial-year.service';
+import { IFinancialYearRepository } from '../repository/interfaces/ifinancial-year.repository';
+import { FinancialYearRepository } from '../repository/financial-year.repository';
+
+import { IAccountingPostingService } from '../services/interfaces/Iaccounting-posting.service';
+import { AccountingPostingService } from '../services/accounting-posting.service';
+
 export const container = new Container();
 
 container.bind<HealthController>(TYPES.HealthController).to(HealthController);
@@ -225,6 +246,9 @@ container.bind<NotificationController>(TYPES.NotificationController).to(Notifica
 container.bind<CatalogController>(TYPES.CatalogController).to(CatalogController);
 container.bind<TaxController>(TYPES.TaxController).to(TaxController);
 container.bind<EstimateController>(TYPES.EstimateController).to(EstimateController);
+container.bind<LedgerAccountController>(TYPES.LedgerAccountController).to(LedgerAccountController);
+container.bind<JournalEntryController>(TYPES.JournalEntryController).to(JournalEntryController);
+container.bind<FinancialYearController>(TYPES.FinancialYearController).to(FinancialYearController);
 container.bind<PublicDocumentController>(TYPES.PublicDocumentController).to(PublicDocumentController);
 
 container.bind<IAccountService>(TYPES.IAccountService).to(AccountService);
@@ -262,6 +286,10 @@ container.bind<INotificationService>(TYPES.INotificationService).to(Notification
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
 container.bind<IEstimateService>(TYPES.IEstimateService).to(EstimateService);
+container.bind<ILedgerAccountService>(TYPES.ILedgerAccountService).to(LedgerAccountService);
+container.bind<IJournalEntryService>(TYPES.IJournalEntryService).to(JournalEntryService);
+container.bind<IFinancialYearService>(TYPES.IFinancialYearService).to(FinancialYearService);
+container.bind<IAccountingPostingService>(TYPES.IAccountingPostingService).to(AccountingPostingService);
 
 container.bind<IAccountRepository>(TYPES.IAccountRepository).to(AccountRepository);
 container.bind<IUserRepository>(TYPES.IUserRepository).to(UserRepository);
@@ -297,6 +325,9 @@ container.bind<INotificationRepository>(TYPES.INotificationRepository).to(Notifi
 container.bind<ICatalogRepository>(TYPES.ICatalogRepository).to(CatalogRepository);
 container.bind<ITaxRepository>(TYPES.ITaxRepository).to(TaxRepository);
 container.bind<IEstimateRepository>(TYPES.IEstimateRepository).to(EstimateRepository);
+container.bind<ILedgerAccountRepository>(TYPES.ILedgerAccountRepository).to(LedgerAccountRepository);
+container.bind<IJournalEntryRepository>(TYPES.IJournalEntryRepository).to(JournalEntryRepository);
+container.bind<IFinancialYearRepository>(TYPES.IFinancialYearRepository).to(FinancialYearRepository);
 
 container.bind<IUnitOfService>(TYPES.IUnitOfService).to(UnitOfService);
 container.bind<IUnitOfWork>(TYPES.IUnitOfWork).to(UnitOfWork);

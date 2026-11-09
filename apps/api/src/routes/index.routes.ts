@@ -34,6 +34,9 @@ import notificationRouter from "./notificationRoutes";
 import catalogRouter from "./catalogRoutes";
 import taxRouter from "./taxRoutes";
 import estimateRouter from "./estimateRoutes";
+import ledgerAccountRouter from "./ledgerAccountRoutes";
+import journalEntryRouter from "./journalEntryRoutes";
+import financialYearRouter from "./financialYearRoutes";
 
 const routes = express.Router();
 
@@ -72,5 +75,8 @@ routes.use("/notifications", notificationRouter);
 routes.use("/catalog", catalogRouter);
 routes.use("/taxes", taxRouter);
 routes.use("/estimates", estimateRouter);
+routes.use("/ledger-accounts", ledgerAccountRouter);
+routes.use("/journal-entries", journalEntryRouter);
+routes.use("/financial-years", financialYearRouter);
 
 export default routes;

@@ -9,6 +9,7 @@ import NotFoundError from '../exceptions/not-found-error';
 
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { CheckoutContext, ICheckoutService } from './interfaces/Icheckout.service';
+import { IAccountingPostingService } from './interfaces/Iaccounting-posting.service';
 import { IOrderService } from './interfaces/Iorder.service';
 
 /**
@@ -34,7 +35,8 @@ function safeCompare(a: string, b: string): boolean {
 export class CheckoutService implements ICheckoutService {
   constructor(
     @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
-    @inject(TYPES.IOrderService) private orderService: IOrderService
+    @inject(TYPES.IOrderService) private orderService: IOrderService,
+    @inject(TYPES.IAccountingPostingService) private accountingPosting: IAccountingPostingService
   ) { }
 
   /** The active cart, guaranteed to exist and hold at least one line. */
@@ -124,7 +126,7 @@ export class CheckoutService implements ICheckoutService {
     // order rather than charging stock and creating a duplicate.
     const existingPayment = await this.unitOfWork.Payment.findByTransactionId(razorpay_payment_id);
     if (existingPayment) {
-      const existingOrder = await this.unitOfWork.Order.findById(existingPayment.orderId);
+      const existingOrder = existingPayment.orderId != null ? await this.unitOfWork.Order.findById(existingPayment.orderId) : null;
       if (!existingOrder) throw new NotFoundError('The order for this payment no longer exists.');
       return { order: existingOrder, payment: existingPayment, alreadyProcessed: true };
     }
@@ -190,6 +192,8 @@ export class CheckoutService implements ICheckoutService {
           transactionClient
         );
 
+        await this.accountingPosting.postReceipt(payment.id, ctx.storeCode, ctx.userId, transactionClient);
+
         await this.unitOfWork.Cart.clearItems(cart.id, transactionClient);
 
         return { order, payment, alreadyProcessed: false };
@@ -199,7 +203,7 @@ export class CheckoutService implements ICheckoutService {
       // back the order it created instead of a 500.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         const winner = await this.unitOfWork.Payment.findByTransactionId(razorpay_payment_id);
-        const winnerOrder = winner && (await this.unitOfWork.Order.findById(winner.orderId));
+        const winnerOrder = winner?.orderId != null ? await this.unitOfWork.Order.findById(winner.orderId) : null;
         if (winner && winnerOrder) return { order: winnerOrder, payment: winner, alreadyProcessed: true };
       }
       throw error;
@@ -248,6 +252,10 @@ export class CheckoutService implements ICheckoutService {
         },
         transactionClient
       );
+
+      // Cash posts a receipt; an unpaid udhari posts nothing, because the sale already raised
+      // the receivable and the money has not moved yet.
+      await this.accountingPosting.postReceipt(payment.id, ctx.storeCode, ctx.userId, transactionClient);
 
       await this.unitOfWork.Cart.clearItems(cart.id, transactionClient);
 

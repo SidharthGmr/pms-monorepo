@@ -16,6 +16,7 @@ import { generateOrderNumber } from "../utils/authHelpers.service";
 import { toPublicOrder } from "../utils/public-document";
 import { buildShareUrl, generateShareToken } from "../utils/share-token";
 import { discountedUnitPrice, payablePrice } from "../utils/variant-pricing";
+import { IAccountingPostingService } from "./interfaces/Iaccounting-posting.service";
 import { INotificationService } from "./interfaces/Inotification.service";
 import { IOrderService } from "./interfaces/Iorder.service";
 import { OrderStatus, Prisma, Role } from "@prisma/client";
@@ -24,7 +25,8 @@ import { OrderStatus, Prisma, Role } from "@prisma/client";
 export class OrderService implements IOrderService {
   constructor(
     @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
-    @inject(TYPES.INotificationService) private notificationService: INotificationService
+    @inject(TYPES.INotificationService) private notificationService: INotificationService,
+    @inject(TYPES.IAccountingPostingService) private accountingPosting: IAccountingPostingService
   ) { }
 
   async getAll(filters?: OrderFilterParams): Promise<ListResponseDto<OrderDto>> {
@@ -215,6 +217,10 @@ export class OrderService implements IOrderService {
           })),
         });
       }
+
+      // Posted on the same client as the sale, so the books and the sale commit together.
+      // A store with no chart of accounts posts nothing and still sells.
+      await this.accountingPosting.postSale(order.id, storeCode, createdById, transactionClient);
 
       return order;
     };

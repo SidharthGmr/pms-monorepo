@@ -10,6 +10,6 @@ export interface IPaymentRepository {
    */
   findByTransactionId(transactionId: string): Promise<PaymentDto | null>;
   create(data: CreatePaymentDto, tx?: Prisma.TransactionClient): Promise<PaymentDto>;
-  update(id: number, data: UpdatePaymentDto): Promise<PaymentDto>;
+  update(id: number, data: UpdatePaymentDto, tx?: Prisma.TransactionClient): Promise<PaymentDto>;
   delete(id: number): Promise<PaymentDto>;
 }

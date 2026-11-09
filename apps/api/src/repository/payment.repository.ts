@@ -21,8 +21,8 @@ export class PaymentRepository implements IPaymentRepository {
     return tx.payment.create({ data });
   }
 
-  async update(id: number, data: UpdatePaymentDto): Promise<PaymentDto> {
-    return prisma.payment.update({ where: { id }, data });
+  async update(id: number, data: UpdatePaymentDto, tx: Prisma.TransactionClient = prisma): Promise<PaymentDto> {
+    return tx.payment.update({ where: { id }, data });
   }
 
   async delete(id: number): Promise<PaymentDto> {

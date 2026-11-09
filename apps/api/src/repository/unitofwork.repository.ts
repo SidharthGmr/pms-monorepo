@@ -37,6 +37,9 @@ import { INotificationRepository } from "./interfaces/inotification.repository";
 import { ICatalogRepository } from "./interfaces/icatalog.repository";
 import { ITaxRepository } from "./interfaces/itax.repository";
 import { IEstimateRepository } from "./interfaces/iestimate.repository";
+import { ILedgerAccountRepository } from "./interfaces/iledger-account.repository";
+import { IJournalEntryRepository } from "./interfaces/ijournal-entry.repository";
+import { IFinancialYearRepository } from "./interfaces/ifinancial-year.repository";
 
 export default class UnitOfWork implements IUnitOfWork {
   public User: IUserRepository;
@@ -73,6 +76,9 @@ export default class UnitOfWork implements IUnitOfWork {
   public Catalog: ICatalogRepository;
   public Tax: ITaxRepository;
   public Estimate: IEstimateRepository;
+  public LedgerAccount: ILedgerAccountRepository;
+  public JournalEntry: IJournalEntryRepository;
+  public FinancialYear: IFinancialYearRepository;
 
   constructor(
     user = container.get<IUserRepository>(TYPES.IUserRepository),
@@ -109,6 +115,9 @@ export default class UnitOfWork implements IUnitOfWork {
     catalog = container.get<ICatalogRepository>(TYPES.ICatalogRepository),
     tax = container.get<ITaxRepository>(TYPES.ITaxRepository),
     estimate = container.get<IEstimateRepository>(TYPES.IEstimateRepository),
+    ledgerAccount = container.get<ILedgerAccountRepository>(TYPES.ILedgerAccountRepository),
+    journalEntry = container.get<IJournalEntryRepository>(TYPES.IJournalEntryRepository),
+    financialYear = container.get<IFinancialYearRepository>(TYPES.IFinancialYearRepository),
   ) {
     this.User = user;
     this.Account = account;
@@ -144,6 +153,9 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Catalog = catalog;
     this.Tax = tax;
     this.Estimate = estimate;
+    this.LedgerAccount = ledgerAccount;
+    this.JournalEntry = journalEntry;
+    this.FinancialYear = financialYear;
   }
   // async transaction<T>(callback: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   //   return prisma.$transaction(async (transactionClient) => {

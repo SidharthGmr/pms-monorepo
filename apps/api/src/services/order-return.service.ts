@@ -23,6 +23,7 @@ import { notifyAdminOfReturn, notifyCustomerOfReturnStatus } from '../utils/emai
 import logger from '../utils/logger';
 import { ACTIVE_RETURN_STATUSES, orderReturnSelect } from '../repository/order-return.repository';
 import { IOrderReturnService } from './interfaces/Iorder-return.service';
+import { IAccountingPostingService } from './interfaces/Iaccounting-posting.service';
 import { IOrderService } from './interfaces/Iorder.service';
 
 const generateReturnNumber = () => {
@@ -63,7 +64,8 @@ type ReturnLine = {
 export class OrderReturnService implements IOrderReturnService {
   constructor(
     @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
-    @inject(TYPES.IOrderService) private orderService: IOrderService
+    @inject(TYPES.IOrderService) private orderService: IOrderService,
+    @inject(TYPES.IAccountingPostingService) private accountingPosting: IAccountingPostingService
   ) {}
 
   async create(data: OrderReturnModel, storeCode: string, userId: string, userName: string, isAdmin: boolean): Promise<OrderReturnDto> {
@@ -271,7 +273,7 @@ export class OrderReturnService implements IOrderReturnService {
       }
 
       const resolved = target === ReturnStatus.COMPLETED || target === ReturnStatus.REJECTED || target === ReturnStatus.CANCELLED;
-      return transactionClient.orderReturn.update({
+      const updated = await transactionClient.orderReturn.update({
         where: { id },
         data: {
           status: target,
@@ -284,6 +286,14 @@ export class OrderReturnService implements IOrderReturnService {
         },
         select: orderReturnSelect,
       });
+
+      // Only a completed return has given the money back, so that is when the books give up
+      // the revenue. A rejected or cancelled return posts nothing.
+      if (target === ReturnStatus.COMPLETED) {
+        await this.accountingPosting.postSalesReturn(id, storeCode, userId, transactionClient);
+      }
+
+      return updated;
     });
 
     void this.mailCustomer(orderReturnData);

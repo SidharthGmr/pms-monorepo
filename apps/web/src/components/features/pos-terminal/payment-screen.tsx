@@ -8,6 +8,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 
 import { useCreateOrder } from '@/hooks/service-hooks/useOrderService';
+import { useCreatePayment } from '@/hooks/service-hooks/usePaymentService';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
@@ -16,7 +17,7 @@ import { ArrowLeft, Banknote, CheckCircle2, CreditCard, ImageOff, Printer, QrCod
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { PaymentMethod, PosCartLine } from './types';
-import { OrderStatusEnum } from '@pms/types';
+import { OrderStatusEnum, PaymentStatusEnum } from '@pms/types';
 const METHODS: { value: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { value: 'CASH', label: 'Cash', icon: Banknote },
   { value: 'UPI', label: 'UPI', icon: QrCode },
@@ -33,6 +34,7 @@ interface PaymentScreenProps {
 export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScreenProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const createOrder = useCreateOrder();
+  const createPayment = useCreatePayment();
   const { data: customersResponse } = useGetAllUserList({ role: 'USER', recordPerPage: 200 });
 
   const [customerId, setCustomerId] = useState('');
@@ -79,7 +81,36 @@ export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScre
     });
 
     if (response && response.status === 201 && response.data?.data) {
-      setPlaced({ id: response.data.data.id, orderNumber: response.data.data.orderNumber });
+      const order = response.data.data;
+
+      // The till has just taken the money, so the payment is recorded against the order
+      // rather than only noted on it - without this the sale sits as a receivable for ever
+      // and the cash book never sees the cash. The order already exists either way, so a
+      // failure here is surfaced rather than rolled back.
+      try {
+        const paymentResponse = await createPayment.mutateAsync({
+          orderId: order.id,
+          amount: order.grandTotal,
+          method,
+          status: PaymentStatusEnum.Paid,
+          remarks: `POS ${method.toLowerCase()} payment`,
+        });
+        if (!paymentResponse || paymentResponse.status !== 201) {
+          toast({
+            variant: 'destructive',
+            title: `Order ${order.orderNumber} saved, payment not recorded`,
+            description: <span>{unitOfService.ErrorHandlerService.getErrorMessage(paymentResponse)}</span>,
+          });
+        }
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: `Order ${order.orderNumber} saved, payment not recorded`,
+          description: <span>{unitOfService.ErrorHandlerService.getErrorMessage(error as never)}</span>,
+        });
+      }
+
+      setPlaced({ id: order.id, orderNumber: order.orderNumber });
       onComplete();
     } else {
       const message = unitOfService.ErrorHandlerService.getErrorMessage(response);
@@ -284,7 +315,7 @@ export default function PaymentScreen({ lines, onBack, onComplete }: PaymentScre
           <Button
             type="button"
             className="h-12 w-full gap-2 text-sm font-bold"
-            loading={createOrder.isPending}
+            loading={createOrder.isPending || createPayment.isPending}
             disabled={cashShort}
             onClick={placeOrder}
           >

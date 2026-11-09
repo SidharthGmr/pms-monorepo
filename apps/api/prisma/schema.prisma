@@ -64,6 +64,10 @@ model users {
   estimatesAsCustomer      estimate[]        @relation("EstimateCustomer")
   estimatesCreated         estimate[]        @relation("EstimateCreatedBy")
   estimateStatusChanges    estimateStatusHistory[] @relation("EstimateStatusChangedBy")
+  journalEntriesCreated    journalEntry[]    @relation("JournalEntryCreatedBy")
+  accountingAudits         accountingAuditLog[] @relation("AccountingAuditPerformedBy")
+  paymentAllocationsCreated paymentAllocation[] @relation("PaymentAllocationCreatedBy")
+  financialYearsClosed     financialYear[]   @relation("FinancialYearClosedBy")
 
   @@index([userId])
   @@index([email])
@@ -83,6 +87,7 @@ model UserProfile {
   country         String?
   pincode         String?
   bio             String? // Text blobs are better stored here
+  gstin           String?
   profileImageUrl String?
   metadata        Json? // Heavy JSON belongs in the less-frequently-queried table
   user            users     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -159,6 +164,10 @@ model store {
   siteName         String?
   /// URL of the store's uploaded logo; null means the bundled default.
   storeLogo        String?
+  /// GST registration number and the two-digit state code it was issued under. The state code
+  /// is what decides CGST+SGST versus IGST once a place of supply is known.
+  gstin            String?
+  stateCode        String?
   isActive         Boolean           @default(true)
   returnWindowDays Int               @default(3)
   createdAt        DateTime          @default(now())
@@ -191,6 +200,12 @@ model store {
   orderReturnItems orderReturnItem[]
   estimates        estimate[]
   estimateItems    estimateItem[]
+  ledgerAccounts   ledgerAccount[]
+  journalEntries   journalEntry[]
+  journalLines     journalLine[]
+  financialYears   financialYear[]
+  accountingAudits accountingAuditLog[]
+  paymentAllocations paymentAllocation[]
 }
 
 model category {
@@ -590,6 +605,8 @@ model supplier {
   email        String?
   phone        String?
   address      String?
+  gstin        String?
+  stateCode    String?
   storeCode    String
   status       Status    @default(Published)
   displayOrder Int?      @default(0)
@@ -701,25 +718,41 @@ model orderItem {
   @@index([storeCode])
 }
 
+/// Every money movement, not just money against an order. `orderId` is null for a supplier
+/// payment, an expense settlement, a contra transfer or an unapplied advance; what the money
+/// was actually applied to lives in `paymentAllocation`, so an advance is simply a payment
+/// with no allocation rows yet. `amount` stays Float to match the existing order-payment
+/// rows and the code that reads them; the journal holds the Decimal figures.
 model payment {
-  id            Int           @id @default(autoincrement())
-  orderId       Int
-  amount        Float
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  transactionId String?       @unique
-  paymentDate   DateTime      @default(now())
-  remarks       String?
-  storeCode     String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  order         order         @relation(fields: [orderId], references: [id])
-  store         store         @relation(fields: [storeCode], references: [code])
+  id              Int              @id @default(autoincrement())
+  orderId         Int?
+  amount          Float
+  method          PaymentMethod
+  status          PaymentStatus    @default(PENDING)
+  transactionId   String?          @unique
+  paymentDate     DateTime         @default(now())
+  remarks         String?
+  storeCode       String
+  direction       PaymentDirection @default(IN)
+  voucherNumber   String?
+  partyType       PartyType?
+  partyId         String?
+  ledgerAccountId Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  order           order?           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  store           store            @relation(fields: [storeCode], references: [code])
+  ledgerAccount   ledgerAccount?   @relation(fields: [storeCode, ledgerAccountId], references: [storeCode, id], onDelete: Restrict)
 
+  allocations paymentAllocation[]
+
+  @@unique([storeCode, voucherNumber])
   @@index([orderId])
   @@index([transactionId])
   @@index([paymentDate])
   @@index([storeCode])
+  @@index([storeCode, direction, paymentDate])
+  @@index([storeCode, partyType, partyId])
 }
 
 enum EstimateStatus {
@@ -1190,4 +1223,225 @@ enum TaxType {
 enum DiscountType {
   PERCENTAGE
   FLAT
+}
+
+enum AccountCategory {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+/// What a posting rule needs to know about an account beyond its category: which accounts are
+/// real money (CASH, BANK) so the Cash Book can filter to them, which are the AR/AP control
+/// accounts that carry party subledgers, and which collect GST either side of a sale.
+enum AccountSubType {
+  CASH
+  BANK
+  RECEIVABLE
+  PAYABLE
+  TAX_INPUT
+  TAX_OUTPUT
+  INVENTORY
+  OTHER
+}
+
+enum VoucherType {
+  OPENING
+  JOURNAL
+  SALES
+  SALES_RETURN
+  PURCHASE
+  PURCHASE_RETURN
+  RECEIPT
+  PAYMENT
+  CONTRA
+  EXPENSE
+}
+
+enum JournalStatus {
+  POSTED
+  REVERSED
+}
+
+enum PartyType {
+  CUSTOMER
+  SUPPLIER
+  STAFF
+  OTHER
+}
+
+enum PaymentDirection {
+  IN
+  OUT
+}
+
+enum AllocationTargetType {
+  ORDER
+  PURCHASE
+  EXPENSE
+}
+
+/// One node of a store's chart of accounts. `systemKey` is how a posting rule finds the account
+/// it must debit or credit without hard-coding an id, so a store can rename "Cash in Hand"
+/// without breaking sales posting; a null key means the account is user-created and no rule
+/// looks for it.
+model ledgerAccount {
+  id           Int             @id @default(autoincrement())
+  storeCode    String
+  code         String
+  name         String
+  category     AccountCategory
+  subType      AccountSubType  @default(OTHER)
+  parentId     Int?
+  description  String?
+  isSystem     Boolean         @default(false)
+  systemKey    String?
+  isActive     Boolean         @default(true)
+  status       Status          @default(Published)
+  displayOrder Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime?       @updatedAt
+  createdById  String?
+  updatedById  String?
+
+  store    store           @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+  parent   ledgerAccount?  @relation("LedgerAccountHierarchy", fields: [storeCode, parentId], references: [storeCode, id], onDelete: Restrict)
+  children ledgerAccount[] @relation("LedgerAccountHierarchy")
+  lines    journalLine[]
+  payments payment[]
+
+  @@unique([storeCode, id])
+  @@unique([storeCode, code])
+  @@unique([storeCode, systemKey])
+  @@index([storeCode, category])
+  @@index([storeCode, parentId])
+  @@index([storeCode, isActive])
+  @@index([storeCode, status])
+}
+
+model financialYear {
+  id         Int       @id @default(autoincrement())
+  storeCode  String
+  name       String
+  startDate  DateTime
+  endDate    DateTime
+  isClosed   Boolean   @default(false)
+  closedAt   DateTime?
+  closedById String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  store    store          @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+  closedBy users?         @relation("FinancialYearClosedBy", fields: [closedById], references: [userId], onDelete: SetNull)
+  entries  journalEntry[]
+
+  @@unique([storeCode, name])
+  @@index([storeCode, startDate])
+  @@index([storeCode, isClosed])
+}
+
+/// A posted voucher. Entries are append-only: a mistake is corrected by posting a reversal that
+/// points back at the original through `reversesEntryId`, never by editing or deleting lines.
+/// `sourceType`/`sourceId` name the document that produced the entry and are unique together per
+/// store, so re-running a posting rule over the same sale cannot double-post it.
+model journalEntry {
+  id              Int           @id @default(autoincrement())
+  storeCode       String
+  voucherNumber   String
+  voucherType     VoucherType   @default(JOURNAL)
+  entryDate       DateTime
+  narration       String?
+  referenceNumber String?
+  sourceType      String?
+  sourceId        Int?
+  financialYearId Int?
+  status          JournalStatus @default(POSTED)
+  reversesEntryId Int?          @unique
+  reversedAt      DateTime?
+  totalDebit      Decimal       @default(0) @db.Decimal(14, 2)
+  totalCredit     Decimal       @default(0) @db.Decimal(14, 2)
+  isOpening       Boolean       @default(false)
+  createdById     String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  store           store          @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+  financialYear   financialYear? @relation(fields: [financialYearId], references: [id], onDelete: Restrict)
+  createdBy       users          @relation("JournalEntryCreatedBy", fields: [createdById], references: [userId], onDelete: Restrict)
+  reversesEntry   journalEntry?  @relation("JournalEntryReversal", fields: [reversesEntryId], references: [id], onDelete: Restrict)
+  reversedByEntry journalEntry?  @relation("JournalEntryReversal")
+  lines           journalLine[]
+
+  @@unique([storeCode, voucherNumber])
+  @@unique([storeCode, sourceType, sourceId])
+  @@index([storeCode, entryDate])
+  @@index([storeCode, voucherType, entryDate])
+  @@index([storeCode, status])
+  @@index([storeCode, financialYearId])
+}
+
+/// One side of one voucher. A line carries either a debit or a credit, never both. `partyType`
+/// and `partyId` are the subledger key: a customer or supplier ledger is derived by filtering
+/// the AR/AP control account's lines, which is why there is no ledger account per party.
+model journalLine {
+  id              Int        @id @default(autoincrement())
+  storeCode       String
+  journalEntryId  Int
+  ledgerAccountId Int
+  debit           Decimal    @default(0) @db.Decimal(14, 2)
+  credit          Decimal    @default(0) @db.Decimal(14, 2)
+  narration       String?
+  partyType       PartyType?
+  partyId         String?
+  lineOrder       Int        @default(0)
+  createdAt       DateTime   @default(now())
+
+  entry         journalEntry  @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  ledgerAccount ledgerAccount @relation(fields: [storeCode, ledgerAccountId], references: [storeCode, id], onDelete: Restrict)
+  store         store         @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+
+  @@index([journalEntryId])
+  @@index([storeCode, ledgerAccountId])
+  @@index([storeCode, partyType, partyId])
+}
+
+/// How much of a payment was applied to a particular invoice or bill. A payment with no rows
+/// here is an unapplied advance, and the sum of its rows can never exceed `payment.amount`.
+model paymentAllocation {
+  id          Int                  @id @default(autoincrement())
+  storeCode   String
+  paymentId   Int
+  targetType  AllocationTargetType
+  targetId    Int
+  amount      Decimal              @db.Decimal(14, 2)
+  createdAt   DateTime             @default(now())
+  createdById String
+
+  payment   payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  store     store   @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+  createdBy users   @relation("PaymentAllocationCreatedBy", fields: [createdById], references: [userId], onDelete: Restrict)
+
+  @@unique([paymentId, targetType, targetId])
+  @@index([storeCode, targetType, targetId])
+  @@index([paymentId])
+}
+
+model accountingAuditLog {
+  id            Int      @id @default(autoincrement())
+  storeCode     String
+  action        String
+  entityType    String
+  entityId      Int?
+  summary       String
+  detail        Json?
+  performedById String
+  createdAt     DateTime @default(now())
+
+  store       store @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+  performedBy users @relation("AccountingAuditPerformedBy", fields: [performedById], references: [userId], onDelete: Restrict)
+
+  @@index([storeCode, createdAt])
+  @@index([storeCode, entityType, entityId])
 }

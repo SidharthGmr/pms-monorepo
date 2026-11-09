@@ -38,6 +38,9 @@ import INotificationService from './interfaces/INotificationService';
 import ICatalogService from './interfaces/ICatalogService';
 import ITaxService from './interfaces/ITaxService';
 import IEstimateService from './interfaces/IEstimateService';
+import ILedgerAccountService from './interfaces/ILedgerAccountService';
+import IJournalEntryService from './interfaces/IJournalEntryService';
+import IPaymentService from './interfaces/IPaymentService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -82,6 +85,9 @@ export default class UnitOfService implements IUnitOfService {
   public CatalogService: ICatalogService;
   public TaxService: ITaxService;
   public EstimateService: IEstimateService;
+  public LedgerAccountService: ILedgerAccountService;
+  public JournalEntryService: IJournalEntryService;
+  public PaymentService: IPaymentService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -121,6 +127,9 @@ export default class UnitOfService implements IUnitOfService {
     catalogService = container.get<ICatalogService>(TYPES.ICatalogService),
     taxService = container.get<ITaxService>(TYPES.ITaxService),
     estimateService = container.get<IEstimateService>(TYPES.IEstimateService),
+    ledgerAccountService = container.get<ILedgerAccountService>(TYPES.ILedgerAccountService),
+    journalEntryService = container.get<IJournalEntryService>(TYPES.IJournalEntryService),
+    paymentService = container.get<IPaymentService>(TYPES.IPaymentService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -159,5 +168,8 @@ export default class UnitOfService implements IUnitOfService {
     this.CatalogService = catalogService;
     this.TaxService = taxService;
     this.EstimateService = estimateService;
+    this.LedgerAccountService = ledgerAccountService;
+    this.JournalEntryService = journalEntryService;
+    this.PaymentService = paymentService;
   }
 }

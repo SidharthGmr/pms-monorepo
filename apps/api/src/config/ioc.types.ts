@@ -36,6 +36,10 @@ export const TYPES = {
   ICatalogService: Symbol.for("CatalogService"),
   ITaxService: Symbol.for("TaxService"),
   IEstimateService: Symbol.for("EstimateService"),
+  ILedgerAccountService: Symbol.for("LedgerAccountService"),
+  IJournalEntryService: Symbol.for("JournalEntryService"),
+  IFinancialYearService: Symbol.for("FinancialYearService"),
+  IAccountingPostingService: Symbol.for("AccountingPostingService"),
 
   //Controllers
   HealthController: Symbol.for("HealthController"),
@@ -73,6 +77,9 @@ export const TYPES = {
   CatalogController: Symbol.for("CatalogController"),
   TaxController: Symbol.for("TaxController"),
   EstimateController: Symbol.for("EstimateController"),
+  LedgerAccountController: Symbol.for("LedgerAccountController"),
+  JournalEntryController: Symbol.for("JournalEntryController"),
+  FinancialYearController: Symbol.for("FinancialYearController"),
   PublicDocumentController: Symbol.for("PublicDocumentController"),
 
   //Repositories
@@ -111,4 +118,7 @@ export const TYPES = {
   ICatalogRepository: Symbol.for("CatalogRepository"),
   ITaxRepository: Symbol.for("TaxRepository"),
   IEstimateRepository: Symbol.for("EstimateRepository"),
+  ILedgerAccountRepository: Symbol.for("LedgerAccountRepository"),
+  IJournalEntryRepository: Symbol.for("JournalEntryRepository"),
+  IFinancialYearRepository: Symbol.for("FinancialYearRepository"),
 };

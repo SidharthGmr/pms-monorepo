@@ -33,6 +33,9 @@ import { INotificationRepository } from "./inotification.repository";
 import { ICatalogRepository } from "./icatalog.repository";
 import { ITaxRepository } from "./itax.repository";
 import { IEstimateRepository } from "./iestimate.repository";
+import { ILedgerAccountRepository } from "./iledger-account.repository";
+import { IJournalEntryRepository } from "./ijournal-entry.repository";
+import { IFinancialYearRepository } from "./ifinancial-year.repository";
 
 export default interface IUnitOfWork {
   User: IUserRepository;
@@ -69,6 +72,9 @@ export default interface IUnitOfWork {
   Catalog: ICatalogRepository;
   Tax: ITaxRepository;
   Estimate: IEstimateRepository;
+  LedgerAccount: ILedgerAccountRepository;
+  JournalEntry: IJournalEntryRepository;
+  FinancialYear: IFinancialYearRepository;
 
   /**
    * Executes a set of operations within a database transaction.

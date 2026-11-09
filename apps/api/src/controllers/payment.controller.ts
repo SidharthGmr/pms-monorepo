@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { container } from "../config/ioc.config";
 import { TYPES } from "../config/ioc.types";
 import IUnitOfService from "../services/interfaces/iunitof.service";
-import { MISSING_STORE_CODE } from '../constants/responses';
+import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 
 import { CustomResponse, ListResponseDto, CreatePaymentDto, PaymentDto, UpdatePaymentDto } from '@pms/types';
 export class PaymentController {
@@ -30,9 +30,11 @@ export class PaymentController {
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<PaymentDto>>> => {
     const storeCode = req.user?.storeCode;
+    const userId = req.user?.userId;
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
     const body = req.body as CreatePaymentDto;
-    const payment = await this.unitOfService.Payment.create(body, storeCode);
+    const payment = await this.unitOfService.Payment.create(body, storeCode, userId);
     return res.status(201).json({ success: true, message: "Payment created successfully", data: payment });
   };
 
@@ -40,9 +42,11 @@ export class PaymentController {
     const id = parseInt(req.params["id"] as string);
     if (isNaN(id)) return res.status(400).json({ success: false, message: "Invalid id" });
     const storeCode = req.user?.storeCode;
+    const userId = req.user?.userId;
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
     const body = req.body as UpdatePaymentDto;
-    const payment = await this.unitOfService.Payment.update(id, body, storeCode);
+    const payment = await this.unitOfService.Payment.update(id, body, storeCode, userId);
     return res.status(200).json({ success: true, message: "Payment updated successfully", data: payment });
   };
 
