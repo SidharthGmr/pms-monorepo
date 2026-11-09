@@ -13,6 +13,12 @@ export interface OrderDto {
   tax: number;
   shippingCost: number;
   grandTotal: number;
+  /** Sale prices are tax-inclusive, so this is the total less the GST sitting inside it. */
+  taxableAmount?: number;
+  /** A presentation split of the one GST figure, the same convention estimates use. */
+  cgstAmount?: number;
+  sgstAmount?: number;
+  igstAmount?: number;
   status: OrderStatus;
   notes?: string | null;
   deliveredAt?: Date | string | null;

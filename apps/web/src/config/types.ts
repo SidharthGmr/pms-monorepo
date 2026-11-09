@@ -41,4 +41,5 @@ export const TYPES = {
   ILedgerAccountService: Symbol.for('ILedgerAccountService'),
   IJournalEntryService: Symbol.for('IJournalEntryService'),
   IPaymentService: Symbol.for('IPaymentService'),
+  IExpenseService: Symbol.for('IExpenseService'),
 };

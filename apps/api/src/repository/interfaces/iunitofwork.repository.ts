@@ -33,6 +33,7 @@ import { INotificationRepository } from "./inotification.repository";
 import { ICatalogRepository } from "./icatalog.repository";
 import { ITaxRepository } from "./itax.repository";
 import { IEstimateRepository } from "./iestimate.repository";
+import { IExpenseRepository } from "./iexpense.repository";
 import { ILedgerAccountRepository } from "./iledger-account.repository";
 import { IJournalEntryRepository } from "./ijournal-entry.repository";
 import { IFinancialYearRepository } from "./ifinancial-year.repository";
@@ -72,6 +73,7 @@ export default interface IUnitOfWork {
   Catalog: ICatalogRepository;
   Tax: ITaxRepository;
   Estimate: IEstimateRepository;
+  Expense: IExpenseRepository;
   LedgerAccount: ILedgerAccountRepository;
   JournalEntry: IJournalEntryRepository;
   FinancialYear: IFinancialYearRepository;

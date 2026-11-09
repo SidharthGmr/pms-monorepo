@@ -1,4 +1,14 @@
-import { EstimateDto, EstimateFilterParams, EstimateModel, EstimateStatusModel, ListResponseDto, PublicDocumentDto, ShareLinkDto } from '@pms/types';
+import {
+  EstimateConvertModel,
+  EstimateDto,
+  EstimateFilterParams,
+  EstimateModel,
+  EstimateStatusModel,
+  ListResponseDto,
+  OrderDto,
+  PublicDocumentDto,
+  ShareLinkDto,
+} from '@pms/types';
 
 export interface IEstimateService {
   create(data: EstimateModel, storeCode: string, createdById: string): Promise<EstimateDto>;
@@ -11,4 +21,5 @@ export interface IEstimateService {
   createShareLink(id: number, storeCode: string): Promise<ShareLinkDto>;
   getPublic(publicToken: string): Promise<PublicDocumentDto>;
   duplicate(id: number, storeCode: string, createdById: string): Promise<EstimateDto>;
+  convert(id: number, data: EstimateConvertModel, storeCode: string, convertedById: string, convertedByName: string): Promise<OrderDto>;
 }

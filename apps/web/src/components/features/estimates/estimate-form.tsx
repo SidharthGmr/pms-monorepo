@@ -12,7 +12,7 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import { useCreateEstimate, useGetEstimateById, useUpdateEstimate } from '@/hooks/service-hooks/useEstimateService';
 import { useGetAllPublicProductVariants } from '@/hooks/service-hooks/useProductVariantService';
-import { useGetAllTaxes } from '@/hooks/service-hooks/useTaxService';
+import { useTaxOptions } from '@/hooks/use-tax-options';
 import { useGetAllUserList } from '@/hooks/service-hooks/useUserList.service.hook';
 import useUnsavedChangesWarning from '@/hooks/use-unsaved-changes-warning';
 import { amountInWords } from '@/lib/amount-in-words';
@@ -112,13 +112,7 @@ export default function EstimateForm({ id }: EstimateFormProps) {
   );
   const customerOptions = useMemo(() => customers.map((c) => ({ label: c.name, value: c.id })), [customers]);
 
-  const { data: taxesResponse } = useGetAllTaxes({ showAllRecords: true });
-  const taxes = useMemo(() => taxesResponse?.data?.data?.data ?? [], [taxesResponse]);
-  const taxById = useMemo(() => new Map(taxes.map((tax) => [tax.id, tax])), [taxes]);
-  const taxOptions = useMemo<InputSelectItem[]>(
-    () => [{ label: 'No tax', value: '' }, ...taxes.map((tax) => ({ label: `${tax.name} · ${tax.rate}%`, value: tax.id }))],
-    [taxes]
-  );
+  const { taxById, options: taxOptions } = useTaxOptions({ emptyLabel: 'No tax' });
 
   const { data: variantsResponse } = useGetAllPublicProductVariants({ showAllRecords: true });
   const variants = useMemo(() => variantsResponse?.data?.data?.data || [], [variantsResponse]);
@@ -207,6 +201,8 @@ export default function EstimateForm({ id }: EstimateFormProps) {
     }
   };
 
+  const blankRow = () => ({ variantId: undefined as unknown as number, quantity: 1, discountType: DiscountTypeEnum.Percentage, taxId: '' });
+
   const selectVariant = (index: number, variantId: number | undefined) => {
     setValue(`items.${index}.variantId`, variantId as unknown as number, { shouldDirty: true });
     const variant = variantId != null ? variantById.get(variantId) : undefined;
@@ -215,6 +211,29 @@ export default function EstimateForm({ id }: EstimateFormProps) {
       setValue(`items.${index}.unitPrice`, charged, { shouldDirty: true });
       setValue(`items.${index}.taxId`, variant.taxId ?? '', { shouldDirty: true });
     }
+    // Filling the last row grows the table by itself, so entering ten items never needs ten
+    // clicks on Add Row. shouldFocus stays off or the focus would jump out of this row's
+    // quantity before it can be typed.
+    if (variantId != null && index === (form.getValues('items')?.length ?? 0) - 1) {
+      append(blankRow(), { shouldFocus: false });
+    }
+  };
+
+  /**
+   * Rows the user never picked an item for are scaffolding, not data - the auto-added trailing
+   * row most of all - so they are dropped before validation rather than failing it. When every
+   * row is blank one is kept, so "Variant is required" still has somewhere to appear.
+   */
+  const dropBlankRows = () => {
+    const items = form.getValues('items') ?? [];
+    const blankIndexes = items.map((item, i) => (item.variantId == null || !Number(item.variantId) ? i : -1)).filter((i) => i >= 0);
+    if (blankIndexes.length === items.length && blankIndexes.length > 0) blankIndexes.shift();
+    for (let k = blankIndexes.length - 1; k >= 0; k--) remove(blankIndexes[k]!);
+  };
+
+  const saveWith = (status: 'DRAFT' | 'SENT') => () => {
+    dropBlankRows();
+    void handleSubmit((model) => submitData(model, status))();
   };
 
   const buildModel = (model: EstimateFormValues, status?: 'DRAFT' | 'SENT'): EstimateModel => ({
@@ -618,7 +637,7 @@ export default function EstimateForm({ id }: EstimateFormProps) {
                       size="sm"
                       icon={Plus}
                       iconPlacement="left"
-                      onClick={() => append({ variantId: undefined as unknown as number, quantity: 1, discountType: DiscountTypeEnum.Percentage, taxId: '' })}
+                      onClick={() => append(blankRow())}
                     >
                       Add Row
                     </Button>
@@ -838,15 +857,15 @@ export default function EstimateForm({ id }: EstimateFormProps) {
               Cancel
             </Button>
             {isEdit ? (
-              <Button type="button" loading={isSaving} onClick={handleSubmit((model) => submitData(model, 'DRAFT'))}>
+              <Button type="button" loading={isSaving} onClick={saveWith('DRAFT')}>
                 Save Changes
               </Button>
             ) : (
               <>
-                <Button type="button" variant="secondary" loading={isSaving} onClick={handleSubmit((model) => submitData(model, 'DRAFT'))}>
+                <Button type="button" variant="secondary" loading={isSaving} onClick={saveWith('DRAFT')}>
                   Save Draft
                 </Button>
-                <Button type="button" loading={isSaving} onClick={handleSubmit((model) => submitData(model, 'SENT'))}>
+                <Button type="button" loading={isSaving} onClick={saveWith('SENT')}>
                   Save &amp; Send
                 </Button>
               </>

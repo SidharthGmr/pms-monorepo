@@ -2,11 +2,13 @@ import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import {
   CustomResponse as Response,
+  EstimateConvertModel,
   EstimateDto,
   EstimateFilterParams,
   EstimateModel,
   EstimateStatusModel,
   ListResponseDto,
+  OrderDto,
   ShareLinkDto,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';
@@ -52,6 +54,10 @@ export default class EstimateService implements IEstimateService {
 
   duplicate(id: number | string): Promise<AxiosResponse<Response<EstimateDto>>> {
     return this.httpService.call().post<EstimateDto, AxiosResponse<Response<EstimateDto>>>(`/estimates/${id}/duplicate`, {});
+  }
+
+  convert(id: number | string, model: EstimateConvertModel): Promise<AxiosResponse<Response<OrderDto>>> {
+    return this.httpService.call().post<OrderDto, AxiosResponse<Response<OrderDto>>>(`/estimates/${id}/convert`, model);
   }
 
   share(id: number | string): Promise<AxiosResponse<Response<ShareLinkDto>>> {

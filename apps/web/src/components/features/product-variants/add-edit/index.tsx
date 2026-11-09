@@ -32,7 +32,7 @@ import {
 } from '@pms/types';
 import TaxTypeData from '@/data/tax.data';
 import DiscountTypeData from '@/data/discount.data';
-import { useGetAllTaxes } from '@/hooks/service-hooks/useTaxService';
+import { useTaxOptions } from '@/hooks/use-tax-options';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -68,8 +68,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const { data: getEntriesResponse } = useGetAllMasterEntries({ showAllRecords: true, status: StatusValues.Published });
   const masterEntries = useMemo(() => getEntriesResponse?.data?.data?.data ?? [], [getEntriesResponse]);
 
-  const { data: getTaxesResponse } = useGetAllTaxes({ showAllRecords: true, isActive: true });
-  const taxOptions = useMemo(() => (getTaxesResponse?.data?.data?.data ?? []).map((tax) => ({ value: tax.id, label: tax.name })), [getTaxesResponse]);
+  const { options: taxOptions } = useTaxOptions();
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 

@@ -41,6 +41,7 @@ import IEstimateService from './interfaces/IEstimateService';
 import ILedgerAccountService from './interfaces/ILedgerAccountService';
 import IJournalEntryService from './interfaces/IJournalEntryService';
 import IPaymentService from './interfaces/IPaymentService';
+import IExpenseService from './interfaces/IExpenseService';
 import IUnitOfService from './interfaces/IUnitOfService';
 import IUserListService from './interfaces/IUserListService.ts';
 
@@ -88,6 +89,7 @@ export default class UnitOfService implements IUnitOfService {
   public LedgerAccountService: ILedgerAccountService;
   public JournalEntryService: IJournalEntryService;
   public PaymentService: IPaymentService;
+  public ExpenseService: IExpenseService;
 
   constructor(
     httpService = container.get<IHttpService>(TYPES.IHttpService),
@@ -130,6 +132,7 @@ export default class UnitOfService implements IUnitOfService {
     ledgerAccountService = container.get<ILedgerAccountService>(TYPES.ILedgerAccountService),
     journalEntryService = container.get<IJournalEntryService>(TYPES.IJournalEntryService),
     paymentService = container.get<IPaymentService>(TYPES.IPaymentService),
+    expenseService = container.get<IExpenseService>(TYPES.IExpenseService),
   ) {
     this.HttpService = httpService;
     this.AccountService = accountService;
@@ -171,5 +174,6 @@ export default class UnitOfService implements IUnitOfService {
     this.LedgerAccountService = ledgerAccountService;
     this.JournalEntryService = journalEntryService;
     this.PaymentService = paymentService;
+    this.ExpenseService = expenseService;
   }
 }

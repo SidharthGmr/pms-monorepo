@@ -71,3 +71,11 @@ export const estimateStatusFields = z.object({
 });
 
 export const estimateStatusValidator = z.object({ body: estimateStatusFields });
+
+export const estimateConvertFields = z.object({
+  orderDate: z.string().trim().nullish(),
+  status: z.enum(['PENDING', 'CONFIRMED']).optional(),
+  notes: z.string().nullish(),
+});
+
+export const estimateConvertValidator = z.object({ body: estimateConvertFields });

@@ -206,3 +206,51 @@ export function buildTransferLines(input: TransferPostingInput): PostingLineById
 
   return [lineById(input.toAccountId, amount, 0), lineById(input.fromAccountId, 0, amount)];
 }
+
+export interface ExpensePostingInput {
+  /** The expense ledger account the user picked - the category, straight off the chart. */
+  expenseAccountId: number;
+  taxableAmount: number;
+  taxAmount: number;
+  isInterState: boolean;
+  cgstInputAccountId?: number | null | undefined;
+  sgstInputAccountId?: number | null | undefined;
+  igstInputAccountId?: number | null | undefined;
+  /** Cash or bank when the expense is paid outright, Accounts Payable while it is still owed. */
+  creditAccountId: number;
+}
+
+/**
+ * Recognising a cost. The GST on a purchase is an asset - input credit the business can set
+ * against the GST it collects - so it is debited to the input accounts rather than buried in
+ * the expense. When the chart has no input account to put it in the tax becomes part of the
+ * cost instead, which is the correct treatment for a credit that cannot be claimed, and keeps
+ * the voucher balanced by construction rather than by a rounding plug.
+ */
+export function buildExpenseLines(input: ExpensePostingInput): PostingLineByIdSpec[] {
+  const taxable = round2(Math.max(input.taxableAmount, 0));
+  const tax = round2(Math.max(input.taxAmount, 0));
+  if (taxable <= 0 && tax <= 0) return [];
+  if (input.expenseAccountId === input.creditAccountId) return [];
+
+  const taxLines: PostingLineByIdSpec[] = [];
+  let unclaimableTax = 0;
+
+  if (tax > 0) {
+    if (input.isInterState) {
+      if (input.igstInputAccountId) taxLines.push(lineById(input.igstInputAccountId, tax, 0));
+      else unclaimableTax = tax;
+    } else if (input.cgstInputAccountId && input.sgstInputAccountId) {
+      const cgst = round2(tax / 2);
+      taxLines.push(lineById(input.cgstInputAccountId, cgst, 0), lineById(input.sgstInputAccountId, round2(tax - cgst), 0));
+    } else {
+      unclaimableTax = tax;
+    }
+  }
+
+  const expenseDebit = round2(taxable + unclaimableTax);
+  const claimedTax = round2(taxLines.reduce((sum, taxLine) => sum + taxLine.debit, 0));
+  const total = round2(expenseDebit + claimedTax);
+
+  return [lineById(input.expenseAccountId, expenseDebit, 0), ...taxLines, lineById(input.creditAccountId, 0, total)];
+}

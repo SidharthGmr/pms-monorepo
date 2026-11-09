@@ -36,6 +36,7 @@ import { INotificationService } from "./interfaces/Inotification.service";
 import { ICatalogService } from "./interfaces/Icatalog.service";
 import { ITaxService } from "./interfaces/Itax.service";
 import { IEstimateService } from "./interfaces/Iestimate.service";
+import { IExpenseService } from "./interfaces/Iexpense.service";
 import { ILedgerAccountService } from "./interfaces/Iledger-account.service";
 import { IJournalEntryService } from "./interfaces/Ijournal-entry.service";
 import { IFinancialYearService } from "./interfaces/Ifinancial-year.service";
@@ -77,6 +78,7 @@ export default class UnitOfService implements IUnitOfService {
   public Catalog: ICatalogService;
   public Tax: ITaxService;
   public Estimate: IEstimateService;
+  public Expense: IExpenseService;
   public LedgerAccount: ILedgerAccountService;
   public JournalEntry: IJournalEntryService;
   public FinancialYear: IFinancialYearService;
@@ -118,6 +120,7 @@ export default class UnitOfService implements IUnitOfService {
     catalog = container.get<ICatalogService>(TYPES.ICatalogService),
     tax = container.get<ITaxService>(TYPES.ITaxService),
     estimate = container.get<IEstimateService>(TYPES.IEstimateService),
+    expense = container.get<IExpenseService>(TYPES.IExpenseService),
     ledgerAccount = container.get<ILedgerAccountService>(TYPES.ILedgerAccountService),
     journalEntry = container.get<IJournalEntryService>(TYPES.IJournalEntryService),
     financialYear = container.get<IFinancialYearService>(TYPES.IFinancialYearService),
@@ -158,6 +161,7 @@ export default class UnitOfService implements IUnitOfService {
     this.Catalog = catalog;
     this.Tax = tax;
     this.Estimate = estimate;
+    this.Expense = expense;
     this.LedgerAccount = ledgerAccount;
     this.JournalEntry = journalEntry;
     this.FinancialYear = financialYear;

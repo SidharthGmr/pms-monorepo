@@ -187,6 +187,11 @@ import { IEstimateService } from '../services/interfaces/Iestimate.service';
 import { EstimateService } from '../services/estimate.service';
 import { IEstimateRepository } from '../repository/interfaces/iestimate.repository';
 import { EstimateRepository } from '../repository/estimate.repository';
+import { ExpenseController } from '../controllers/expense.controller';
+import { IExpenseService } from '../services/interfaces/Iexpense.service';
+import { ExpenseService } from '../services/expense.service';
+import { IExpenseRepository } from '../repository/interfaces/iexpense.repository';
+import { ExpenseRepository } from '../repository/expense.repository';
 
 import { LedgerAccountController } from '../controllers/ledger-account.controller';
 import { ILedgerAccountService } from '../services/interfaces/Iledger-account.service';
@@ -246,6 +251,7 @@ container.bind<NotificationController>(TYPES.NotificationController).to(Notifica
 container.bind<CatalogController>(TYPES.CatalogController).to(CatalogController);
 container.bind<TaxController>(TYPES.TaxController).to(TaxController);
 container.bind<EstimateController>(TYPES.EstimateController).to(EstimateController);
+container.bind<ExpenseController>(TYPES.ExpenseController).to(ExpenseController);
 container.bind<LedgerAccountController>(TYPES.LedgerAccountController).to(LedgerAccountController);
 container.bind<JournalEntryController>(TYPES.JournalEntryController).to(JournalEntryController);
 container.bind<FinancialYearController>(TYPES.FinancialYearController).to(FinancialYearController);
@@ -286,6 +292,7 @@ container.bind<INotificationService>(TYPES.INotificationService).to(Notification
 container.bind<ICatalogService>(TYPES.ICatalogService).to(CatalogService);
 container.bind<ITaxService>(TYPES.ITaxService).to(TaxService);
 container.bind<IEstimateService>(TYPES.IEstimateService).to(EstimateService);
+container.bind<IExpenseService>(TYPES.IExpenseService).to(ExpenseService);
 container.bind<ILedgerAccountService>(TYPES.ILedgerAccountService).to(LedgerAccountService);
 container.bind<IJournalEntryService>(TYPES.IJournalEntryService).to(JournalEntryService);
 container.bind<IFinancialYearService>(TYPES.IFinancialYearService).to(FinancialYearService);
@@ -325,6 +332,7 @@ container.bind<INotificationRepository>(TYPES.INotificationRepository).to(Notifi
 container.bind<ICatalogRepository>(TYPES.ICatalogRepository).to(CatalogRepository);
 container.bind<ITaxRepository>(TYPES.ITaxRepository).to(TaxRepository);
 container.bind<IEstimateRepository>(TYPES.IEstimateRepository).to(EstimateRepository);
+container.bind<IExpenseRepository>(TYPES.IExpenseRepository).to(ExpenseRepository);
 container.bind<ILedgerAccountRepository>(TYPES.ILedgerAccountRepository).to(LedgerAccountRepository);
 container.bind<IJournalEntryRepository>(TYPES.IJournalEntryRepository).to(JournalEntryRepository);
 container.bind<IFinancialYearRepository>(TYPES.IFinancialYearRepository).to(FinancialYearRepository);

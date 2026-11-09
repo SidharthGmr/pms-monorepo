@@ -70,6 +70,18 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
   const { control, handleSubmit, reset } = form;
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
+  /**
+   * Rows the user never picked an item for are scaffolding, not data - the auto-added trailing
+   * row most of all - so they are dropped before validation rather than failing it. When every
+   * row is blank one is kept, so the required-variant message still has somewhere to appear.
+   */
+  const dropBlankRows = () => {
+    const items = form.getValues('items') ?? [];
+    const blankIndexes = items.map((item, i) => (item.variantId == null || !Number(item.variantId) ? i : -1)).filter((i) => i >= 0);
+    if (blankIndexes.length === items.length && blankIndexes.length > 0) blankIndexes.shift();
+    for (let k = blankIndexes.length - 1; k >= 0; k--) remove(blankIndexes[k]!);
+  };
+
   useEffect(() => {
     if (isEdit && orderResponse?.data?.data) {
       const order = orderResponse.data.data;
@@ -120,7 +132,14 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form autoComplete="off" onSubmit={handleSubmit(submitData)} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form
+            autoComplete="off"
+            onSubmit={(event) => {
+              dropBlankRows();
+              void handleSubmit(submitData)(event);
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
             <FormField
               control={control}
               name="customerId"
@@ -203,7 +222,14 @@ export default function ManageOrder({ id, isOpen, onClose }: ManageOrderProps) {
                                 value={field.value ?? ''}
                                 valueType="number"
                                 containerName={`order-product-${index}`}
-                                onChange={(value) => field.onChange(value === '' ? undefined : Number(value))}
+                                onChange={(value) => {
+                                  field.onChange(value === '' ? undefined : Number(value));
+                                  // Filling the last row grows the list by itself; no focus
+                                  // steal, or the quantity could not be typed next.
+                                  if (value !== '' && index === (form.getValues('items')?.length ?? 0) - 1) {
+                                    append({ variantId: undefined as any, quantity: 1 }, { shouldFocus: false });
+                                  }
+                                }}
                               />
                             </FormControl>
                             <FormMessage />

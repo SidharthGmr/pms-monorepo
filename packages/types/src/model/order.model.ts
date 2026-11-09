@@ -16,6 +16,12 @@ export interface CreateOrderModel {
   items?: {
     variantId: number;
     quantity: number;
+    /**
+     * Server-only. The price a quotation already promised the customer, read back from the
+     * stored estimate when it is converted. The public order validator does not accept this
+     * field, so a client can never dictate its own price with it.
+     */
+    unitPriceOverride?: number;
   }[];
 }
 

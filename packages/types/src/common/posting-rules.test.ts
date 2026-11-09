@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildExpenseLines,
   buildMoneyVoucherLines,
   buildPurchaseLines,
   buildReceiptLines,
   buildSaleLines,
   buildSalesReturnLines,
   buildTransferLines,
+  PostingLineByIdSpec,
   proportionalTax,
 } from './posting-rules';
-import { computeJournalTotals, validateJournalLines } from './journal-balance';
+import { computeJournalTotals, round2, validateJournalLines } from './journal-balance';
 
 // Every expected number is hand-computed. These builders decide what the books say about a
 // sale, so a drift here silently misstates revenue or GST.
@@ -180,5 +182,74 @@ describe('buildTransferLines', () => {
 
   it('refuses a transfer to the same account', () => {
     expect(buildTransferLines({ fromAccountId: 10, toAccountId: 10, amount: 2000 })).toEqual([]);
+  });
+});
+
+describe('buildExpenseLines', () => {
+  const sum = (lines: PostingLineByIdSpec[], side: 'debit' | 'credit') => round2(lines.reduce((total, line) => total + line[side], 0));
+
+  it('debits the expense and credits cash for a paid expense with no GST', () => {
+    const lines = buildExpenseLines({ expenseAccountId: 55, taxableAmount: 15000, taxAmount: 0, isInterState: false, creditAccountId: 11 });
+    expect(lines).toEqual([
+      { ledgerAccountId: 55, debit: 15000, credit: 0 },
+      { ledgerAccountId: 11, debit: 0, credit: 15000 },
+    ]);
+  });
+
+  it('debits GST to the input accounts rather than into the expense', () => {
+    const lines = buildExpenseLines({
+      expenseAccountId: 55,
+      taxableAmount: 10000,
+      taxAmount: 1800,
+      isInterState: false,
+      cgstInputAccountId: 16,
+      sgstInputAccountId: 17,
+      creditAccountId: 11,
+    });
+    expect(lines.find((line) => line.ledgerAccountId === 55)?.debit).toBe(10000);
+    expect(lines.find((line) => line.ledgerAccountId === 16)?.debit).toBe(900);
+    expect(lines.find((line) => line.ledgerAccountId === 17)?.debit).toBe(900);
+    expect(lines.find((line) => line.ledgerAccountId === 11)?.credit).toBe(11800);
+    expect(sum(lines, 'debit')).toBe(sum(lines, 'credit'));
+  });
+
+  it('uses the IGST input account for an inter-state bill', () => {
+    const lines = buildExpenseLines({
+      expenseAccountId: 55,
+      taxableAmount: 10000,
+      taxAmount: 1800,
+      isInterState: true,
+      igstInputAccountId: 18,
+      cgstInputAccountId: 16,
+      sgstInputAccountId: 17,
+      creditAccountId: 11,
+    });
+    expect(lines.find((line) => line.ledgerAccountId === 18)?.debit).toBe(1800);
+    expect(lines.some((line) => line.ledgerAccountId === 16)).toBe(false);
+    expect(sum(lines, 'debit')).toBe(sum(lines, 'credit'));
+  });
+
+  it('absorbs the GST into the cost when the chart has no input account for it', () => {
+    const lines = buildExpenseLines({ expenseAccountId: 55, taxableAmount: 10000, taxAmount: 1800, isInterState: false, creditAccountId: 11 });
+    expect(lines.find((line) => line.ledgerAccountId === 55)?.debit).toBe(11800);
+    expect(sum(lines, 'debit')).toBe(sum(lines, 'credit'));
+  });
+
+  it('keeps an odd GST split adding back to the whole', () => {
+    const lines = buildExpenseLines({
+      expenseAccountId: 55,
+      taxableAmount: 100,
+      taxAmount: 5.01,
+      isInterState: false,
+      cgstInputAccountId: 16,
+      sgstInputAccountId: 17,
+      creditAccountId: 11,
+    });
+    expect(sum(lines, 'debit')).toBe(sum(lines, 'credit'));
+    expect(round2((lines.find((l) => l.ledgerAccountId === 16)?.debit ?? 0) + (lines.find((l) => l.ledgerAccountId === 17)?.debit ?? 0))).toBe(5.01);
+  });
+
+  it('refuses to post an expense against itself', () => {
+    expect(buildExpenseLines({ expenseAccountId: 55, taxableAmount: 100, taxAmount: 0, isInterState: false, creditAccountId: 55 })).toEqual([]);
   });
 });

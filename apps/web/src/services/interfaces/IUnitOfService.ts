@@ -37,6 +37,7 @@ import IEstimateService from './IEstimateService';
 import ILedgerAccountService from './ILedgerAccountService';
 import IJournalEntryService from './IJournalEntryService';
 import IPaymentService from './IPaymentService';
+import IExpenseService from './IExpenseService';
 import IUserListService from './IUserListService.ts';
 
 export default interface IUnitOfService {
@@ -80,4 +81,5 @@ export default interface IUnitOfService {
   LedgerAccountService: ILedgerAccountService;
   JournalEntryService: IJournalEntryService;
   PaymentService: IPaymentService;
+  ExpenseService: IExpenseService;
 }

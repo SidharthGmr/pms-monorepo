@@ -86,6 +86,8 @@ import JournalEntryService from '@/services/JournalEntryService';
 import IJournalEntryService from '@/services/interfaces/IJournalEntryService';
 import PaymentService from '@/services/PaymentService';
 import IPaymentService from '@/services/interfaces/IPaymentService';
+import ExpenseService from '@/services/ExpenseService';
+import IExpenseService from '@/services/interfaces/IExpenseService';
 import UnitOfService from '@/services/UnitOfService';
 import UserListService from '@/services/UserListService';
 
@@ -133,6 +135,7 @@ container.bind<IEstimateService>(TYPES.IEstimateService).to(EstimateService);
 container.bind<ILedgerAccountService>(TYPES.ILedgerAccountService).to(LedgerAccountService);
 container.bind<IJournalEntryService>(TYPES.IJournalEntryService).to(JournalEntryService);
 container.bind<IPaymentService>(TYPES.IPaymentService).to(PaymentService);
+container.bind<IExpenseService>(TYPES.IExpenseService).to(ExpenseService);
 
 export { container };
 

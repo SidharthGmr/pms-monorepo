@@ -7,8 +7,10 @@ import {
   EstimateFilterParams,
   EstimateModel,
   EstimateStatus,
+  EstimateConvertModel,
   EstimateStatusModel,
   ListResponseDto,
+  OrderDto,
   ShareLinkDto,
 } from '@pms/types';
 import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
@@ -16,6 +18,17 @@ import IUnitOfService from '../services/interfaces/iunitof.service';
 
 export class EstimateController {
   constructor(private unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService)) {}
+
+  convert = async (req: Request, res: Response): Promise<Response<CustomResponse<OrderDto>>> => {
+    const id = parseInt(req.params['id'] as string);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+    const storeCode = req.user?.storeCode;
+    const userId = req.user?.userId;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    if (!userId) return res.status(401).json(MISSING_USER_ID);
+    const data = await this.unitOfService.Estimate.convert(id, req.body as EstimateConvertModel, storeCode, userId, req.user?.name ?? '');
+    return res.status(201).json({ success: true, message: 'Estimate converted to a sale', data });
+  };
 
   create = async (req: Request, res: Response): Promise<Response<CustomResponse<EstimateDto>>> => {
     const body = req.body as EstimateModel;

@@ -33,6 +33,7 @@ import { INotificationService } from "./Inotification.service";
 import { ICatalogService } from "./Icatalog.service";
 import { ITaxService } from "./Itax.service";
 import { IEstimateService } from "./Iestimate.service";
+import { IExpenseService } from "./Iexpense.service";
 import { ILedgerAccountService } from "./Iledger-account.service";
 import { IJournalEntryService } from "./Ijournal-entry.service";
 import { IFinancialYearService } from "./Ifinancial-year.service";
@@ -74,6 +75,7 @@ export default interface IUnitOfService {
   Catalog: ICatalogService;
   Tax: ITaxService;
   Estimate: IEstimateService;
+  Expense: IExpenseService;
   LedgerAccount: ILedgerAccountService;
   JournalEntry: IJournalEntryService;
   FinancialYear: IFinancialYearService;

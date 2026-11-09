@@ -37,6 +37,7 @@ import { INotificationRepository } from "./interfaces/inotification.repository";
 import { ICatalogRepository } from "./interfaces/icatalog.repository";
 import { ITaxRepository } from "./interfaces/itax.repository";
 import { IEstimateRepository } from "./interfaces/iestimate.repository";
+import { IExpenseRepository } from "./interfaces/iexpense.repository";
 import { ILedgerAccountRepository } from "./interfaces/iledger-account.repository";
 import { IJournalEntryRepository } from "./interfaces/ijournal-entry.repository";
 import { IFinancialYearRepository } from "./interfaces/ifinancial-year.repository";
@@ -76,6 +77,7 @@ export default class UnitOfWork implements IUnitOfWork {
   public Catalog: ICatalogRepository;
   public Tax: ITaxRepository;
   public Estimate: IEstimateRepository;
+  public Expense: IExpenseRepository;
   public LedgerAccount: ILedgerAccountRepository;
   public JournalEntry: IJournalEntryRepository;
   public FinancialYear: IFinancialYearRepository;
@@ -115,6 +117,7 @@ export default class UnitOfWork implements IUnitOfWork {
     catalog = container.get<ICatalogRepository>(TYPES.ICatalogRepository),
     tax = container.get<ITaxRepository>(TYPES.ITaxRepository),
     estimate = container.get<IEstimateRepository>(TYPES.IEstimateRepository),
+    expense = container.get<IExpenseRepository>(TYPES.IExpenseRepository),
     ledgerAccount = container.get<ILedgerAccountRepository>(TYPES.ILedgerAccountRepository),
     journalEntry = container.get<IJournalEntryRepository>(TYPES.IJournalEntryRepository),
     financialYear = container.get<IFinancialYearRepository>(TYPES.IFinancialYearRepository),
@@ -153,6 +156,7 @@ export default class UnitOfWork implements IUnitOfWork {
     this.Catalog = catalog;
     this.Tax = tax;
     this.Estimate = estimate;
+    this.Expense = expense;
     this.LedgerAccount = ledgerAccount;
     this.JournalEntry = journalEntry;
     this.FinancialYear = financialYear;

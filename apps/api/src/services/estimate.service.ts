@@ -15,6 +15,9 @@ import {
   PublicDocumentDto,
   ShareLinkDto,
   TaxCategoryEnum,
+  EstimateConvertModel,
+  OrderDto,
+  OrderStatusEnum,
   TaxType,
   TaxTypeEnum,
 } from '@pms/types';
@@ -27,12 +30,27 @@ import { toPublicEstimate } from '../utils/public-document';
 import { buildShareUrl, generateShareToken } from '../utils/share-token';
 import { discountedUnitPrice } from '../utils/variant-pricing';
 import { IEstimateService } from './interfaces/Iestimate.service';
+import type { IOrderService } from './interfaces/Iorder.service';
 
 type EstimateItemRow = Omit<Prisma.estimateItemCreateManyEstimateInput, 'estimateId'>;
 
+/**
+ * How far a converted sale's total may sit from the quoted total before the conversion is
+ * refused. Spreading a line total back over its quantity can leave a few paisa; anything
+ * larger means the two documents genuinely disagree about the money.
+ */
+const MAX_CONVERSION_DRIFT = 1;
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
 @injectable()
 export class EstimateService implements IEstimateService {
-  constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) {}
+  // The order service is injected directly rather than through IUnitOfService: the aggregator
+  // holds this service too, so going through it would make resolving either one recurse.
+  constructor(
+    @inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork,
+    @inject(TYPES.IOrderService) private orderService: IOrderService
+  ) {}
 
   async create(data: EstimateModel, storeCode: string, createdById: string): Promise<EstimateDto> {
     const estimateDate = data.estimateDate ? new Date(data.estimateDate) : new Date();
@@ -152,6 +170,104 @@ export class EstimateService implements IEstimateService {
     await this.transitionTo(id, existing.status, data.status, data.note ?? null, changedById);
     const estimate = await this.unitOfWork.Estimate.findById(id);
     return estimate!;
+  }
+
+  /**
+   * Turns an accepted quotation into a real sale. The order is priced from the estimate rather
+   * than from today's price ledger - a quote whose price moved on conversion would not be a
+   * quote - and the override reaches the order service from the stored estimate row, never from
+   * the request, so this does not become a way for a caller to name its own price.
+   *
+   * The order and the estimate's CONVERTED status commit together: if stock is short the whole
+   * conversion rolls back and the estimate is left untouched rather than half-converted.
+   */
+  async convert(id: number, data: EstimateConvertModel, storeCode: string, convertedById: string, convertedByName: string): Promise<OrderDto> {
+    const estimate = await this.unitOfWork.Estimate.findById(id);
+    if (!estimate) throw new NotFoundError('Estimate not found');
+    if (estimate.storeCode !== storeCode) throw new ForbiddenError('This estimate belongs to another store');
+    if (estimate.convertedOrderId != null) throw new ClientError(`This estimate was already converted to order #${estimate.convertedOrderId}`);
+
+    const allowed = ESTIMATE_STATUS_TRANSITIONS[estimate.status as EstimateStatus] ?? [];
+    if (!allowed.includes(EstimateStatusEnum.Converted)) {
+      throw new ClientError(
+        estimate.status === EstimateStatusEnum.Sent
+          ? 'Mark this estimate accepted before converting it to a sale'
+          : `An estimate that is ${estimate.status.toLowerCase()} cannot be converted to a sale`
+      );
+    }
+    if (!estimate.customerId) {
+      throw new ClientError('This estimate has no linked customer account, so it cannot become an order. Edit it and pick a registered customer.');
+    }
+
+    const items = estimate.items ?? [];
+    if (items.length === 0) throw new ClientError('This estimate has no items to convert');
+
+    // The line total is what the customer was quoted for that line - after its discount and
+    // with the GST inside it, which is the convention order prices already follow.
+    const orderItems = items.map((item) => ({
+      variantId: item.variantId,
+      quantity: item.quantity,
+      unitPriceOverride: Math.round((item.lineTotal / item.quantity) * 100) / 100,
+    }));
+
+    // The order has no adjustment of its own, and an adjustment is just money added to or
+    // taken off the total - so it is carried on whichever of the two order-level amounts moves
+    // the total the same way, which reproduces the quoted grand total exactly.
+    const adjustment = estimate.adjustment ?? 0;
+    const discount = round2(estimate.additionalDiscount + Math.max(0, -adjustment));
+    const shippingCost = round2(estimate.shippingCharges + Math.max(0, adjustment));
+
+    const noteParts = [`Converted from estimate ${estimate.estimateNumber}`];
+    if (adjustment !== 0) noteParts.push(`includes an adjustment of ${adjustment.toFixed(2)}`);
+    if (data.notes) noteParts.push(data.notes);
+
+    const order = await this.unitOfWork.transaction(async (transactionClient) => {
+      const created = await this.orderService.create(
+        {
+          customerId: estimate.customerId!,
+          orderDate: data.orderDate ? new Date(data.orderDate) : new Date(),
+          discount,
+          shippingCost,
+          status: data.status === OrderStatusEnum.Pending ? OrderStatusEnum.Pending : OrderStatusEnum.Confirmed,
+          notes: noteParts.join(' - '),
+          items: orderItems,
+        },
+        storeCode,
+        convertedById,
+        convertedByName,
+        transactionClient
+      );
+
+      // A quoted total the sale does not reproduce means the two documents disagree about what
+      // the customer owes, so the conversion is abandoned rather than left to be noticed later.
+      if (Math.abs(created.grandTotal - estimate.grandTotal) > MAX_CONVERSION_DRIFT) {
+        throw new ClientError(
+          `The sale total (${created.grandTotal.toFixed(2)}) does not match the quoted total (${estimate.grandTotal.toFixed(2)}). The estimate was not converted.`
+        );
+      }
+
+      await transactionClient.estimate.update({
+        where: { id },
+        data: {
+          status: EstimateStatusEnum.Converted,
+          convertedOrderId: created.id,
+          convertedAt: new Date(),
+          updatedById: convertedById,
+          statusHistory: {
+            create: {
+              fromStatus: estimate.status as EstimateStatus,
+              toStatus: EstimateStatusEnum.Converted,
+              note: `Converted to order ${created.orderNumber}`,
+              changedById: convertedById,
+            },
+          },
+        },
+      });
+
+      return created;
+    });
+
+    return order;
   }
 
   /** A new DRAFT carrying the source's snapshots untouched - prices are NOT re-read from the ledger. */

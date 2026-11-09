@@ -6,7 +6,7 @@ import asyncHandler from '../middleware/asyncHandler.middleware';
 import { authenticateToken } from '../middleware/authentication.middleware';
 import authorization from '../middleware/authorization.middleware';
 import { validate } from '../middleware/validate';
-import { estimateStatusValidator, estimateValidator } from '@pms/types';
+import { estimateConvertValidator, estimateStatusValidator, estimateValidator } from '@pms/types';
 import { Role } from '@prisma/client';
 
 const STAFF_ROLES = [Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF];
@@ -390,5 +390,46 @@ estimateRouter.post('/:id/duplicate', authenticateToken, authorization(STAFF_ROL
  *     description: Returns the same token on every call, so a link already emailed to a customer keeps working. The token grants read-only access to the public document page.
  */
 estimateRouter.post('/:id/share', authenticateToken, authorization(STAFF_ROLES), asyncHandler(estimateController.share));
+
+/**
+ * @swagger
+ * /estimates/{id}/convert:
+ *   post:
+ *     summary: Convert an accepted estimate into a sale
+ *     tags: [Estimate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               orderDate: { type: string, format: date-time }
+ *               status: { type: string, enum: [PENDING, CONFIRMED] }
+ *               notes: { type: string }
+ *     responses:
+ *       201:
+ *         description: Estimate converted to a sale
+ *       400:
+ *         description: Invalid id, the estimate is not accepted, is already converted, has no linked customer, or stock is short
+ *       401:
+ *         description: User id not found on the token
+ *       403:
+ *         description: The estimate belongs to another store
+ *       404:
+ *         description: Estimate not found
+ *     description: The order is priced from the estimate, not from today's price ledger, so the customer is charged exactly what was quoted. The order, the stock movement and the estimate's CONVERTED status all commit together - if stock is short nothing is written and the estimate stays as it was. An estimate can only be converted once.
+ */
+estimateRouter.post('/:id/convert', authenticateToken, authorization(STAFF_ROLES), validate(estimateConvertValidator), asyncHandler(estimateController.convert));
 
 export default estimateRouter;

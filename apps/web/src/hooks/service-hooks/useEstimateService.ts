@@ -1,7 +1,7 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { EstimateFilterParams, EstimateModel, EstimateStatusModel } from '@pms/types';
+import { EstimateConvertModel, EstimateFilterParams, EstimateModel, EstimateStatusModel } from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const useCreateEstimate = () => {
@@ -129,7 +129,35 @@ const useDeleteEstimate = () => {
   });
 };
 
+type ConvertEstimateArgs = { id: number | string; model: EstimateConvertModel };
+
+// Converting writes an order, moves stock and posts a sales voucher, so everything those
+// touch is invalidated - not just the estimate list.
+const useConvertEstimate = () => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, model }: ConvertEstimateArgs) => unitOfService.EstimateService.convert(id, model),
+    onSettled: (response) => {
+      if (response && response.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ['EstimateService.getAll'] });
+        queryClient.invalidateQueries({ queryKey: ['EstimateService.getById'] });
+        queryClient.invalidateQueries({ queryKey: ['OrderService.getAll'] });
+        queryClient.invalidateQueries({ queryKey: ['ProductVariantService.getAll'] });
+        queryClient.invalidateQueries({ queryKey: ['PaymentService.getOutstanding'] });
+        queryClient.invalidateQueries({ queryKey: ['JournalEntryService.getAll'] });
+        queryClient.invalidateQueries({ queryKey: ['JournalEntryService.getDaySummary'] });
+        queryClient.invalidateQueries({ queryKey: ['LedgerAccountService.getStatement'] });
+        queryClient.invalidateQueries({ queryKey: ['LedgerAccountService.getTrialBalance'] });
+      }
+    },
+    onError: (error) => error,
+  });
+};
+
 export {
+  useConvertEstimate,
   useCreateEstimate,
   useDeleteEstimate,
   useDuplicateEstimate,

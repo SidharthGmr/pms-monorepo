@@ -1,10 +1,72 @@
 import { OrderStatus, Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
 
-import { ListResponseDto, OrderDto, UpdateOrderDto, OrderFilterParams } from '@pms/types';
+import { ListResponseDto, OrderDto, UpdateOrderDto, OrderFilterParams, TaxCategoryEnum, TaxTypeEnum } from '@pms/types';
 import { IOrderRepository } from "./interfaces/iorder.repository";
+import { effectiveOn, EFFECTIVE_ORDER } from "../utils/variant-pricing";
 
 const SORTABLE_COLUMNS = new Set(['orderNumber', 'grandTotal', 'status', 'createdAt', 'updatedAt', 'id']);
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/**
+ * Order items snapshot only the money charged, so the GST on a line is not stored anywhere.
+ * It is resolved here from the price row that was in force on the order date - the very row
+ * order.service priced the sale from - rather than from today's rate, so a later rate change
+ * cannot rewrite what an old bill says. Prices are tax-inclusive, so the tax is carved out of
+ * the line rather than added to it, and the per-line figures always re-add to the order's own
+ * stored `tax`.
+ */
+async function decorateWithTax<T extends OrderDto | null>(order: T): Promise<T> {
+  if (!order || !order.items || order.items.length === 0) return order;
+
+  const variantIds = [...new Set(order.items.map((item) => item.variantId).filter((id): id is number => id != null))];
+  if (variantIds.length === 0) return order;
+
+  const priceRows = await prisma.priceHistory.findMany({
+    where: { variantId: { in: variantIds }, ...effectiveOn(new Date(order.orderDate)) },
+    orderBy: EFFECTIVE_ORDER,
+    select: { variantId: true, saleTaxType: true, taxId: true },
+  });
+
+  const priceByVariant = new Map<number, (typeof priceRows)[number]>();
+  for (const row of priceRows) if (!priceByVariant.has(row.variantId)) priceByVariant.set(row.variantId, row);
+
+  const taxIds = [...new Set([...priceByVariant.values()].map((row) => row.taxId).filter((id): id is string => id != null))];
+  const taxes = taxIds.length > 0 ? await prisma.tax.findMany({ where: { id: { in: taxIds } }, select: { id: true, name: true, rate: true, category: true } }) : [];
+  const taxById = new Map(taxes.map((tax) => [tax.id, tax] as const));
+
+  for (const item of order.items) {
+    const priceRow = item.variantId != null ? priceByVariant.get(item.variantId) : undefined;
+    const tax = priceRow?.taxId ? taxById.get(priceRow.taxId) : undefined;
+    // An exempt or zero-rated line carries no GST however the price was typed.
+    const rate = tax && tax.category === TaxCategoryEnum.Taxable ? tax.rate.toNumber() : 0;
+    const lineTotal = Number(item.totalPrice ?? item.unitPrice * item.quantity);
+
+    if (rate <= 0 || priceRow?.saleTaxType !== TaxTypeEnum.WithTax) {
+      item.taxName = tax?.name ?? null;
+      item.taxRate = rate;
+      item.taxableAmount = round2(lineTotal);
+      item.taxAmount = 0;
+      continue;
+    }
+
+    const taxAmount = round2((lineTotal * rate) / (100 + rate));
+    item.taxName = tax?.name ?? null;
+    item.taxRate = rate;
+    item.taxAmount = taxAmount;
+    item.taxableAmount = round2(lineTotal - taxAmount);
+  }
+
+  const totalTax = round2(Number(order.tax ?? 0));
+  const cgst = round2(totalTax / 2);
+  order.taxableAmount = round2(Number(order.totalAmount ?? 0) - totalTax);
+  order.cgstAmount = cgst;
+  order.sgstAmount = round2(totalTax - cgst);
+  order.igstAmount = 0;
+
+  return order;
+}
 
 export class OrderRepository implements IOrderRepository {
   async findAll(filters?: OrderFilterParams): Promise<ListResponseDto<OrderDto>> {
@@ -94,7 +156,7 @@ export class OrderRepository implements IOrderRepository {
   }
 
   async findById(id: number): Promise<OrderDto | null> {
-    return prisma.order.findUnique({
+    return decorateWithTax(await prisma.order.findUnique({
       where: { id },
       include: {
         customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
@@ -107,11 +169,11 @@ export class OrderRepository implements IOrderRepository {
         },
         payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
       },
-    });
+    }));
   }
 
   async findByNumber(orderNumber: string): Promise<OrderDto | null> {
-    return prisma.order.findFirst({
+    return decorateWithTax(await prisma.order.findFirst({
       where: { orderNumber: { equals: orderNumber, mode: 'insensitive' } },
       include: {
         customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
@@ -124,11 +186,11 @@ export class OrderRepository implements IOrderRepository {
         },
         payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
       },
-    });
+    }));
   }
 
   async findByPublicToken(publicToken: string): Promise<OrderDto | null> {
-    return prisma.order.findFirst({
+    return decorateWithTax(await prisma.order.findFirst({
       where: { publicToken },
       include: {
         customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
@@ -141,7 +203,7 @@ export class OrderRepository implements IOrderRepository {
         },
         payments: { select: { method: true, status: true, amount: true }, orderBy: { paymentDate: 'desc' } },
       },
-    });
+    }));
   }
 
   async ensurePublicToken(id: number, token: string): Promise<string> {

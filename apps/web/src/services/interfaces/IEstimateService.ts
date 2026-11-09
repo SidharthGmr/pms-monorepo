@@ -1,10 +1,12 @@
 import {
   CustomResponse as Response,
+  EstimateConvertModel,
   EstimateDto,
   EstimateFilterParams,
   EstimateModel,
   EstimateStatusModel,
   ListResponseDto,
+  OrderDto,
   ShareLinkDto,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';
@@ -18,5 +20,6 @@ export default interface IEstimateService {
   delete(id: number | string): Promise<AxiosResponse<Response<EstimateDto>>>;
   updateStatus(id: number | string, model: EstimateStatusModel): Promise<AxiosResponse<Response<EstimateDto>>>;
   duplicate(id: number | string): Promise<AxiosResponse<Response<EstimateDto>>>;
+  convert(id: number | string, model: EstimateConvertModel): Promise<AxiosResponse<Response<OrderDto>>>;
   share(id: number | string): Promise<AxiosResponse<Response<ShareLinkDto>>>;
 }

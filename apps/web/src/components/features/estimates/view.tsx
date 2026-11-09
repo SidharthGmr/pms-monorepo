@@ -26,6 +26,7 @@ import {
   useDuplicateEstimate,
   useGetEstimate,
   useShareEstimate,
+  useConvertEstimate,
   useUpdateEstimateStatus,
 } from '@/hooks/service-hooks/useEstimateService';
 import { amountInWords } from '@/lib/amount-in-words';
@@ -50,6 +51,7 @@ import {
   Pencil,
   Send,
   ShoppingBag,
+  ShoppingCart,
   Store,
   Trash2,
   XCircle,
@@ -129,6 +131,7 @@ export default function EstimateDetailsView({ idOrNumber }: EstimateDetailsViewP
   const deleteMutation = useDeleteEstimate();
   const statusMutation = useUpdateEstimateStatus();
   const duplicateMutation = useDuplicateEstimate();
+  const convertMutation = useConvertEstimate();
   const shareMutation = useShareEstimate();
   const [showDelete, setShowDelete] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState<Extract<EstimateStatusModel['status'], 'REJECTED' | 'CANCELLED'> | null>(null);
@@ -162,7 +165,11 @@ export default function EstimateDetailsView({ idOrNumber }: EstimateDetailsViewP
   const canDecide = estimate.status === EstimateStatusEnum.Sent;
   const canCancel =
     estimate.status === EstimateStatusEnum.Draft || estimate.status === EstimateStatusEnum.Sent || estimate.status === EstimateStatusEnum.Accepted;
-  const isActing = statusMutation.isPending || duplicateMutation.isPending;
+  const isActing = statusMutation.isPending || duplicateMutation.isPending || convertMutation.isPending;
+  const canConvert = estimate.status === EstimateStatusEnum.Accepted && estimate.convertedOrderId == null;
+  // An order has to belong to a registered customer, so a quote typed against a bare name
+  // cannot become one. Saying so on the button beats letting the click fail.
+  const convertBlockedReason = canConvert && !estimate.customerId ? 'Pick a registered customer on this estimate before converting it' : null;
 
   const items = estimate.items ?? [];
   const history = estimate.statusHistory ?? [];
@@ -223,6 +230,20 @@ export default function EstimateDetailsView({ idOrNumber }: EstimateDetailsViewP
     }
   };
 
+  // Converting creates the sale, moves stock and posts the voucher in one server-side
+  // transaction, so there is nothing to undo here if it fails - the estimate is untouched.
+  const handleConvert = async () => {
+    const result = await convertMutation.mutateAsync({ id: estimate.id, model: {} });
+    const order = result?.data?.data;
+    if (result && result.status === 201 && order) {
+      toast({ variant: 'success', title: `Converted to sale ${order.orderNumber}` });
+      router.push(`/admin/orders/${order.id}`);
+    } else {
+      const error = unitOfService.ErrorHandlerService.getErrorMessage(result);
+      toast({ variant: 'destructive', title: 'Could not convert this estimate', description: <span>{error}</span> });
+    }
+  };
+
   const handleDuplicate = async () => {
     const result = await duplicateMutation.mutateAsync(estimate.id);
     const newId = result?.data?.data?.id;
@@ -255,6 +276,21 @@ export default function EstimateDetailsView({ idOrNumber }: EstimateDetailsViewP
                 <CheckCircle2 className="h-4 w-4" />
                 Accept
               </Button>
+            )}
+            {canConvert && (
+              <div className="flex items-center gap-2">
+                <Button
+                  className="h-9 gap-1.5"
+                  loading={convertMutation.isPending}
+                  disabled={isActing || !!convertBlockedReason}
+                  title={convertBlockedReason ?? 'Create the sale from this quote'}
+                  onClick={handleConvert}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Convert to sale
+                </Button>
+                {convertBlockedReason && <span className="max-w-[200px] text-[11px] leading-tight text-muted-foreground">{convertBlockedReason}</span>}
+              </div>
             )}
             {canDecide && (
               <Button

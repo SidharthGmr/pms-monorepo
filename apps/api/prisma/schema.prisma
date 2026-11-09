@@ -68,6 +68,8 @@ model users {
   accountingAudits         accountingAuditLog[] @relation("AccountingAuditPerformedBy")
   paymentAllocationsCreated paymentAllocation[] @relation("PaymentAllocationCreatedBy")
   financialYearsClosed     financialYear[]   @relation("FinancialYearClosedBy")
+  expensesCreated          expense[]         @relation("ExpenseCreatedBy")
+  expensesApproved         expense[]         @relation("ExpenseApprovedBy")
 
   @@index([userId])
   @@index([email])
@@ -206,6 +208,7 @@ model store {
   financialYears   financialYear[]
   accountingAudits accountingAuditLog[]
   paymentAllocations paymentAllocation[]
+  expenses         expense[]
 }
 
 model category {
@@ -411,6 +414,7 @@ model Tax {
 
   products       product[]
   priceHistories PriceHistory[]
+  expenses       expense[]
 
   @@index([category, isActive])
   @@index([deletedAt])
@@ -613,6 +617,7 @@ model supplier {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime?
   store        store     @relation(fields: [storeCode], references: [code])
+  expenses     expense[]
 
   @@unique([name, storeCode])
   @@index([id])
@@ -1311,6 +1316,8 @@ model ledgerAccount {
   children ledgerAccount[] @relation("LedgerAccountHierarchy")
   lines    journalLine[]
   payments payment[]
+  expenseCategories expense[] @relation("ExpenseCategoryAccount")
+  expensesPaidFrom  expense[] @relation("ExpensePaidFromAccount")
 
   @@unique([storeCode, id])
   @@unique([storeCode, code])
@@ -1444,4 +1451,85 @@ model accountingAuditLog {
 
   @@index([storeCode, createdAt])
   @@index([storeCode, entityType, entityId])
+}
+
+enum ExpenseStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum RecurrenceInterval {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+/// A business cost: office rent, electricity, salaries. The expense *category* is a ledger
+/// account under EXPENSE rather than a table of its own, so the chart of accounts stays the
+/// single source of truth and a new category needs no migration. Money is snapshotted onto the
+/// row the same way an estimate snapshots its tax rate, so a later rate change never rewrites a
+/// posted expense. A row with `isTemplate` is a recurring definition that is never posted and
+/// never appears in reports; the expenses it generates point back at it through `templateId`.
+model expense {
+  id               Int           @id @default(autoincrement())
+  storeCode        String
+  expenseNumber    String
+  expenseDate      DateTime
+  expenseAccountId Int
+  /// Where the money left from. Required once the expense is PAID, null while it is a payable.
+  paidFromAccountId Int?
+  supplierId       Int?
+  partyType        PartyType?
+  partyId          String?
+  referenceNumber  String?
+  notes            String?
+  status           ExpenseStatus @default(DRAFT)
+
+  amount        Decimal  @default(0) @db.Decimal(14, 2)
+  taxId         String?  @db.Uuid
+  taxName       String?
+  taxRate       Decimal  @default(0) @db.Decimal(5, 2)
+  taxType       TaxType?
+  taxableAmount Decimal  @default(0) @db.Decimal(14, 2)
+  taxAmount     Decimal  @default(0) @db.Decimal(14, 2)
+  totalAmount   Decimal  @default(0) @db.Decimal(14, 2)
+  isInterState  Boolean  @default(false)
+
+  attachments String[]
+
+  isTemplate         Boolean             @default(false)
+  templateId         Int?
+  recurrenceInterval RecurrenceInterval?
+  recurrenceNextDate DateTime?
+  recurrenceEndDate  DateTime?
+
+  approvedById String?
+  approvedAt   DateTime?
+  paidAt       DateTime?
+  createdById  String
+  updatedById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  store          store         @relation(fields: [storeCode], references: [code], onDelete: Restrict)
+  expenseAccount ledgerAccount @relation("ExpenseCategoryAccount", fields: [storeCode, expenseAccountId], references: [storeCode, id], onDelete: Restrict)
+  paidFromAccount ledgerAccount? @relation("ExpensePaidFromAccount", fields: [storeCode, paidFromAccountId], references: [storeCode, id], onDelete: Restrict)
+  supplier       supplier?     @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  tax            Tax?          @relation(fields: [taxId], references: [id], onDelete: Restrict)
+  template       expense?      @relation("ExpenseRecurrence", fields: [templateId], references: [id], onDelete: Restrict)
+  generated      expense[]     @relation("ExpenseRecurrence")
+  approvedBy     users?        @relation("ExpenseApprovedBy", fields: [approvedById], references: [userId], onDelete: SetNull)
+  createdBy      users         @relation("ExpenseCreatedBy", fields: [createdById], references: [userId], onDelete: Restrict)
+
+  @@unique([storeCode, expenseNumber])
+  @@index([storeCode, status])
+  @@index([storeCode, expenseDate])
+  @@index([storeCode, expenseAccountId])
+  @@index([storeCode, supplierId])
+  @@index([storeCode, isTemplate])
+  @@index([storeCode, deletedAt])
 }

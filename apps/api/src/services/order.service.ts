@@ -151,7 +151,12 @@ export class OrderService implements IOrderService {
             },
             variant.isOffer
           ) as number;
-          const unitPrice = discountedUnitPrice(payable, priceRow.discountType, priceRow.discountValue);
+          // A converted quotation carries the price it promised the customer. It comes from the
+          // stored estimate rather than the request body, so honouring it is not the same as
+          // letting a caller name its own price - and a quote whose price moved on conversion
+          // would not be a quote.
+          const ledgerPrice = discountedUnitPrice(payable, priceRow.discountType, priceRow.discountValue);
+          const unitPrice = item.unitPriceOverride != null && item.unitPriceOverride >= 0 ? item.unitPriceOverride : ledgerPrice;
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 

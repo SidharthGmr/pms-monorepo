@@ -38,3 +38,10 @@ export interface EstimateModel {
   status?: 'DRAFT' | 'SENT';
   items: EstimateItemModel[];
 }
+
+export interface EstimateConvertModel {
+  /** Defaults to today. The order prices itself on this date for anything the estimate did not fix. */
+  orderDate?: string | Date | null;
+  status?: 'PENDING' | 'CONFIRMED';
+  notes?: string | null;
+}

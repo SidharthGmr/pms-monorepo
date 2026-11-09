@@ -321,7 +321,7 @@ export default function OrderDetailsView({ idOrNumber }: OrderDetailsViewProps) 
             <DetailLineItems
               emptyMessage="No items are recorded on this order."
               showDiscount={false}
-              showTax={false}
+              showTax={items.some((item) => (item.taxAmount ?? 0) > 0)}
               items={items.map((item) => {
                 const name = item.product?.name ?? `Product #${item.productId}`;
                 return {
@@ -333,6 +333,10 @@ export default function OrderDetailsView({ idOrNumber }: OrderDetailsViewProps) 
                   sku: item.variant?.sku ?? null,
                   quantity: item.quantity,
                   unitPrice: item.unitPrice,
+                  taxAmount: item.taxAmount ?? null,
+                  // Tax names here are already written as "GST@18%", so appending the rate
+                  // again would read "GST@18% @ 18%".
+                  taxLabel: item.taxRate ? (item.taxName?.includes('%') ? item.taxName : `${item.taxName ?? 'GST'} @ ${item.taxRate}%`) : null,
                   total: item.totalPrice ?? item.unitPrice * item.quantity,
                   extra: isOwnOrder ? (
                     <div className="mt-1.5">
@@ -347,10 +351,26 @@ export default function OrderDetailsView({ idOrNumber }: OrderDetailsViewProps) 
           {/* Words on the left, what is owed on the right - the closing block of a bill. */}
           <DetailTotalsFooter words={amountInWords(order.grandTotal ?? 0)}>
             <Line label="Subtotal" value={formatPrice(order.totalAmount)} />
-            {order.discount > 0 && (
-              <Line label="Discount" value={`−${formatPrice(order.discount)}`} className="text-emerald-700 dark:text-emerald-400" />
+            <Line
+              label="Discount"
+              value={order.discount > 0 ? `−${formatPrice(order.discount)}` : '—'}
+              className={cn(order.discount > 0 && 'text-emerald-700 dark:text-emerald-400')}
+            />
+            {order.tax > 0 && (
+              <>
+                <Line label="Taxable value" value={formatPrice(order.taxableAmount ?? order.totalAmount - order.tax)} className="text-muted-foreground" />
+                {order.igstAmount && order.igstAmount > 0 ? (
+                  <Line label="IGST" value={formatPrice(order.igstAmount)} className="text-muted-foreground" />
+                ) : (
+                  <>
+                    <Line label="CGST" value={formatPrice(order.cgstAmount ?? order.tax / 2)} className="text-muted-foreground" />
+                    <Line label="SGST" value={formatPrice(order.sgstAmount ?? order.tax / 2)} className="text-muted-foreground" />
+                  </>
+                )}
+                <Line label="GST (already inside the price)" value={formatPrice(order.tax)} className="text-muted-foreground" />
+              </>
             )}
-            {order.tax > 0 && <Line label="GST (incl. in price)" value={formatPrice(order.tax)} className="text-muted-foreground" />}
+            {order.tax === 0 && <Line label="GST" value="—" className="text-muted-foreground" />}
             <Line
               label="Shipping & platform fee"
               value={order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}
