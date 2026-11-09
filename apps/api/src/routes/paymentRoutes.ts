@@ -163,6 +163,45 @@ paymentRouter.get("/outstanding", authenticateToken, authorization(ADMIN_ROLES),
 
 /**
  * @swagger
+ * /payments/party-statement:
+ *   get:
+ *     summary: One customer's or supplier's full ledger statement
+ *     description: Every journal line tagged to the party across the receivable, payable and advance control accounts, with a running balance read from the party's side - positive means a customer owes us or we owe a supplier, and an advance shows as a negative balance on the same statement.
+ *     tags: [Payment]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: query
+ *         name: partyType
+ *         required: true
+ *         schema: { type: string, enum: [CUSTOMER, SUPPLIER] }
+ *       - in: query
+ *         name: partyId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: startDate
+ *         schema: { type: string, format: date-time }
+ *       - in: query
+ *         name: endDate
+ *         schema: { type: string, format: date-time }
+ *       - in: query
+ *         name: includeReversed
+ *         schema: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: Opening balance, the window's movements with a running balance, and the closing balance
+ *       400:
+ *         description: Missing or non-party partyType/partyId, or the token carries no store code
+ */
+paymentRouter.get("/party-statement", authenticateToken, authorization(ADMIN_ROLES), asyncHandler(paymentController.getPartyStatement));
+
+/**
+ * @swagger
  * /payments/vouchers/{id}:
  *   get:
  *     summary: Get one money voucher

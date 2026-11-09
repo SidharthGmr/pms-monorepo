@@ -7,6 +7,8 @@ import {
   LedgerStatementFilterParams,
   ListResponseDto,
   TrialBalanceDto,
+  ProfitLossDto,
+  ProfitLossParams,
 } from '@pms/types';
 
 export interface ILedgerAccountService {
@@ -19,4 +21,5 @@ export interface ILedgerAccountService {
   seedDefaults(storeCode: string, createdById: string): Promise<ListResponseDto<LedgerAccountDto>>;
   getStatement(id: number, storeCode: string, filters?: LedgerStatementFilterParams): Promise<LedgerStatementDto>;
   getTrialBalance(storeCode: string, filters?: LedgerStatementFilterParams): Promise<TrialBalanceDto>;
+  getProfitLoss(storeCode: string, filters?: ProfitLossParams): Promise<ProfitLossDto>;
 }

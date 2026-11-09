@@ -12,6 +12,8 @@ import {
   PaymentVoucherModel,
   ReversePaymentModel,
   UpdatePaymentModel,
+  PartyStatementDto,
+  PartyStatementParams,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
@@ -62,6 +64,10 @@ export default class PaymentService implements IPaymentService {
 
   reverseVoucher(id: number | string, model: ReversePaymentModel): Promise<AxiosResponse<Response<PaymentVoucherDto>>> {
     return this.httpService.call().post<PaymentVoucherDto, AxiosResponse<Response<PaymentVoucherDto>>>(`/payments/${id}/reverse`, model);
+  }
+
+  getPartyStatement(params: PartyStatementParams): Promise<AxiosResponse<Response<PartyStatementDto>>> {
+    return this.httpService.call().get<PartyStatementDto, AxiosResponse<Response<PartyStatementDto>>>('/payments/party-statement', { params });
   }
 
   getOutstanding(): Promise<AxiosResponse<Response<OutstandingSummaryDto>>> {

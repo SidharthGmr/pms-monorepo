@@ -9,6 +9,15 @@ import {
   ListResponseDto,
   signedMovement,
   TrialBalanceDto,
+  AccountCategoryEnum,
+  buildPartyStatement,
+  computeProfitAndLoss,
+  PartyStatementDto,
+  PartyStatementParams,
+  PartyType,
+  ProfitLossDto,
+  ProfitLossInputRow,
+  ProfitLossParams,
 } from '@pms/types';
 import { JournalStatus, PartyType as PrismaPartyType, Prisma, Status } from '@prisma/client';
 import prisma from '../config/prisma';
@@ -322,6 +331,139 @@ export class LedgerAccountRepository implements ILedgerAccountRepository {
 
     const difference = round2(totalDebit - totalCredit);
     return { startDate, endDate, rows, totalDebit, totalCredit, difference, isBalanced: difference === 0 };
+  }
+
+  /**
+   * The income and expense accounts' movement over the window, netted per account and handed
+   * to the shared P&L arithmetic. Only the window's own postings count - a P&L is a flow
+   * statement, so unlike the statement there is no opening balance to carry in.
+   */
+  async profitLoss(storeCode: string, filters?: ProfitLossParams): Promise<ProfitLossDto> {
+    const entryWhere: Prisma.journalEntryWhereInput = filters?.includeReversed ? {} : { status: JournalStatus.POSTED };
+    const startDate = filters?.startDate ? new Date(filters.startDate as string) : null;
+    const endDate = filters?.endDate ? new Date(filters.endDate as string) : null;
+
+    const grouped = await prisma.journalLine.groupBy({
+      by: ['ledgerAccountId'],
+      where: {
+        storeCode,
+        entry: {
+          ...entryWhere,
+          ...(startDate || endDate ? { entryDate: { ...(startDate && { gte: startDate }), ...(endDate && { lte: endDate }) } } : {}),
+        },
+      },
+      _sum: { debit: true, credit: true },
+    });
+
+    const accounts = await prisma.ledgerAccount.findMany({
+      where: {
+        storeCode,
+        id: { in: grouped.map((row) => row.ledgerAccountId) },
+        category: { in: [AccountCategoryEnum.Income, AccountCategoryEnum.Expense] },
+      },
+      select: { id: true, code: true, name: true, category: true, systemKey: true },
+    });
+    const byId = new Map(accounts.map((account) => [account.id, account] as const));
+
+    const rows: ProfitLossInputRow[] = [];
+    for (const row of grouped) {
+      const account = byId.get(row.ledgerAccountId);
+      if (!account) continue;
+      rows.push({
+        accountId: account.id,
+        code: account.code,
+        name: account.name,
+        category: account.category,
+        systemKey: account.systemKey,
+        debit: row._sum.debit?.toNumber() ?? 0,
+        credit: row._sum.credit?.toNumber() ?? 0,
+      });
+    }
+
+    return { startDate, endDate, ...computeProfitAndLoss(rows) };
+  }
+
+  /**
+   * Everything one customer or supplier did, across every control account that carries them.
+   * The lines themselves define the set: posting only ever tags a party on AR, AP and the
+   * advance accounts, so filtering by the party tag collects receivable, payable and advance
+   * movements together - which is exactly why an advance shows up here as a negative balance
+   * instead of hiding on a different screen.
+   */
+  async partyStatement(storeCode: string, params: PartyStatementParams): Promise<PartyStatementDto> {
+    const entryWhere: Prisma.journalEntryWhereInput = params.includeReversed ? {} : { status: JournalStatus.POSTED };
+    const startDate = params.startDate ? new Date(params.startDate as string) : null;
+    const endDate = params.endDate ? new Date(params.endDate as string) : null;
+
+    const base: Prisma.journalLineWhereInput = {
+      storeCode,
+      partyType: params.partyType as PrismaPartyType,
+      partyId: params.partyId,
+      entry: entryWhere,
+    };
+
+    const [openingAgg, lines] = await Promise.all([
+      startDate
+        ? prisma.journalLine.aggregate({
+            where: { ...base, entry: { ...entryWhere, entryDate: { lt: startDate } } },
+            _sum: { debit: true, credit: true },
+          })
+        : Promise.resolve(null),
+      prisma.journalLine.findMany({
+        where: {
+          ...base,
+          entry: {
+            ...entryWhere,
+            ...(startDate || endDate ? { entryDate: { ...(startDate && { gte: startDate }), ...(endDate && { lte: endDate }) } } : {}),
+          },
+        },
+        orderBy: [{ entry: { entryDate: 'asc' } }, { journalEntryId: 'asc' }, { lineOrder: 'asc' }],
+        select: {
+          id: true,
+          journalEntryId: true,
+          debit: true,
+          credit: true,
+          ledgerAccount: { select: { name: true } },
+          entry: { select: { voucherNumber: true, voucherType: true, entryDate: true, narration: true, referenceNumber: true } },
+        },
+      }),
+    ]);
+
+    const computed = buildPartyStatement({
+      partyType: params.partyType as PartyType,
+      openingDebit: openingAgg?._sum.debit?.toNumber() ?? 0,
+      openingCredit: openingAgg?._sum.credit?.toNumber() ?? 0,
+      movements: lines.map((line) => ({ ledgerAccountId: 0, debit: line.debit.toNumber(), credit: line.credit.toNumber() })),
+    });
+
+    const rows = lines.map((line, index) => ({
+      journalEntryId: line.journalEntryId,
+      lineId: line.id,
+      voucherNumber: line.entry.voucherNumber,
+      voucherType: line.entry.voucherType,
+      entryDate: line.entry.entryDate,
+      narration: line.entry.narration,
+      referenceNumber: line.entry.referenceNumber,
+      accountName: line.ledgerAccount.name,
+      debit: computed.rows[index]!.debit,
+      credit: computed.rows[index]!.credit,
+      balance: computed.rows[index]!.balance,
+    }));
+
+    return {
+      partyType: params.partyType as PartyStatementDto['partyType'],
+      partyId: params.partyId,
+      partyName: await this.resolvePartyName(params.partyId),
+      nature: computed.nature,
+      startDate,
+      endDate,
+      openingBalance: computed.openingBalance,
+      totalDebit: computed.totalDebit,
+      totalCredit: computed.totalCredit,
+      closingBalance: computed.closingBalance,
+      rowCount: rows.length,
+      rows,
+    };
   }
 
   /** A party id is a userId for a customer or staff member, and a supplier id otherwise. */

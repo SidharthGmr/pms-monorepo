@@ -21,6 +21,9 @@ import {
   ReversePaymentModel,
   UpdatePaymentDto,
   VoucherTypeEnum,
+  PartyStatementDto,
+  PartyStatementParams,
+  PartyTypeEnum,
 } from '@pms/types';
 import {
   assertAllocationsFit,
@@ -266,6 +269,19 @@ export class PaymentService implements IPaymentService {
 
   async getAllVouchers(filters?: PaymentFilterParams): Promise<ListResponseDto<PaymentVoucherDto>> {
     return this.unitOfWork.Payment.findAllVouchers(filters);
+  }
+
+  /**
+   * One customer's or supplier's whole ledger - receivable or payable plus any advances -
+   * read from the journal's party-tagged control lines. Only a customer or a supplier has a
+   * statement: anything else has no control account to collect one from.
+   */
+  async getPartyStatement(params: PartyStatementParams, storeCode: string): Promise<PartyStatementDto> {
+    if (params.partyType !== PartyTypeEnum.Customer && params.partyType !== PartyTypeEnum.Supplier) {
+      throw new ClientError('Pick a customer or a supplier');
+    }
+    if (!params.partyId) throw new ClientError('Say whose statement this is');
+    return this.unitOfWork.LedgerAccount.partyStatement(storeCode, params);
   }
 
   async getVoucherById(id: number, storeCode: string): Promise<PaymentVoucherDto> {

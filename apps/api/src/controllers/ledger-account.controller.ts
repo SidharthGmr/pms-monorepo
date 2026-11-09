@@ -15,6 +15,7 @@ import {
   PartyType,
   Status,
   TrialBalanceDto,
+  ProfitLossDto,
 } from '@pms/types';
 import { MISSING_STORE_CODE, MISSING_USER_ID } from '../constants/responses';
 import IUnitOfService from '../services/interfaces/iunitof.service';
@@ -107,6 +108,13 @@ export class LedgerAccountController {
     if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
     const data = await this.unitOfService.LedgerAccount.getTrialBalance(storeCode, this.buildStatementFilters(req));
     return res.status(200).json({ success: true, message: 'Trial balance fetched successfully', data });
+  };
+
+  getProfitLoss = async (req: Request, res: Response): Promise<Response<CustomResponse<ProfitLossDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+    const data = await this.unitOfService.LedgerAccount.getProfitLoss(storeCode, this.buildStatementFilters(req));
+    return res.status(200).json({ success: true, message: 'Profit and loss fetched successfully', data });
   };
 
   seedDefaults = async (req: Request, res: Response): Promise<Response<CustomResponse<ListResponseDto<LedgerAccountDto>>>> => {

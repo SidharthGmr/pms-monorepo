@@ -16,6 +16,8 @@ import {
   PaymentVoucherModel,
   ReversePaymentModel,
   UpdatePaymentDto,
+  PartyStatementDto,
+  PartyStatementParams,
 } from '@pms/types';
 export class PaymentController {
   constructor(
@@ -135,6 +137,22 @@ export class PaymentController {
     if (!userId) return res.status(401).json(MISSING_USER_ID);
     const data = await this.unitOfService.Payment.reverseVoucher(id, req.body as ReversePaymentModel, storeCode, userId);
     return res.status(201).json({ success: true, message: 'Payment reversed successfully', data });
+  };
+
+  getPartyStatement = async (req: Request, res: Response): Promise<Response<CustomResponse<PartyStatementDto>>> => {
+    const storeCode = req.user?.storeCode;
+    if (!storeCode) return res.status(400).json(MISSING_STORE_CODE);
+
+    const params: PartyStatementParams = {
+      partyType: String(req.query['partyType'] ?? ''),
+      partyId: String(req.query['partyId'] ?? ''),
+      startDate: (req.query['startDate'] as string) || null,
+      endDate: (req.query['endDate'] as string) || null,
+      includeReversed: req.query['includeReversed'] === 'true',
+    };
+
+    const data = await this.unitOfService.Payment.getPartyStatement(params, storeCode);
+    return res.status(200).json({ success: true, message: 'Party statement fetched successfully', data });
   };
 
   getOutstanding = async (req: Request, res: Response): Promise<Response<CustomResponse<OutstandingSummaryDto>>> => {

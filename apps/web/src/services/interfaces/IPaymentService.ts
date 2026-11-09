@@ -10,6 +10,8 @@ import {
   PaymentVoucherModel,
   ReversePaymentModel,
   UpdatePaymentModel,
+  PartyStatementDto,
+  PartyStatementParams,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
@@ -24,5 +26,6 @@ export default interface IPaymentService {
   getAllVouchers(params?: PaymentFilterParams): Promise<AxiosResponse<Response<ListResponseDto<PaymentVoucherDto>>>>;
   getVoucherById(id: number | string): Promise<AxiosResponse<Response<PaymentVoucherDto>>>;
   reverseVoucher(id: number | string, model: ReversePaymentModel): Promise<AxiosResponse<Response<PaymentVoucherDto>>>;
+  getPartyStatement(params: PartyStatementParams): Promise<AxiosResponse<Response<PartyStatementDto>>>;
   getOutstanding(): Promise<AxiosResponse<Response<OutstandingSummaryDto>>>;
 }

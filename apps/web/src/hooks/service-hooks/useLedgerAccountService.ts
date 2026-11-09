@@ -1,7 +1,9 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { LedgerAccountFilterParams, LedgerAccountModel, LedgerStatementFilterParams } from '@pms/types';
+import { LedgerAccountFilterParams, LedgerAccountModel, LedgerStatementFilterParams,
+  ProfitLossParams,
+} from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const useCreateLedgerAccount = () => {
@@ -121,6 +123,16 @@ const useGetTrialBalance = (params?: LedgerStatementFilterParams, enabled: boole
   });
 };
 
+const useGetProfitLoss = (params?: ProfitLossParams, enabled: boolean = true) => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  return useQuery({
+    queryKey: ['LedgerAccountService.getProfitLoss', params],
+    queryFn: () => unitOfService.LedgerAccountService.getProfitLoss(params),
+    enabled,
+  });
+};
+
 export {
   useCreateLedgerAccount,
   useDeleteLedgerAccount,
@@ -128,6 +140,7 @@ export {
   useGetLedgerAccountById,
   useGetLedgerAccountTree,
   useGetLedgerStatement,
+  useGetProfitLoss,
   useGetTrialBalance,
   useSeedLedgerAccounts,
   useUpdateLedgerAccount,

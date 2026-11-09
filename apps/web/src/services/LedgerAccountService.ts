@@ -10,6 +10,8 @@ import {
   LedgerStatementFilterParams,
   ListResponseDto,
   TrialBalanceDto,
+  ProfitLossDto,
+  ProfitLossParams,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';
 import { injectable } from 'inversify';
@@ -54,6 +56,10 @@ export default class LedgerAccountService implements ILedgerAccountService {
     return this.httpService
       .call()
       .get<LedgerStatementDto, AxiosResponse<Response<LedgerStatementDto>>>(`/ledger-accounts/${id}/statement`, { params });
+  }
+
+  getProfitLoss(params?: ProfitLossParams): Promise<AxiosResponse<Response<ProfitLossDto>>> {
+    return this.httpService.call().get<ProfitLossDto, AxiosResponse<Response<ProfitLossDto>>>('/ledger-accounts/profit-loss', { params });
   }
 
   getTrialBalance(params?: LedgerStatementFilterParams): Promise<AxiosResponse<Response<TrialBalanceDto>>> {

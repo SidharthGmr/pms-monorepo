@@ -320,6 +320,15 @@ export const SideBarMenu: SideBarMenuDto[] = [
     isActive: false,
   },
   {
+    id: 'profit-loss',
+    title: 'Profit & Loss',
+    icon: TrendingUp,
+    url: '/admin/ledger-book/?view=pnl',
+    group: 'Accounting',
+    role: [Roles.ADMIN],
+    isActive: false,
+  },
+  {
     id: 'payments',
     title: 'Payments',
     icon: Wallet,

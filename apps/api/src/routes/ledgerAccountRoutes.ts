@@ -198,6 +198,37 @@ ledgerAccountRouter.get('/trial-balance', authenticateToken, authorization(ADMIN
 
 /**
  * @swagger
+ * /ledger-accounts/profit-loss:
+ *   get:
+ *     summary: Profit and loss for a period
+ *     description: Income and expense movement over the window, derived from journal lines on read. Purchases are shown as direct costs above gross profit; the application runs periodic inventory, so unsold stock still sits inside the purchases figure.
+ *     tags: [LedgerAccount]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: header
+ *         name: clientId
+ *         schema: { type: string }
+ *         required: true
+ *       - in: query
+ *         name: startDate
+ *         schema: { type: string, format: date-time }
+ *       - in: query
+ *         name: endDate
+ *         schema: { type: string, format: date-time }
+ *       - in: query
+ *         name: includeReversed
+ *         schema: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: Income, direct costs, expenses and the gross and net profit lines
+ *       400:
+ *         description: The token carries no store code
+ */
+ledgerAccountRouter.get('/profit-loss', authenticateToken, authorization(ADMIN_ROLES), asyncHandler(ledgerAccountController.getProfitLoss));
+
+/**
+ * @swagger
  * /ledger-accounts/{id}/statement:
  *   get:
  *     summary: One account's ledger statement for a period

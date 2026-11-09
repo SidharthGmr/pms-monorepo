@@ -6,6 +6,10 @@ import {
   LedgerStatementFilterParams,
   ListResponseDto,
   TrialBalanceDto,
+  PartyStatementDto,
+  PartyStatementParams,
+  ProfitLossDto,
+  ProfitLossParams,
 } from '@pms/types';
 
 export interface ILedgerAccountRepository {
@@ -24,4 +28,6 @@ export interface ILedgerAccountRepository {
   countChildren(id: number, storeCode: string): Promise<number>;
   statement(id: number, storeCode: string, filters?: LedgerStatementFilterParams): Promise<LedgerStatementDto | null>;
   trialBalance(storeCode: string, filters?: LedgerStatementFilterParams): Promise<TrialBalanceDto>;
+  profitLoss(storeCode: string, filters?: ProfitLossParams): Promise<ProfitLossDto>;
+  partyStatement(storeCode: string, params: PartyStatementParams): Promise<PartyStatementDto>;
 }

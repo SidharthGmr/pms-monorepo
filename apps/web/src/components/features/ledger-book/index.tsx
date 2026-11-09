@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
-import { useGetAllLedgerAccounts, useGetLedgerStatement, useGetTrialBalance } from '@/hooks/service-hooks/useLedgerAccountService';
+import { useGetAllLedgerAccounts, useGetLedgerStatement, useGetProfitLoss, useGetTrialBalance } from '@/hooks/service-hooks/useLedgerAccountService';
 import { ACCOUNT_CATEGORY_LABELS, LedgerStatementFilterParams, VOUCHER_TYPE_LABELS } from '@pms/types';
 import { format } from 'date-fns';
 import { Download } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { DateRange } from 'react-day-picker';
+import ProfitLossView from './profit-loss-view';
 import StatementView from './statement-view';
 import TrialBalanceView from './trial-balance-view';
 
@@ -23,7 +25,15 @@ const csvCell = (value: string | number) => {
 };
 
 export default function LedgerBook() {
-  const [view, setView] = useState<'account' | 'trial'>('account');
+  const [view, setView] = useState<'account' | 'trial' | 'pnl'>('account');
+  const searchParams = useSearchParams();
+  const viewParam = searchParams?.get('view');
+
+  // The sidebar's Profit & Loss entry deep-links here as ?view=pnl, so the query wins over
+  // the default tab - on first load and again if the link is clicked while already on the page.
+  useEffect(() => {
+    if (viewParam === 'account' || viewParam === 'trial' || viewParam === 'pnl') setView(viewParam);
+  }, [viewParam]);
   const [accountId, setAccountId] = useState<number | undefined>();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
@@ -45,9 +55,11 @@ export default function LedgerBook() {
 
   const statementQuery = useGetLedgerStatement(accountId ?? 0, params, view === 'account' && !!accountId);
   const trialQuery = useGetTrialBalance(params, view === 'trial');
+  const profitLossQuery = useGetProfitLoss(params, view === 'pnl');
 
   const statement = statementQuery.data?.data?.data;
   const trialBalance = trialQuery.data?.data?.data;
+  const profitLoss = profitLossQuery.data?.data?.data;
 
   const accountOptions = accounts.map((account) => ({
     value: account.id,
@@ -83,6 +95,20 @@ export default function LedgerBook() {
         );
       }
       rows.push(['', '', '', 'Closing balance', '', statement.totalDebit, statement.totalCredit, statement.closingBalance].map(csvCell).join(','));
+    } else if (view === 'pnl') {
+      if (!profitLoss) {
+        toast({ variant: 'destructive', title: 'Nothing to export' });
+        return;
+      }
+      fileName = 'profit-loss';
+      rows.push(['Section', 'Code', 'Account', 'Amount'].join(','));
+      for (const line of profitLoss.income) rows.push(['Income', line.code, line.name, line.amount].map(csvCell).join(','));
+      rows.push(['Income', '', 'Total income', profitLoss.incomeTotal].map(csvCell).join(','));
+      for (const line of profitLoss.directCosts) rows.push(['Direct costs', line.code, line.name, line.amount].map(csvCell).join(','));
+      rows.push(['', '', 'Gross profit', profitLoss.grossProfit].map(csvCell).join(','));
+      for (const line of profitLoss.expenses) rows.push(['Expenses', line.code, line.name, line.amount].map(csvCell).join(','));
+      rows.push(['Expenses', '', 'Total expenses', profitLoss.expenseTotal].map(csvCell).join(','));
+      rows.push(['', '', profitLoss.netProfit >= 0 ? 'Net profit' : 'Net loss', profitLoss.netProfit].map(csvCell).join(','));
     } else {
       if (!trialBalance) {
         toast({ variant: 'destructive', title: 'Nothing to export' });
@@ -109,10 +135,11 @@ export default function LedgerBook() {
   return (
     <div className="space-y-4">
       <Card size="sm" className="flex flex-wrap items-center gap-3 p-4">
-        <Tabs value={view} onValueChange={(next) => setView(next as 'account' | 'trial')}>
+        <Tabs value={view} onValueChange={(next) => setView(next as 'account' | 'trial' | 'pnl')}>
           <TabsList>
             <TabsTrigger value="account">Account ledger</TabsTrigger>
             <TabsTrigger value="trial">Trial balance</TabsTrigger>
+            <TabsTrigger value="pnl">Profit &amp; Loss</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -143,11 +170,9 @@ export default function LedgerBook() {
         </Button>
       </Card>
 
-      {view === 'account' ? (
-        <StatementView statement={statement} loading={statementQuery.isFetching} error={statementQuery.isError} />
-      ) : (
-        <TrialBalanceView trialBalance={trialBalance} loading={trialQuery.isFetching} error={trialQuery.isError} />
-      )}
+      {view === 'account' && <StatementView statement={statement} loading={statementQuery.isFetching} error={statementQuery.isError} />}
+      {view === 'trial' && <TrialBalanceView trialBalance={trialBalance} loading={trialQuery.isFetching} error={trialQuery.isError} />}
+      {view === 'pnl' && <ProfitLossView report={profitLoss} loading={profitLossQuery.isFetching} error={profitLossQuery.isError} />}
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   PaymentVoucherModel,
   ReversePaymentModel,
   UpdatePaymentDto,
+  PartyStatementDto,
+  PartyStatementParams,
 } from '@pms/types';
 
 export interface IPaymentService {
@@ -21,6 +23,7 @@ export interface IPaymentService {
   transfer(data: PaymentTransferModel, storeCode: string, userId: string): Promise<PaymentVoucherDto>;
   getAllVouchers(filters?: PaymentFilterParams): Promise<ListResponseDto<PaymentVoucherDto>>;
   getVoucherById(id: number, storeCode: string): Promise<PaymentVoucherDto>;
+  getPartyStatement(params: PartyStatementParams, storeCode: string): Promise<PartyStatementDto>;
   reverseVoucher(id: number, data: ReversePaymentModel, storeCode: string, userId: string): Promise<PaymentVoucherDto>;
   getOutstanding(storeCode: string): Promise<OutstandingSummaryDto>;
 }

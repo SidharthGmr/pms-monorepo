@@ -15,10 +15,11 @@ import useModalShowHide from '@/hooks/use-modal-show-hide';
 import { formatPrice } from '@/lib/format-price';
 import { cn } from '@/lib/utils';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { PaymentDirectionEnum, PaymentFilterParams, PaymentStatusEnum, PaymentVoucherDto } from '@pms/types';
+import { PartyType, PartyTypeEnum, PaymentDirectionEnum, PaymentFilterParams, PaymentStatusEnum, PaymentVoucherDto } from '@pms/types';
 import { format } from 'date-fns';
 import { ArrowDownLeft, ArrowUpRight, Undo2, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import PartyStatementDialog from './party-statement-dialog';
 
 interface PaymentListProps {
   onCountChange?: (total: number) => void;
@@ -27,6 +28,7 @@ interface PaymentListProps {
 export default function PaymentList({ onCountChange }: PaymentListProps) {
   const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
   const [page, setPage] = useState(1);
+  const [statementParty, setStatementParty] = useState<{ partyType: PartyType; partyId: string; partyName?: string | null }>();
   const [pageSize, setPageSize] = useState(config.recordPerPage);
 
   const params = useMemo<PaymentFilterParams>(() => ({ page, recordPerPage: pageSize, sortBy: 'paymentDate', sortDirection: 'DESC' }), [page, pageSize]);
@@ -108,7 +110,12 @@ export default function PaymentList({ onCountChange }: PaymentListProps) {
             </TableHeader>
             <TableBody>
               {outstanding.customers.map((row) => (
-                <TableRow key={row.partyId}>
+                <TableRow
+                  key={row.partyId}
+                  className="cursor-pointer"
+                  title="Open this customer's full statement"
+                  onClick={() => setStatementParty({ partyType: PartyTypeEnum.Customer, partyId: row.partyId, partyName: row.partyName })}
+                >
                   <TableCell className="pl-5 text-sm">{row.partyName ?? row.partyId}</TableCell>
                   <TableCell className="pr-5 text-right text-sm tabular-nums">{formatPrice(row.balance)}</TableCell>
                 </TableRow>
@@ -215,6 +222,16 @@ export default function PaymentList({ onCountChange }: PaymentListProps) {
             }}
           />
         </Card>
+      )}
+
+      {statementParty && (
+        <PartyStatementDialog
+          partyType={statementParty.partyType}
+          partyId={statementParty.partyId}
+          partyName={statementParty.partyName}
+          isOpen
+          onClose={() => setStatementParty(undefined)}
+        />
       )}
 
       {showModal && uniqueId && (

@@ -13,6 +13,8 @@ import {
   ListResponseDto,
   TrialBalanceDto,
   StatusEnum,
+  ProfitLossDto,
+  ProfitLossParams,
 } from '@pms/types';
 import ClientError from '../exceptions/client-error';
 import NotFoundError from '../exceptions/not-found-error';
@@ -204,6 +206,10 @@ export class LedgerAccountService implements ILedgerAccountService {
 
   async getTrialBalance(storeCode: string, filters?: LedgerStatementFilterParams): Promise<TrialBalanceDto> {
     return this.unitOfWork.LedgerAccount.trialBalance(storeCode, filters);
+  }
+
+  async getProfitLoss(storeCode: string, filters?: ProfitLossParams): Promise<ProfitLossDto> {
+    return this.unitOfWork.LedgerAccount.profitLoss(storeCode, filters);
   }
 
   private async findInStore(id: number, storeCode: string): Promise<LedgerAccountDto> {

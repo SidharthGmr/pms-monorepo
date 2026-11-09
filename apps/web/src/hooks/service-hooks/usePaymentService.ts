@@ -1,7 +1,9 @@
 import { container } from '@/config/ioc';
 import { TYPES } from '@/config/types';
 import IUnitOfService from '@/services/interfaces/IUnitOfService';
-import { CreatePaymentModel, PaymentFilterParams, PaymentTransferModel, PaymentVoucherModel, ReversePaymentModel, UpdatePaymentModel } from '@pms/types';
+import { CreatePaymentModel, PaymentFilterParams, PaymentTransferModel, PaymentVoucherModel, ReversePaymentModel, UpdatePaymentModel,
+  PartyStatementParams,
+} from '@pms/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // A payment changes what the books say, so the journal reads are invalidated with it.
@@ -115,6 +117,16 @@ const useReversePayment = () => {
   });
 };
 
+const useGetPartyStatement = (params: PartyStatementParams, enabled: boolean = true) => {
+  const unitOfService = container.get<IUnitOfService>(TYPES.IUnitOfService);
+
+  return useQuery({
+    queryKey: ['PaymentService.getPartyStatement', params],
+    queryFn: () => unitOfService.PaymentService.getPartyStatement(params),
+    enabled: enabled && !!params.partyId,
+  });
+};
+
 export {
   useCreatePayment,
   useCreatePaymentVoucher,
@@ -124,4 +136,5 @@ export {
   useGetPaymentsByOrderId,
   useReversePayment,
   useUpdatePayment,
+  useGetPartyStatement,
 };

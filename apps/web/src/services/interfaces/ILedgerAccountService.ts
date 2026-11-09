@@ -8,6 +8,8 @@ import {
   LedgerStatementFilterParams,
   ListResponseDto,
   TrialBalanceDto,
+  ProfitLossDto,
+  ProfitLossParams,
 } from '@pms/types';
 import { AxiosResponse } from 'axios';
 
@@ -21,4 +23,5 @@ export default interface ILedgerAccountService {
   seedDefaults(): Promise<AxiosResponse<Response<ListResponseDto<LedgerAccountDto>>>>;
   getStatement(id: number | string, params?: LedgerStatementFilterParams): Promise<AxiosResponse<Response<LedgerStatementDto>>>;
   getTrialBalance(params?: LedgerStatementFilterParams): Promise<AxiosResponse<Response<TrialBalanceDto>>>;
+  getProfitLoss(params?: ProfitLossParams): Promise<AxiosResponse<Response<ProfitLossDto>>>;
 }
