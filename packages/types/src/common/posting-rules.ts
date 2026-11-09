@@ -109,7 +109,20 @@ export function buildReceiptLines(input: ReceiptPostingInput): PostingLineSpec[]
   return settle([line(input.moneyAccount, input.amount, 0), line('ACCOUNTS_RECEIVABLE', 0, input.amount)]);
 }
 
+/** The GST paid on a purchase is input credit - an asset to set against output GST - not cost. */
+const inputTaxLines = (tax: number, isInterState: boolean): PostingLineSpec[] => {
+  const total = round2(tax);
+  if (total <= 0) return [];
+  if (isInterState) return [line('IGST_INPUT', total, 0)];
+
+  const cgst = round2(total / 2);
+  return [line('CGST_INPUT', cgst, 0), line('SGST_INPUT', round2(total - cgst), 0)];
+};
+
 export interface PurchasePostingInput {
+  /** The GST sitting inside totalAmount; nothing is added on top of what the supplier billed. */
+  tax?: number;
+  isInterState?: boolean;
   totalAmount: number;
 }
 
@@ -119,7 +132,14 @@ export interface PurchasePostingInput {
  * has been chosen - see the note on INVENTORY in the chart of accounts.
  */
 export function buildPurchaseLines(input: PurchasePostingInput): PostingLineSpec[] {
-  return settle([line('PURCHASES', input.totalAmount, 0), line('ACCOUNTS_PAYABLE', 0, input.totalAmount)]);
+  const tax = round2(Math.min(Math.max(input.tax ?? 0, 0), input.totalAmount));
+  const net = round2(round2(input.totalAmount) - tax);
+
+  return settle([
+    line('PURCHASES', net, 0),
+    ...inputTaxLines(tax, input.isInterState === true),
+    line('ACCOUNTS_PAYABLE', 0, input.totalAmount),
+  ]);
 }
 
 export interface SalesReturnPostingInput {

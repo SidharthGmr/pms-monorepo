@@ -40,6 +40,7 @@ export const productFields = z.object({
   categoryId: z.number().positive("Category is required"),
   brandNameId: z.number().int().positive("Select a brand or leave it empty").nullable().optional(),
   slug: z.string().min(1, "Slug is required"),
+  hsnCode: z.string().trim().max(8, "An HSN/SAC code is 4 to 8 digits").nullable().optional(),
   description: z.string().nullable().optional(),
   sellingPrice: z.number().nonnegative("Selling price must be zero or greater").optional(),
   costPrice: z.number().nonnegative("Purchase price must be zero or greater").nullable().optional(),

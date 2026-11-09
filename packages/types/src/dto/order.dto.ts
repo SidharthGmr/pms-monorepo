@@ -16,6 +16,7 @@ export interface OrderDto {
   /** Sale prices are tax-inclusive, so this is the total less the GST sitting inside it. */
   taxableAmount?: number;
   /** A presentation split of the one GST figure, the same convention estimates use. */
+  isInterState?: boolean;
   cgstAmount?: number;
   sgstAmount?: number;
   igstAmount?: number;

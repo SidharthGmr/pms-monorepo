@@ -475,9 +475,12 @@ export class EstimateService implements IEstimateService {
       const label = `${variant.product.name}${variant.sku ? ` (${variant.sku})` : ''}`;
       const priceRow = prices.get(item.variantId);
 
+      // The price being quoted decides which tax type applies: quoting the wholesale price
+      // goes by the wholesale tax type, exactly as the sale itself will.
+      const usedWholesale = variant.isOffer && priceRow?.wholesalePrice != null;
       let unitPrice = item.unitPrice ?? null;
       if (unitPrice == null && priceRow) {
-        const base = variant.isOffer && priceRow.wholesalePrice != null ? priceRow.wholesalePrice : priceRow.sellingPrice;
+        const base = usedWholesale ? priceRow.wholesalePrice! : priceRow.sellingPrice;
         unitPrice = discountedUnitPrice(base, priceRow.discountType, priceRow.discountValue);
       }
       if (unitPrice == null) {
@@ -488,7 +491,8 @@ export class EstimateService implements IEstimateService {
       const tax = taxId ? taxById.get(taxId) : undefined;
       if (taxId && !tax) throw new ClientError(`Tax not found for ${label}`);
       const taxRate = tax && tax.category === TaxCategoryEnum.Taxable ? tax.rate.toNumber() : 0;
-      const taxType: TaxType | null = priceRow?.saleTaxType ?? (taxRate > 0 ? TaxTypeEnum.WithTax : null);
+      const ledgerTaxType = usedWholesale ? priceRow?.wholesaleTaxType : priceRow?.saleTaxType;
+      const taxType: TaxType | null = ledgerTaxType ?? (taxRate > 0 ? TaxTypeEnum.WithTax : null);
 
       const grossAmount = Math.round(unitPrice * item.quantity * 100) / 100;
       if (item.discountType === 'FLAT' && (item.discountValue ?? 0) > grossAmount) {

@@ -6,7 +6,7 @@ import { CurrencyInput } from '@/components/common/currency-input';
 import { DateRangePicker } from '@/components/common/date-range-picker';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,7 +28,6 @@ import {
   productVariantFormFields,
   StatusValues,
   TaxType,
-  TaxTypeEnum,
 } from '@pms/types';
 import TaxTypeData from '@/data/tax.data';
 import DiscountTypeData from '@/data/discount.data';
@@ -109,7 +108,10 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
   const purchaseTaxType = form.watch('purchaseTaxType');
   const wholesaleTaxType = form.watch('wholesaleTaxType');
   const saleTaxType = form.watch('saleTaxType');
-  const anyWithTax = [purchaseTaxType, wholesaleTaxType, saleTaxType].includes(TaxTypeEnum.WithTax);
+  // Any chosen tax type needs a rate: WithTax means the GST sits inside the price, WithoutTax
+  // means it is added on top at billing - both are real GST positions, so both get the picker.
+  // (WithoutTax used to hide it, which made an ex-GST price impossible to configure.)
+  const anyTaxType = [purchaseTaxType, wholesaleTaxType, saleTaxType].some((taxType) => taxType != null);
   const discountType = form.watch('discountType');
 
   useEffect(() => {
@@ -300,7 +302,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                           onChange={(value) => {
                             field.onChange(value ? (value as TaxType) : null);
                             const next = { purchaseTaxType, wholesaleTaxType, saleTaxType, [taxField.name]: value || null };
-                            if (!Object.values(next).includes(TaxTypeEnum.WithTax)) form.setValue('taxId', null);
+                            if (!Object.values(next).some(Boolean)) form.setValue('taxId', null);
                           }}
                         />
                       </FormControl>
@@ -310,7 +312,7 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                 />
               ))}
 
-              {anyWithTax && (
+              {anyTaxType && (
                 <FormField
                   control={form.control}
                   name="taxId"
@@ -327,6 +329,9 @@ export default function ManageVariant({ id, productId, onCancel, onSaved }: Mana
                           onChange={(value) => field.onChange(value ? String(value) : null)}
                         />
                       </FormControl>
+                      <FormDescription className="text-[11px]">
+                        With tax: the GST is already inside the price. Without tax: it is added on top at billing.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

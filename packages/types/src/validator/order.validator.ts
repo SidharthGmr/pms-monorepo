@@ -9,6 +9,7 @@ export const orderFormFields = z.object({
   tax: numeric(z.number({ error: "Enter a number" }).min(0).default(0)),
   shippingCost: numeric(z.number({ error: "Enter a number" }).min(0).default(0)),
   status: z.enum(Object.values(OrderStatusEnum) as [OrderStatus, ...OrderStatus[]]),
+  isInterState: z.boolean().optional(),
   notes: z.string().optional(),
   items: z
     .array(

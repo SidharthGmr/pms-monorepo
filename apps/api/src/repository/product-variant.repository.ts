@@ -50,6 +50,7 @@ const listItemSelect = {
       id: true,
       name: true,
       slug: true,
+      hsnCode: true,
       categoryId: true,
       images: true,
       category: { select: { name: true, images: true } },

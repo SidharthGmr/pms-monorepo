@@ -19,8 +19,10 @@ export interface SampleInvoice {
   number: string;
   status: 'PENDING' | 'CONFIRMED' | 'DELIVERED' | 'CANCELLED';
   issuedAt: Date;
-  store: { name: string; code: string; address: string; phone: string; email: string };
-  customer: { name: string; address: string; phone: string; email: string };
+  store: { name: string; code: string; address: string; phone: string; email: string; gstin?: string };
+  customer: { name: string; address: string; phone: string; email: string; gstin?: string };
+  /** IGST when true, CGST+SGST otherwise. Undefined keeps the single combined GST row. */
+  isInterState?: boolean;
   items: SampleInvoiceItem[];
   discount: number;
   taxRate: number;

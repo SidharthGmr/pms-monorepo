@@ -20,7 +20,10 @@ import {
   StatusEnum,
   VoucherType,
   VoucherTypeEnum,
+  TaxCategoryEnum,
+  TaxTypeEnum,
 } from '@pms/types';
+import { effectiveOn, EFFECTIVE_ORDER } from '../utils/variant-pricing';
 import logger from '../utils/logger';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
 import { IAccountingPostingService, MoneyMovementPosting } from './interfaces/Iaccounting-posting.service';
@@ -121,6 +124,7 @@ export class AccountingPostingService implements IAccountingPostingService {
         discount: true,
         shippingCost: true,
         grandTotal: true,
+        isInterState: true,
         status: true,
       },
     });
@@ -137,6 +141,7 @@ export class AccountingPostingService implements IAccountingPostingService {
       discount: order.discount,
       shippingCost: order.shippingCost,
       grandTotal: order.grandTotal,
+      isInterState: order.isInterState,
     });
 
     return this.postSpecs({
@@ -197,13 +202,23 @@ export class AccountingPostingService implements IAccountingPostingService {
   async postPurchase(purchaseId: number, storeCode: string, createdById: string, transactionClient: Prisma.TransactionClient): Promise<number | null> {
     const purchase = await transactionClient.purchase.findFirst({
       where: { id: purchaseId, storeCode },
-      select: { id: true, invoiceNumber: true, purchaseDate: true, totalAmount: true, supplierId: true, supplierName: true, status: true },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        purchaseDate: true,
+        totalAmount: true,
+        supplierId: true,
+        supplierName: true,
+        status: true,
+        items: { select: { variantId: true, totalPrice: true } },
+      },
     });
     if (!purchase) return null;
     if (purchase.status === PurchaseStatusEnum.Cancelled) return null;
     if (purchase.totalAmount <= 0) return null;
 
-    const specs = buildPurchaseLines({ totalAmount: purchase.totalAmount });
+    const { tax, isInterState } = await this.purchaseInputTax(purchase, storeCode, transactionClient);
+    const specs = buildPurchaseLines({ totalAmount: purchase.totalAmount, tax, isInterState });
 
     return this.postSpecs({
       specs,
@@ -218,6 +233,58 @@ export class AccountingPostingService implements IAccountingPostingService {
       sourceId: purchase.id,
       party: purchase.supplierId ? { partyType: PartyTypeEnum.Supplier, partyId: purchase.supplierId } : null,
     });
+  }
+
+  /**
+   * The GST sitting inside a purchase, line by line from the price row in force on the
+   * purchase date - the same source the purchase was costed from. Only a cost entered WithTax
+   * carries extractable GST; a row typed WithoutTax or carrying no tax contributes nothing,
+   * because the supplier's bill total is what was recorded and nothing may be added on top of
+   * it here. Place of supply follows the supplier's state against the store's - D4 put both
+   * on file for exactly this.
+   */
+  private async purchaseInputTax(
+    purchase: { purchaseDate: Date; supplierId: string | null; items: { variantId: number; totalPrice: Prisma.Decimal }[] },
+    storeCode: string,
+    transactionClient: Prisma.TransactionClient
+  ): Promise<{ tax: number; isInterState: boolean }> {
+    const variantIds = [...new Set(purchase.items.map((item) => item.variantId))];
+    if (variantIds.length === 0) return { tax: 0, isInterState: false };
+
+    const priceRows = await transactionClient.priceHistory.findMany({
+      where: { variantId: { in: variantIds }, ...effectiveOn(purchase.purchaseDate) },
+      orderBy: EFFECTIVE_ORDER,
+      select: { variantId: true, purchaseTaxType: true, taxId: true },
+    });
+    const priceByVariant = new Map<number, (typeof priceRows)[number]>();
+    for (const row of priceRows) if (!priceByVariant.has(row.variantId)) priceByVariant.set(row.variantId, row);
+
+    const taxIds = [...new Set([...priceByVariant.values()].map((row) => row.taxId).filter((id): id is string => id != null))];
+    const taxRows =
+      taxIds.length > 0
+        ? await transactionClient.tax.findMany({ where: { id: { in: taxIds } }, select: { id: true, rate: true, category: true } })
+        : [];
+    const rateById = new Map(taxRows.map((row) => [row.id, row.category === TaxCategoryEnum.Taxable ? row.rate.toNumber() : 0] as const));
+
+    let tax = 0;
+    for (const item of purchase.items) {
+      const priceRow = priceByVariant.get(item.variantId);
+      if (priceRow?.purchaseTaxType !== TaxTypeEnum.WithTax || !priceRow.taxId) continue;
+      const rate = rateById.get(priceRow.taxId) ?? 0;
+      if (rate > 0) tax += (item.totalPrice.toNumber() * rate) / (100 + rate);
+    }
+
+    let isInterState = false;
+    const supplierId = Number(purchase.supplierId);
+    if (Number.isFinite(supplierId) && supplierId > 0) {
+      const [supplier, store] = await Promise.all([
+        transactionClient.supplier.findFirst({ where: { id: supplierId, storeCode }, select: { stateCode: true } }),
+        transactionClient.store.findUnique({ where: { code: storeCode }, select: { stateCode: true } }),
+      ]);
+      isInterState = !!supplier?.stateCode && !!store?.stateCode && supplier.stateCode !== store.stateCode;
+    }
+
+    return { tax: Math.round(tax * 100) / 100, isInterState };
   }
 
   async postSalesReturn(returnId: number, storeCode: string, createdById: string, transactionClient: Prisma.TransactionClient): Promise<number | null> {

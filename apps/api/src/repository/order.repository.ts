@@ -26,7 +26,7 @@ async function decorateWithTax<T extends OrderDto | null>(order: T): Promise<T> 
   const priceRows = await prisma.priceHistory.findMany({
     where: { variantId: { in: variantIds }, ...effectiveOn(new Date(order.orderDate)) },
     orderBy: EFFECTIVE_ORDER,
-    select: { variantId: true, saleTaxType: true, taxId: true },
+    select: { variantId: true, saleTaxType: true, wholesaleTaxType: true, wholesalePrice: true, taxId: true },
   });
 
   const priceByVariant = new Map<number, (typeof priceRows)[number]>();
@@ -43,7 +43,11 @@ async function decorateWithTax<T extends OrderDto | null>(order: T): Promise<T> 
     const rate = tax && tax.category === TaxCategoryEnum.Taxable ? tax.rate.toNumber() : 0;
     const lineTotal = Number(item.totalPrice ?? item.unitPrice * item.quantity);
 
-    if (rate <= 0 || priceRow?.saleTaxType !== TaxTypeEnum.WithTax) {
+    // Charged prices are tax-inclusive by construction - an ex-GST ledger price has its GST
+    // added at the till - so any rated line carries its GST inside, whichever tax type the
+    // ledger row was typed with.
+    const hasTaxType = priceRow != null && (priceRow.saleTaxType != null || priceRow.wholesaleTaxType != null);
+    if (rate <= 0 || !hasTaxType) {
       item.taxName = tax?.name ?? null;
       item.taxRate = rate;
       item.taxableAmount = round2(lineTotal);
@@ -59,11 +63,17 @@ async function decorateWithTax<T extends OrderDto | null>(order: T): Promise<T> 
   }
 
   const totalTax = round2(Number(order.tax ?? 0));
-  const cgst = round2(totalTax / 2);
   order.taxableAmount = round2(Number(order.totalAmount ?? 0) - totalTax);
-  order.cgstAmount = cgst;
-  order.sgstAmount = round2(totalTax - cgst);
-  order.igstAmount = 0;
+  if (order.isInterState) {
+    order.cgstAmount = 0;
+    order.sgstAmount = 0;
+    order.igstAmount = totalTax;
+  } else {
+    const cgst = round2(totalTax / 2);
+    order.cgstAmount = cgst;
+    order.sgstAmount = round2(totalTax - cgst);
+    order.igstAmount = 0;
+  }
 
   return order;
 }

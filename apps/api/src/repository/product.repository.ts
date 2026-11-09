@@ -12,6 +12,7 @@ const productSelect = {
   name: true,
   parentId: true,
   slug: true,
+  hsnCode: true,
   description: true,
   images: true,
   storeCode: true,

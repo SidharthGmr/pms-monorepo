@@ -42,6 +42,7 @@ export default function TaxTemplate({ invoice, logoUrl }: InvoiceTemplateProps) 
             </td>
             <td className="border border-slate-400 border-l-slate-300 px-3 py-2 text-right align-middle">
               <span className="block text-xl font-bold leading-tight text-slate-900">{invoice.store.name}</span>
+              {invoice.store.gstin && <span className="mt-0.5 block text-[11px] font-bold leading-4 text-slate-800">GSTIN: {invoice.store.gstin}</span>}
               {storeContact && <span className="mt-1 block text-[11px] leading-4 text-slate-600">{storeContact}</span>}
             </td>
           </tr>
@@ -60,6 +61,7 @@ export default function TaxTemplate({ invoice, logoUrl }: InvoiceTemplateProps) 
           <tr className="align-top">
             <td className={`${BOX} py-2`}>
               <span className="block text-[11px] leading-4 text-slate-600">{invoice.customer.address}</span>
+              {invoice.customer.gstin && <span className="block text-[11px] font-bold leading-4 text-slate-800">GSTIN: {invoice.customer.gstin}</span>}
               {customerContact && <span className="block text-[11px] leading-4 text-slate-600">{customerContact}</span>}
             </td>
             <td className={`${BOX} py-2`}>
@@ -165,6 +167,24 @@ export default function TaxTemplate({ invoice, logoUrl }: InvoiceTemplateProps) 
                     <td className={CELL}>Discount</td>
                     <td className={`${CELL} text-right`}>- {money(invoice.discount)}</td>
                   </tr>
+                  {tax > 0 && invoice.isInterState === true && (
+                    <tr>
+                      <td className={CELL}>IGST</td>
+                      <td className={`${CELL} text-right`}>{money(tax)}</td>
+                    </tr>
+                  )}
+                  {tax > 0 && invoice.isInterState === false && (
+                    <>
+                      <tr>
+                        <td className={CELL}>CGST</td>
+                        <td className={`${CELL} text-right`}>{money(Math.round((tax / 2) * 100) / 100)}</td>
+                      </tr>
+                      <tr>
+                        <td className={CELL}>SGST</td>
+                        <td className={`${CELL} text-right`}>{money(Math.round((tax - Math.round((tax / 2) * 100) / 100) * 100) / 100)}</td>
+                      </tr>
+                    </>
+                  )}
                   <tr>
                     <td className={CELL}>{taxLabel(invoice)}</td>
                     <td className={`${CELL} text-right`}>{money(tax)}</td>

@@ -9,6 +9,7 @@ export interface ProductResponseDto {
   parentId: number | null;
   name: string;
   slug: string;
+  hsnCode?: string | null;
   description?: string | null;
   images: string[];
   storeCode: string;

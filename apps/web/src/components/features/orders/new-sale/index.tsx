@@ -3,6 +3,7 @@ import ListPageHeader from '@/components/common/list-page-header';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import config from '@/config';
@@ -110,6 +111,7 @@ export default function NewSale() {
       discount: 0,
       tax: 0,
       shippingCost: 0,
+      isInterState: false,
       status: OrderStatusEnum.Confirmed,
       notes: '',
       items: [{ variantId: undefined as any, quantity: 1 }],
@@ -173,12 +175,15 @@ export default function NewSale() {
       address: '',
       phone: myStore?.phone ?? '',
       email: myStore?.email ?? '',
+      gstin: myStore?.gstin ?? undefined,
     },
     customer: { name: billCustomerName, address: '', phone: '', email: customer?.email ?? '' },
+    isInterState: values.isInterState === true,
     items: lines.map((line) => ({
       name: line.variant?.product?.name || line.variant?.name || `Variant #${line.variantId}`,
       variant: line.variant?.name ?? undefined,
       sku: line.variant?.sku ?? undefined,
+      hsn: line.variant?.product?.hsnCode ?? undefined,
       quantity: line.quantity,
       unitPrice: line.unitPrice,
       discount: line.discountAmount || undefined,
@@ -238,6 +243,7 @@ export default function NewSale() {
       discount: additionalDiscount,
       tax: itemTaxTotal,
       shippingCost: model.shippingCost,
+      isInterState: model.isInterState === true,
       status: model.status,
       notes: model.notes,
       items: (model.items ?? []).map((it) => ({ variantId: Number(it.variantId), quantity: Number(it.quantity) })),
@@ -488,6 +494,19 @@ export default function NewSale() {
                           </FormControl>
                           <FormMessage />
                         </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="isInterState"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between gap-3 space-y-0 py-1.5">
+                        <FormLabel className="text-sm font-normal text-muted-foreground">Inter-state supply (IGST)</FormLabel>
+                        <FormControl>
+                          <Switch checked={field.value === true} onCheckedChange={field.onChange} />
+                        </FormControl>
                       </FormItem>
                     )}
                   />

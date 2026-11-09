@@ -257,6 +257,8 @@ model product {
   categoryId       Int
   brandNameId      Int?
   taxId            String?   @db.Uuid
+  /// HSN/SAC code printed on GST invoices and summarised in GSTR filings. Variants inherit it.
+  hsnCode      String?
   slug             String
   description      String?
   shortDescription String?
@@ -674,6 +676,8 @@ model order {
   discount        Float         @default(0)
   tax             Float         @default(0)
   shippingCost    Float         @default(0)
+  /// Place of supply: IGST when true, CGST+SGST otherwise - the same presentational split estimates use.
+  isInterState Boolean     @default(false)
   grandTotal      Float         @default(0)
   status          OrderStatus   @default(PENDING)
   notes           String?

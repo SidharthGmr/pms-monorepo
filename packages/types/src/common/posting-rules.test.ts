@@ -185,6 +185,38 @@ describe('buildTransferLines', () => {
   });
 });
 
+describe('buildPurchaseLines', () => {
+  it('books the whole bill to purchases when no GST is identified', () => {
+    const lines = buildPurchaseLines({ totalAmount: 5000 });
+    expect(lines).toEqual([
+      { account: 'PURCHASES', debit: 5000, credit: 0 },
+      { account: 'ACCOUNTS_PAYABLE', debit: 0, credit: 5000 },
+    ]);
+  });
+
+  it('splits the GST inside the bill into the input accounts, never on top of it', () => {
+    const lines = buildPurchaseLines({ totalAmount: 11800, tax: 1800 });
+    expect(lines.find((l) => l.account === 'PURCHASES')?.debit).toBe(10000);
+    expect(lines.find((l) => l.account === 'CGST_INPUT')?.debit).toBe(900);
+    expect(lines.find((l) => l.account === 'SGST_INPUT')?.debit).toBe(900);
+    expect(lines.find((l) => l.account === 'ACCOUNTS_PAYABLE')?.credit).toBe(11800);
+    const totals = computeJournalTotals(lines.map((l) => ({ ledgerAccountId: 0, debit: l.debit, credit: l.credit })));
+    expect(totals.difference).toBe(0);
+  });
+
+  it('uses IGST input for an inter-state supplier', () => {
+    const lines = buildPurchaseLines({ totalAmount: 11800, tax: 1800, isInterState: true });
+    expect(lines.find((l) => l.account === 'IGST_INPUT')?.debit).toBe(1800);
+    expect(lines.some((l) => l.account === 'CGST_INPUT')).toBe(false);
+  });
+
+  it('caps the tax at the bill total rather than going negative', () => {
+    const lines = buildPurchaseLines({ totalAmount: 100, tax: 500 });
+    expect(lines.find((l) => l.account === 'PURCHASES')).toBeUndefined();
+    expect(lines.find((l) => l.account === 'ACCOUNTS_PAYABLE')?.credit).toBe(100);
+  });
+});
+
 describe('buildExpenseLines', () => {
   const sum = (lines: PostingLineByIdSpec[], side: 'debit' | 'credit') => round2(lines.reduce((total, line) => total + line[side], 0));
 

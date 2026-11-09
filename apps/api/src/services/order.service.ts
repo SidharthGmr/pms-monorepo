@@ -2,7 +2,7 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "../config/ioc.types";
 
-import { ListResponseDto, OrderDto, UpdateOrderDto, CreateOrderModel, OrderFilterParams, PublicDocumentDto, ShareLinkDto } from '@pms/types';
+import { ListResponseDto, OrderDto, UpdateOrderDto, CreateOrderModel, OrderFilterParams, PublicDocumentDto, ShareLinkDto, TaxCategoryEnum } from '@pms/types';
 import ClientError from "../exceptions/client-error";
 import ForbiddenError from "../exceptions/forbidden-error";
 import NotFoundError from "../exceptions/not-found-error";
@@ -12,7 +12,7 @@ import logger from "../utils/logger";
 import { isSmsEnabled, sendSMS } from "../utils/twilio";
 
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
-import { generateOrderNumber } from "../utils/authHelpers.service";
+
 import { toPublicOrder } from "../utils/public-document";
 import { buildShareUrl, generateShareToken } from "../utils/share-token";
 import { discountedUnitPrice, payablePrice } from "../utils/variant-pricing";
@@ -105,8 +105,13 @@ export class OrderService implements IOrderService {
         // Sale prices are tax-inclusive, so the order's tax is the GST portion already inside
         // the line totals - recorded for the invoice, never added on top of the total.
         const taxIds = [...new Set([...prices.values()].map((row) => row.taxId).filter((id): id is string => id != null))];
-        const taxRows = taxIds.length > 0 ? await transactionClient.tax.findMany({ where: { id: { in: taxIds } }, select: { id: true, rate: true } }) : [];
-        const taxRateById = new Map(taxRows.map((row) => [row.id, row.rate.toNumber()] as const));
+        const taxRows =
+          taxIds.length > 0
+            ? await transactionClient.tax.findMany({ where: { id: { in: taxIds } }, select: { id: true, rate: true, category: true } })
+            : [];
+        // An EXEMPT or ZERO_RATED tax charges nothing whatever rate the row carries - the same
+        // rule estimates already apply, so a quote and the sale it becomes agree.
+        const taxRateById = new Map(taxRows.map((row) => [row.id, row.category === TaxCategoryEnum.Taxable ? row.rate.toNumber() : 0] as const));
 
         // Two lines for the same variant compete for the same stock, so the check is on the summed request.
         const requestedByVariant = new Map<number, number>();
@@ -151,25 +156,40 @@ export class OrderService implements IOrderService {
             },
             variant.isOffer
           ) as number;
+          // The price actually charged decides which tax type applies: billing at the wholesale
+          // price goes by the wholesale tax type, not the retail one - a wholesale price entered
+          // ex-GST must have GST added however the retail price was typed.
+          const usedWholesale = variant.isOffer && priceRow.wholesalePrice != null;
+          const taxType = usedWholesale ? priceRow.wholesaleTaxType : priceRow.saleTaxType;
+          const rate = priceRow.taxId ? (taxRateById.get(priceRow.taxId) ?? 0) : 0;
+
+          // An ex-GST ledger price becomes inclusive at the till: the customer pays price plus
+          // GST, and from here on every stored price is tax-inclusive - one convention for every
+          // reader downstream (posting, the invoice, the GST decoration on reads).
+          const discounted = discountedUnitPrice(payable, priceRow.discountType, priceRow.discountValue);
+          const ledgerPrice = taxType === 'WithoutTax' && rate > 0 ? Math.round(discounted * (1 + rate / 100) * 100) / 100 : discounted;
+
           // A converted quotation carries the price it promised the customer. It comes from the
           // stored estimate rather than the request body, so honouring it is not the same as
           // letting a caller name its own price - and a quote whose price moved on conversion
           // would not be a quote.
-          const ledgerPrice = discountedUnitPrice(payable, priceRow.discountType, priceRow.discountValue);
           const unitPrice = item.unitPriceOverride != null && item.unitPriceOverride >= 0 ? item.unitPriceOverride : ledgerPrice;
           const totalPrice = unitPrice * item.quantity;
           calculatedTotalAmount += totalPrice;
 
-          if (priceRow.saleTaxType === 'WithTax' && priceRow.taxId) {
-            const rate = taxRateById.get(priceRow.taxId) ?? 0;
-            if (rate > 0) includedTax += (totalPrice * rate) / (100 + rate);
-          }
+          if (rate > 0) includedTax += (totalPrice * rate) / (100 + rate);
 
           orderItemsToCreate.push({ productId: variant.productId, variantId: item.variantId, quantity: item.quantity, unitPrice, totalPrice });
         }
       }
 
-      const orderNumber = generateOrderNumber();
+      // GST wants consecutive invoice serials, and the old date-plus-random format could also
+      // collide on a busy day. The advisory lock serialises concurrent creates on the caller's
+      // transaction, so two tills cannot draw the same number; it releases on commit. One
+      // sequence covers all stores for now - with a second store, each needs its own prefix.
+      const lockKey = `order:number:${storeCode}`;
+      await transactionClient.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+      const orderNumber = await this.nextInvoiceNumber(transactionClient);
       const discount = data.discount || 0;
       const tax = Math.round(includedTax * 100) / 100;
       const shippingCost = data.shippingCost || 0;
@@ -190,6 +210,7 @@ export class OrderService implements IOrderService {
           shippingCost,
           grandTotal,
           status: data.status || OrderStatus.PENDING,
+          isInterState: data.isInterState === true,
           notes: data.notes || null,
           deliveredAt: data.status === OrderStatus.DELIVERED ? orderDate : null,
           createdById,
@@ -377,5 +398,16 @@ export class OrderService implements IOrderService {
     if (!existing) throw new NotFoundError("Order not found");
     if (storeCode && existing.storeCode !== storeCode) throw new ForbiddenError("This order belongs to another store");
     return this.unitOfWork.Order.delete(id);
+  }
+
+  /** The next serial in the INV- sequence. Pre-accounting ORD- numbers are left out of the scan. */
+  private async nextInvoiceNumber(transactionClient: Prisma.TransactionClient): Promise<string> {
+    const last = await transactionClient.order.findFirst({
+      where: { orderNumber: { startsWith: 'INV-' } },
+      orderBy: { id: 'desc' },
+      select: { orderNumber: true },
+    });
+    const lastSequence = last ? Number(last.orderNumber.match(/(\d+)$/)?.[1] ?? 0) : 0;
+    return `INV-${String(lastSequence + 1).padStart(5, '0')}`;
   }
 }

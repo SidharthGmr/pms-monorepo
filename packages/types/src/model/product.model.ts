@@ -28,6 +28,8 @@ export interface ProductModel {
   categoryId: number;
   brandNameId?: number | null;
   slug: string;
+  /** HSN/SAC code for GST invoices and GSTR summaries. Variants inherit it. */
+  hsnCode?: string | null;
   description?: string | null;
   sellingPrice?: number;
   costPrice?: number | null;

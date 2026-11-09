@@ -41,6 +41,7 @@ export interface ProductVariantListItemDto extends ProductVariantResponseDto {
     id: number;
     name: string;
     slug: string;
+    hsnCode?: string | null;
     categoryId: number;
     images: string[];
     category?: { name: string; images: string[] } | null;

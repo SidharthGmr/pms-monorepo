@@ -8,6 +8,8 @@ export interface CreateOrderModel {
   tax?: number;
   shippingCost?: number;
   status?: OrderStatus;
+  /** IGST when true, CGST+SGST otherwise. Defaults to intra-state, the walk-in POS case. */
+  isInterState?: boolean;
   notes?: string | null;
   createdById?: string | null;
   createdByName?: string | null;

@@ -9,7 +9,7 @@ import { DirtyNote } from '@/components/common/field';
 import OptionalSection from '@/components/common/optional-section';
 import StatusSwitch from '@/components/common/status-switch';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -63,6 +63,7 @@ const DEFAULT_VALUES: CreateProductModel = {
   brandNameId: undefined,
   name: '',
   slug: '',
+  hsnCode: '',
   description: '',
   displayOrder: undefined,
   images: [],
@@ -124,6 +125,7 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
       reset({
         name: p.name,
         slug: p.slug,
+        hsnCode: p.hsnCode ?? '',
         description: p.description ?? '',
         parentId: p.parentId ?? undefined,
         categoryId: p.category?.id,
@@ -689,6 +691,22 @@ export default function ManageProduct({ id, onCancel, onSaved }: ManageProductPr
                       )}
                     />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="hsnCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>HSN / SAC code</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 3209" maxLength={8} {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">
+                          Printed on GST invoices and summarised in GSTR filings. All variants of this product share it.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="description"

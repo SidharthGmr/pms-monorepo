@@ -8,6 +8,9 @@ export interface StoreDto {
   email: string;
   /** Brand name shown on invoices and emails in place of the app name. */
   siteName?: string | null;
+  /** The store's GST registration, printed on every tax invoice. */
+  gstin?: string | null;
+  stateCode?: string | null;
   /** URL of the store's uploaded logo; null means the bundled default. */
   storeLogo?: string | null;
   isActive: boolean;
