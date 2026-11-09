@@ -1,5 +1,13 @@
 import { Prisma } from '@prisma/client';
-import { CreatePaymentDto, PaymentDto, UpdatePaymentDto } from '@pms/types';
+import {
+  CreatePaymentDto,
+  ListResponseDto,
+  OutstandingSummaryDto,
+  PaymentDto,
+  PaymentFilterParams,
+  PaymentVoucherDto,
+  UpdatePaymentDto,
+} from '@pms/types';
 
 export interface IPaymentRepository {
   findByOrderId(orderId: number): Promise<PaymentDto[]>;
@@ -12,4 +20,7 @@ export interface IPaymentRepository {
   create(data: CreatePaymentDto, tx?: Prisma.TransactionClient): Promise<PaymentDto>;
   update(id: number, data: UpdatePaymentDto, tx?: Prisma.TransactionClient): Promise<PaymentDto>;
   delete(id: number): Promise<PaymentDto>;
+  findAllVouchers(filters?: PaymentFilterParams): Promise<ListResponseDto<PaymentVoucherDto>>;
+  findVoucherById(id: number, storeCode: string): Promise<PaymentVoucherDto | null>;
+  outstanding(storeCode: string): Promise<OutstandingSummaryDto>;
 }

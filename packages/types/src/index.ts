@@ -27,6 +27,7 @@ export * from "./params/estimate.params";
 export * from "./params/ledger-account.params";
 export * from "./params/journal-entry.params";
 export * from "./params/ledger-statement.params";
+export * from "./params/payment.params";
 
 // dtos
 export * from "./dto/list-response.dto";
@@ -77,6 +78,7 @@ export * from "./dto/journal-entry.dto";
 export * from "./dto/financial-year.dto";
 export * from "./dto/day-book.dto";
 export * from "./dto/ledger-statement.dto";
+export * from "./dto/payment-voucher.dto";
 export * from "./dto/public-document.dto";
 
 // enums
@@ -144,6 +146,7 @@ export * from "./model/ledger-account.model";
 export * from "./model/journal-entry.model";
 export * from "./model/financial-year.model";
 export * from "./model/accounting-backfill.model";
+export * from "./model/payment-voucher.model";
 
 // validators
 export * from "./validator/product.validator";
@@ -180,6 +183,7 @@ export * from "./validator/ledger-account.validator";
 export * from "./validator/journal-entry.validator";
 export * from "./validator/financial-year.validator";
 export * from "./validator/accounting-backfill.validator";
+export * from "./validator/payment-voucher.validator";
 
 // common
 export * from "./common/email-template-defs";

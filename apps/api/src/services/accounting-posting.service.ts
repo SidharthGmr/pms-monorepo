@@ -23,7 +23,7 @@ import {
 } from '@pms/types';
 import logger from '../utils/logger';
 import type IUnitOfWork from '../repository/interfaces/iunitofwork.repository';
-import { IAccountingPostingService } from './interfaces/Iaccounting-posting.service';
+import { IAccountingPostingService, MoneyMovementPosting } from './interfaces/Iaccounting-posting.service';
 import { IJournalEntryService } from './interfaces/Ijournal-entry.service';
 
 /**
@@ -327,6 +327,56 @@ export class AccountingPostingService implements IAccountingPostingService {
     }
 
     return result;
+  }
+
+  /**
+   * Posts a voucher whose accounts the user chose. The same two guards as every other rule
+   * apply - already-posted is a no-op, and an unconfigured store skips rather than blocking
+   * the document - but there is no system-key lookup, because the ids are already known.
+   */
+  async postMoneyMovement(args: MoneyMovementPosting, transactionClient: Prisma.TransactionClient): Promise<number | null> {
+    if (args.lines.length < 2) return null;
+
+    const alreadyPosted = await transactionClient.journalEntry.findUnique({
+      where: { storeCode_sourceType_sourceId: { storeCode: args.storeCode, sourceType: args.sourceType, sourceId: args.sourceId } },
+      select: { id: true },
+    });
+    if (alreadyPosted) return alreadyPosted.id;
+
+    if (!(await this.isConfigured(args.storeCode, transactionClient))) {
+      logger.warn('Skipped accounting posting: store has no chart of accounts', {
+        storeCode: args.storeCode,
+        sourceType: args.sourceType,
+        sourceId: args.sourceId,
+      });
+      return null;
+    }
+
+    const partyAccounts = new Set(args.partyAccountIds ?? []);
+
+    return this.journalEntryService.post(
+      {
+        storeCode: args.storeCode,
+        createdById: args.createdById,
+        voucherType: args.voucherType,
+        entryDate: args.entryDate,
+        narration: args.narration,
+        referenceNumber: args.referenceNumber ?? null,
+        sourceType: args.sourceType,
+        sourceId: args.sourceId,
+        lines: args.lines.map((line) => {
+          const carriesParty = args.party != null && partyAccounts.has(line.ledgerAccountId);
+          return {
+            ledgerAccountId: line.ledgerAccountId,
+            debit: line.debit,
+            credit: line.credit,
+            partyType: carriesParty ? args.party!.partyType : null,
+            partyId: carriesParty ? args.party!.partyId : null,
+          };
+        }),
+      },
+      transactionClient
+    );
   }
 
   /**
