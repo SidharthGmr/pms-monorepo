@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { StatusEnum } from "../enum/status.enum";
-import { optionalNumberField, phoneField, requiredString } from "./fields";
+import { gstinField, gstStateCodeField, optionalNumberField, phoneField, requiredString } from "./fields";
 
 export const supplierFields = z.object({
   name: requiredString("Supplier name is required"),
   email: z.string().trim().min(1, "Email is required").email("Invalid email"),
   phone: phoneField(true),
   address: z.string().nullable().optional(),
+  gstin: gstinField(),
+  stateCode: gstStateCodeField(),
   status: z.nativeEnum(StatusEnum),
   displayOrder: optionalNumberField("Display order must be a number").nullable(),
 });

@@ -161,6 +161,7 @@ export class UserService implements IUserService {
       country: profile?.country || null,
       pincode: profile?.pincode || null,
       bio: profile?.bio || null,
+      gstin: profile?.gstin || null,
     };
   }
 }

@@ -8,6 +8,14 @@ import { IStoreService } from "./interfaces/Istore.service";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import CustomError from "../exceptions/custom-error";
 import { ListResponseDto, StoreDto, StoreFilterParams, CreateStoreModel, UpdateMyStoreModel, UpdateStoreModel } from '@pms/types';
+
+// A GSTIN's first two digits ARE the GST state code, so a typed code wins but an absent one
+// is read straight off the registration - one less field to get wrong.
+const gstFields = (data: { gstin?: string | null; stateCode?: string | null }) => ({
+  gstin: data.gstin || null,
+  stateCode: data.stateCode || (data.gstin ? data.gstin.slice(0, 2) : null),
+});
+
 @injectable()
 export class StoreService implements IStoreService {
   constructor(@inject(TYPES.IUnitOfWork) private unitOfWork: IUnitOfWork) { }
@@ -35,6 +43,7 @@ export class StoreService implements IStoreService {
           phone: data.phone || null,
           email: data.email,
           siteName: data.siteName || null,
+          ...gstFields(data),
           storeLogo: data.storeLogo || null,
           isActive: data.isActive ?? true,
           status: data.status || "Published",
@@ -101,6 +110,11 @@ export class StoreService implements IStoreService {
       if (data.phone !== undefined) updateData.phone = data.phone || null;
       if (data.email !== undefined && data.email !== "") updateData.email = data.email;
       if (data.siteName !== undefined) updateData.siteName = data.siteName || null;
+      if (data.gstin !== undefined || data.stateCode !== undefined) {
+        const gst = gstFields({ gstin: data.gstin ?? null, stateCode: data.stateCode ?? null });
+        if (data.gstin !== undefined) updateData.gstin = gst.gstin;
+        updateData.stateCode = gst.stateCode;
+      }
       if (data.storeLogo !== undefined) updateData.storeLogo = data.storeLogo || null;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
       if (data.status !== undefined) updateData.status = data.status;
@@ -142,6 +156,7 @@ export class StoreService implements IStoreService {
           phone: data.phone || null,
           email: data.email,
           siteName: data.siteName || null,
+          ...gstFields(data),
           storeLogo: data.storeLogo || null,
         },
       });

@@ -6,6 +6,9 @@ export interface CreateStoreModel {
   phone?: string;
   email: string;
   siteName?: string;
+  /** GST registration printed on every tax invoice; the first two digits are the state code. */
+  gstin?: string | null;
+  stateCode?: string | null;
   storeLogo?: string;
   isActive?: boolean;
   status?: Status;
@@ -18,6 +21,8 @@ export interface UpdateMyStoreModel {
   email: string;
   siteName?: string;
   storeLogo?: string;
+  gstin?: string | null;
+  stateCode?: string | null;
 }
 
 // `code` is deliberately absent: the tenant key every row hangs off is written once at
@@ -28,6 +33,8 @@ export interface UpdateStoreModel {
   email?: string;
   siteName?: string;
   storeLogo?: string;
+  gstin?: string | null;
+  stateCode?: string | null;
   isActive?: boolean;
   status?: Status;
 }

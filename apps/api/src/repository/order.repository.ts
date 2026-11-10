@@ -62,6 +62,13 @@ async function decorateWithTax<T extends OrderDto | null>(order: T): Promise<T> 
     item.taxableAmount = round2(lineTotal - taxAmount);
   }
 
+  // The buyer's GSTIN lives on their profile; the invoice wants it flat on the customer.
+  const rawCustomer = order.customer as (typeof order.customer & { UserProfile?: { gstin: string | null } | null }) | undefined;
+  if (rawCustomer?.UserProfile !== undefined) {
+    rawCustomer.gstin = rawCustomer.UserProfile?.gstin ?? null;
+    delete rawCustomer.UserProfile;
+  }
+
   const totalTax = round2(Number(order.tax ?? 0));
   order.taxableAmount = round2(Number(order.totalAmount ?? 0) - totalTax);
   if (order.isInterState) {
@@ -129,7 +136,7 @@ export class OrderRepository implements IOrderRepository {
         include: {
           // A narrow select, never `customer: true`: the full users row would serialize the
           // customer's password hash and live session tokens into every order response.
-          customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+          customer: { select: { id: true, userId: true, name: true, email: true, phone: true, UserProfile: { select: { gstin: true } } } },
           store: true,
           items: {
             include: {
@@ -153,7 +160,7 @@ export class OrderRepository implements IOrderRepository {
         createdAt: 'desc',
       },
       include: {
-        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true, UserProfile: { select: { gstin: true } } } },
         store: true,
         items: {
           include: {
@@ -169,7 +176,7 @@ export class OrderRepository implements IOrderRepository {
     return decorateWithTax(await prisma.order.findUnique({
       where: { id },
       include: {
-        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true, UserProfile: { select: { gstin: true } } } },
         store: true,
         items: {
           include: {
@@ -186,7 +193,7 @@ export class OrderRepository implements IOrderRepository {
     return decorateWithTax(await prisma.order.findFirst({
       where: { orderNumber: { equals: orderNumber, mode: 'insensitive' } },
       include: {
-        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true, UserProfile: { select: { gstin: true } } } },
         store: true,
         items: {
           include: {
@@ -203,7 +210,7 @@ export class OrderRepository implements IOrderRepository {
     return decorateWithTax(await prisma.order.findFirst({
       where: { publicToken },
       include: {
-        customer: { select: { id: true, userId: true, name: true, email: true, phone: true } },
+        customer: { select: { id: true, userId: true, name: true, email: true, phone: true, UserProfile: { select: { gstin: true } } } },
         store: true,
         items: {
           include: {

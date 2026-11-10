@@ -235,6 +235,19 @@ export default function EditUserProfile({ isOpen, onClose, userId }: EditUserPro
                 />
                 <FormField
                   control={form.control}
+                  name="gstin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GSTIN</FormLabel>
+                      <FormControl>
+                        <Input placeholder="For B2B invoices, e.g. 09ABCDE1234F1Z5" maxLength={15} className="uppercase" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="bio"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">

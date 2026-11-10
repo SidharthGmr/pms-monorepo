@@ -41,6 +41,8 @@ export interface OrderDto {
     lastName?: string;
     email?: string;
     phone?: string | null;
+    /** Flattened from the customer's profile on detail reads, for B2B tax invoices. */
+    gstin?: string | null;
   };
   /** The API joins the whole store row, so the bill can print real contact details. */
   store?: {
@@ -49,6 +51,9 @@ export interface OrderDto {
     address?: string | null;
     phone?: string | null;
     email?: string | null;
+    gstin?: string | null;
+    siteName?: string | null;
+    storeLogo?: string | null;
   };
 }
 

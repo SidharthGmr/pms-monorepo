@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { StatusEnum } from "../enum/status.enum";
-import { emailField, phoneField, requiredString } from "./fields";
+import { emailField, gstinField, gstStateCodeField, phoneField, requiredString } from "./fields";
 
 export const storeFields = z.object({
   name: requiredString("Store name is required").min(2, "Store name must be at least 2 characters"),
@@ -8,6 +8,8 @@ export const storeFields = z.object({
   phone: phoneField(false),
   email: emailField("Invalid email format"),
   siteName: z.string().trim().max(100, "Site name must be 100 characters or fewer").optional(),
+  gstin: gstinField(),
+  stateCode: gstStateCodeField(),
   storeLogo: z.string().trim().max(2048, "Logo URL must be 2048 characters or fewer").optional(),
   isActive: z.boolean().optional(),
   status: z.nativeEnum(StatusEnum).optional(),
@@ -28,6 +30,8 @@ export const myStoreFields = storeFields.pick({
   email: true,
   siteName: true,
   storeLogo: true,
+  gstin: true,
+  stateCode: true,
 });
 
 export const updateMyStoreValidator = z.object({ body: myStoreFields });

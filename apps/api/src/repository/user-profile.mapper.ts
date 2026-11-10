@@ -20,6 +20,7 @@ export const profileFieldNames = [
   'country',
   'pincode',
   'bio',
+  'gstin',
 ] as const;
 
 /**
@@ -62,5 +63,6 @@ export function toUserDto(user: UserWithProfile): UserDto {
     country: profile?.country ?? null,
     pincode: profile?.pincode ?? null,
     bio: profile?.bio ?? null,
+    gstin: profile?.gstin ?? null,
   };
 }

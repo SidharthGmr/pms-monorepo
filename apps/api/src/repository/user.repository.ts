@@ -108,7 +108,7 @@ export class UserRepository implements IUserRepository {
 
   async update(userId: string, data: UpdateUserDto): Promise<UserDto> {
     // Profile fields have to be routed to the related `UserProfile` row.
-    const { userName, profileImageUrl, address, city, state, country, pincode, bio } = data;
+    const { userName, profileImageUrl, address, city, state, country, pincode, bio, gstin } = data;
     // The form sends dateOfBirth as a string; '' means "clear it", and an unparseable value
     // must not reach Prisma's DateTime column (an invalid invocation surfaces as a 500).
     const rawDob = data.dateOfBirth;
@@ -121,7 +121,7 @@ export class UserRepository implements IUserRepository {
       ...(data.phone !== undefined && { phone: data.phone }),
       ...(data.updatedAt !== undefined && { updatedAt: data.updatedAt }),
     };
-    const profileFields = { userName, profileImageUrl, dateOfBirth, address, city, state, country, pincode, bio };
+    const profileFields = { userName, profileImageUrl, dateOfBirth, address, city, state, country, pincode, bio, gstin };
     const hasProfileUpdate = Object.values(profileFields).some((value) => value !== undefined);
 
     let profileWrite: { upsert: { create: any; update: any } } | undefined;

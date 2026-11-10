@@ -42,6 +42,8 @@ export interface UserDto {
   country?: string | null;
   pincode?: string | null;
   bio?: string | null;
+  /** The customer's GST registration, printed on B2B tax invoices raised to them. */
+  gstin?: string | null;
 }
 
 export interface CreateUserDto {
@@ -72,6 +74,8 @@ export interface UpdateUserDto {
   country?: string | null;
   pincode?: string | null;
   bio?: string | null;
+  /** The customer's GST registration, printed on B2B tax invoices raised to them. */
+  gstin?: string | null;
 }
 
 export interface UserBasicDto {

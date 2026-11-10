@@ -15,4 +15,6 @@ export interface UpdateProfileModel {
   country?: string;
   pincode?: string;
   bio?: string;
+  /** GST registration printed on B2B tax invoices raised to this customer. */
+  gstin?: string;
 }

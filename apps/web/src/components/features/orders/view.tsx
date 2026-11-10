@@ -51,6 +51,8 @@ import { useRouter } from 'next/navigation';
 import React, { ReactNode, useState } from 'react';
 import { amountInWords } from '@/lib/amount-in-words';
 import { downloadInvoicePdf } from './invoice-pdf';
+import { orderToTaxInvoice } from './order-invoice';
+import { downloadTemplateBill } from './template-bill';
 import { OrderItemDto, Roles } from '@pms/types';
 import ListPageHeader from '@/components/common/list-page-header';
 
@@ -142,7 +144,13 @@ export default function OrderDetailsView({ idOrNumber }: OrderDetailsViewProps) 
       const logoUrl = await fetchMyStore()
         .then((response) => response.data.data?.storeLogo || undefined)
         .catch(() => undefined);
-      await downloadInvoicePdf(order, logoUrl);
+      // The GST-compliant Tax Invoice layout (GSTINs, HSN, the CGST/SGST split) is the bill a
+      // customer receives; the old drawn jsPDF layout stays only as the fallback.
+      try {
+        await downloadTemplateBill(orderToTaxInvoice(order), logoUrl, `${order.orderNumber}.pdf`);
+      } catch {
+        await downloadInvoicePdf(order, logoUrl);
+      }
     } catch (error) {
       console.error('Failed to generate PDF', error);
     } finally {

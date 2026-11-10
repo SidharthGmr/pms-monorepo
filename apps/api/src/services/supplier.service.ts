@@ -6,6 +6,14 @@ import NotFoundError from "../exceptions/not-found-error";
 import type IUnitOfWork from "../repository/interfaces/iunitofwork.repository";
 import { ISupplierService } from "./interfaces/Isupplier.service";
 import { ListResponseDto, StatusEnum, SupplierDto, CreateSupplierDto, SupplierFilterParams } from '@pms/types';
+
+// A GSTIN's first two digits ARE the GST state code, so a typed code wins but an absent one
+// is read straight off the registration - one less field to get wrong.
+const gstFields = (data: { gstin?: string | null; stateCode?: string | null }) => ({
+  gstin: data.gstin || null,
+  stateCode: data.stateCode || (data.gstin ? data.gstin.slice(0, 2) : null),
+});
+
 @injectable()
 export class SupplierService implements ISupplierService {
   constructor(
@@ -30,6 +38,7 @@ export class SupplierService implements ISupplierService {
           email: data.email || null,
           phone: data.phone || null,
           address: data.address || null,
+          ...gstFields(data),
           storeCode: storeCode,
           status: data.status || StatusEnum.Published,
           displayOrder: data.displayOrder || null,
@@ -51,6 +60,7 @@ export class SupplierService implements ISupplierService {
           email: data.email ?? null,
           phone: data.phone ?? null,
           address: data.address ?? null,
+          ...gstFields(data),
           status: data.status,
           displayOrder: data.displayOrder || null,
           updatedAt: new Date(),

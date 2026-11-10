@@ -22,6 +22,7 @@ export interface OrderItemDto {
     name: string;
     description?: string | null;
     slug?: string;
+    hsnCode?: string | null;
     images?: string[];
   } | null;
   variant?: {

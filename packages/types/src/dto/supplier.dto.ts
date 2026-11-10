@@ -6,6 +6,8 @@ export interface SupplierDto {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  gstin?: string | null;
+  stateCode?: string | null;
   storeCode: string;
   status: Status;
   displayOrder?: number | null;
@@ -18,6 +20,8 @@ export interface CreateSupplierDto {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  gstin?: string | null;
+  stateCode?: string | null;
   storeCode: string;
   status: Status;
   displayOrder?: number | null;

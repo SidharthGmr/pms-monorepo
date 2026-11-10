@@ -1,3 +1,4 @@
+import { gstinField } from "./fields";
 import { z } from "zod";
 import { urlOrAppPath } from "./utils";
 
@@ -30,6 +31,7 @@ export const profileValidator = z.object({
     .optional()
     .or(z.literal("")),
   bio: z.string().max(500, "Bio must be 500 characters or fewer").optional(),
+  gstin: gstinField(),
 });
 
 
@@ -59,6 +61,7 @@ export const profileFields = z.object({
     .optional()
     .or(z.literal("")),
   bio: z.string().max(500, "Bio must be 500 characters or fewer").optional(),
+  gstin: gstinField(),
 });
 
 /** Partial variant — every field optional (patch-style updates). */

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
@@ -37,7 +37,7 @@ export default function StoreTab() {
 
   const form = useForm<UpdateMyStoreModel>({
     resolver: zodResolver(myStoreFields),
-    defaultValues: { name: '', phone: '', email: '', siteName: '', storeLogo: '' },
+    defaultValues: { name: '', phone: '', email: '', siteName: '', gstin: '', stateCode: '', storeLogo: '' },
   });
 
   useEffect(() => {
@@ -47,6 +47,8 @@ export default function StoreTab() {
         phone: store.phone ?? '',
         email: store.email ?? '',
         siteName: store.siteName ?? '',
+        gstin: store.gstin ?? '',
+        stateCode: store.stateCode ?? '',
         storeLogo: store.storeLogo ?? '',
       });
     }
@@ -153,6 +155,38 @@ export default function StoreTab() {
                       <FormLabel>Site Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Brand name on invoices & emails" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="gstin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GSTIN</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 09ABCDE1234F1Z5" maxLength={15} className="uppercase" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription className="text-[11px]">
+                        Printed on every tax invoice. The first two digits are your GST state code.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="stateCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST state code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Taken from the GSTIN if left empty" maxLength={2} {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -6,7 +6,7 @@ import OptionalSection from '@/components/common/optional-section';
 import StatusSwitch from '@/components/common/status-switch';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
@@ -62,6 +62,8 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
       email: '',
       phone: '',
       address: '',
+      gstin: '',
+      stateCode: '',
       status: StatusValues.Draft,
       displayOrder: 0,
     },
@@ -85,11 +87,13 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
         email: supplier.email ?? '',
         phone: supplier.phone ?? '',
         address: supplier.address ?? '',
+        gstin: supplier.gstin ?? '',
+        stateCode: supplier.stateCode ?? '',
         status: supplier.status,
         displayOrder: supplier.displayOrder ?? 0,
       });
       // An address or a non-default order is already filled in, so the fold must not hide it.
-      if (supplier.address?.trim() || (supplier.displayOrder ?? 0) !== 0) setOptionalOpen(true);
+      if (supplier.address?.trim() || supplier.gstin || (supplier.displayOrder ?? 0) !== 0) setOptionalOpen(true);
     }
   }, [isEdit, getSupplierResponse.data, reset]);
 
@@ -275,6 +279,38 @@ export default function ManageSupplier({ id, isOpen, mode = 'edit', onClose }: M
                             </FormItem>
                           )}
                         />
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="gstin"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>GSTIN</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g. 27ABCDE1234F1Z5" maxLength={15} className="uppercase" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormDescription className="text-[11px]">
+                                  Decides IGST vs CGST+SGST on this supplier&apos;s bills. State code comes from its first two digits.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="stateCode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>GST state code</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g. 27" maxLength={2} {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
                         <FormField
                           control={form.control}

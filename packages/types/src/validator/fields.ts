@@ -98,3 +98,20 @@ export const phoneField = (required = false) => {
     .refine((value) => INDIAN_MOBILE.test(value), message);
   return required ? digits : z.union([z.literal(""), digits]).optional();
 };
+
+/**
+ * A 15-character GST registration: state code, PAN, entity digit, Z, check digit. Uppercased
+ * before the check so a lowercase paste still passes, and empty stays allowed - registration
+ * is optional, printing an invalid one on an invoice is not.
+ */
+export const gstinField = () =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? value.trim().toUpperCase() : value),
+    z
+      .union([z.literal(""), z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/, "That is not a valid 15-character GSTIN")])
+      .nullish()
+  );
+
+/** The two-digit GST state code, e.g. 09 for UP, 27 for Maharashtra. */
+export const gstStateCodeField = () =>
+  z.union([z.literal(""), z.string().trim().regex(/^[0-9]{2}$/, "A GST state code is two digits")]).nullish();
