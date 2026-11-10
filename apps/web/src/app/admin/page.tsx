@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function AdminPage() {
   return (
-    <div className="mx-auto w-full max-w-7xl">
+    <div>
       <DashboardSwitcher />
     </div>
   );

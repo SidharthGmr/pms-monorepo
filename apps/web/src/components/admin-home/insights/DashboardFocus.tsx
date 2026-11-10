@@ -45,28 +45,20 @@ interface LowStockProduct {
 
 const greetingFor = (hour: number) => (hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening');
 
-// Staggered entrance so the page settles top to bottom instead of popping in at once.
 const enter = (step: number) => ({
   className: 'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500',
   style: { animationDelay: `${step * 60}ms` },
 });
 
 interface DashboardFocusProps {
-  /** Rendered beside the page actions, e.g. the Insights / Classic switch. */
   toolbar?: ReactNode;
 }
 
-/**
- * Four regions, in the order the question gets asked: what needs doing, how today went, where
- * the week is heading, and what the shop is made of. Every figure that is not actionable sits
- * below the ones that are.
- */
 export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
   const { currentUser } = useGetCurrentUser();
   const summaryQuery = useGetDashboardSummary();
   const tPanel = useTranslations();
   const lowStockQuery = useGetLowStockProducts();
-  // Only the count is wanted, so one row is enough - the API still reports the full total.
   const pendingQuery = useGetAllOrders({ status: 'PENDING', recordPerPage: 1 });
 
   const summary: DashboardSummaryDto | undefined = summaryQuery.data?.data?.data;
@@ -158,15 +150,13 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
 
   return (
     <div className="space-y-5">
-      {/* 1. Who, when, and how the day is going in one sentence. */}
       <section {...enter(0)} className={cn(enter(0).className, 'flex flex-col gap-3 md:flex-row md:items-end md:justify-between')}>
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
             {greetingFor(today.getHours())}
             {firstName ? `, ${firstName}` : ''}
           </h1>
-          {/* The skeleton replaces the whole <p>: a div inside a paragraph is invalid HTML, the
-              parser closes the <p> early, and hydration fails on the mismatch. */}
+
           {isLoading ? (
             <Skeleton className="mt-1.5 h-4 w-72" />
           ) : (
@@ -206,6 +196,7 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
         <h2 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
           Today · {today.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}
         </h2>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <FocusKpi
             {...enter(2)}
@@ -258,122 +249,117 @@ export default function DashboardFocus({ toolbar }: DashboardFocusProps) {
         </div>
       </section>
 
-      {/* 4. Context: where the week is going, what just happened, what is thin on the shelf. */}
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Panel
+          {...enter(6)}
+          title="Sales, last 7 days"
+          icon={TrendingUp}
+          hint="Completed orders by day; cancelled and returned are left out."
+          href="/admin/orders"
+          cta="All orders"
+        >
+          <FocusSalesTrend days={7} />
+        </Panel>
+        <Panel
+          {...enter(7)}
+          title="Latest activity"
+          icon={ShoppingBag}
+          hint="Sales and stock purchases, newest first, grouped by day."
+          href="/admin/orders"
+          cta="All orders"
+        >
+          <FocusActivityFeed limit={6} />
+        </Panel>
+      </section>
+
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="min-w-0 space-y-4 xl:col-span-2">
-          <Panel
-            {...enter(6)}
-            title="Sales, last 7 days"
-            icon={TrendingUp}
-            hint="Completed orders by day; cancelled and returned are left out."
-            href="/admin/orders"
-            cta="All orders"
-          >
-            <FocusSalesTrend days={7} />
-          </Panel>
-
-          <Panel
-            {...enter(7)}
-            title="Latest activity"
-            icon={ShoppingBag}
-            hint="Sales and stock purchases, newest first, grouped by day."
-            href="/admin/orders"
-            cta="All orders"
-          >
-            <FocusActivityFeed limit={6} />
-          </Panel>
-        </div>
-
-        <div className="min-w-0 space-y-4">
-          <Panel
-            {...enter(6)}
-            title={tPanel('stock.lowOnStock')}
-            icon={AlertTriangle}
-            count={lowStockQuery.isLoading ? undefined : lowStockAll.length}
-            href="/admin/stock-purchase"
-            cta={tPanel('stock.receiveStock')}
-          >
-            <StockWatch items={lowStockAll} loading={lowStockQuery.isLoading} />
-          </Panel>
-
-          <Panel {...enter(7)} title="What the shop holds" icon={Boxes} bodyClassName="px-3 py-3 sm:px-3">
-            <ul className="grid grid-cols-2 gap-2">
-              <CatalogRow icon={Boxes} accent="sky" label="Products" value={summary?.productTotal} href="/admin/products" loading={isLoading} />
-              <CatalogRow
-                icon={FolderTree}
-                accent="emerald"
-                label="Categories"
-                value={summary?.categoryTotal}
-                href="/admin/categories"
-                loading={isLoading}
-              />
-              <CatalogRow icon={Tag} accent="violet" label="Brands" value={summary?.brandTotal} href="/admin/brand-names" loading={isLoading} />
-              <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} href="/admin/users" loading={isLoading} />
-            </ul>
-          </Panel>
-
-          {/* 2. The only part of the page that asks for a decision, so it comes before the figures. */}
-          <Panel
-            {...enter(8)}
-            title="Needs attention"
-            icon={Boxes}
-            bodyClassName="px-3 py-3 sm:px-3"
-            action={
-              !checking && tasks.length > 0 ? (
-                <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>
-              ) : undefined
-            }
-          >
-            {checking ? (
-              <div className="grid gap-3 lg:grid-cols-3">
-                {Array.from({ length: 2 }).map((_, index) => (
-                  <Skeleton key={index} className="h-[4.5rem] rounded-xl" />
-                ))}
+        <Panel
+          {...enter(8)}
+          title="Needs attention"
+          icon={Boxes}
+          bodyClassName="px-3 py-3 sm:px-3"
+          action={
+            !checking && tasks.length > 0 ? (
+              <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] tabular-nums text-destructive">{tasks.length}</span>
+            ) : undefined
+          }
+        >
+          {checking ? (
+            <div className="grid gap-3 lg:grid-cols-3">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <Skeleton key={index} className="h-[4.5rem] rounded-xl" />
+              ))}
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className={cn(SURFACE, 'flex items-center gap-3 px-4 py-3.5')}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Nothing needs you right now</p>
+                <p className="text-xs text-muted-foreground">Every product is above its threshold and no order is waiting.</p>
               </div>
-            ) : tasks.length === 0 ? (
-              <div className={cn(SURFACE, 'flex items-center gap-3 px-4 py-3.5')}>
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-4 w-4" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">Nothing needs you right now</p>
-                  <p className="text-xs text-muted-foreground">Every product is above its threshold and no order is waiting.</p>
-                </div>
-              </div>
-            ) : (
-              <ul className="grid gap-3 lg:grid-cols-1">
-                {tasks.map((task) => (
-                  <li key={task.key}>
-                    <Link
-                      href={task.cta.href}
+            </div>
+          ) : (
+            <ul className="grid gap-3 lg:grid-cols-1">
+              {tasks.map((task) => (
+                <li key={task.key}>
+                  <Link
+                    href={task.cta.href}
+                    className={cn(
+                      'group flex h-full items-start gap-3 rounded-xl border px-4 py-3.5 transition-all hover:-translate-y-0.5 hover:shadow-md',
+                      task.tone === 'critical' ? 'border-destructive/30 bg-destructive/[0.04]' : 'border-amber-500/30 bg-amber-500/[0.05]'
+                    )}
+                  >
+                    <span
                       className={cn(
-                        'group flex h-full items-start gap-3 rounded-xl border px-4 py-3.5 transition-all hover:-translate-y-0.5 hover:shadow-md',
-                        task.tone === 'critical' ? 'border-destructive/30 bg-destructive/[0.04]' : 'border-amber-500/30 bg-amber-500/[0.05]'
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                        task.tone === 'critical' ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
                       )}
                     >
-                      <span
-                        className={cn(
-                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                          task.tone === 'critical' ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
-                        )}
-                      >
-                        <task.icon className="h-4 w-4" />
+                      <task.icon className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-snug">{task.title}</p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{task.body}</p>
+                      <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                        {task.cta.label}
+                        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold leading-snug">{task.title}</p>
-                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{task.body}</p>
-                        <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                          {task.cta.label}
-                          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-        </div>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel
+          {...enter(6)}
+          title={tPanel('stock.lowOnStock')}
+          icon={AlertTriangle}
+          count={lowStockQuery.isLoading ? undefined : lowStockAll.length}
+          href="/admin/stock-purchase"
+          cta={tPanel('stock.receiveStock')}
+        >
+          <StockWatch items={lowStockAll} loading={lowStockQuery.isLoading} />
+        </Panel>
+
+        <Panel {...enter(7)} title="What the shop holds" icon={Boxes} bodyClassName="px-3 py-3 sm:px-3">
+          <ul className="grid grid-cols-2 gap-2">
+            <CatalogRow icon={Boxes} accent="sky" label="Products" value={summary?.productTotal} href="/admin/products" loading={isLoading} />
+            <CatalogRow
+              icon={FolderTree}
+              accent="emerald"
+              label="Categories"
+              value={summary?.categoryTotal}
+              href="/admin/categories"
+              loading={isLoading}
+            />
+            <CatalogRow icon={Tag} accent="violet" label="Brands" value={summary?.brandTotal} href="/admin/brand-names" loading={isLoading} />
+            <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} href="/admin/users" loading={isLoading} />
+          </ul>
+        </Panel>
       </section>
     </div>
   );

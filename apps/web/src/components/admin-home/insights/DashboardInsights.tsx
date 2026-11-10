@@ -45,7 +45,10 @@ interface LowStockProduct {
 const greetingFor = (hour: number) => (hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening');
 
 // Staggered entrance so the page settles top to bottom instead of popping in at once.
-const enter = (step: number) => ({ className: 'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500', style: { animationDelay: `${step * 60}ms` } });
+const enter = (step: number) => ({
+  className: 'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-500',
+  style: { animationDelay: `${step * 60}ms` },
+});
 
 interface DashboardInsightsProps {
   /** Rendered inside the hero, beside the page actions. */
@@ -64,8 +67,6 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
   const dayOfMonth = today.getDate();
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
-  // Month figures divided by the days elapsed give a "typical day" to hold today up against; the
-  // projection is a straight line, as if every remaining day matched that average.
   const metrics = useMemo(() => {
     const s = summary;
     const monthSale = s?.totalMonthSale ?? 0;
@@ -108,11 +109,13 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* 1. One banner carries the greeting, the day's actions and today's three numbers, so the
-             page opens on a single block instead of a plain heading stacked above a card. */}
       <section {...enter(0)}>
         <div className="relative isolate overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-indigo-700 p-5 text-primary-foreground shadow-lg sm:p-6 lg:p-7">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '18px 18px' }} aria-hidden />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.12]"
+            style={{ backgroundImage: 'radial-gradient(currentColor 1px, transparent 1px)', backgroundSize: '18px 18px' }}
+            aria-hidden
+          />
           <div className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-white/15 blur-3xl" aria-hidden />
           <div className="pointer-events-none absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-secondary/25 blur-3xl" aria-hidden />
 
@@ -140,9 +143,12 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
                   <p className="mt-1 max-w-xl text-sm text-primary-foreground/80">
                     {metrics.todayOrders > 0 ? (
                       <>
-                        <strong className="font-semibold text-primary-foreground">{formatCount(metrics.todayOrders)}</strong> {metrics.todayOrders === 1 ? 'order' : 'orders'} so far today, worth{' '}
+                        <strong className="font-semibold text-primary-foreground">{formatCount(metrics.todayOrders)}</strong>{' '}
+                        {metrics.todayOrders === 1 ? 'order' : 'orders'} so far today, worth{' '}
                         <strong className="font-semibold text-primary-foreground">{formatMoney(metrics.todaySale)}</strong>.{' '}
-                        {metrics.todaySale >= metrics.avgDaySale ? 'Ahead of a typical day this month.' : 'A slower start than a typical day this month.'}
+                        {metrics.todaySale >= metrics.avgDaySale
+                          ? 'Ahead of a typical day this month.'
+                          : 'A slower start than a typical day this month.'}
                       </>
                     ) : (
                       'No orders yet today. Start a sale, or check what is running low.'
@@ -153,7 +159,12 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
 
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {toolbar}
-                <Button asChild size="sm" variant="outline" className="h-9 border-white/25 bg-white/10 text-primary-foreground backdrop-blur-sm hover:bg-white/20 hover:text-primary-foreground">
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-9 border-white/25 bg-white/10 text-primary-foreground backdrop-blur-sm hover:bg-white/20 hover:text-primary-foreground"
+                >
                   <Link href="/admin/stock-purchase">
                     <Truck className="h-4 w-4" />
                     Receive stock
@@ -175,7 +186,11 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
                 delta={isLoading ? undefined : trendPct(metrics.todaySale, metrics.avgDaySale)}
                 emphasis
               />
-              <HeroStat label="Orders today" value={isLoading ? undefined : formatCount(metrics.todayOrders)} delta={isLoading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)} />
+              <HeroStat
+                label="Orders today"
+                value={isLoading ? undefined : formatCount(metrics.todayOrders)}
+                delta={isLoading ? undefined : trendPct(metrics.todayOrders, metrics.avgDayOrders)}
+              />
               <HeroStat label="Stock bought today" value={isLoading ? undefined : formatMoney(metrics.todayPurchase, true)} />
 
               <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm sm:col-span-3 lg:col-span-1">
@@ -191,11 +206,19 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
                 <div className="mt-2.5 flex items-end justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[11px] text-primary-foreground/70">Month so far</p>
-                    {isLoading ? <Skeleton className="mt-1 h-5 w-20 bg-white/20" /> : <p className="truncate text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.monthSale)}</p>}
+                    {isLoading ? (
+                      <Skeleton className="mt-1 h-5 w-20 bg-white/20" />
+                    ) : (
+                      <p className="truncate text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.monthSale)}</p>
+                    )}
                   </div>
                   <div className="min-w-0 text-right">
                     <p className="text-[11px] text-primary-foreground/70">On track for</p>
-                    {isLoading ? <Skeleton className="mt-1 h-5 w-20 bg-white/20" /> : <p className="truncate text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.projectedSale, true)}</p>}
+                    {isLoading ? (
+                      <Skeleton className="mt-1 h-5 w-20 bg-white/20" />
+                    ) : (
+                      <p className="truncate text-base font-bold tabular-nums leading-tight">{formatMoney(metrics.projectedSale, true)}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -258,11 +281,25 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
              explain it sitting alongside. */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4 xl:col-span-2">
-          <Panel {...enter(5)} title="Sales, last 7 days" icon={TrendingUp} hint="Completed orders by day; cancelled and returned orders are left out." href="/admin/orders" cta="All orders">
+          <Panel
+            {...enter(5)}
+            title="Sales, last 7 days"
+            icon={TrendingUp}
+            hint="Completed orders by day; cancelled and returned orders are left out."
+            href="/admin/orders"
+            cta="All orders"
+          >
             <SalesTrend days={7} />
           </Panel>
 
-          <Panel {...enter(6)} title="Latest activity" icon={ShoppingBag} hint="Sales and stock purchases, newest first." href="/admin/orders" cta="All orders">
+          <Panel
+            {...enter(6)}
+            title="Latest activity"
+            icon={ShoppingBag}
+            hint="Sales and stock purchases, newest first."
+            href="/admin/orders"
+            cta="All orders"
+          >
             <ActivityFeed limit={8} />
           </Panel>
         </div>
@@ -310,19 +347,75 @@ export default function DashboardInsights({ toolbar }: DashboardInsightsProps) {
           <CategoryBreakdown summary={summary} loading={isLoading} />
         </Panel>
 
-        <Panel {...enter(8)} title="People" icon={Users} hint="Newest customers and the team on the books." href="/admin/users" cta="All users" className="xl:col-span-2">
+        <Panel
+          {...enter(8)}
+          title="People"
+          icon={Users}
+          hint="Newest customers and the team on the books."
+          href="/admin/users"
+          cta="All users"
+          className="xl:col-span-2"
+        >
           <PeoplePanel summary={summary} loading={isLoading} />
         </Panel>
       </section>
 
       <section {...enter(9)}>
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          <CatalogRow icon={Boxes} accent="sky" label="Products" value={summary?.productTotal} recent={summary?.products?.length} href="/admin/products" loading={isLoading} />
-          <CatalogRow icon={FolderTree} accent="emerald" label="Categories" value={summary?.categoryTotal} recent={summary?.categories?.length} href="/admin/categories" loading={isLoading} />
-          <CatalogRow icon={Tag} accent="violet" label="Brands" value={summary?.brandTotal} recent={summary?.brands?.length} href="/admin/brand-names" loading={isLoading} />
-          <CatalogRow icon={Ruler} accent="amber" label="Attributes" value={summary?.attributeTotal} recent={summary?.attributes?.length} href="/admin/master-attributes" loading={isLoading} />
-          <CatalogRow icon={Users} accent="rose" label="Customers" value={summary?.customerTotal} recent={summary?.customers?.length} href="/admin/users" loading={isLoading} />
-          <CatalogRow icon={Briefcase} accent="indigo" label="Staff" value={summary?.staffTotal} recent={summary?.staff?.length} href="/admin/users" loading={isLoading} />
+          <CatalogRow
+            icon={Boxes}
+            accent="sky"
+            label="Products"
+            value={summary?.productTotal}
+            recent={summary?.products?.length}
+            href="/admin/products"
+            loading={isLoading}
+          />
+          <CatalogRow
+            icon={FolderTree}
+            accent="emerald"
+            label="Categories"
+            value={summary?.categoryTotal}
+            recent={summary?.categories?.length}
+            href="/admin/categories"
+            loading={isLoading}
+          />
+          <CatalogRow
+            icon={Tag}
+            accent="violet"
+            label="Brands"
+            value={summary?.brandTotal}
+            recent={summary?.brands?.length}
+            href="/admin/brand-names"
+            loading={isLoading}
+          />
+          <CatalogRow
+            icon={Ruler}
+            accent="amber"
+            label="Attributes"
+            value={summary?.attributeTotal}
+            recent={summary?.attributes?.length}
+            href="/admin/master-attributes"
+            loading={isLoading}
+          />
+          <CatalogRow
+            icon={Users}
+            accent="rose"
+            label="Customers"
+            value={summary?.customerTotal}
+            recent={summary?.customers?.length}
+            href="/admin/users"
+            loading={isLoading}
+          />
+          <CatalogRow
+            icon={Briefcase}
+            accent="indigo"
+            label="Staff"
+            value={summary?.staffTotal}
+            recent={summary?.staff?.length}
+            href="/admin/users"
+            loading={isLoading}
+          />
         </ul>
       </section>
     </div>
@@ -383,9 +476,21 @@ function InsightKpi({
 }) {
   const a = ACCENT[accent];
   return (
-    <Link href={href} className={cn('group block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring', className)} style={style}>
-      <div className={cn(SURFACE, 'relative flex h-full flex-col overflow-hidden transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md')}>
-        <div className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.glow)} aria-hidden />
+    <Link
+      href={href}
+      className={cn('group block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring', className)}
+      style={style}
+    >
+      <div
+        className={cn(
+          SURFACE,
+          'relative flex h-full flex-col overflow-hidden transition-all group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-md'
+        )}
+      >
+        <div
+          className={cn('pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br to-transparent', a.glow)}
+          aria-hidden
+        />
 
         <div className="relative flex flex-1 flex-col p-4">
           <div className="flex items-center justify-between gap-2">
@@ -450,7 +555,12 @@ function StockWatch({ items, loading }: { items: LowStockProduct[]; loading: boo
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="truncate font-medium group-hover:underline">{product.name}</span>
-                  <span className={cn('shrink-0 rounded-full px-1.5 py-0 text-[10px] font-semibold tabular-nums', critical ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400')}>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-1.5 py-0 text-[10px] font-semibold tabular-nums',
+                      critical ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                    )}
+                  >
                     {critical ? 'Out' : `${product.stock} left`}
                   </span>
                 </div>
@@ -571,7 +681,14 @@ function PeoplePanel({ summary, loading }: { summary?: DashboardSummaryDto; load
         total={summary?.customerTotal}
         href="/admin/users?role=USER"
         emptyText="No customers yet. They appear here as soon as someone registers or places an order."
-        people={customers.map((c) => ({ id: c.id, name: c.name, sub: c.email || c.phone || '', when: c.createdAt, active: c.isActive, badge: c.isActive ? null : 'Inactive' }))}
+        people={customers.map((c) => ({
+          id: c.id,
+          name: c.name,
+          sub: c.email || c.phone || '',
+          when: c.createdAt,
+          active: c.isActive,
+          badge: c.isActive ? null : 'Inactive',
+        }))}
       />
       <PeopleList
         title="Team"
@@ -603,7 +720,21 @@ interface Person {
 
 // One column of the People panel: heading with the store-wide total, then compact rows that
 // link to the user list. The newest person is marked so the list reads as a feed.
-function PeopleList({ title, total, href, emptyText, people, className }: { title: string; total?: number; href: string; emptyText: string; people: Person[]; className?: string }) {
+function PeopleList({
+  title,
+  total,
+  href,
+  emptyText,
+  people,
+  className,
+}: {
+  title: string;
+  total?: number;
+  href: string;
+  emptyText: string;
+  people: Person[];
+  className?: string;
+}) {
   return (
     <div className={cn('min-w-0', className)}>
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -625,18 +756,27 @@ function PeopleList({ title, total, href, emptyText, people, className }: { titl
         <ul className="-mx-2">
           {people.map((p, index) => (
             <li key={p.id}>
-              <Link href={`/admin/users?search=${encodeURIComponent(p.name)}`} className="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50">
+              <Link
+                href={`/admin/users?search=${encodeURIComponent(p.name)}`}
+                className="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/50"
+              >
                 <Initials name={p.name} active={p.active} />
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-1.5 text-sm font-medium leading-tight">
                     <span className="truncate group-hover:underline">{p.name}</span>
-                    {index === 0 && <span className="shrink-0 rounded bg-primary/10 px-1 text-[9px] font-semibold uppercase tracking-wide text-primary">New</span>}
+                    {index === 0 && (
+                      <span className="shrink-0 rounded bg-primary/10 px-1 text-[9px] font-semibold uppercase tracking-wide text-primary">New</span>
+                    )}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground">{p.sub || '—'}</p>
                 </div>
                 <div className="shrink-0 text-right">
                   {p.badge && (
-                    <span className={cn('block text-[10px] font-semibold', p.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>{p.badge}</span>
+                    <span
+                      className={cn('block text-[10px] font-semibold', p.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}
+                    >
+                      {p.badge}
+                    </span>
                   )}
                   <span className="block text-[10px] text-muted-foreground" title={p.when ? new Date(p.when).toLocaleString('en-IN') : ''}>
                     {p.when ? formatDistanceToNow(new Date(p.when), { addSuffix: true }) : ''}
@@ -651,10 +791,29 @@ function PeopleList({ title, total, href, emptyText, people, className }: { titl
   );
 }
 
-function CatalogRow({ icon: Icon, accent, label, value, recent, href, loading }: { icon: React.ElementType; accent: Accent; label: string; value?: number; recent?: number; href: string; loading: boolean }) {
+function CatalogRow({
+  icon: Icon,
+  accent,
+  label,
+  value,
+  recent,
+  href,
+  loading,
+}: {
+  icon: React.ElementType;
+  accent: Accent;
+  label: string;
+  value?: number;
+  recent?: number;
+  href: string;
+  loading: boolean;
+}) {
   return (
     <li className="min-w-0">
-      <Link href={href} className="group flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+      <Link
+        href={href}
+        className="group flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
+      >
         <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-md', ACCENT[accent].icon)}>
           <Icon className="h-4 w-4" />
         </span>
